@@ -175,7 +175,19 @@ final class AgentModeUITests: XCTestCase {
         XCTAssertTrue(answer.waitForExistence(timeout: 6))
         XCTAssertTrue(app.descendants(matching: .any)["agent.taskTitle"].exists)
         XCTAssertFalse(app.buttons["Open in results"].exists)
-        answer.click()
+        XCTAssertTrue(app.buttons["agent.approve.deny"].waitForExistence(timeout: 4))
+        let transcript = app.scrollViews["agent.transcript"]
+        XCTAssertGreaterThanOrEqual(transcript.frame.height, 140,
+                                    "The expanded approval must leave room to read the conversation")
+        UITestHarness.scrollTo(responseMore, in: app, within: transcript)
+        let visibleAnswer = answer.frame.intersection(transcript.frame.insetBy(dx: 8, dy: 8))
+        XCTAssertFalse(visibleAnswer.isNull, "The response must be visible before selecting it")
+        XCTAssertGreaterThan(visibleAnswer.height, 12)
+        // A long text view can extend beyond its scroll viewport. XCTest's
+        // default center click can otherwise land on the fixed approval dock.
+        answer.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(
+            dx: visibleAnswer.minX - answer.frame.minX + 4,
+            dy: visibleAnswer.midY - answer.frame.minY)).click()
         app.typeKey("a", modifierFlags: .command)
         app.typeKey("c", modifierFlags: .command)
         composer.click()

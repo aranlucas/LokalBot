@@ -3,6 +3,7 @@ import SwiftUI
 struct AgentApprovalDock: View {
     @ObservedObject var controller: AgentSessionController
     let request: AgentApprovalRequest
+    var detailsMaxHeight: CGFloat = 180
     @State private var expanded = true
 
     var body: some View {
@@ -19,7 +20,7 @@ struct AgentApprovalDock: View {
                 Text(command).font(LBTokens.Typography.path).lineLimit(2).textSelection(.enabled)
             }
             DisclosureGroup("Review Details", isExpanded: $expanded) {
-                ScrollView { details }.frame(maxHeight: 180)
+                ScrollView { details }.frame(maxHeight: detailsMaxHeight)
             }
 
             ViewThatFits(in: .horizontal) {

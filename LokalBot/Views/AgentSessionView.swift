@@ -20,7 +20,7 @@ struct AgentSessionView: View {
         // long response or an action row to contribute its ideal width to
         // the native window's minimum size.
         GeometryReader { geometry in
-            conversation(width: geometry.size.width)
+            conversation(width: geometry.size.width, height: geometry.size.height)
                 .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .toolbar { ToolbarItemGroup(placement: .primaryAction) { taskActions } }
@@ -49,7 +49,7 @@ struct AgentSessionView: View {
         max(0, min(WorkspaceMetric.readingMaxWidth, width - 40))
     }
 
-    private func conversation(width: CGFloat) -> some View {
+    private func conversation(width: CGFloat, height: CGFloat) -> some View {
         VStack(spacing: 0) {
             taskHeader.frame(width: readingWidth(width)).padding(.top, 20).padding(.bottom, 16)
             if findVisible { findBar }
@@ -59,7 +59,11 @@ struct AgentSessionView: View {
                     if controller.pendingApprovals.count > 1 {
                         Text("\(controller.pendingApprovals.count) approvals waiting").font(.caption)
                     }
-                    AgentApprovalDock(controller: controller, request: request).id(request.id)
+                    // Keep the expanded preview scrollable without consuming
+                    // the conversation above it in a compact window.
+                    AgentApprovalDock(controller: controller, request: request,
+                                      detailsMaxHeight: min(180, max(48, height - 600)))
+                        .id(request.id)
                 }
                 .frame(width: readingWidth(width))
                 .padding(.bottom, 8)
