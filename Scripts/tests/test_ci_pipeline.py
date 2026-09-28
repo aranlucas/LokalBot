@@ -1,5 +1,7 @@
 """Negative controls for artifact reuse, complete coverage, and publication gates."""
 import copy
+import contextlib
+import io
 import importlib.util
 import json
 import os
@@ -23,6 +25,8 @@ def module(name, file):
 release = module('release_candidate', 'release-candidate.py')
 shards = module('ui_shards', 'ui-shards.py')
 products = module('test_products', 'test-products.py')
+compiler = module('compiler_cache', 'compiler-cache.py')
+timing = module('ci_timings', 'ci-timings.py')
 
 
 class PublicationGateTests(unittest.TestCase):
@@ -156,6 +160,185 @@ class CompleteCoverageTests(unittest.TestCase):
         self.assertEqual(list(shards.test_results(tree)), [('Suite/testOne', 'Passed')])
 
 
+class ParallelGateTests(unittest.TestCase):
+    def test_all_seven_consumers_depend_only_on_build(self):
+        workflow = (ROOT / '.github/workflows/ui-tests.yml').read_text()
+        for job in ['build-smoke', 'reduced-motion', 'shards']:
+            block = workflow.split(f'  {job}:\n', 1)[1].split('    steps:', 1)[0]
+            self.assertIn('    needs: build\n', block)
+        self.assertIn('needs: [build, build-smoke, reduced-motion, shards]', workflow)
+        self.assertIn('cancel-in-progress: true', workflow)
+        self.assertIn('name: UI build and critical tests', workflow)
+        self.assertIn('XCUITest (macOS)', workflow)
+
+    def test_missing_failed_skipped_or_cancelled_jobs_block_full_gate(self):
+        shards.gate('success', 'success', 'success', 'success')
+        for index in range(4):
+            for bad in ['', 'failure', 'skipped', 'cancelled']:
+                values = ['success'] * 4
+                values[index] = bad
+                with self.subTest(index=index, bad=bad), self.assertRaises(ValueError):
+                    shards.gate(*values)
+
+    def test_filtered_run_requires_selected_job_and_skips_matrix(self):
+        with patch.object(shards, 'inventory', return_value=['Suite/testOne', 'Suite/testTwo']):
+            shards.gate('success', 'success', 'skipped', 'skipped', 'Suite/testOne')
+            self.assertEqual(shards.selected_tests('Suite'), ['Suite/testOne', 'Suite/testTwo'])
+            self.assertEqual(shards.selected_tests('LokalBotUITests/Suite/testOne'), ['Suite/testOne'])
+            shards.gate('success', 'success', 'skipped', 'skipped', 'LokalBotUITests/Suite/testOne')
+            for values in [('success', 'failure', 'skipped', 'skipped', 'Suite/testOne'),
+                           ('success', 'success', 'skipped', 'skipped', 'Suite/typo'),
+                           ('success', 'success', 'success', 'success', 'Suite/testOne')]:
+                with self.assertRaises(ValueError):
+                    shards.gate(*values)
+
+
+class CompilerCacheTests(unittest.TestCase):
+    def setUp(self):
+        self.original = Path.cwd()
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        os.chdir(self.temp.name)
+        self.addCleanup(os.chdir, self.original)
+        compiler.EVIDENCE.mkdir(parents=True)
+        (compiler.EVIDENCE / 'cache-identity.json').write_text('{"toolchain": "pinned"}')
+        compiler.CAS.mkdir(parents=True)
+        (compiler.CAS / 'object').write_bytes(b'compiled input')
+        compiler.seal()
+
+    def test_valid_cache_and_incompatible_or_tampered_cache(self):
+        self.assertTrue(compiler.validate())
+        (compiler.CAS / 'object').write_bytes(b'tampered input')
+        self.assertFalse(compiler.validate())
+        self.assertFalse(compiler.CACHE.exists())
+
+    def test_changed_toolchain_and_invalid_metadata_fall_back_cleanly(self):
+        manifest = compiler.CACHE / 'manifest.json'
+        for value in ['broken json', '{}', '{"identity": {"toolchain": "other"}}']:
+            compiler.CACHE.mkdir(exist_ok=True)
+            manifest.write_text(value)
+            self.assertFalse(compiler.validate())
+            self.assertFalse(compiler.CACHE.exists())
+
+    def test_size_and_symlink_limits(self):
+        with patch.object(compiler, 'LIMIT', 1):
+            self.assertFalse(compiler.validate())
+        compiler.CAS.mkdir(parents=True)
+        (compiler.CAS / 'link').symlink_to('/etc/hosts')
+        self.assertFalse(compiler.validate())
+
+    def test_source_content_changes_cache_key_even_with_same_timestamp(self):
+        import time
+        source = Path('Source.swift')
+        source.write_text('let answer = 1')
+        stamp = source.stat().st_mtime_ns
+        before = compiler.fingerprint([source])
+        source.write_text('let answer = 2')
+        os.utime(source, ns=(stamp, stamp))
+        self.assertNotEqual(compiler.fingerprint([source]), before)
+
+    def test_key_ignores_generated_ids_but_pins_configuration_generator_and_sources(self):
+        paths = ['project.yml', 'Package.resolved', 'LokalBot/Fixture.swift',
+                 'Scripts/ui-tests.sh', '.github/workflows/build.yml']
+        for name in paths:
+            path = Path(name)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('original input')
+        generated = Path('LokalBot.xcodeproj/project.pbxproj')
+        generated.parent.mkdir()
+        generated.write_text('copy phase IDs: first ordering')
+        commands = {('git', 'ls-files', '-z'): '\0'.join(paths),
+                    ('git', 'rev-parse', 'HEAD'): 'candidate',
+                    ('xcodegen', '--version'): 'Version: 2.46.0',
+                    ('xcodebuild', '-version'): 'Xcode 26.3',
+                    ('xcrun', 'swiftc', '--version'): 'Swift 6.2.4',
+                    ('xcrun', '--sdk', 'macosx', '--show-sdk-version'): '26.2',
+                    ('xcrun', '--sdk', 'macosx', '--show-sdk-build-version'): '25C58',
+                    ('uname', '-m'): 'arm64'}
+
+        def prepare():
+            with patch.object(compiler, 'output', side_effect=lambda *args: commands[args]), \
+                    patch.object(compiler, 'emit') as emit, contextlib.redirect_stdout(io.StringIO()):
+                compiler.prepare('ui')
+                return emit.call_args.kwargs
+
+        original = prepare()
+        generated.write_text('copy phase IDs: equivalent second ordering')
+        self.assertEqual(prepare(), original)
+        Path('LokalBot/Fixture.swift').write_text('edited source')
+        changed_source = prepare()
+        self.assertEqual(changed_source['prefix'], original['prefix'])
+        self.assertNotEqual(changed_source['key'], original['key'])
+        for name in ['project.yml', 'Package.resolved', 'Scripts/ui-tests.sh', '.github/workflows/build.yml']:
+            path = Path(name)
+            path.write_text('changed configuration')
+            self.assertNotEqual(prepare()['prefix'], original['prefix'])
+            path.write_text('original input')
+        for command in commands:
+            if command[0] == 'git':
+                continue
+            old = commands[command]
+            commands[command] = 'different toolchain or generator'
+            self.assertNotEqual(prepare()['prefix'], original['prefix'])
+            commands[command] = old
+
+    def test_clean_build_discards_products_stamp_and_incremental_database(self):
+        dd = Path('.build/dd/Build')
+        dd.mkdir(parents=True)
+        (dd / 'old-product').write_text('old')
+        (dd.parent / 'ui-build.json').write_text('old')
+        compiler.clean_products()
+        self.assertFalse(dd.parent.exists())
+
+
+class TimingTests(unittest.TestCase):
+    def test_dependency_wait_is_not_runner_time_or_shard_queue(self):
+        run = dict(id=42, run_attempt=2, name='UI Tests', head_sha='candidate',
+                   html_url='https://example.invalid/run/42', event='workflow_dispatch',
+                   conclusion='success', status='completed', run_started_at='2026-09-28T12:00:00Z')
+        def job(id, name, start, end):
+            return dict(id=id, name=name, started_at=f'2026-09-28T12:{start}:00Z',
+                        completed_at=f'2026-09-28T12:{end}:00Z', conclusion='success',
+                        labels=['macos-15'], runner_name='hosted', steps=[])
+        jobs = [job(1, 'UI build (macOS)', '02', '10'),
+                job(2, 'UI build and critical tests', '11', '16'),
+                job(3, 'UI visual-1000x700', '12', '17')]
+        result = timing.summarize(run, jobs)
+        self.assertEqual([j['queue_seconds'] for j in result['jobs']], [120, 60, 120])
+        self.assertEqual(result['wall_seconds'], 17 * 60)
+        self.assertEqual(result['macos_runner_minutes'], 18)
+        self.assertEqual(result['peak_macos_jobs'], 2)
+        self.assertEqual(result['max_macos_queue_seconds'], 120)
+        self.assertEqual(result['build_and_critical_seconds'], 16 * 60)
+        gate = job(4, 'UI focused / comparison (macOS)', '18', '19')
+        gate['labels'] = ['ubuntu-latest']
+        result = timing.summarize(run, jobs + [gate])
+        self.assertEqual(result['jobs'][-1]['queue_seconds'], 60)
+        self.assertEqual(result['macos_runner_minutes'], 18)
+
+    def test_incomplete_jobs_are_never_reported_as_complete(self):
+        run = dict(id=42, run_attempt=1, name='Build', head_sha='candidate',
+                   html_url='https://example.invalid/run/42', event='push', conclusion=None,
+                   status='in_progress', run_started_at='2026-09-28T12:00:00Z')
+        result = timing.summarize(run, [dict(id=1, name='xcodebuild (macOS)',
+            started_at='2026-09-28T12:02:00Z', completed_at=None, labels=['macos-15'], runner_name='hosted', steps=[])])
+        self.assertIsNone(result['wall_seconds'])
+        self.assertIsNone(result['jobs'][0]['seconds'])
+        self.assertEqual(result['macos_runner_minutes'], 0)
+        run['event'] = 'pull_request'
+        self.assertIsNone(timing.summarize(run, [])['checkout_sha'])
+        cancelled = dict(id=2, name='xcodebuild (macOS)', started_at='2026-09-28T12:02:00Z',
+                         completed_at='2026-09-28T12:10:00Z', labels=['macos-15'],
+                         conclusion='cancelled', runner_name=None, steps=[])
+        result = timing.summarize(run, [cancelled])
+        self.assertEqual(result['macos_runner_minutes'], 0)
+        self.assertEqual(result['peak_macos_jobs'], 0)
+        self.assertIsNone(result['jobs'][0]['queue_seconds'])
+        skipped = dict(cancelled, name='UI build and critical tests', conclusion='skipped')
+        result = timing.summarize(dict(run, name='UI Tests'), [skipped])
+        self.assertIsNone(result['build_and_critical_seconds'])
+
+
 class TestArtifactTests(unittest.TestCase):
     def test_identity_ignores_only_runner_location_and_job(self):
         identity = dict(root='/producer', job='build', commit='sha', xcode='26.3', lock='hash',
@@ -176,7 +359,8 @@ class TestArtifactTests(unittest.TestCase):
             binary.chmod(0o755)
             (source / 'Fixture.xctestrun').write_bytes(plistlib.dumps({'path': str(binary)}))
             original = Path.cwd()
-            identity = dict(commit='sha', run='42', attempt='1', xcode='26.3')
+            identity = dict(commit='sha', run='42', attempt='1', xcode='26.3', sdk='26.2',
+                            architecture='arm64', signing='NO', lock='dependencies')
             try:
                 os.chdir(producer)
                 with patch.object(products, 'identity', return_value=identity):
@@ -184,9 +368,10 @@ class TestArtifactTests(unittest.TestCase):
                 import shutil
                 shutil.copytree(producer / '.build/transfer', consumer / '.build/transfer')
                 os.chdir(consumer)
-                with patch.object(products, 'identity', return_value=dict(identity, attempt='2')):
-                    with self.assertRaises(ValueError):
-                        products.transfer('unpack', 'unit')
+                for key in identity:
+                    with patch.object(products, 'identity', return_value=dict(identity, **{key: 'changed'})):
+                        with self.subTest(key=key), self.assertRaises(ValueError):
+                            products.transfer('unpack', 'unit')
                 self.assertFalse((consumer / '.build/dd').exists())
                 with patch.object(products, 'identity', return_value=identity):
                     products.transfer('unpack', 'unit')
