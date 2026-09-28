@@ -164,6 +164,14 @@ final class ProcessingPipeline: ObservableObject {
     /// re-checks them; `retryJobsWaitingForModels()` re-checks mid-session.
     private var waitingForModelsJobs: [Job] = []
     private var isDraining = false
+    private(set) var captureActive = false
+
+    /// Never start another heavy job while capture is active. An already
+    /// running phase finishes and persists its result before yielding.
+    func setCaptureActive(_ active: Bool) {
+        captureActive = active
+        if !active { drain() }
+    }
     private var activeMeetingID: Meeting.ID?
     private var activeJob: Job?
     /// The currently running job is retained separately from the queue-drain
@@ -473,10 +481,10 @@ final class ProcessingPipeline: ObservableObject {
     }
 
     private func drain() {
-        guard !isDraining else { return }
+        guard !isDraining, !captureActive else { return }
         isDraining = true
         Task {
-            while !queue.isEmpty {
+            while !queue.isEmpty, !captureActive {
                 let job = queue.removeFirst()
                 guard !revokedMeetingIDs.contains(job.meeting.id) else { continue }
                 activeMeetingID = job.meeting.id
@@ -494,6 +502,17 @@ final class ProcessingPipeline: ObservableObject {
             }
             isDraining = false
         }
+    }
+
+    private func yieldToCapture(meetingID: Meeting.ID) async throws {
+        guard captureActive else { return }
+        let previous = stages[meetingID]
+        stages[meetingID] = .queued
+        while captureActive {
+            try await Task.sleep(for: .milliseconds(250))
+            try requireCommitPermission(for: meetingID)
+        }
+        stages[meetingID] = previous
     }
 
     private func process(_ job: Job) async {
@@ -539,6 +558,7 @@ final class ProcessingPipeline: ObservableObject {
         var transcriptWrittenThisJob = false
         var notifiedArtifactsWillChange = false
         do {
+            try await yieldToCapture(meetingID: meeting.id)
             if job.transcribe || !FileManager.default.fileExists(
                 atPath: folder.appendingPathComponent("transcript.json").path) {
                 let previousTranscript = try? loadTranscript(from: folder)
@@ -614,6 +634,10 @@ final class ProcessingPipeline: ObservableObject {
             }
             let resolvedJob = activeJob ?? job
             try requireCommitPermission(for: meeting.id)
+            if resolvedJob.summarize, captureActive {
+                if transcriptWrittenThisJob { onArtifactsWritten?(meeting) }
+                try await yieldToCapture(meetingID: meeting.id)
+            }
             activePhase = .summarizing
             if resolvedJob.summarize {
                 // Missing Think model on automatic work: keep the transcript
@@ -834,6 +858,7 @@ final class ProcessingPipeline: ObservableObject {
         }
         // Reject missing or unreadable recordings before any model download.
         guard !sources.isEmpty else { throw PipelineError.noAudio }
+        try await yieldToCapture(meetingID: meeting.id)
         if config.multiSpeakerDiarization { try await prepareDiarizationModels(config: config) }
         let language = config.transcriptionLanguage.code
         var tracks: [Transcript] = []
@@ -845,6 +870,7 @@ final class ProcessingPipeline: ObservableObject {
         }.value
 
         for (track, url) in sources {
+            try await yieldToCapture(meetingID: meeting.id)
             let name = track.rawValue
             let speaker = track == .mic ? "me" : "them"
             // Per-track checkpoint: a finished track's transcript survives a
@@ -867,6 +893,7 @@ final class ProcessingPipeline: ObservableObject {
                     ? try await diarizer.diarizeDetailed(url: audio, model: config.diarizationModel,
                         includeVoiceSamples: config.rememberSpeakersOnMac)
                     : SpeakerDiarizationResult(segments: [], samples: [])
+                try await yieldToCapture(meetingID: meeting.id)
                 var result: Transcript?
                 if let data = try? Data(contentsOf: checkpoint),
                    let cached = try? JSONDecoder().decode(TrackCheckpoint.self, from: data),

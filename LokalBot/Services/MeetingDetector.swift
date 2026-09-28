@@ -164,6 +164,8 @@ final class MeetingDetector {
     var onMeetingStarted: ((MeetingDetectionContext) -> Void)?
     var onMeetingSwitched: ((MeetingDetectionContext) -> Void)?
     var onMeetingEnded: ((MeetingDetectionEnd) -> Void)?
+    var onBrowserObservation: ((UUID, Bool, Date?) -> Void)?
+    var onVerifiedSourceAvailable: ((MeetingDetectionContext) -> Void)?
     var stopDebounce: TimeInterval = AppSettings.defaultStopDebounceSeconds
     /// Extra grace before stopping while a calendar-backed meeting is still in
     /// its scheduled window — brief audio drops mid-meeting shouldn't end it.
@@ -734,15 +736,20 @@ final class MeetingDetector {
     /// A browser-wide audio stream is never evidence that the bound call is
     /// still running. A verified window that still holds the call keeps it,
     /// even when its call controls cannot be read. Otherwise a missing
-    /// snapshot is uncertainty for a bounded grace period; an explicit ended
-    /// state ends immediately. A missing host gets a shorter reconnect grace
-    /// so a browser restart does not split the call. Preserve the last
-    /// verified boundary for processing.
+    /// snapshot remains uncertainty until positive end evidence or user Stop.
+    /// The last verified observation is diagnostic, never a content cutoff.
     private func tickBrowser(_ app: DetectedApp, now: Date) {
         let host = NSRunningApplication.runningApplications(withBundleIdentifier: app.bundleID).first
         let snapshot = host.flatMap { browserSnapshots[$0.processIdentifier] }
         let observedState: BrowserMeetingSession.State? = snapshot.map {
             $0.url == app.meetingURL ? $0.state : .unavailable
+        }
+        if observedState == .inCall, let host {
+            let verified = DetectedApp(name: app.name, bundleID: app.bundleID,
+                                       pid: host.processIdentifier, meetingURL: app.meetingURL)
+            onVerifiedSourceAvailable?(.init(detectedApp: verified, calendarEvent: activeCalendarEvent,
+                                             confidence: .high, reason: "verified-browser-source",
+                                             detectorSessionID: activeSessionID))
         }
         let event = browserLifecycle.observe(
             observedState,
@@ -750,6 +757,10 @@ final class MeetingDetector {
             now: now,
             grace: max(Self.browserObservationGrace, max(0, stopDebounce)),
             hostReconnectGrace: Self.browserHostReconnectGrace)
+        if let sessionID = activeSessionID {
+            onBrowserObservation?(sessionID, browserLifecycle.lostAt != nil,
+                                  browserLifecycle.lastEvidenceAt)
+        }
         switch event {
         case .none:
             // Only an open uncertainty window may leave a pending end in place.
@@ -1059,12 +1070,14 @@ final class MeetingDetector {
     /// silently widen its capture scope to arbitrary browser media.
     static func captureCandidateApp(
         in running: [NSRunningApplication] = NSWorkspace.shared.runningApplications,
-        expectedMeetingURL: URL? = nil
+        expectedMeetingURL: URL? = nil,
+        expectedBundleID: String? = nil
     ) -> DetectedApp? {
+        let running = running.filter { expectedBundleID == nil || $0.bundleIdentifier == expectedBundleID }
         // Prefer native apps that are actually emitting, then a verified
         // browser call. An idle Teams/Zoom process must not shadow the Chrome
         // call the user is recording just because it happens to be open.
-        if let native = nativeMeetingApp(in: running, requireAudio: true) { return native }
+        if expectedMeetingURL == nil, let native = nativeMeetingApp(in: running, requireAudio: true) { return native }
         for app in running {
             guard let bundleID = app.bundleIdentifier, browsers.contains(bundleID),
                   let snapshot = BrowserMeetingSession.snapshot(
@@ -1083,6 +1096,7 @@ final class MeetingDetector {
                 pid: audioProcess?.id ?? target.pid,
                 meetingURL: target.meetingURL)
         }
+        guard expectedMeetingURL == nil else { return nil }
         // A single idle native app is still a useful silent tap target: it may
         // begin emitting after the user presses Record. When several are open,
         // choose only a frontmost one; otherwise abstain rather than mixing an

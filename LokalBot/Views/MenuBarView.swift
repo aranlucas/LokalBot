@@ -505,6 +505,13 @@ struct MeetingRecordingTimerText: View {
     @ObservedObject var recording: RecordingController
 
     var body: some View {
-        Text(recording.menuBarTimer).monospacedDigit()
+        HStack(spacing: 3) {
+            if !recording.captureWarnings.isEmpty {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .accessibilityLabel("Recording needs attention")
+            }
+            Text(recording.menuBarTimer).monospacedDigit()
+        }
+        .help(recording.captureWarnings.joined(separator: "\n"))
     }
 }

@@ -22,10 +22,7 @@ struct MeetingDetectionContext: Equatable {
 struct MeetingDetectionEnd {
     enum Action: Equatable {
         case ignore
-        /// An uncertain end never locks the same call out of restarting.
         case stop(allowsAutomaticRestart: Bool)
-        /// Keep recording and rejoin the call when it is verified again.
-        case release
     }
 
     let sessionID: UUID
@@ -37,11 +34,11 @@ struct MeetingDetectionEnd {
         detectorSessionID == sessionID
     }
 
-    /// A recording the user started stops only on a confident end.
-    func action(detectorSessionID: UUID?, startedByUser: Bool) -> Action {
+    /// Neither automatic nor explicit recordings can be stopped by uncertainty.
+    func action(detectorSessionID: UUID?, startedByUser _: Bool) -> Action {
         guard ownsRecording(detectorSessionID: detectorSessionID) else { return .ignore }
         if confident { return .stop(allowsAutomaticRestart: false) }
-        return startedByUser ? .release : .stop(allowsAutomaticRestart: true)
+        return .ignore
     }
 }
 

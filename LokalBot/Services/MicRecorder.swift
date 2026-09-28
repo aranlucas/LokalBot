@@ -218,6 +218,7 @@ final class MicRecorder {
     private var converter: AVAudioConverter?
     private var converterInputFormat: AVAudioFormat?
     private var previewTee: AudioPreviewTee?
+    private var writeFailure: String?
     private var recordingFormat: AVAudioFormat?
     /// Accessed only on `ioQueue`. Nil for standalone dictation capture.
     private var timeline: RecordingAudioTimeline?
@@ -295,6 +296,7 @@ final class MicRecorder {
         let isEngineRunning: Bool
         let droppedBufferCount: Int
         let recoveryState: RecoveryState
+        var writeError: String?
     }
 
     static func requestPermission() async -> Bool {
@@ -332,15 +334,23 @@ final class MicRecorder {
             throw RecorderError.unsupportedInputFormat
         }
 
-        let newFile = try Self.makeRecordingFile(at: url, recordingFormat: recordingFormat)
+        var initialWriteFailure: String?
+        let newFile: AVAudioFile?
+        do { newFile = try Self.makeRecordingFile(at: url, recordingFormat: recordingFormat) } catch {
+            newFile = nil
+            initialWriteFailure = error.localizedDescription
+        }
         let newPreviewTee = previewURL.flatMap {
             AudioPreviewTee(url: $0, sourceFormat: recordingFormat)
         }
+        guard newFile != nil || newPreviewTee != nil else { throw CocoaError(.fileWriteUnknown) }
         ioQueue.sync {
             file = newFile
             self.recordingFormat = recordingFormat
             self.timeline = timeline
             previewTee = newPreviewTee
+            writeFailure = initialWriteFailure
+                ?? (previewURL != nil && newPreviewTee == nil ? "Recovery audio could not be opened" : nil)
             converter = nil
             converterInputFormat = nil
             recoverySilenceCommitGate.cancel()
@@ -412,11 +422,12 @@ final class MicRecorder {
         let recoveryState = self.recoveryState
         healthLock.unlock()
         let droppedBufferCount = dropCounter.snapshot()
+        let writeError = ioQueue.sync { writeFailure ?? previewTee?.failureDescription }
         return CaptureHealth(duration: duration,
                              lastAudioWriteAt: lastAudioWriteAt,
                              isEngineRunning: engine.isRunning,
                              droppedBufferCount: droppedBufferCount,
-                             recoveryState: recoveryState)
+                             recoveryState: recoveryState, writeError: writeError)
     }
 
     func restartCapture() throws {
@@ -789,7 +800,7 @@ final class MicRecorder {
     }
 
     private func drainConverter() {
-        guard let converter, let recordingFormat, let file else { return }
+        guard let converter, let recordingFormat else { return }
         // Loop because the converter may need multiple output buffers to
         // emit everything it has buffered (especially with resampling).
         for _ in 0..<8 {
@@ -801,11 +812,10 @@ final class MicRecorder {
                 return nil
             }
             if tail.frameLength > 0 {
-                do { try file.write(from: tail) } catch {
+                do { try writeSafely(tail) } catch {
                     NSLog("MicRecorder drain write failed: \(error.localizedDescription)")
                     return
                 }
-                previewTee?.write(tail)
                 healthLock.lock()
                 framesWritten += AVAudioFramePosition(tail.frameLength)
                 healthLock.unlock()
@@ -822,7 +832,6 @@ final class MicRecorder {
         capturedAt: ContinuousClock.Instant, hostTime: UInt64, hostValid: Bool,
         bufferHostStart: Double, callbackHostTime: Double
     ) throws {
-        guard let file else { return }
         let bufferDuration = buffer.format.sampleRate > 0
             ? Double(buffer.frameLength) / buffer.format.sampleRate
             : 0
@@ -830,8 +839,7 @@ final class MicRecorder {
         let timelineHostStart = timeline?.hostTimeOnTimeline(bufferHostTime: bufferHostStart,
             callbackHostTime: callbackHostTime, callbackInstant: capturedAt) ?? bufferHostStart
         guard let recordingFormat else {
-            try file.write(from: buffer)
-            previewTee?.write(buffer)
+            try writeSafely(buffer)
             noteWrittenAudio(buffer, endedAt: capturedAt, hostTime: hostTime, hostValid: hostValid)
             return
         }
@@ -841,10 +849,8 @@ final class MicRecorder {
             try appendPendingRecoverySilence(
                 until: bufferStartedAt,
                 bufferHostStart: timelineHostStart,
-                format: recordingFormat,
-                file: file)
-            try file.write(from: buffer)
-            previewTee?.write(buffer)
+                format: recordingFormat)
+            try writeSafely(buffer)
             noteWrittenAudio(buffer, endedAt: capturedAt, hostTime: hostTime, hostValid: hostValid)
             return
         }
@@ -882,11 +888,24 @@ final class MicRecorder {
             try appendPendingRecoverySilence(
                 until: bufferStartedAt,
                 bufferHostStart: timelineHostStart,
-                format: recordingFormat,
-                file: file)
-            try file.write(from: output)
-            previewTee?.write(output)
+                format: recordingFormat)
+            try writeSafely(output)
             noteWrittenAudio(output, endedAt: capturedAt, hostTime: hostTime, hostValid: hostValid)
+        }
+    }
+
+    private func writeSafely(_ buffer: AVAudioPCMBuffer, isPadding: Bool = false) throws {
+        let result = AudioWriteSafety.write(recovery: { previewTee?.write(buffer, isPadding: isPadding) ?? false }, primary: {
+            guard let file else { throw CocoaError(.fileWriteUnknown) }
+            do { try file.write(from: buffer) } catch {
+                self.file = nil
+                throw error
+            }
+        })
+        if let error = result.error { writeFailure = "Primary audio unavailable; using recovery audio. \(error)" }
+        guard result.saved else {
+            writeFailure = "No audio is being saved. Free disk space and restart recording."
+            throw CocoaError(.fileWriteUnknown)
         }
     }
 
@@ -940,8 +959,7 @@ final class MicRecorder {
     private func appendPendingRecoverySilence(
         until now: ContinuousClock.Instant,
         bufferHostStart: Double,
-        format: AVAudioFormat,
-        file: AVAudioFile
+        format: AVAudioFormat
     ) throws {
         healthLock.lock()
         let anchor = lastAudioWriteInstant ?? captureStartedInstant
@@ -963,8 +981,7 @@ final class MicRecorder {
             return
         }
         try AudioTimelinePadding.write(frames: paddingFrames, format: format) { silence in
-            try file.write(from: silence)
-            previewTee?.write(silence)
+            try writeSafely(silence, isPadding: true)
             healthLock.lock()
             framesWritten += Int64(silence.frameLength)
             healthLock.unlock()

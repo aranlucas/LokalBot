@@ -1,6 +1,6 @@
 # LokalBot Privacy Policy
 
-Effective: September 25, 2026
+Effective: September 28, 2026
 
 LokalBot is a local-first macOS application. It has no LokalBot account,
 analytics service, advertising SDK, or telemetry backend. The project does not
@@ -57,6 +57,24 @@ folders until removed. Disabling these features stops future runs; it does not
 delete those existing copies.
 
 Browser meeting detection checks the Meet document URL and call controls through Accessibility. When the controls cannot be read, it checks whether the call's window and tab are still open by their titles. These transient lifecycle checks do not retain page text, participant names, or pixels, and the call tab's title is kept in memory only. Calendar entries and browser audio alone cannot authorize automatic recording. Reviewed meeting boundaries limit derived transcripts and summaries while preserving original audio.
+
+An authorized browser recording continues when call observation is unavailable,
+including a temporarily missing browser host. It stops when you press Stop or
+when LokalBot positively verifies the call ended or its bound tab closed. The
+recording UI keeps the uncertainty visible. Capture is scoped to an application
+process, not reliably to one tab, so continuing browser capture may include
+other tabs playing audio in that process. A replacement browser host must verify
+the same call before recovery attaches; uncertainty does not authorize another
+app, a global audio tap, or a new automatic recording. Microphone-only recording
+never acquires system audio through recovery.
+
+Recordings also keep local PCM recovery checkpoints, manifests, and capture-health
+reports beside the original tracks. These follow the meeting's deletion rules
+and never bypass exclusions or permission revocation. Complete duplicate audio
+is removed only after the primary file is verified; incomplete recovery keeps
+its surviving sources. Reopening the app can repair existing media but does not
+restart recording from recovery metadata. Reviewed and legacy boundaries stay
+in place until you explicitly rebuild a different range.
 
 LokalBot does not read Google Meet participant names or speaking activity.
 Earlier versions offered an off-by-default **Meeting speaker identification**

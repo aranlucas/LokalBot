@@ -12,6 +12,8 @@ struct MeetingDocumentSnapshot: Sendable {
     var transcriptDisplay: Transcript.DisplayIndex
     var speakerPresentation: MeetingSpeakerPresentation
     var attributionNeedsRefresh = false
+    var captureNeedsAttention = false
+    var recoveryNeedsAttention = false
 
     static func load(meeting: Meeting, root: URL, template: NoteTemplate, databaseURL: URL) -> Self {
         let folder = root.appendingPathComponent(meeting.relativePath)
@@ -36,6 +38,8 @@ struct MeetingDocumentSnapshot: Sendable {
                         calendarNames: meeting.resolvedCalendarParticipantIdentities.compactMap(\.name), ocrText: text),
                     transcriptDisplay: Transcript.DisplayIndex(transcript: transcript),
                     speakerPresentation: MeetingSpeakerPresentation(transcript: transcript),
-                    attributionNeedsRefresh: MeetingAttributionArtifacts.needsRefresh(in: folder))
+                    attributionNeedsRefresh: MeetingAttributionArtifacts.needsRefresh(in: folder),
+                    captureNeedsAttention: RecordingHealthReport.load(in: folder)?.hasCaptureIssues == true,
+                    recoveryNeedsAttention: MeetingAudioFiles.recoveryNeedsAttention(in: folder))
     }
 }

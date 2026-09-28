@@ -7,6 +7,23 @@ import XCTest
 /// jobs pass straight through.
 @MainActor
 final class ProcessingPipelineAutomationGateTests: XCTestCase {
+    func testCaptureDefersDurableJobsWithoutBurningAttemptsAndResumesOnStop() async throws {
+        let root = try makeRoot()
+        let jobs = PipelineJobStore(databaseURL: root.appendingPathComponent("jobs.sqlite"))
+        let pipeline = makePipeline(root: root, jobStore: jobs, readiness: ReadinessBox())
+        let meeting = makeMeeting()
+        pipeline.setCaptureActive(true)
+        XCTAssertEqual(pipeline.enqueue(meeting, origin: .automatic), .enqueued)
+        await Task.yield()
+        XCTAssertFalse(pipeline.hasActiveWork)
+        XCTAssertEqual(pipeline.stages[meeting.id], .queued)
+        XCTAssertEqual(try XCTUnwrap(jobs.job(meetingID: meeting.id)).attempts, 0)
+        pipeline.setCaptureActive(false)
+        await waitUntil { pipeline.stages[meeting.id] == .waitingForModels }
+        XCTAssertEqual(pipeline.stages[meeting.id], .waitingForModels)
+        XCTAssertEqual(try XCTUnwrap(jobs.job(meetingID: meeting.id)).attempts, 0)
+    }
+
     func testTerminationPersistsAJobWithoutStartingProcessing() throws {
         let root = try makeRoot()
         let url = root.appendingPathComponent("jobs.sqlite")

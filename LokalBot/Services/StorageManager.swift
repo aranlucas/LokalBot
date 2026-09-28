@@ -72,6 +72,12 @@ final class StorageManager {
                 // forever ("in progress"). Close it at the audio's last write.
                 if meeting.endedAt == nil {
                     let folder = url.deletingLastPathComponent()
+                    // Materialize independent checkpoints before inspecting an
+                    // orphan. This finalizes existing media, never new capture.
+                    for track in MeetingAudioFiles.Track.allCases {
+                        _ = try? AudioRecoveryJournal.recover(
+                            previewURL: MeetingAudioFiles.recoveryURL(for: track, in: folder))
+                    }
                     let audioURLs = MeetingAudioFiles.Track.allCases.flatMap { track in
                         [MeetingAudioFiles.primaryURL(for: track, in: folder),
                          MeetingAudioFiles.recoveryURL(for: track, in: folder)]
@@ -80,7 +86,9 @@ final class StorageManager {
                         (try? FileManager.default.attributesOfItem(atPath: audioURL.path))?[.modificationDate]
                             as? Date
                     }.max()
-                    meeting.endedAt = mtime ?? meeting.startedAt
+                    let duration = MeetingAudioFiles.longestDuration(in: folder) ?? 0
+                    meeting.endedAt = max(mtime ?? meeting.startedAt,
+                                          meeting.startedAt.addingTimeInterval(duration))
                     try? saveMeta(meeting)
                 }
                 let folder = url.deletingLastPathComponent()

@@ -123,6 +123,8 @@ private struct MeetingWorkspaceDetail: View {
     @StateObject private var player = MeetingPlayer()
     @State private var loadRevision = 0
     @State private var documentLoading = true
+    @State private var captureNeedsAttention = false
+    @State private var recoveryNeedsAttention = false
     // Begin with the narrow controls until the detail column is measured so
     // the toolbar cannot enlarge a compact window during its first layout.
     @State private var compactToolbar = true
@@ -187,6 +189,8 @@ private struct MeetingWorkspaceDetail: View {
         _speakerNameHints = State(initialValue: document.speakerNameHints)
         _calendarSpeakerCandidates = State(initialValue: meeting.resolvedCalendarParticipantIdentities)
         _attributionNeedsRefresh = State(initialValue: document.attributionNeedsRefresh)
+        _captureNeedsAttention = State(initialValue: document.captureNeedsAttention)
+        _recoveryNeedsAttention = State(initialValue: document.recoveryNeedsAttention)
     }
 
     private var folder: URL { meeting.folderURL(in: app.storage) }
@@ -518,8 +522,34 @@ private struct MeetingWorkspaceDetail: View {
     }
 
     @ViewBuilder private var meetingStatusContent: some View {
+        if captureNeedsAttention {
+            Label("Audio capture was interrupted or saving reported an error. Review the saved recording for missing audio.",
+                  systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+                .padding(12).workspaceControl()
+                .accessibilityIdentifier("meeting.captureWarning")
+        }
+        if recoveryNeedsAttention {
+            Label("Some recovery audio could not be verified. Saved audio and original checkpoints are retained.",
+                  systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+                .padding(12).workspaceControl()
+        }
+        if meeting.additionalSavedAudioDuration > 0.1 {
+            HStack {
+                Label("Additional saved audio is outside the meeting boundaries.", systemImage: "waveform")
+                Spacer()
+                Button("Review additional saved audio…") { editingBoundaries = true }
+                    .accessibilityIdentifier("meeting.reviewSavedAudio")
+            }
+            .padding(12).workspaceControl()
+        }
         if let stage = app.pipeline.stages[meeting.id] {
             processingStageContent(stage)
+        }
+        if transcript?.segments.isEmpty == true {
+            Text("No speech detected. Saved audio remains available for playback and export.")
+                .foregroundStyle(.secondary)
         }
         if let partialNotes {
             VStack(alignment: .leading, spacing: 3) {
@@ -1044,6 +1074,8 @@ private struct MeetingWorkspaceDetail: View {
         partialNotes = document.partialNotes
         partialProjection = document.partialProjection
         attributionNeedsRefresh = document.attributionNeedsRefresh
+        captureNeedsAttention = document.captureNeedsAttention
+        recoveryNeedsAttention = document.recoveryNeedsAttention
         summary = document.summary
         speakerNameHints = document.speakerNameHints
         calendarSpeakerCandidates = meeting.resolvedCalendarParticipantIdentities

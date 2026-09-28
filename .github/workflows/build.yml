@@ -152,6 +152,8 @@ jobs:
           xcodebuild test-without-building -xctestrun "${runs[0]}" \
             -destination 'platform=macOS' -derivedDataPath .build/dd \
             -only-testing:LokalBotTests -resultBundlePath .build/unit.xcresult
+      - name: Verify audio recovery after SIGKILL
+        run: bash Scripts/tests/audio-recovery-crash.sh
       - name: Save unit results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a

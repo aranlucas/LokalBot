@@ -7,6 +7,16 @@ struct RecordingHealthStrip: View {
         TimelineView(.periodic(from: .now, by: 0.2)) { context in
             let health = recording.memoryHealthSnapshot(at: context.date)
             VStack(alignment: .leading, spacing: 4) {
+                ForEach(recording.captureWarnings, id: \.self) { warning in
+                    Label(warning, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if recording.callObservationUnavailable {
+                    Text("Browser audio is captured by process and may include other tabs in that process.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 20) {
                         Label("Mic · \(health.microphoneStatus)", systemImage: "mic")

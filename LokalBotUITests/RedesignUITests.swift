@@ -19,6 +19,31 @@ final class RedesignUITests: XCTestCase {
         previousVisualFixtures.forEach { $0.cleanUp() }
     }
 
+    func testSavedAudioRecoveryIsReviewableAndCaptureWarningSurvivesProcessing() throws {
+        let folder = fixture.folder(for: fixture.designReview)
+        let metaURL = folder.appendingPathComponent("meta.json")
+        var meta = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: metaURL)) as? [String: Any])
+        meta["recordedDuration"] = 120
+        meta["contentRange"] = ["start": 0, "end": 60]
+        try JSONSerialization.data(withJSONObject: meta).write(to: metaURL, options: .atomic)
+        let report: [String: Any] = ["version": 1, "events": [], "microphoneDroppedBuffers": 0,
+            "systemDroppedBuffers": 0, "attachmentAttempts": 10, "hadMissingAudio": true]
+        try JSONSerialization.data(withJSONObject: report).write(to: folder.appendingPathComponent("recording-health.json"))
+        try launch(["LOKALBOT_INITIAL_SECTION": "meetings", "LOKALBOT_SELECT_INDEX": "0"])
+        XCTAssertTrue(element("meeting.captureWarning").waitForExistence(timeout: 8))
+        let review = app.buttons["meeting.reviewSavedAudio"]
+        XCTAssertTrue(review.waitForExistence(timeout: 5))
+        review.click()
+        XCTAssertTrue(app.buttons["Use full recording"].waitForExistence(timeout: 3))
+        app.buttons["Use full recording"].click()
+        app.buttons["Cancel"].click()
+        let unchanged = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: metaURL)) as? [String: Any])
+        XCTAssertEqual((unchanged["contentRange"] as? [String: Double])?["end"], 60,
+                       "Review and cancellation cannot expand a legacy or user-reviewed range")
+        XCTAssertTrue(element("meeting.captureWarning").exists)
+        snapshot("saved-audio-review-and-capture-warning")
+    }
+
     func testWorkspaceVisualMatrix() throws {
         // Collect route assertion failures across the matrix for review. Any
         // failed assertion still fails this test and the aggregate release gate.

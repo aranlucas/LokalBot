@@ -199,7 +199,7 @@ struct RecordingMemoryHealthSnapshot: Equatable, Sendable {
 
 /// Owns the meeting-recording lifecycle: the two recorders (mic + system tap),
 /// the start/stop state machine, the capture-health watchdog, the menu-bar
-/// timer tick, and transcription-model prewarm. `AppState` keeps a reference,
+/// timer tick, and capture recovery. `AppState` keeps a reference,
 /// republishes changes, and folds finished meetings into the library via
 /// `onMeetingFinished`.
 @MainActor
@@ -214,6 +214,13 @@ final class RecordingController: ObservableObject {
     @Published private(set) var status: Status = .idle
     /// The live recording (shown at the top of the library while running).
     @Published private(set) var currentMeeting: Meeting?
+    @Published private(set) var captureWarnings: [String] = []
+    @Published private(set) var callObservationUnavailable = false
+    private var healthReport = RecordingHealthReport()
+    private var notifiedCaptureWarnings: Set<String> = []
+    private var lastDiskCheckAt: Date?
+    private var lastHealthReportAt: Date?
+    private var diskWarning: String?
     /// Only lifecycle events from this detector session own the recording.
     /// A recording the user started joins the session of the call it records.
     private(set) var detectorSessionID: UUID?
@@ -248,7 +255,7 @@ final class RecordingController: ObservableObject {
     /// A finished meeting leaves the controller here; the app inserts it into
     /// the library list.
     private let onMeetingFinished: (Meeting) -> Void
-    /// Gates notifications + prewarm to the real interactive launch
+    /// Gates notifications to the real interactive launch
     /// (not headless / UI tests).
     private let isInteractive: () -> Bool
 
@@ -261,6 +268,7 @@ final class RecordingController: ObservableObject {
     private struct SystemAudioTarget {
         var bundleID: String
         var pid: pid_t
+        var hostPID: pid_t?
     }
     private var systemAudioTarget: SystemAudioTarget?
     private var recordingHealthWatchdog: AnyCancellable?
@@ -270,11 +278,11 @@ final class RecordingController: ObservableObject {
     private var silentSystemAudioWarning = SilentSystemAudioWarningState()
     private var samePIDSystemAudioRetryBudget = SystemAudioSamePIDRetryBudget()
     private var systemAudioTapLedger = SystemAudioTapLedger()
-    private static let recordingHealthWatchdogInterval: TimeInterval = 5
-    private static let micCaptureInitialGrace: TimeInterval = 8
-    private static let micCaptureStallGrace: TimeInterval = 15
+    private static let recordingHealthWatchdogInterval: TimeInterval = 1
+    private static let micCaptureInitialGrace: TimeInterval = 5
+    private static let micCaptureStallGrace: TimeInterval = 5
     private static let micCaptureRestartCooldown: TimeInterval = 10
-    private static let systemAudioInitialGrace: TimeInterval = 8
+    private static let systemAudioInitialGrace: TimeInterval = 5
     private static let systemAudioSilentGrace: TimeInterval = 8
     /// The same wait, for a tap that has already written audible audio of its
     /// own. Eight seconds is a pause between two sentences, so on a proven tap
@@ -301,19 +309,13 @@ final class RecordingController: ObservableObject {
     /// Ticks once a second while recording so the menu bar timer (and popover)
     /// stay live even with no window open. Nil when idle.
     private var recordingTick: AnyCancellable?
-    private var transcriptionPrewarmTask: Task<Void, Never>?
-    private var summaryPrewarmTask: Task<Void, Never>?
-    private var diarizationPrewarmTask: Task<Void, Never>?
     private var startTask: Task<Void, Never>?
     private var systemAudioHandoffTask: Task<Void, Never>?
     /// Manual capture can begin during a transient Accessibility gap. Keep a
-    /// bounded retry alive until the browser's verified meeting document is
+    /// persistent retry alive until the browser's verified meeting document is
     /// visible, then attach the system tap to the same meeting folder.
-    private var pendingSystemAudioCaptureTask: Task<Void, Never>?
+    private let systemAudioRecovery = MeetingAudioRecovery()
     private var activeSystemAudioPolicy: RecordingSystemAudioPolicy?
-    private static let lateSystemAudioCaptureRetryDelays: [TimeInterval] = [
-        0.5, 1, 2, 4, 8, 15, 30, 30, 30,
-    ]
 
     init(storage: StorageManager,
          settingsStore: SettingsStore,
@@ -386,14 +388,7 @@ final class RecordingController: ObservableObject {
     @discardableResult
     func prepareForTermination() -> Bool {
         let retryable = Array(pendingFinalizations.values)
-        transcriptionPrewarmTask?.cancel()
-        transcriptionPrewarmTask = nil
-        summaryPrewarmTask?.cancel()
-        summaryPrewarmTask = nil
-        diarizationPrewarmTask?.cancel()
-        diarizationPrewarmTask = nil
-        pendingSystemAudioCaptureTask?.cancel()
-        pendingSystemAudioCaptureTask = nil
+        systemAudioRecovery.cancel()
         if isRecording || isStarting { stop(process: false, deferProcessing: true) }
         for pending in retryable { _ = persistFinalization(pending, deferProcessing: true) }
         return pendingFinalizations.isEmpty
@@ -498,6 +493,7 @@ final class RecordingController: ObservableObject {
                     appName: detectedApp?.name)
                 var meeting = try storage.createMeetingFolder(title: title,
                                                               appName: detectedApp?.name ?? "Manual")
+                created = meeting
                 if let calendarEvent {
                     meeting.calendarProvider = calendarEvent.provider
                     meeting.calendarEventID = calendarEvent.externalID
@@ -518,6 +514,22 @@ final class RecordingController: ObservableObject {
                     meeting.meetingURL = url
                     try storage.saveMeta(meeting)
                 }
+                meeting.captureIntent = .init(
+                    systemAudioRequested: systemAudioPolicy == .meetingAppWhenAvailable,
+                    appBundleID: detectedApp?.bundleID,
+                    meetingURL: meeting.meetingURL.flatMap { url in
+                        BrowserMeetingSession.meetURL(url.absoluteString).flatMap(URL.init(string:))
+                    })
+                try storage.saveMeta(meeting)
+                healthReport = RecordingHealthReport()
+                notifiedCaptureWarnings = []
+                captureWarnings = []
+                callObservationUnavailable = false
+                lastDiskCheckAt = nil
+                lastHealthReportAt = nil
+                stopRecordingHealthWatchdog()
+                withdrawSilentSystemAudioWarning()
+                diskWarning = nil
                 created = meeting
                 speakerAudioClock = RecordingAudioClock()
                 microphoneAudioClock = RecordingAudioClock()
@@ -537,7 +549,6 @@ final class RecordingController: ObservableObject {
                     previewTee: meeting.folderURL(in: storage)
                         .appendingPathComponent(AudioPreviewTee.micFileName),
                     timeline: timeline)
-                startRecordingHealthWatchdog()
                 try Task.checkCancellation()
 
                 // Meeting-intent callers may fall back to a running meeting app
@@ -549,7 +560,8 @@ final class RecordingController: ObservableObject {
                     detectedApp: detectedApp,
                     fallback: {
                         MeetingDetector.captureCandidateApp(
-                            expectedMeetingURL: calendarEvent?.meetingURL)
+                            expectedMeetingURL: meeting.captureIntent?.meetingURL,
+                            expectedBundleID: meeting.captureIntent?.appBundleID)
                     })
                 if let captureApp {
                     _ = startSystemAudioCapture(captureApp, meeting: &meeting, detectedApp: detectedApp)
@@ -561,15 +573,14 @@ final class RecordingController: ObservableObject {
                 try Task.checkCancellation()
                 currentMeeting = meeting
                 status = .recording(meetingID: meeting.id)
+                updateCaptureWarnings()
+                startRecordingHealthWatchdog()
                 if systemAudioPolicy == .meetingAppWhenAvailable, systemAudioTarget == nil {
                     scheduleLateSystemAudioCapture(expectedMeetingURL: meeting.meetingURL)
                 }
                 startRecordingTick()
                 if isInteractive() {
                     RecordingNotifier.shared.recordingStarted(title: meeting.title)
-                    prewarmSelectedTranscriptionModel(reason: source)
-                    prewarmSelectedSummaryModel(reason: source)
-                    prewarmDiarizationModels(reason: source)
                 }
             } catch is CancellationError {
                 cleanupCancelledStart(created: created)
@@ -580,11 +591,10 @@ final class RecordingController: ObservableObject {
                 systemAudioTarget = nil
                 audioMonitor.isRecordingActive = false
                 audioMonitor.reseed()
-                // Don't leave a 0-minute husk in the library.
                 micRecorder.stop()
                 systemRecorder.stop()
                 resetAudioClocks()
-                if let husk = created { try? storage.deleteMeeting(husk) }
+                preserveAudioFromInterruptedStart(created)
             }
         }
     }
@@ -593,8 +603,7 @@ final class RecordingController: ObservableObject {
               allowsAutomaticRestart: Bool = false) {
         if isStarting {
             startTask?.cancel()
-            pendingSystemAudioCaptureTask?.cancel()
-            pendingSystemAudioCaptureTask = nil
+            systemAudioRecovery.cancel()
             activeSystemAudioPolicy = nil
             status = .idle
             detectorSessionID = nil
@@ -603,8 +612,7 @@ final class RecordingController: ObservableObject {
             return
         }
         guard isRecording, var meeting = currentMeeting else { return }
-        pendingSystemAudioCaptureTask?.cancel()
-        pendingSystemAudioCaptureTask = nil
+        systemAudioRecovery.cancel()
         systemAudioHandoffTask?.cancel()
         systemAudioHandoffTask = nil
         // Before the watchdog goes away: it is the only thing that notices
@@ -612,6 +620,7 @@ final class RecordingController: ObservableObject {
         // next tick would leave the advisory standing over a recording that
         // does have a system track.
         withdrawSilentSystemAudioWarningIfRecovered()
+        updateCaptureWarnings()
         stopRecordingHealthWatchdog()
         micRecorder.stop()
         systemRecorder.stop()
@@ -630,6 +639,11 @@ final class RecordingController: ObservableObject {
         audioMonitor.reseed()
         stopRecordingTick()
         let endedAt = Date()
+        healthReport.completedAt = endedAt
+        do {
+            try JSONEncoder().encode(healthReport).write(to: meeting.folderURL(in: storage)
+                .appendingPathComponent(RecordingHealthReport.fileName), options: .atomic)
+        } catch { onError("Audio retained, but the final capture-health report could not be saved.") }
         meeting.endedAt = endedAt
         let folder = meeting.folderURL(in: storage)
         // Only discard a preview tee after its finalized AAC track is known to
@@ -644,7 +658,10 @@ final class RecordingController: ObservableObject {
         meeting.recordedDuration = [micDuration, systemDuration].compactMap { $0 }.max()
         if let contentEndedAt, let duration = meeting.recordedDuration {
             let end = min(duration, max(0, contentEndedAt.timeIntervalSince(meeting.startedAt)))
-            if end > 0 { meeting.contentRange = .init(start: 0, end: end) }
+            if end > 0, meeting.contentRange == nil {
+                meeting.contentRange = .init(start: 0, end: end)
+                meeting.contentRangeSource = .confirmedCallEnd
+            }
         }
         let wallDuration = endedAt.timeIntervalSince(meeting.startedAt)
         lokalbotLog(
@@ -655,6 +672,8 @@ final class RecordingController: ObservableObject {
             onError("Recording saved, but only \(meeting.durationLabel) of audio was captured from a \(Self.formatMinutes(wallDuration)) session.")
         }
         finalize(meeting, process: process, deferProcessing: deferProcessing)
+        captureWarnings = []
+        callObservationUnavailable = false
         // The call may still be running; let it record again once verified.
         if allowsAutomaticRestart { lastCalendarEventEndedAt = nil }
     }
@@ -672,11 +691,21 @@ final class RecordingController: ObservableObject {
         return true
     }
 
-    /// An uncertain end releases a user-started recording instead of stopping it.
-    func leaveDetectorSession() {
-        guard detectorSessionID != nil else { return }
-        detectorSessionID = nil
-        lokalbotLog("recording left detector session: call end uncertain, still recording")
+    func considerDetectedSource(_ context: MeetingDetectionContext) {
+        guard isRecording, let meeting = currentMeeting, let app = context.detectedApp else { return }
+        guard meeting.captureIntent?.accepts(appBundleID: app.bundleID, meetingURL: app.meetingURL) == true else { return }
+        if systemAudioTarget == nil {
+            systemAudioRecovery.offer(app, recordingID: meeting.id)
+        } else if let target = systemAudioTarget, target.hostPID != Self.hostPID(for: app.bundleID) {
+            // The detector has just verified the same call in a replacement host.
+            retargetSystemAudio(to: app)
+        }
+    }
+
+    func updateCallObservation(sessionID: UUID, unavailable: Bool, lastVerifiedAt: Date?) {
+        guard isRecording, detectorSessionID == sessionID else { return }
+        callObservationUnavailable = unavailable
+        healthReport.lastVerifiedCallAt = lastVerifiedAt
     }
 
     nonisolated static func recordsSameCall(capturedBundleID: String?, recordingURL: URL?,
@@ -785,7 +814,11 @@ final class RecordingController: ObservableObject {
             merged.endedAt = finalized.endedAt
             merged.hasSystemTrack = merged.hasSystemTrack || finalized.hasSystemTrack
             if merged.recordedDuration == nil { merged.recordedDuration = finalized.recordedDuration }
-            if merged.contentRange == nil { merged.contentRange = finalized.contentRange }
+            if merged.contentRange == nil, merged.contentRangeSource != .userReviewed {
+                merged.contentRange = finalized.contentRange
+                merged.contentRangeSource = finalized.contentRangeSource
+            }
+            if merged.captureIntent == nil { merged.captureIntent = finalized.captureIntent }
         }
         return merged
     }
@@ -822,6 +855,8 @@ final class RecordingController: ObservableObject {
         meeting: inout Meeting,
         detectedApp: MeetingDetector.DetectedApp?
     ) -> Bool {
+        if let intent = meeting.captureIntent,
+           !intent.accepts(appBundleID: captureApp.bundleID, meetingURL: captureApp.meetingURL) { return false }
         let captureProcess = MeetingDetector.currentCaptureTargetProcess(for: captureApp)
         let pid = captureProcess?.id ?? captureApp.pid
         do {
@@ -832,7 +867,10 @@ final class RecordingController: ObservableObject {
                     .appendingPathComponent(AudioPreviewTee.systemFileName),
                 timeline: audioTimeline)
             meeting.hasSystemTrack = true
-            systemAudioTarget = SystemAudioTarget(bundleID: captureApp.bundleID, pid: pid)
+            meeting.captureIntent?.appBundleID = captureApp.bundleID
+            meeting.captureIntent?.meetingURL = captureApp.meetingURL
+            systemAudioTarget = SystemAudioTarget(bundleID: captureApp.bundleID, pid: pid,
+                hostPID: Self.hostPID(for: captureApp.bundleID))
             systemAudioTapLedger.attached(to: pid, audibleDuration: 0)
             if pid != captureApp.pid || captureProcess?.bundleID != captureApp.bundleID {
                 lokalbotLog(
@@ -843,14 +881,14 @@ final class RecordingController: ObservableObject {
             lokalbotLog(
                 "system audio tap started pid=\(pid) bundle=\(captureApp.bundleID) "
                     + "detected=\(detectedApp != nil) fallback=\(detectedApp == nil)")
-            if detectedApp == nil, let url = captureApp.meetingURL {
-                meeting.meetingURL = url
-                try? storage.saveMeta(meeting)
+            if let url = captureApp.meetingURL { meeting.meetingURL = url }
+            do { try storage.saveMeta(meeting) } catch {
+                onError("Audio capture started, but its source metadata could not be saved: \(error.localizedDescription)")
             }
             return true
         } catch {
             // Degrade gracefully: the microphone remains authoritative. A
-            // meeting that began during an AX gap gets a bounded late retry;
+            // meeting that began during an AX gap keeps its late retry active;
             // a detected start still receives the existing actionable error.
             if detectedApp != nil {
                 onError("System audio tap failed (\(error.localizedDescription)) — recording mic only.")
@@ -864,42 +902,22 @@ final class RecordingController: ObservableObject {
     /// Accessibility snapshots are occasionally unavailable exactly when the
     /// user presses Record. Do not freeze that first miss into a mic-only
     /// meeting: look again for a verified browser call while the recording is
-    /// already active, with a finite retry budget and no broader browser tabs.
+    /// already active, with bounded backoff and no broader browser tabs.
     private func scheduleLateSystemAudioCapture(expectedMeetingURL: URL?) {
         guard activeSystemAudioPolicy == .meetingAppWhenAvailable,
-              isRecording,
-              systemAudioTarget == nil,
-              pendingSystemAudioCaptureTask == nil else { return }
-        pendingSystemAudioCaptureTask = Task { [weak self] in
-            for (index, delay) in Self.lateSystemAudioCaptureRetryDelays.enumerated() {
-                do { try await Task.sleep(for: .seconds(delay)) } catch { return }
-                guard let self,
-                      !Task.isCancelled,
-                      self.isRecording,
-                      self.activeSystemAudioPolicy == .meetingAppWhenAvailable,
-                      self.systemAudioTarget == nil else { return }
-                MeetingDetector.invalidateAudioProcessSnapshot()
-                guard let captureApp = MeetingDetector.captureCandidateApp(
-                    expectedMeetingURL: expectedMeetingURL) else {
-                    lokalbotLog(
-                        "system audio late attach retry=\(index + 1) unavailable "
-                            + "expectedURL=\(expectedMeetingURL?.absoluteString ?? "none")")
-                    continue
-                }
-                if self.attachLateSystemAudio(captureApp) {
-                    lokalbotLog(
-                        "system audio late attach succeeded retry=\(index + 1) "
-                            + "bundle=\(captureApp.bundleID) pid=\(captureApp.pid)")
-                    self.pendingSystemAudioCaptureTask = nil
-                    return
-                }
-            }
-            guard let self else { return }
-            if self.isRecording, self.systemAudioTarget == nil {
-                lokalbotLog("system audio late attach exhausted; continuing microphone capture")
-            }
-            self.pendingSystemAudioCaptureTask = nil
-        }
+              isRecording, let meeting = currentMeeting, systemAudioTarget == nil else { return }
+        let intent = meeting.captureIntent ?? .init(
+            systemAudioRequested: true, meetingURL: expectedMeetingURL)
+        systemAudioRecovery.start(recordingID: meeting.id, intent: intent, find: { intent in
+            MeetingDetector.invalidateAudioProcessSnapshot()
+            return MeetingDetector.captureCandidateApp(
+                expectedMeetingURL: intent.meetingURL, expectedBundleID: intent.appBundleID)
+        }, attach: { [weak self] app in
+            guard let self, self.currentMeeting?.id == meeting.id else { return false }
+            let attached = self.attachLateSystemAudio(app)
+            if attached { self.updateCaptureWarnings() }
+            return attached
+        })
     }
 
     @discardableResult
@@ -922,8 +940,7 @@ final class RecordingController: ObservableObject {
 
     private func cleanupCancelledStart(created: Meeting?) {
         detectorSessionID = nil
-        pendingSystemAudioCaptureTask?.cancel()
-        pendingSystemAudioCaptureTask = nil
+        systemAudioRecovery.cancel()
         stopRecordingHealthWatchdog()
         micRecorder.stop()
         systemRecorder.stop()
@@ -932,89 +949,40 @@ final class RecordingController: ObservableObject {
         activeSystemAudioPolicy = nil
         audioMonitor.isRecordingActive = false
         audioMonitor.reseed()
-        if let created { try? storage.deleteMeeting(created) }
+        preserveAudioFromInterruptedStart(created)
         lokalbotLog("recording start cancelled")
     }
 
-    private func prewarmSelectedTranscriptionModel(reason: String) {
-        guard settings.autoTranscribe else { return }
-        guard transcriptionPrewarmTask == nil else { return }
-        let config = settings
-        // Prewarm only warms models that already exist on disk. A missing
-        // model would make `prepare()` download gigabytes mid-recording that
-        // the user never asked for — the pipeline parks the meeting as
-        // "waiting for models" instead.
-        guard ModelReadinessSnapshot.transcriptionReady(config) else {
-            lokalbotLog("transcription prewarm skipped: model not downloaded")
+    /// Startup cancellation/failure can race the first successful microphone
+    /// buffers. Remove empty folders only; retain every playable start attempt.
+    private func preserveAudioFromInterruptedStart(_ created: Meeting?) {
+        guard var meeting = created else { return }
+        let folder = meeting.folderURL(in: storage)
+        guard let duration = MeetingAudioFiles.longestDuration(in: folder), duration > 0 else {
+            // A damaged file may still have salvageable bytes. Only delete a
+            // start with no audio payload, never an unreadable recovery journal.
+            let hasRecovery = MeetingAudioFiles.Track.allCases.contains {
+                FileManager.default.fileExists(atPath: AudioRecoveryJournal.directory(
+                    for: MeetingAudioFiles.recoveryURL(for: $0, in: folder)).path)
+            }
+            let hasAudioBytes = MeetingAudioFiles.Track.allCases.contains { track in
+                [MeetingAudioFiles.primaryURL(for: track, in: folder),
+                 MeetingAudioFiles.recoveryURL(for: track, in: folder)].contains { url in
+                    ((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0) > 0
+                }
+            }
+            if !hasRecovery && !hasAudioBytes {
+                try? storage.deleteMeeting(meeting)
+            } else {
+                meeting.endedAt = Date()
+                finalize(meeting, process: false)
+            }
             return
         }
-        let choice = config.transcriptionModel
-        let engine = config.transcriptionEngine()
-        transcriptionPrewarmTask = Task { [weak self, choice, engine, reason] in
-            let started = Date()
-            lokalbotLog("transcription prewarm start model=\(choice.rawValue) reason=\(reason)")
-            do {
-                try await engine.prepare()
-                let elapsed = Date().timeIntervalSince(started)
-                lokalbotLog("transcription prewarm ready model=\(choice.rawValue) elapsed=\(String(format: "%.2fs", elapsed))")
-            } catch {
-                lokalbotLog("transcription prewarm FAILED model=\(choice.rawValue): \(error.localizedDescription)")
-            }
-            await MainActor.run { self?.transcriptionPrewarmTask = nil }
-        }
-    }
-
-    /// Verify and warm the built-in summary model while the meeting is in
-    /// progress. Warm-only: a model that is not downloaded is left alone —
-    /// the pipeline parks the summary as "waiting for models" rather than
-    /// starting a multi-gigabyte download the user never asked for.
-    private func prewarmSelectedSummaryModel(reason: String) {
-        let config = settings
-        guard config.autoSummarize, config.summarizerBackend == .builtIn else { return }
-        guard ModelReadinessSnapshot.thinkReady(config, storage: storage) else {
-            lokalbotLog("summary prewarm skipped: model not downloaded")
-            return
-        }
-        guard summaryPrewarmTask == nil else { return }
-        summaryPrewarmTask = Task { [weak self, config, reason] in
-            let started = Date()
-            lokalbotLog("summary prewarm start model=\(config.builtInModelID) reason=\(reason)")
-            do {
-                try await self?.pipeline.thinkExecution.prepareBuiltInModel(config)
-                let elapsed = Date().timeIntervalSince(started)
-                lokalbotLog(
-                    "summary prewarm ready model=\(config.builtInModelID) elapsed=\(String(format: "%.2fs", elapsed))")
-            } catch is CancellationError {
-                lokalbotLog("summary prewarm cancelled model=\(config.builtInModelID)")
-            } catch {
-                // Processing retries the same preparation and surfaces the
-                // error beside the meeting if the transient problem persists.
-                lokalbotLog(
-                    "summary prewarm FAILED model=\(config.builtInModelID): \(error.localizedDescription)")
-            }
-            await MainActor.run { self?.summaryPrewarmTask = nil }
-        }
-    }
-
-    private func prewarmDiarizationModels(reason: String) {
-        guard settings.multiSpeakerDiarization, diarizationPrewarmTask == nil else { return }
-        let config = settings
-        diarizationPrewarmTask = Task { [weak self, reason, config] in
-            defer {
-                // A stopped recording may already have started another prewarm.
-                if !Task.isCancelled { self?.diarizationPrewarmTask = nil }
-            }
-            lokalbotLog("diarization prewarm start reason=\(reason)")
-            do {
-                try await self?.pipeline.prepareDiarizationModels(config: config)
-                guard !Task.isCancelled else { return }
-                lokalbotLog("diarization prewarm ready reason=\(reason)")
-            } catch is CancellationError {
-                return
-            } catch {
-                lokalbotLog("diarization prewarm failed reason=\(reason): \(error.localizedDescription)")
-            }
-        }
+        meeting.endedAt = Date()
+        meeting.recordedDuration = duration
+        meeting.hasSystemTrack = MeetingAudioFiles.transcribableURL(for: .system, in: folder) != nil
+        finalize(meeting, process: false)
     }
 
     /// Start/stop the once-a-second clock that keeps the menu bar timer live.
@@ -1033,16 +1001,6 @@ final class RecordingController: ObservableObject {
     // MARK: - Capture-health watchdog
 
     private func startRecordingHealthWatchdog() {
-        stopRecordingHealthWatchdog()
-        // A truly silent warning intentionally survives stop so the user can
-        // still see what happened. Starting a new capture retires that scoped
-        // warning through AppState's guarded nil callback before this attempt.
-        withdrawSilentSystemAudioWarning()
-        lastMicRestartAt = nil
-        didWarnAboutMicCaptureStall = false
-        lastSystemAudioReattachAt = nil
-        samePIDSystemAudioRetryBudget.reset()
-        systemAudioTapLedger.reset()
         recordingHealthWatchdog = Timer.publish(
             every: Self.recordingHealthWatchdogInterval,
             on: .main,
@@ -1051,7 +1009,80 @@ final class RecordingController: ObservableObject {
             .sink { [weak self] _ in
                 self?.checkMicCapture()
                 self?.checkSystemAudioCapture()
+                self?.updateCaptureWarnings()
             }
+    }
+
+    private func updateCaptureWarnings() {
+        guard isRecording, let meeting = currentMeeting else { return }
+        let time = Date()
+        let elapsed = time.timeIntervalSince(meeting.startedAt)
+        let mic = micRecorder.captureHealth()
+        let system = systemRecorder.captureHealth()
+        var messages = Self.captureWarnings(
+            systemAudioRequested: activeSystemAudioPolicy == .meetingAppWhenAvailable,
+            hasSystemTarget: systemAudioTarget != nil,
+            microphoneLastWrite: mic.lastAudioWriteAt, systemLastWrite: system.lastAudioWriteAt,
+            elapsed: elapsed, now: time)
+        if elapsed >= 5, !messages.isEmpty { healthReport.hadMissingAudio = true }
+        if mic.writeError != nil || system.writeError != nil { healthReport.hadWriteFailure = true }
+        if mic.droppedBufferCount > 0 || system.droppedBufferCount > 0 {
+            messages.append("Audio buffers were dropped while saving. Some audio may be missing.")
+        }
+        if callObservationUnavailable {
+            messages.append("Call status is unavailable. Recording continues; use Stop when finished.")
+        }
+        for (source, error) in [("Microphone", mic.writeError), ("System audio", system.writeError)] {
+            if let error { messages.append("\(source) saving needs attention: \(error)") }
+        }
+        if lastDiskCheckAt.map({ time.timeIntervalSince($0) >= 15 }) != false {
+            lastDiskCheckAt = time
+            diskWarning = DiskSpacePrecheck.recordingAdvisory(
+                availableBytes: DiskSpacePrecheck.availableBytes(at: storage.rootURL)) == nil ? nil
+                : "Disk space is low. Free space now to keep saving this recording."
+        }
+        if let diskWarning { messages.append(diskWarning) }
+        captureWarnings = messages
+        if elapsed >= 5, isInteractive() {
+            for message in messages where notifiedCaptureWarnings.insert(message).inserted {
+                RecordingNotifier.shared.captureNeedsAttention(message)
+            }
+        }
+        healthReport.microphoneDroppedBuffers = mic.droppedBufferCount
+        healthReport.systemDroppedBuffers = system.droppedBufferCount
+        healthReport.attachmentAttempts = max(healthReport.attachmentAttempts, systemAudioRecovery.attempts)
+        let changed = healthReport.observe(messages, seconds: elapsed)
+        if changed || lastHealthReportAt.map({ time.timeIntervalSince($0) >= 30 }) != false {
+            do {
+                try JSONEncoder().encode(healthReport).write(
+                    to: meeting.folderURL(in: storage).appendingPathComponent(RecordingHealthReport.fileName),
+                    options: .atomic)
+                lastHealthReportAt = time
+            } catch {
+                captureWarnings.append("Recording health could not be saved. Check disk space.")
+            }
+        }
+    }
+
+    static func captureWarnings(systemAudioRequested: Bool, hasSystemTarget: Bool,
+                                microphoneLastWrite: Date?, systemLastWrite: Date?,
+                                elapsed: TimeInterval, now: Date) -> [String] {
+        var warnings: [String] = []
+        if systemAudioRequested, !hasSystemTarget {
+            warnings.append("Looking for meeting audio; microphone only. Recovery is still active.")
+        }
+        if systemAudioRequested, hasSystemTarget, systemLastWrite == nil {
+            warnings.append("Waiting for meeting audio to reach disk; microphone recording continues.")
+        }
+        guard elapsed >= 5 else { return warnings }
+        if microphoneLastWrite.map({ now.timeIntervalSince($0) < 5 }) != true {
+            warnings.append("Microphone audio is not arriving. Trying to recover it.")
+        }
+        if systemAudioRequested, hasSystemTarget,
+           systemLastWrite.map({ now.timeIntervalSince($0) < 5 }) != true {
+            warnings.append("Meeting audio is not arriving. Trying to recover it; the microphone continues.")
+        }
+        return warnings
     }
 
     private func stopRecordingHealthWatchdog() {
@@ -1120,9 +1151,12 @@ final class RecordingController: ObservableObject {
         systemAudioTapLedger.observe(pid: target.pid,
                                      audibleDuration: health.audibleDuration,
                                      minimum: AudioFileInspector.minimumTranscribableDuration)
-        let silentFor = health.lastAudibleWriteAt.map { now.timeIntervalSince($0) } ?? elapsed
+        let noBuffers = health.lastAudioWriteAt.map { now.timeIntervalSince($0) >= 5 } ?? true
+        let silentFor = noBuffers
+            ? now.timeIntervalSince(health.lastAudioWriteAt ?? meeting.startedAt)
+            : health.lastAudibleWriteAt.map { now.timeIntervalSince($0) } ?? elapsed
         // Do not enumerate process siblings during sub-threshold fluctuations.
-        guard silentFor >= Self.systemAudioSilentGrace else { return }
+        guard silentFor >= (noBuffers ? 5 : Self.systemAudioSilentGrace) else { return }
 
         // A proven tap ordinarily stays put for the long grace, but it should
         // not wait while Core Audio already shows a different process in the
@@ -1143,7 +1177,10 @@ final class RecordingController: ObservableObject {
             ordinary: Self.systemAudioSilentGrace,
             proven: Self.provenSystemAudioSilentGrace,
             activelyEmittingAlternative: emittingAlternative != nil)
-        guard silentFor >= silenceGrace else { return }
+        // Flowing zero samples are valid silence. Only an emitting sibling
+        // can justify switching a healthy silent tap.
+        guard noBuffers || emittingAlternative != nil else { return }
+        guard noBuffers || silentFor >= silenceGrace else { return }
 
         if let lastSystemAudioReattachAt,
            now.timeIntervalSince(lastSystemAudioReattachAt) < Self.systemAudioReattachCooldown {
@@ -1179,7 +1216,7 @@ final class RecordingController: ObservableObject {
         // If the tap has never delivered audio, retry even on the same PID.
         // Once samples exist, reattach only when Core Audio reports a different
         // active process for the same meeting app/browser family.
-        let shouldRetrySamePID = SystemAudioRecoveryCandidatePolicy.shouldRetrySamePID(
+        let shouldRetrySamePID = noBuffers || SystemAudioRecoveryCandidatePolicy.shouldRetrySamePID(
             framesSinceAttach: health.framesSinceAttach,
             audibleDuration: health.audibleDuration,
             minimumAudibleDuration: AudioFileInspector.minimumTranscribableDuration)
@@ -1192,11 +1229,15 @@ final class RecordingController: ObservableObject {
             return
         }
         if isSamePIDRetry, !samePIDSystemAudioRetryBudget.beginRetry() {
+            if noBuffers, lastSystemAudioReattachAt.map({ now.timeIntervalSince($0) >= 30 }) != false {
+                samePIDSystemAudioRetryBudget.reset()
+            } else {
             warnOnceAboutSilentSystemAudio(elapsed: elapsed, captured: health.duration,
                                            audible: health.audibleDuration,
                                            rms: health.lastRMSLevel,
                                            peakRMS: health.peakRMSLevel)
             return
+            }
         }
 
         do {
@@ -1231,12 +1272,24 @@ final class RecordingController: ObservableObject {
         for target: SystemAudioTarget,
         excluding excludedPIDs: Set<pid_t> = []
     ) -> AudioProcess? {
-        MeetingDetector.currentCaptureTargetProcess(
+        guard mayRecoverSource(target) else { return nil }
+        return MeetingDetector.currentCaptureTargetProcess(
             for: MeetingDetector.DetectedApp(
                 name: target.bundleID,
                 bundleID: target.bundleID,
                 pid: target.pid),
             excluding: excludedPIDs)
+    }
+
+    private static func hostPID(for bundleID: String) -> pid_t? {
+        NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first?.processIdentifier
+    }
+
+    /// Helpers within a live authorized host may move. A new browser host must
+    /// first be verified against the same room, then offered by the detector.
+    private func mayRecoverSource(_ target: SystemAudioTarget) -> Bool {
+        !MeetingDetector.browsers.contains(target.bundleID)
+            || (target.hostPID != nil && target.hostPID == Self.hostPID(for: target.bundleID))
     }
 
     /// A currently-emitting sibling is stronger recovery evidence than a quiet
@@ -1246,7 +1299,8 @@ final class RecordingController: ObservableObject {
         for target: SystemAudioTarget,
         excluding excludedPIDs: Set<pid_t>
     ) -> AudioProcess? {
-        MeetingDetector.currentOutputAudioProcess(
+        guard mayRecoverSource(target) else { return nil }
+        return MeetingDetector.currentOutputAudioProcess(
             for: MeetingDetector.DetectedApp(
                 name: target.bundleID,
                 bundleID: target.bundleID,
@@ -1259,14 +1313,15 @@ final class RecordingController: ObservableObject {
     /// the existing writer; the detector, not helper churn, owns whole-meeting
     /// termination. Microphone recording continues throughout.
     private func handleCapturedProcessTermination(_ terminatedPID: pid_t) {
-        guard isRecording, systemAudioTarget?.pid == terminatedPID else { return }
+        guard isRecording, let recordingID = currentMeeting?.id, systemAudioTarget?.pid == terminatedPID else { return }
         systemAudioHandoffTask?.cancel()
         systemAudioHandoffTask = Task { [weak self] in
             guard let self else { return }
             let delays: [TimeInterval] = [0.15, 0.35, 0.7, 1.2, 2.0]
             for delay in delays {
                 do { try await Task.sleep(for: .seconds(delay)) } catch { return }
-                guard self.isRecording, var target = self.systemAudioTarget,
+                guard !Task.isCancelled, self.currentMeeting?.id == recordingID,
+                      self.isRecording, var target = self.systemAudioTarget,
                       target.pid == terminatedPID else { return }
                 MeetingDetector.invalidateAudioProcessSnapshot()
                 guard let candidate = self.currentSystemAudioCandidate(
@@ -1291,21 +1346,23 @@ final class RecordingController: ObservableObject {
                     lokalbotLog("system audio helper handoff retry failed: \(error.localizedDescription)")
                 }
             }
-            guard self.isRecording, self.systemAudioTarget?.pid == terminatedPID else { return }
+            guard !Task.isCancelled, self.currentMeeting?.id == recordingID,
+                  self.isRecording, self.systemAudioTarget?.pid == terminatedPID else { return }
             self.onError("System audio capture was interrupted; LokalBot is still recording the microphone and will keep looking for the meeting app.")
             self.systemAudioHandoffTask = nil
         }
     }
 
     private func retargetSystemAudio(to app: MeetingDetector.DetectedApp) {
-        guard isRecording else { return }
+        guard isRecording,
+              currentMeeting?.captureIntent?.accepts(appBundleID: app.bundleID, meetingURL: app.meetingURL) == true else { return }
         MeetingDetector.invalidateAudioProcessSnapshot()
         guard let candidate = MeetingDetector.currentCaptureTargetProcess(for: app) else { return }
         if systemAudioTarget?.bundleID == app.bundleID,
            systemAudioTarget?.pid == candidate.id { return }
         do {
             try systemRecorder.reattach(capturingPID: candidate.id)
-            systemAudioTarget = SystemAudioTarget(bundleID: app.bundleID, pid: candidate.id)
+            systemAudioTarget = SystemAudioTarget(bundleID: app.bundleID, pid: candidate.id, hostPID: Self.hostPID(for: app.bundleID))
             systemAudioTapLedger.attached(
                 to: candidate.id,
                 audibleDuration: systemRecorder.captureHealth().audibleDuration)

@@ -187,7 +187,12 @@ actor NeuralDiarizationEngine {
         guard let models else { throw TranscriptionEngineError.notLoaded }
         let manager = OfflineDiarizerManager(config: Self.configuration(includeVoiceSamples: includeVoiceSamples))
         manager.initialize(models: models)
-        let result = try await manager.process(url)
+        let result: DiarizationResult
+        do { result = try await manager.process(url) } catch OfflineDiarizationError.noSpeechDetected {
+            // A valid silent track is an empty observation, not a failed
+            // recording. Other model/file failures still surface for retry.
+            return SpeakerDiarizationResult(segments: [], samples: [])
+        }
         try Task.checkCancellation()
         let segments = result.segments.map {
             DiarizedSegment(start: TimeInterval($0.startTimeSeconds), end: TimeInterval($0.endTimeSeconds), speakerId: $0.speakerId)

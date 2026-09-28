@@ -90,6 +90,10 @@ final class RecordingNotifier: NSObject, UNUserNotificationCenterDelegate {
         post(title: "Recording started", body: title)
     }
 
+    func captureNeedsAttention(_ message: String) {
+        post(title: "Recording needs attention", body: message)
+    }
+
     func recordingStopped(title: String, duration: TimeInterval, willTranscribe: Bool,
                           waitingForModels: Bool = false) {
         let minutes = max(1, Int(duration / 60))

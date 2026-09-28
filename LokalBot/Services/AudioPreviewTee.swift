@@ -25,16 +25,10 @@ enum AudioTimelinePadding {
     }
 }
 
-/// Best-effort side-channel writer that mirrors a recorder's buffers into a
-/// small snapshot-safe PCM `.caf` (16 kHz mono float32 — what ASR models
-/// resample to anyway, ~230 MB/hour). The primary meeting tracks are AAC
-/// `.m4a`, whose MP4 container is unreadable until the writer closes, so the
-/// live transcript needs this tee: CAF is append-only and a mid-write copy
-/// always decodes (the same property dictation's live preview relies on).
-///
-/// Strictly non-fatal: a failed setup returns `nil`, a failed write disables
-/// the tee, and the meeting recording never notices either way. Each recorder
-/// owns one instance and calls `write` from its single serial write context.
+/// Independent 16 kHz mono PCM recovery beside the AAC track (~230 MB/hour
+/// per PCM copy). The growing CAF serves live transcription; closed checkpoints
+/// survive a damaged/unfinalized container. Failures reach capture health, and
+/// one sink failing cannot disable the other. Called only on the writer queue.
 final class AudioPreviewTee {
 
     static let micFileName = "mic.live.caf"
@@ -43,6 +37,10 @@ final class AudioPreviewTee {
     private var file: AVAudioFile?
     private var converter: AVAudioConverter?
     private let teeFormat: AVAudioFormat
+    private var journal: AudioRecoveryJournal?
+    private var writeFailure: String?
+    private var lastInputWasPadding = false
+    var failureDescription: String? { writeFailure ?? journal?.failureDescription }
 
     init?(url: URL, sourceFormat: AVAudioFormat) {
         guard let teeFormat = AVAudioFormat(commonFormat: .pcmFormatFloat32,
@@ -54,6 +52,9 @@ final class AudioPreviewTee {
         }
         self.teeFormat = teeFormat
         self.converter = converter
+        do { journal = try AudioRecoveryJournal(previewURL: url, format: teeFormat) } catch {
+            writeFailure = "Recovery checkpoints unavailable: \(error.localizedDescription)"
+        }
         let settings: [String: Any] = [
             AVFormatIDKey: kAudioFormatLinearPCM,
             AVSampleRateKey: teeFormat.sampleRate,
@@ -71,17 +72,22 @@ final class AudioPreviewTee {
                                    interleaved: teeFormat.isInterleaved)
         } catch {
             NSLog("AudioPreviewTee setup failed: \(error.localizedDescription)")
-            return nil
+            writeFailure = error.localizedDescription
+            if journal == nil { return nil }
         }
     }
 
     /// Resample + downmix `buffer` (in the source format) into the tee file.
-    func write(_ buffer: AVAudioPCMBuffer) {
-        guard let file, let converter, buffer.frameLength > 0 else { return }
+    @discardableResult
+    func write(_ buffer: AVAudioPCMBuffer, isPadding: Bool = false) -> Bool {
+        guard let converter, buffer.frameLength > 0 else { return false }
+        lastInputWasPadding = isPadding
         let ratio = teeFormat.sampleRate / buffer.format.sampleRate
         let capacity = AVAudioFrameCount(Double(buffer.frameLength) * ratio) + 16
         guard let output = AVAudioPCMBuffer(pcmFormat: teeFormat, frameCapacity: capacity) else {
-            return
+            writeFailure = "Recovery conversion buffer unavailable"
+            self.converter = nil
+            return false
         }
         var didProvideInput = false
         var conversionError: NSError?
@@ -97,23 +103,33 @@ final class AudioPreviewTee {
         guard status != .error else {
             // Disable rather than spam the audio thread with retries.
             NSLog("AudioPreviewTee convert failed: \(conversionError?.localizedDescription ?? "unknown")")
-            self.file = nil
-            return
+            writeFailure = conversionError?.localizedDescription ?? "PCM conversion failed"
+            self.converter = nil
+            return false
         }
-        guard output.frameLength > 0 else { return }
-        do {
-            try file.write(from: output)
-        } catch {
-            NSLog("AudioPreviewTee write failed: \(error.localizedDescription)")
-            self.file = nil
+        guard output.frameLength > 0 else { return true } // converter retained a short tail
+        return writePCM(output, isPadding: isPadding)
+    }
+
+    private func writePCM(_ output: AVAudioPCMBuffer, isPadding: Bool) -> Bool {
+        var saved = false
+        if let journal {
+            do { try journal.append(output, isPadding: isPadding); saved = true } catch { writeFailure = error.localizedDescription }
         }
+        if let file {
+            do { try file.write(from: output); saved = true } catch {
+                writeFailure = error.localizedDescription
+                self.file = nil // never resume this file with missing frames
+            }
+        }
+        return saved
     }
 
     func close() {
         // Resampling can retain a short tail. Flush it before closing so a
         // finalized preview/recovery file keeps the primary track's timeline,
         // including the final speech after a long padded interval.
-        if let file, let converter {
+        if let converter {
             for _ in 0..<8 {
                 guard let tail = AVAudioPCMBuffer(pcmFormat: teeFormat, frameCapacity: 4_096) else { break }
                 var error: NSError?
@@ -122,15 +138,14 @@ final class AudioPreviewTee {
                     return nil
                 }
                 if tail.frameLength > 0 {
-                    do { try file.write(from: tail) } catch {
-                        NSLog("AudioPreviewTee drain failed: \(error.localizedDescription)")
-                        break
-                    }
+                    if !writePCM(tail, isPadding: lastInputWasPadding) { break }
                 }
                 if status == .error || status == .endOfStream || tail.frameLength == 0 { break }
             }
         }
-        file = nil   // closes the caf
+        file?.close()
+        file = nil
+        journal?.close()
         converter = nil
     }
 }
