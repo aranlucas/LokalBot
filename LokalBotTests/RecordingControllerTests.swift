@@ -228,6 +228,15 @@ final class RecordingControllerTests: XCTestCase {
         XCTAssertEqual(snapshot.systemAudioStatus, "Waiting for audio")
     }
 
+    func testSystemLevelExpiresAndDoesNotReuseHistoricalPeak() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        XCTAssertEqual(health(at: now, rms: 0.01).systemAudioLevel ?? -1, 1.0 / 3, accuracy: 0.001)
+        XCTAssertEqual(health(at: now, rms: 0).systemAudioLevel, 0)
+        XCTAssertNil(health(at: now, systemWrite: now.addingTimeInterval(-2), rms: 0.5).systemAudioLevel)
+        XCTAssertNil(health(at: now, attached: false, rms: 0.5).systemAudioLevel)
+        XCTAssertNil(health(at: now, rms: .nan).systemAudioLevel)
+    }
+
     private func health(
         at now: Date,
         micWrite: Date? = nil,
@@ -235,14 +244,15 @@ final class RecordingControllerTests: XCTestCase {
         lastAudible: Date? = nil,
         engineRunning: Bool = true,
         attached: Bool = true,
-        recovery: MicRecorder.RecoveryState = .healthy
+        recovery: MicRecorder.RecoveryState = .healthy,
+        rms: Float = 0
     ) -> RecordingMemoryHealthSnapshot {
         .recording(
             microphone: .init(duration: 30, lastAudioWriteAt: micWrite ?? now, isEngineRunning: engineRunning,
                               droppedBufferCount: 3, recoveryState: recovery),
             system: .init(duration: 30, audibleDuration: 20, framesSinceAttach: 48_000,
                           lastAudioWriteAt: systemWrite ?? now, lastAudibleWriteAt: lastAudible,
-                          capturedPID: 42, lastRMSLevel: 0, peakRMSLevel: 0.5, droppedBufferCount: 2),
+                          capturedPID: 42, lastRMSLevel: rms, peakRMSLevel: 0.5, droppedBufferCount: 2),
             hasSystemTarget: attached, lastRecoveryAt: now, at: now)
     }
 

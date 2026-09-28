@@ -110,6 +110,10 @@ struct TodayView: View {
                 DayActivityOverview(model: model, title: "Day So Far", showsLegend: false)
                 Divider()
                 DayDigestCard(model: model, identifier: "today", showsControls: false, mode: .today)
+                if !model.workSessions.isEmpty {
+                    Divider()
+                    TodaySessionsSection(model: model)
+                }
             }
             .padding(16)
             .lbGroupedSurface()

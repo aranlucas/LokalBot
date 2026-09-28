@@ -324,7 +324,19 @@ private struct EditorialTurn: View {
                         if message.isPending {
                             Text(verbatim: parsed.display).textSelection(.enabled)
                         } else {
-                            SelectableDigestText(parsed.display, style: .editorial)
+                            SelectableDigestText(ChatCitationParser.extract(message.text, linked: true).display, style: .editorial)
+                                .environment(\.openURL, OpenURLAction { url in
+                                    guard url.scheme == "lokalbot-citation" else { return .systemAction }
+                                    guard url.host == "source", let number = Int(url.lastPathComponent),
+                                          parsed.citations.indices.contains(number - 1) else { return .discarded }
+                                    let citation = parsed.citations[number - 1]
+                                    if let snapshotID = citation.snapshotID {
+                                        app.openScreenSnapshot(snapshotID)
+                                    } else {
+                                        app.openCitation(citation)
+                                    }
+                                    return .handled
+                                })
                         }
                     }
                         .foregroundStyle(message.isError ? AnyShapeStyle(.red)
@@ -645,17 +657,21 @@ private struct EditorialTurn: View {
 private struct EvidenceDisclosure: View {
     @EnvironmentObject var app: AppState
     let citations: [ChatCitation]
-    @State private var isExpanded = false
+    @State private var isExpanded: Bool
+
+    init(citations: [ChatCitation]) {
+        self.citations = citations
+        _isExpanded = State(initialValue: citations.count <= 3)
+    }
 
     var body: some View {
         WorkspaceDisclosure(
             isExpanded: $isExpanded,
             identifier: "chat.evidence",
             style: .compact) {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
                 ForEach(Array(citations.enumerated()), id: \.element.id) { index, citation in
                     sourceRow(number: index + 1, citation: citation)
-                    if index != citations.count - 1 { Divider() }
                 }
             }
             Text("LokalBot used only the sources enabled for this question. Citation numbers remain stable even when a local source is later removed.")
@@ -716,7 +732,8 @@ private struct EvidenceDisclosure: View {
                     Text(source.title)
                         .font(Font.body.weight(.semibold))
                         .foregroundStyle(source.available ? .primary : .secondary)
-                        .lineLimit(1)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(source.detail)
                         .font(Font.callout).foregroundStyle(.secondary)
                 }
@@ -731,7 +748,8 @@ private struct EvidenceDisclosure: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .padding(.vertical, 8)
+            .padding(12)
+            .lbGroupedSurface()
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

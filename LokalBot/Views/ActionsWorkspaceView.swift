@@ -31,14 +31,20 @@ struct ActionsWorkspaceView: View {
                 && (needle.isEmpty || [action.text, action.meetingTitle, action.due ?? ""].contains { $0.localizedCaseInsensitiveContains(needle) })
                 && matchesDue(action)
         }.sorted { lhs, rhs in
-            if sort == "due" {
-                let left = ActionDuePresentation.date(lhs.due) ?? .distantFuture
-                let right = ActionDuePresentation.date(rhs.due) ?? .distantFuture
-                if left != right { return left < right }
+            if sort != "recent" {
+                return ActionDueSort(order: sort == "dueDescending" ? .reverse : .forward)
+                    .compare(lhs, rhs) == .orderedAscending
             }
             if lhs.meetingStartedAt != rhs.meetingStartedAt { return lhs.meetingStartedAt > rhs.meetingStartedAt }
             return lhs.id < rhs.id
         }
+    }
+    private var tableSort: Binding<[ActionDueSort]> {
+        Binding(get: {
+            sort == "recent" ? [] : [ActionDueSort(order: sort == "dueDescending" ? .reverse : .forward)]
+        }, set: { comparators in
+            sort = comparators.first.map { $0.order == .forward ? "due" : "dueDescending" } ?? "recent"
+        })
     }
     private var inspected: OutcomeActionReference? {
         visible.first { selection.contains($0.id) }
@@ -101,7 +107,7 @@ struct ActionsWorkspaceView: View {
 
     private var actionList: some View {
         HSplitView {
-            Table(visible, selection: listSelection) {
+            Table(visible, selection: listSelection, sortOrder: tableSort) {
                 TableColumn("") { reference in
                     HStack(spacing: 6) {
                         if selecting { selectionToggle(reference.id) }
@@ -127,7 +133,7 @@ struct ActionsWorkspaceView: View {
                     Text(reference.owner.map { SpeakerDisplayName.label($0, identity: reference.isForUser ? .user : .unresolved) } ?? "Owner unclear")
                         .foregroundStyle(reference.owner == nil ? LBTokens.Palette.attentionText : .secondary)
                 }.width(90)
-                TableColumn("Due") { reference in
+                TableColumn("Due", sortUsing: ActionDueSort()) { reference in
                     Text(reference.due.map { ActionDuePresentation.label($0, spokenAt: reference.meetingStartedAt) } ?? "—")
                         .foregroundStyle(isOverdue(reference) ? LBTokens.Palette.recordingText : .secondary)
                 }.width(110)
@@ -285,6 +291,7 @@ struct ActionsWorkspaceView: View {
     private var sortPicker: some View {
         Picker("Sort", selection: $sort) {
             Text("Due, then recent").tag("due")
+            Text("Latest due first").tag("dueDescending")
             Text("Most recent").tag("recent")
         }
     }
@@ -323,15 +330,7 @@ struct ActionsWorkspaceView: View {
                 Text("Original Wording").font(Font.callout.weight(.semibold))
                 Text(reference.action.displayText).textSelection(.enabled)
                 if let originalDue = reference.action.due { Text("Original due phrase: \(originalDue)") }
-                ForEach(reference.action.citations) { citation in
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("“" + citation.excerpt + "”").textSelection(.enabled)
-                        Button("Show Passage · \(Transcript.stamp(citation.start))") {
-                            app.openMeeting(reference.meetingID, seek: citation.start)
-                        }
-                    }
-                    .padding(12).lbGroupedSurface()
-                }
+                ActionEvidencePassages(reference: reference).id(reference.id)
                 Text("Saved corrections stay separate from the original action and its supporting passage.")
                     .font(.callout).foregroundStyle(.secondary)
                 if reference.action.citations.isEmpty { Text("No supporting passage was stored.").foregroundStyle(.secondary) }

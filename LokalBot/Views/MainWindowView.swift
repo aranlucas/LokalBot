@@ -296,6 +296,7 @@ private struct SidebarPrivacyFooter: View {
             }
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: "lock.shield").foregroundStyle(Brand.teal)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Storage: this Mac").font(.callout.weight(.semibold))
                     HStack(spacing: 4) {

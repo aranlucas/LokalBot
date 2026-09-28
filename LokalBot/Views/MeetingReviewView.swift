@@ -6,6 +6,11 @@ struct MeetingSpeakerReviewSection: View {
     let canPlay: Bool
     let onPlay: (Transcript.Segment) -> Void
     let onReview: (String) -> Void
+    @State private var showsAllSpeakers = false
+
+    private var visibleSpeakers: [MeetingSpeakerReviewItem] {
+        showsAllSpeakers ? speakers : Array(speakers.prefix(5))
+    }
 
     var body: some View {
         WorkspaceSection(title: "Review Speakers", icon: "person.2") {
@@ -14,7 +19,7 @@ struct MeetingSpeakerReviewSection: View {
             if speakers.isEmpty {
                 Text("No transcript speakers are available yet.").workspaceTextRole(.supporting)
             }
-            ForEach(speakers) { speaker in
+            ForEach(visibleSpeakers) { speaker in
                 VStack(alignment: .leading, spacing: 8) {
                     ViewThatFits(in: .horizontal) {
                         HStack(alignment: .top) {
@@ -38,12 +43,20 @@ struct MeetingSpeakerReviewSection: View {
                 .padding(.vertical, 8)
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel(SpeakerDisplayName.label(speaker.name))
-                if speaker.id != speakers.last?.id { Divider() }
+                if speaker.id != visibleSpeakers.last?.id { Divider() }
+            }
+            if speakers.count > 5 {
+                Button(showsAllSpeakers ? "Show Fewer Speakers" : "Show \(speakers.count - 5) More Speakers") {
+                    showsAllSpeakers.toggle()
+                }
+                .buttonStyle(.workspaceLink)
+                .accessibilityIdentifier("meeting.review.moreSpeakers")
             }
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Review speakers")
         .accessibilityIdentifier("meeting.review.speakers")
+        .onChange(of: speakers.map(\.id)) { showsAllSpeakers = false }
     }
 
     private func speakerLabel(_ speaker: MeetingSpeakerReviewItem) -> some View {

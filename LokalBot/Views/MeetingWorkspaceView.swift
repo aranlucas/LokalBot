@@ -205,7 +205,7 @@ private struct MeetingWorkspaceDetail: View {
     var body: some View {
         ScrollViewReader { scrollProxy in
             VStack(spacing: 0) {
-                if isSearchPresented {
+                if isSearchPresented || tab == .transcript {
                     MeetingPageSearchBar(
                         query: $searchQuery,
                         focusRequest: app.meetingPageSearchRequestRevision,
@@ -213,7 +213,8 @@ private struct MeetingWorkspaceDetail: View {
                         hasMatches: !searchMatches.isEmpty,
                         onPrevious: { moveSearch(by: -1, using: scrollProxy) },
                         onNext: { moveSearch(by: 1, using: scrollProxy) },
-                        onClose: dismissSearch)
+                        onClose: dismissSearch,
+                        isPresented: isSearchPresented)
                     .padding(.horizontal, WorkspaceMetric.pagePadding)
                     .padding(.vertical, 10)
                     Divider()
@@ -270,17 +271,21 @@ private struct MeetingWorkspaceDetail: View {
                         segmentIndex: index, field: .text), anchor: .center)
                 }
             }
+            .onChange(of: tab) { previous, current in
+                if previous == .transcript, current != .transcript, !isSearchPresented { dismissSearch() }
+            }
+            .onChange(of: isSearchPresented) { updateSearch(using: scrollProxy, revealFirst: false) }
             .onChange(of: searchQuery) {
                 updateSearch(using: scrollProxy)
             }
             .onChange(of: searchContentRevision) {
-                if isSearchPresented {
+                if isSearchPresented || tab == .transcript {
                     updateSearch(using: scrollProxy, revealFirst: false)
                 }
             }
             .onChange(of: projection) {
                 reloadReviewProjection()
-                if isSearchPresented {
+                if isSearchPresented || tab == .transcript {
                     updateSearch(using: scrollProxy, revealFirst: false)
                 }
             }
@@ -798,7 +803,7 @@ private struct MeetingWorkspaceDetail: View {
     }
 
     private var visibleSearchQuery: String {
-        isSearchPresented ? searchQuery : ""
+        (isSearchPresented || tab == .transcript) ? searchQuery : ""
     }
 
     private var isSearchPresented: Bool {
@@ -806,7 +811,7 @@ private struct MeetingWorkspaceDetail: View {
     }
 
     private var activeSearchMatch: MeetingPageSearchMatch? {
-        guard isSearchPresented,
+        guard isSearchPresented || tab == .transcript,
               searchMatches.indices.contains(selectedSearchMatchIndex) else { return nil }
         return searchMatches[selectedSearchMatchIndex]
     }
@@ -841,7 +846,9 @@ private struct MeetingWorkspaceDetail: View {
         let previousMatch = activeSearchMatch
         let matches = MeetingPageSearch.matches(
             query: searchQuery,
-            sources: searchSources)
+            sources: isSearchPresented ? searchSources : searchSources.filter {
+                MeetingWorkspaceTab.containing($0.location) == .transcript
+            })
         searchMatches = matches
         selectedSearchMatchIndex = revealFirst ? 0 : matches.firstIndex { $0 == previousMatch } ?? 0
         if revealFirst, let first = matches.first {
@@ -1385,6 +1392,7 @@ private struct MeetingPageSearchBar: View {
     let onPrevious: () -> Void
     let onNext: () -> Void
     let onClose: () -> Void
+    let isPresented: Bool
 
     var body: some View {
         HStack(spacing: 8) {
@@ -1395,7 +1403,9 @@ private struct MeetingPageSearchBar: View {
                 text: $query,
                 focusRequest: focusRequest,
                 onSubmit: onNext,
-                onCancel: onClose)
+                onCancel: onClose,
+                placeholder: isPresented ? "Search this meeting" : "Search Transcript",
+                focusesOnAppear: isPresented)
                 .frame(maxWidth: .infinity)
                 .frame(height: 20)
 
@@ -1438,13 +1448,15 @@ private struct MeetingPageSearchBar: View {
             .help("Next match")
             .accessibilityIdentifier("meeting.search.next")
 
-            Button(action: onClose) {
-                Image(systemName: "xmark")
+            if isPresented {
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                }
+                .buttonStyle(.plain)
+                .keyboardShortcut(.cancelAction)
+                .help("Close search")
+                .accessibilityIdentifier("meeting.search.close")
             }
-            .buttonStyle(.plain)
-            .keyboardShortcut(.cancelAction)
-            .help("Close search")
-            .accessibilityIdentifier("meeting.search.close")
         }
         .onAppear {
             uiTestDiagnosticLog("meeting.search bar appear")
@@ -2099,29 +2111,43 @@ private struct WorkspaceSpeakerRenameSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("Name Speaker").font(.headline)
-                Spacer()
-                if let sample = draft.sample {
-                    Button("Play voice") { onPlay(sample) }
-                        .accessibilityIdentifier("speaker.rename.playVoice")
-                }
-            }
+            Text("Name Speaker").font(.title3.bold())
             if let sample = draft.sample {
-                Text(sample.text).font(Font.body).lineLimit(4)
+                HStack(alignment: .top, spacing: 12) {
+                    Button { onPlay(sample) } label: {
+                        Image(systemName: "play.fill").frame(width: 20, height: 20)
+                    }
+                    .primaryActionButton()
+                    .buttonBorderShape(.circle)
+                    .help("Play Voice")
+                    .accessibilityLabel("Play Voice")
+                    .accessibilityIdentifier("speaker.rename.playVoice")
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("“\(sample.text)”").font(.body)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .lineLimit(5)
+                        Text(Transcript.stamp(sample.start))
+                            .font(LBTokens.Typography.timestamp).foregroundStyle(.secondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14).lbGroupedSurface()
             } else {
                 Text("No clear voice excerpt available. Check the transcript before confirming this speaker.")
                     .workspaceTextRole(.supporting)
             }
-            TextField("Speaker name", text: $name, prompt: Text("Name this speaker"))
-                .textFieldStyle(.roundedBorder)
-                .focused($nameFocused)
-                .accessibilityIdentifier("speaker.rename.name")
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Name").font(.callout).foregroundStyle(.secondary)
+                TextField("Speaker name", text: $name, prompt: Text("Name this speaker"))
+                    .textFieldStyle(.roundedBorder)
+                    .focused($nameFocused)
+                    .accessibilityIdentifier("speaker.rename.name")
+            }
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     if !suggestions.isEmpty {
-                        Text("Name suggestions")
-                            .font(.subheadline.weight(.semibold))
+                        Text("Suggested Names")
+                            .font(.headline)
                         Text("Listen, choose a name, then save. These sources suggest names; attendance does not identify a voice.")
                             .workspaceTextRole(.supporting)
                             .fixedSize(horizontal: false, vertical: true)
@@ -2143,14 +2169,19 @@ private struct WorkspaceSpeakerRenameSheet: View {
                     if let notice { Text(notice).font(.caption).foregroundStyle(.secondary) }
                 }
             }
-            .frame(maxHeight: 440)
+            .frame(maxHeight: 280)
+
+            Label("Names are saved with this meeting. Only confirmed microphone voices can be remembered on this Mac.",
+                  systemImage: "lock.shield")
+                .font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
 
             HStack {
                 Button("Leave Unidentified", action: onReset)
                     .help("Clear the saved name and return to \(SpeakerDisplayName.label(draft.defaultName))")
                     .accessibilityIdentifier("speaker.rename.leaveUnidentified")
                 Spacer()
-                Button("Cancel", action: onCancel)
+                Button("Cancel", action: onCancel).keyboardShortcut(.cancelAction)
                 Button("Save") { onSave(name, selectedCalendarIdentityID, remember, profileID) }
                     .primaryActionButton()
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -2158,8 +2189,8 @@ private struct WorkspaceSpeakerRenameSheet: View {
                     .accessibilityIdentifier("speaker.rename.save")
             }
         }
-        .padding(18)
-        .frame(width: 500)
+        .padding(24)
+        .frame(width: 560)
         .disabled(busy)
         .onAppear {
             nameFocused = true
@@ -2208,8 +2239,10 @@ private struct WorkspaceSpeakerRenameSheet: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .buttonStyle(.bordered)
-        .tint(selected ? .accentColor : nil)
+        .buttonStyle(.plain)
+        .padding(12)
+        .lbGroupedSurface()
+        .foregroundStyle(selected ? LBTokens.Palette.accentText : .primary)
         .accessibilityLabel(label)
         .accessibilityIdentifier(suggestion.accessibilityID)
     }

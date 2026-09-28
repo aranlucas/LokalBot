@@ -260,6 +260,9 @@ struct TimelineContentView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject var model: CaptureModel
     @State private var contextDrawerPresented = false
+    @State private var browseMode = TimelineBrowseMode.day
+    @State private var momentQuery = ""
+    @State private var momentApplication = ""
 
     var body: some View {
         GeometryReader { proxy in
@@ -270,12 +273,13 @@ struct TimelineContentView: View {
                     model: model,
                     showsContextToggle: usesDrawer,
                     usesCompactHeader: proxy.size.width < 1_000,
-                    contextPresented: $contextDrawerPresented)
+                    contextPresented: $contextDrawerPresented,
+                    browseMode: $browseMode, query: $momentQuery, application: $momentApplication)
                 Divider()
 
                 if usesDrawer {
                     ZStack(alignment: .trailing) {
-                        CaptureDayView(model: model) {
+                        CaptureDayView(model: model, browseMode: browseMode, query: momentQuery, application: momentApplication) {
                             contextDrawerPresented = true
                         }
 
@@ -299,7 +303,8 @@ struct TimelineContentView: View {
                     }
                 } else {
                     HSplitView {
-                        CaptureDayView(model: model, onOpenContext: {})
+                        CaptureDayView(model: model, browseMode: browseMode, query: momentQuery,
+                                       application: momentApplication, onOpenContext: {})
                             .frame(minWidth: WorkspaceMetric.timelineDayMinWidth,
                                    maxWidth: .infinity, maxHeight: .infinity)
                             .accessibilityElement(children: .contain)
@@ -402,6 +407,9 @@ private struct TimelineWorkspaceHeader: View {
     let showsContextToggle: Bool
     let usesCompactHeader: Bool
     @Binding var contextPresented: Bool
+    @Binding var browseMode: TimelineBrowseMode
+    @Binding var query: String
+    @Binding var application: String
     @State private var showingCalendar = false
 
     var body: some View {
@@ -422,7 +430,22 @@ private struct TimelineWorkspaceHeader: View {
                     digestControls.fixedSize()
                 }
             }
-
+            HStack(spacing: 12) {
+                Picker("Timeline view", selection: $browseMode) {
+                    ForEach(TimelineBrowseMode.allCases) { Text($0.rawValue).tag($0) }
+                }
+                .pickerStyle(.segmented).labelsHidden().frame(width: 150)
+                .accessibilityIdentifier("timeline.mode")
+                TextField("Search Screen Memory", text: $query)
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityIdentifier("timeline.search")
+                Picker("App", selection: $application) {
+                    Text("All Apps").tag("")
+                    ForEach(Array(Set(model.shots.map(\.app))).sorted(), id: \.self) { Text($0).tag($0) }
+                }
+                .labelsHidden().frame(maxWidth: 160)
+                .accessibilityIdentifier("timeline.appFilter")
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -516,6 +539,9 @@ private struct TimelineWorkspaceHeader: View {
 struct CaptureDayView: View {
     @EnvironmentObject var app: AppState
     @ObservedObject var model: CaptureModel
+    var browseMode = TimelineBrowseMode.day
+    var query = ""
+    var application = ""
     let onOpenContext: () -> Void
     @State private var digestExpanded = false
 
@@ -524,6 +550,7 @@ struct CaptureDayView: View {
         let sessions = model.workSessions
         ScrollView {
             VStack(alignment: .leading, spacing: LBTokens.Metric.sectionSpacing) {
+                if momentsFirst { momentsSection }
                 DayActivityOverview(model: model)
                     .accessibilityIdentifier("capture.dayOverview")
                 VStack(alignment: .leading, spacing: 10) {
@@ -566,10 +593,18 @@ struct CaptureDayView: View {
                         sessionList(sessions: sessions, meetings: meetings, now: Date())
                     }
                 }
+                if !momentsFirst { momentsSection }
             }
             .padding(LBTokens.Metric.detailPadding)
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
+    }
+
+    private var momentsFirst: Bool { browseMode == .rewind || !query.isEmpty || !application.isEmpty }
+
+    private var momentsSection: some View {
+        TimelineMomentsSection(model: model, mode: browseMode, query: query,
+                               application: application, onOpenContext: onOpenContext)
     }
 
     private func sessionList(

@@ -591,7 +591,14 @@ struct SelectableDigestText: View {
         )) ?? AttributedString(source)
         result.font = font
         if let foreground { result.foregroundColor = foreground }
-        if style == .editorial { styleNumericCitations(in: &result) }
+        if style == .editorial {
+            styleNumericCitations(in: &result)
+            for run in result.runs where run.link?.scheme == "lokalbot-citation" {
+                result[run.range].font = Font.callout.weight(.semibold).monospacedDigit()
+                result[run.range].foregroundColor = Brand.teal
+                result[run.range].backgroundColor = Brand.teal.opacity(0.12)
+            }
+        }
         return result
     }
 

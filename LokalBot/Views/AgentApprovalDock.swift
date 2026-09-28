@@ -3,7 +3,7 @@ import SwiftUI
 struct AgentApprovalDock: View {
     @ObservedObject var controller: AgentSessionController
     let request: AgentApprovalRequest
-    @State private var expanded = false
+    @State private var expanded = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -29,6 +29,7 @@ struct AgentApprovalDock: View {
         }
         .padding(12)
         .lbStatusSurface(.orange)
+        .onChange(of: request.id) { expanded = true }
     }
 
     private var details: some View {
@@ -72,7 +73,7 @@ struct AgentApprovalDock: View {
                     id: request.id, approved: false, scope: .once)
             }
         }
-        .primaryActionButton()
+        .buttonStyle(.bordered)
         .keyboardShortcut(.cancelAction)
         .accessibilityIdentifier("agent.approve.deny")
 
@@ -93,6 +94,7 @@ struct AgentApprovalDock: View {
                     id: request.id, approved: true, scope: .once)
             }
         }
+        .primaryActionButton()
         .disabled(!request.canApprove)
         .accessibilityIdentifier("agent.approve.once")
     }

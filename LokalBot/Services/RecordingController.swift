@@ -145,6 +145,7 @@ struct RecordingMemoryHealthSnapshot: Equatable, Sendable {
     var systemAudioLastWriteAt: Date?
     var systemAudioDroppedBuffers: Int
     var lastRecoveryAt: Date?
+    var systemAudioLevel: Double?
 
     /// Presentation follows recent writes from each source independently.
     /// A source that produced sound earlier can subsequently become silent;
@@ -184,7 +185,11 @@ struct RecordingMemoryHealthSnapshot: Equatable, Sendable {
             systemAudioStatus: systemStatus,
             systemAudioLastWriteAt: system.lastAudioWriteAt,
             systemAudioDroppedBuffers: system.droppedBufferCount,
-            lastRecoveryAt: lastRecoveryAt)
+            lastRecoveryAt: lastRecoveryAt,
+            systemAudioLevel: hasSystemTarget && system.lastAudioWriteAt.map {
+                (0...1).contains(current.timeIntervalSince($0))
+            } == true && system.lastRMSLevel.isFinite
+                ? min(1, max(0, (20 * log10(max(Double(system.lastRMSLevel), 0.000001)) + 60) / 60)) : nil)
     }
 
     private static func isRecent(_ date: Date?, at current: Date) -> Bool {

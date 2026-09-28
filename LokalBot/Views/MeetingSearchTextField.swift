@@ -9,6 +9,8 @@ struct MeetingSearchTextField: NSViewRepresentable {
     let focusRequest: Int
     let onSubmit: () -> Void
     let onCancel: () -> Void
+    var placeholder = "Search this meeting"
+    var focusesOnAppear = true
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -18,7 +20,7 @@ struct MeetingSearchTextField: NSViewRepresentable {
         let field = FocusOwningTextField()
         field.delegate = context.coordinator
         field.stringValue = text
-        field.placeholderString = "Search this meeting"
+        field.placeholderString = placeholder
         field.isBordered = false
         field.drawsBackground = false
         field.focusRingType = .none
@@ -27,13 +29,15 @@ struct MeetingSearchTextField: NSViewRepresentable {
         field.cell?.usesSingleLineMode = true
         field.identifier = NSUserInterfaceItemIdentifier("meeting.search.field")
         field.setAccessibilityIdentifier("meeting.search.field")
-        field.setAccessibilityLabel("Search this meeting")
-        field.requestFocus()
+        field.setAccessibilityLabel(placeholder)
+        if focusesOnAppear { field.requestFocus() }
         return field
     }
 
     func updateNSView(_ field: FocusOwningTextField, context: Context) {
         context.coordinator.update(parent: self)
+        field.placeholderString = placeholder
+        field.setAccessibilityLabel(placeholder)
         if field.stringValue != text {
             field.stringValue = text
         }

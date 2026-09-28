@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Four deliberate steps. Capture preferences remain a draft until Review;
@@ -8,10 +9,10 @@ struct OnboardingView: View {
         case capture, permissions, models, review
         var title: String {
             switch self {
-            case .capture: "Choose what to remember"
-            case .permissions: "Enable the access you need"
-            case .models: "Prepare your workflows"
-            case .review: "Review and start"
+            case .capture: "Choose What to Remember"
+            case .permissions: "Enable the Access You Need"
+            case .models: "Prepare Your Workflows"
+            case .review: "Review and Start"
             }
         }
     }
@@ -40,11 +41,10 @@ struct OnboardingView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(spacing: 16) {
-                Image(systemName: stepIcon)
-                    .font(.system(size: 32, weight: .medium))
-                    .foregroundStyle(LBTokens.Palette.accentText)
+                Image(nsImage: NSApplication.shared.applicationIconImage)
+                    .resizable().interpolation(.high)
                     .frame(width: 64, height: 64)
-                    .lbGroupedSurface()
+                    .accessibilityLabel("LokalBot")
                 if mode == .welcome {
                     HStack(spacing: 8) {
                         ForEach(Step.allCases, id: \.rawValue) { item in
@@ -77,8 +77,9 @@ struct OnboardingView: View {
                     Text("Step \(step.rawValue + 1) of 4").font(.callout).foregroundStyle(.secondary)
                 }
                 Spacer()
-                if mode == .welcome, step != .capture {
+                if mode == .welcome {
                     Button("Back") { step = Step(rawValue: step.rawValue - 1) ?? .capture }
+                        .disabled(step == .capture)
                 }
                 if mode == .permissions {
                     Button("Done") { dismiss() }.primaryActionButton()
@@ -107,35 +108,38 @@ struct OnboardingView: View {
         .onDisappear { permissions.stopPolling(); PermissionGuidanceController.shared.dismiss() }
     }
 
-    private var stepIcon: String {
-        switch step {
-        case .capture: "brain.head.profile"
-        case .permissions: "hand.raised"
-        case .models: "cpu"
-        case .review: "checkmark.circle"
-        }
-    }
-
     private var captureChoices: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Keep meeting evidence and a useful memory of your day. You can change each choice later in Settings.")
                 .font(.body).foregroundStyle(.secondary)
-            VStack(alignment: .leading, spacing: 10) {
-                Picker("Detected Meetings", selection: $draft.meetingMode) {
-                    ForEach(AppSettings.AutoRecordMode.allCases) { Text($0.rawValue).tag($0) }
-                }.accessibilityIdentifier("onboarding.meetingMode")
-                Text("Ask via notification waits for you to start recording. Manual mode keeps Record now available.")
-                    .workspaceTextRole(.supporting)
+            VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Picker("Detected Meetings", selection: $draft.meetingMode) {
+                        ForEach(AppSettings.AutoRecordMode.allCases) { Text($0.rawValue).tag($0) }
+                    }.accessibilityIdentifier("onboarding.meetingMode")
+                    Text("Ask via notification waits for you to start recording. Manual mode keeps Record Now available.")
+                        .workspaceTextRole(.supporting)
+                }
+                Divider()
+                Toggle(isOn: $draft.dayMemory) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Day Memory")
+                        Text("Remember app and window activity.").workspaceTextRole(.supporting)
+                    }
+                }
+                .accessibilityLabel("Remember app and window activity")
+                Divider()
+                VStack(alignment: .leading, spacing: 6) {
+                    Picker("Day-Memory Detail", selection: $draft.contextMode) {
+                        ForEach(AppSettings.ScreenContextCaptureMode.allCases) { Text($0.rawValue).tag($0) }
+                    }.disabled(!draft.dayMemory)
+                    Text(draft.contextMode.detail).workspaceTextRole(.trust)
+                }
             }.workspacePanel()
-            VStack(alignment: .leading, spacing: 10) {
-                Toggle("Remember app and window activity", isOn: $draft.dayMemory)
-                Picker("Day-Memory Detail", selection: $draft.contextMode) {
-                    ForEach(AppSettings.ScreenContextCaptureMode.allCases) { Text($0.rawValue).tag($0) }
-                }.disabled(!draft.dayMemory)
-                Text(draft.contextMode.detail).workspaceTextRole(.trust)
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Text and images build on app activity. Images are encrypted on disk; captured text remains searchable under your retention policy.")
                     .workspaceTextRole(.supporting)
-            }.workspacePanel()
+            }
             Label("These choices are applied on the final Review step.", systemImage: "checklist")
                 .workspaceTextRole(.supporting)
         }

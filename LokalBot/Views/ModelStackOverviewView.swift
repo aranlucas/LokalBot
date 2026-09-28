@@ -9,14 +9,19 @@ struct ModelStackOverviewView: View {
     @ObservedObject private var setup: ModelSetupController
     let present: (ModelsSettingsSheet) -> Void
     let connections: () -> Void
+    let choosePreset: (ModelStackPreset) -> Void
+    let manageDownloads: () -> Void
 
-    init(app: AppState, present: @escaping (ModelsSettingsSheet) -> Void, connections: @escaping () -> Void) {
+    init(app: AppState, present: @escaping (ModelsSettingsSheet) -> Void, connections: @escaping () -> Void,
+         choosePreset: @escaping (ModelStackPreset) -> Void, manageDownloads: @escaping () -> Void) {
         self.app = app
         roles = app.modelRoles
         checks = app.modelChecks
         setup = app.modelSetup
         self.present = present
         self.connections = connections
+        self.choosePreset = choosePreset
+        self.manageDownloads = manageDownloads
     }
 
     private var snapshot: ModelRolesSnapshot {
@@ -38,14 +43,10 @@ struct ModelStackOverviewView: View {
                      + " · " + ModelSettingsPresentation.setupLocation(app.settings))
                     .font(.body).settingsSecondary()
                 Spacer(minLength: 8)
-                Button("Choose Preset…") { present(.presets) }
-                    .buttonStyle(.bordered)
-                    .disabled(setup.pending != nil)
-                    .accessibilityIdentifier("models.choosePreset")
             }
             .padding(.vertical, 4)
             VStack(alignment: .leading, spacing: 4) {
-                Text("Core models").font(.headline)
+                Text("Core Roles").font(.headline)
                 if checks.results.isEmpty, !checks.isTesting {
                     Text("Selected models have not been checked yet.")
                         .font(.body).settingsSecondary()
@@ -63,6 +64,9 @@ struct ModelStackOverviewView: View {
             }
             .padding(.horizontal, 16).padding(.vertical, 14)
             .settingsPanel()
+            ModelPresetsSection(settings: app.settings, switching: setup.pending != nil, choose: choosePreset)
+            ModelRemoteOverview(app: app, connections: connections)
+            ModelStorageSection(app: app, manage: manageDownloads)
             processingBudget
                 .padding(.horizontal, 16).padding(.vertical, 14)
                 .settingsPanel()

@@ -282,7 +282,7 @@ final class MainWindowUITests: XCTestCase {
             .waitForExistence(timeout: 6), "core readiness overview missing")
         XCTAssertTrue(app.descendants(matching: .any)["models.storage"].exists,
                       "model storage summary missing")
-        XCTAssertTrue(textWithContent("Core models").firstMatch.exists)
+        XCTAssertTrue(textWithContent("Core Roles").firstMatch.exists)
         XCTAssertFalse(app.buttons["models.advanced"].exists,
                        "Models should not hide configuration behind Advanced details")
         XCTAssertTrue(app.buttons["models.stack.change.transcribe"]

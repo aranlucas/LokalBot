@@ -15,13 +15,13 @@ struct AgentView: View {
                 // with the transcript and can prevent the window shrinking.
                 HSplitView {
                     AgentTaskSidebar(sessions: sessions, verifyRuntime: verifyRuntime)
-                        .frame(minWidth: 240, idealWidth: taskColumnWidth, maxWidth: 340)
+                        .frame(minWidth: 200, idealWidth: taskColumnWidth, maxWidth: 340)
                         .onGeometryChange(for: Double.self) { Double($0.size.width) } action: { taskColumnWidth = $0 }
                         .splitPaneAccessibilityLabel("Agent tasks", autosaveName: "LokalBot.agent", initialWidth: LBTokens.Metric.contentColumnWidth)
                     if let tab = sessions.selectedTab {
                         AgentSessionView(controller: tab.controller, sessions: sessions, taskID: tab.id)
                             .id(tab.id)
-                            .frame(minWidth: 360, maxWidth: .infinity, maxHeight: .infinity)
+                            .frame(minWidth: 350, maxWidth: .infinity, maxHeight: .infinity)
                             .splitPaneAccessibilityLabel("Agent conversation")
                     }
                 }

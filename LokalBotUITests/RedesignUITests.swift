@@ -286,6 +286,39 @@ final class RedesignUITests: XCTestCase {
         snapshot("meeting-review-ready-to-refresh")
     }
 
+    func testTimelineFiltersRetainedMomentsWithoutHidingWorkSessions() throws {
+        try launch(["LOKALBOT_INITIAL_SECTION": "timeline", "LOKALBOT_SCREEN_MEMORY_DEMO": "1"])
+        let search = app.textFields["timeline.search"]
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        search.click()
+        search.typeText("no-matching-retained-moment-9382")
+        XCTAssertTrue(UITestHarness.staticText(containing: "No moments match these filters", in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(element("timeline.workSessions").exists, "Moment filters must preserve work sessions")
+        search.typeKey("a", modifierFlags: .command)
+        search.typeKey(.delete, modifierFlags: [])
+        UITestHarness.selectSegment("Rewind", pickerIdentifier: "timeline.mode", in: app)
+        XCTAssertTrue(element("timeline.rewind").waitForExistence(timeout: 5))
+        snapshot("timeline-rewind-with-sessions")
+    }
+
+    func testTranscriptSearchIsPersistentAndCommandFStillFindsAcrossMeeting() throws {
+        try launch(["LOKALBOT_INITIAL_SECTION": "meetings", "LOKALBOT_SELECT_INDEX": "0"])
+        UITestHarness.selectSegment("Transcript", pickerIdentifier: "meeting.contentTabs", in: app)
+        let search = app.textFields["meeting.search.field"]
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        XCTAssertEqual(search.placeholderValue, "Search Transcript")
+        search.click()
+        search.typeText("failover")
+        let status = app.staticTexts["meeting.search.status"]
+        XCTAssertTrue(status.waitForExistence(timeout: 3))
+        XCTAssertTrue((status.value as? String ?? status.label).contains("Transcript"))
+        app.typeKey("f", modifierFlags: .command)
+        XCTAssertTrue(UITestHarness.waitUntil { search.placeholderValue == "Search this meeting" })
+        app.buttons["meeting.search.close"].click()
+        XCTAssertTrue(search.exists, "Closing page find must keep the transcript search field")
+        XCTAssertFalse(status.exists, "Closing page find clears its query and matches")
+    }
+
     func testMeetingCorrectionKeepsReviewWithPageSearchOpenAndClearsReturnOrigin() throws {
         try launch(["LOKALBOT_INITIAL_SECTION": "meetings", "LOKALBOT_SELECT_INDEX": "0",
                     "LOKALBOT_DETAIL_TAB": "review"])

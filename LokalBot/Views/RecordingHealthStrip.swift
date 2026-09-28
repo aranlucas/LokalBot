@@ -4,7 +4,7 @@ struct RecordingHealthStrip: View {
     @ObservedObject var recording: RecordingController
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 2)) { context in
+        TimelineView(.periodic(from: .now, by: 0.2)) { context in
             let health = recording.memoryHealthSnapshot(at: context.date)
             VStack(alignment: .leading, spacing: 4) {
                 ViewThatFits(in: .horizontal) {
@@ -16,6 +16,18 @@ struct RecordingHealthStrip: View {
                         Label("Mic · \(health.microphoneStatus)", systemImage: "mic")
                         Label("System · \(health.systemAudioStatus)", systemImage: "speaker.wave.2")
                     }
+                }
+                if let level = health.systemAudioLevel {
+                    HStack(spacing: 3) {
+                        ForEach(0..<20, id: \.self) { index in
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(Double(index) / 20 < level ? Brand.teal : Color.secondary.opacity(0.15))
+                                .frame(width: 5, height: 10)
+                        }
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("System audio input level")
+                    .accessibilityValue("\(Int(level * 100)) percent")
                 }
                 if let recovery = health.lastRecoveryAt {
                     Text("Last recovery \(recovery.formatted(date: .omitted, time: .standard))")

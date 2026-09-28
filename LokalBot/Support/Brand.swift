@@ -12,7 +12,7 @@ enum Brand {
     /// (`BrandContrastTests`).
     static let tealNSColor = NSColor(name: nil) { appearance in
         appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-            ? NSColor(srgbRed: 0x35 / 255, green: 0xC3 / 255, blue: 0xAE / 255, alpha: 1) // #35C3AE
+            ? NSColor(srgbRed: 0x6E / 255, green: 0xF2 / 255, blue: 0xDC / 255, alpha: 1) // #6EF2DC; includes tinted dark surfaces
             : NSColor(srgbRed: 0x07 / 255, green: 0x5F / 255, blue: 0x55 / 255, alpha: 1) // #075F55; text on grouped/tinted surfaces
     }
     static let teal = Color(nsColor: tealNSColor)

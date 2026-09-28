@@ -90,7 +90,7 @@ enum ChatCitationParser {
 
     /// Replace markers with ordered `[n]` references and return the matching,
     /// deduped citations. Repeated sources retain their first source number.
-    static func extract(_ text: String) -> (display: String, citations: [ChatCitation]) {
+    static func extract(_ text: String, linked: Bool = false) -> (display: String, citations: [ChatCitation]) {
         guard text.contains("[meeting:") || text.contains("[screen:"),
               let regex = try? NSRegularExpression(pattern: pattern) else { return (text, []) }
         let ns = text as NSString
@@ -127,7 +127,7 @@ enum ChatCitationParser {
                 citations.append(citation)
                 number = citations.count
             }
-            display += "[\(number)]"
+            display += linked ? "[\(number)](lokalbot-citation://source/\(number))" : "[\(number)]"
         }
         display += ns.substring(from: cursor)
         return (cleaned(display), citations)

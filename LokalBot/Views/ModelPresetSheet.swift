@@ -6,9 +6,10 @@ struct ModelPresetSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selected = ModelStackPreset.recommended
 
-    init(app: AppState) {
+    init(app: AppState, initialPreset: ModelStackPreset = .recommended) {
         self.app = app
         setup = app.modelSetup
+        _selected = State(initialValue: initialPreset)
     }
 
     private var target: AppSettings { selected.patch.applying(to: app.settings) }

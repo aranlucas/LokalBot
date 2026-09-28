@@ -64,7 +64,7 @@ struct DayDigestView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "briefcase")
                             .accessibilityHidden(true)
-                        Text("Work Summary")
+                        Text(mode == .today ? "Tasks" : "Work Summary")
                             .font(DayDigestTaskType.sectionTitle)
                             .accessibilityIdentifier("dayDigest.tasks")
                     }
