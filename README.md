@@ -6,99 +6,83 @@
 
 **Find what you said or saw on your Mac.**
 
-Turn meetings into searchable notes. Find the page you had open. Pick up where you left off.<br />
-Meeting notes, optional workday memory, dictation, and autocomplete—with built-in AI that runs on your Mac.
-
-Free and open source. Runs locally by default. No account required.
+Private meeting notes, workday recall, dictation, and autocomplete—with AI that runs on your Mac.<br />
+Free and open source. No account. Nothing joins your calls.
 
 [![Download LokalBot for macOS](https://img.shields.io/badge/%E2%80%82Download%20for%20macOS%E2%80%82-LokalBot.dmg-0969da?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/stevyhacker/lokalbot/releases/latest/download/LokalBot.dmg)
 
-<sub>Apple Silicon (M1 or later) · macOS 15+ · Models download during setup</sub>
+<sub>Apple Silicon (M1 or later) · macOS 15+ · or <code>brew install --cask stevyhacker/tap/lokalbot</code></sub>
 
 [![Latest release](https://img.shields.io/github/v/release/stevyhacker/lokalbot?color=1f6feb&label=release)](https://github.com/stevyhacker/lokalbot/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/stevyhacker/lokalbot/total?color=1f6feb&label=downloads)](https://github.com/stevyhacker/lokalbot/releases)
 [![License: GPLv3](https://img.shields.io/badge/license-GPLv3-2ea043)](LICENSE)
+[![MCP: read-only server](https://img.shields.io/badge/MCP-read--only%20server-8250df)](#for-developers--agents)
 
-[Get started](#get-started) · [Features](#features) · [Watch the demo](#see-it-in-action) · [Privacy](#privacy) · [Contribute](#contributing) · [Website](https://www.lokalbot.com/)
+[Features](#features) · [Compare](#how-it-compares) · [Privacy](#privacy) · [Get started](#get-started) · [Models](#local-ai-your-choice) · [Agents & CLI](#for-developers--agents) · [Website](https://www.lokalbot.com/)
 
 </div>
 
-<div align="center">
-<a href="Assets/screenshots/quick-recall.png"><img src="Assets/screenshots/quick-recall.png" alt="Quick Recall finding a Redis discussion across meeting transcripts and saved Slack and browser context" width="660" /></a>
-<br />
-<sub>One search across your meetings and the screen text you choose to save. Screenshot uses fictional demo data.</sub>
-</div>
-
-<a id="download"></a>
-
-## Get started
-
-You'll need an **Apple Silicon Mac running macOS 15 or later** and space for your selected models. **Settings → Models** shows download sizes and readiness; storage and memory needs depend on the models you choose.
-
-1. **Install the app.** [Download LokalBot.dmg](https://github.com/stevyhacker/lokalbot/releases/latest/download/LokalBot.dmg), drag LokalBot to Applications, and open it.
-2. **Choose what to capture.** Review recording settings: automatic detection, ask-first, or manual recording. Day tracking starts with activity only; saving screen text or screenshots is a separate opt-in. Grant only the permissions for the features you enable.
-3. **Let the models download.** Built-in transcription, search, summaries, and writing can then work offline. No model server to set up and no API key to bring.
-
-**Try this first:** make a short test recording, let it transcribe, then search for a phrase you said and open the matching passage. Add screen memory or writing tools when you're ready.
-
-Let meeting participants know before recording and get their consent.
-
-[Release notes](https://github.com/stevyhacker/lokalbot/releases) · [Setup help](SUPPORT.md) · [Homebrew options](Distribution/homebrew/README.md)
-
-## Features
-
-| When you need to… | LokalBot helps you… |
-| --- | --- |
-| **Remember what was agreed** | Record microphone and meeting-app audio without a bot joining. Get local transcripts, recaps, decisions, and action items, with citations back to the discussion. |
-| **Find something you saw** | Search meeting transcripts and optional saved screen text by keywords or meaning. Open the matching passage or retained screen moment instead of hunting through apps. |
-| **Pick up where you left off** | Review your day in Today and Timeline. Find open meeting actions, correct them, mark them done, and trace them to their source. |
-| **Talk instead of typing** | Enable Dictation, hold **⌥ Space**, speak, and release to insert text at your cursor. Transcription runs on your Mac. |
-| **Finish the sentence** | Enable local Autocomplete for suggestions as you type. Press **Tab** to accept, or keep typing. Try the in-app preview before enabling it in other apps. |
-| **Follow through** | Export notes and prepare local follow-up drafts, daily briefs, or weekly work logs. Save them to a folder you choose, then review and send them yourself. |
-
-**Ask, then check the source.** Ask a question about your meeting library and follow the answer's citations back to the transcript or audio. Generated notes are a starting point—not a substitute for the original discussion.
-
-## See it in action
-
-**Watch the 43-second demo:** find a database decision, return to the discussion, and recover the follow-up.
+<a id="see-it-in-action"></a>
 
 https://github.com/user-attachments/assets/39cba80c-a0d5-4cf3-9019-b081b287de4f
 
-<sub>Recorded in the real app with a prepared fictional meeting. The demo shows search and source navigation, not live recording or transcription.</sub>
+<div align="center"><sub>43 seconds in the real app: find a database decision, return to the discussion, and recover the follow-up. Fictional meeting data.</sub></div>
 
-**From a call to a clear recap—with the evidence a click away.**
+## Features
+
+### Remember what was agreed
+
+Record microphone and meeting-app audio without a bot joining. Get local transcripts, recaps, decisions, and action items, with citations back to the discussion.
 
 <div align="center"><a href="Assets/screenshots/meetings-summary.png"><img src="Assets/screenshots/meetings-summary.png" alt="Meeting workspace with a recap, decisions, action items, source citations, and audio playback" width="920" /></a></div>
 
-<details>
-<summary><strong>More screenshots: Today, Timeline, and writing tools</strong></summary>
+### Find something you saw
 
-### Start with what needs your attention
+One search across your meeting transcripts and the screen text you choose to save, by keyword or by meaning. Open the matching passage or retained screen moment instead of hunting through apps.
 
-Today brings your day digest and outstanding meeting actions together.
+<div align="center"><a href="Assets/screenshots/quick-recall.png"><img src="Assets/screenshots/quick-recall.png" alt="Quick Recall finding a Redis discussion across meeting transcripts and saved Slack and browser context" width="560" /></a></div>
 
-<div align="center"><a href="Assets/screenshots/today.png"><img src="Assets/screenshots/today.png" alt="Today showing the day digest and outstanding meeting actions" width="920" /></a></div>
+### Pick up where you left off
 
-### Retrace your day
+Today brings your day digest and open meeting actions together. Timeline groups captured activity into work sessions, with the underlying context available to inspect. Correct actions, mark them done, and trace each one to its source.
 
-Timeline groups captured activity into work sessions, with the underlying context available to inspect.
+<table>
+  <tr>
+    <td width="50%"><a href="Assets/screenshots/today.png"><img src="Assets/screenshots/today.png" alt="Today showing the day digest and outstanding meeting actions" width="400" /></a></td>
+    <td width="50%"><a href="Assets/screenshots/timeline.png"><img src="Assets/screenshots/timeline.png" alt="Timeline showing work sessions, meetings, and access to captured context" width="400" /></a></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>Today</b>: your digest and open actions</sub></td>
+    <td align="center"><sub><b>Timeline</b>: work sessions and their context</sub></td>
+  </tr>
+</table>
 
-<div align="center"><a href="Assets/screenshots/timeline.png"><img src="Assets/screenshots/timeline.png" alt="Timeline showing work sessions, meetings, and access to captured context" width="920" /></a></div>
+### Talk instead of typing. Finish the sentence.
 
-### Try a suggestion before turning it on everywhere
+Turn on Dictation in **Settings → Writing**, then hold **⌥ Space**, speak, and release to insert text at your cursor in any app. Turn on local Autocomplete in the same place for suggestions as you type: press **Tab** to accept, or keep typing. Transcription and suggestions run on your Mac, and you can rehearse Autocomplete in the app before using it everywhere.
 
-Preview Autocomplete and rehearse accepting a suggestion inside the app.
+<div align="center"><a href="Assets/screenshots/cotyping.png"><img src="Assets/screenshots/cotyping.png" alt="Settings → Writing showing Autocomplete readiness and a local suggestion preview you can rehearse" width="920" /></a></div>
 
-<div align="center"><a href="Assets/screenshots/cotyping.png"><img src="Assets/screenshots/cotyping.png" alt="Autocomplete settings with a local suggestion preview and acceptance rehearsal" width="920" /></a></div>
+### And more
 
-### Choose the models behind each feature
+| Ask, then check the source | Follow through | Bring your own agent |
+| --- | --- | --- |
+| Ask about your meeting library and follow the answer's citations back to the transcript or audio. Generated notes are a starting point, not a substitute for the discussion. | Export notes, or prepare local follow-up drafts, daily briefs, and weekly work logs in a folder you choose. You review and send them yourself. | Give Claude Code or any MCP client read-only access to your meeting library through the bundled `lokalbot-cli`. It stays off until you enable it. |
 
-Manage downloads, active model roles, and optional connections in one place.
+<sub>Screenshots are unedited captures of the native app with fictional demo data. They show the interface, not a live inference benchmark. Click an image for full resolution; see the <a href="Assets/screenshots/README.md">capture notes</a> for provenance.</sub>
 
-<div align="center"><a href="Assets/screenshots/models.png"><img src="Assets/screenshots/models.png" alt="Models settings showing active roles, download readiness, and connections" width="920" /></a></div>
+## How it compares
 
-</details>
+| Coming from… | What's different with LokalBot |
+| --- | --- |
+| [Granola](https://www.lokalbot.com/lokalbot-vs-granola) | The same bot-free capture, but transcription and summaries run on your Mac by default. No account and no subscription. |
+| [Otter](https://www.lokalbot.com/lokalbot-vs-otter) · [Fireflies](https://www.lokalbot.com/lokalbot-vs-fireflies) | Nothing joins your call, audio stays on your Mac, and there are no minute caps. |
+| [Hyprnote (anarlog)](https://www.lokalbot.com/lokalbot-vs-hyprnote) | Local AI ships built in, with no separate model runner or API keys to set up. Dictation, a day timeline, and autocomplete come in the same app. |
+| [Screenpipe](https://www.lokalbot.com/lokalbot-vs-screenpipe) | Starts with app and window activity. Screen text and screenshots are opt-in and deleted after 14 days by default. GPLv3 rather than source-available. |
+| [Rewind](https://www.lokalbot.com/lokalbot-vs-rewind) | Rewind's Mac app is discontinued. LokalBot's timeline is open source and actively developed. |
+| [MacWhisper](https://www.lokalbot.com/lokalbot-vs-macwhisper) · [Superwhisper](https://www.lokalbot.com/lokalbot-vs-superwhisper) | Dictation comes alongside meeting notes, recall, and autocomplete, for free. For transcribing files you already have, MacWhisper is the better tool. |
 
-<sub>Screenshots use synthetic demo data captured from v0.8.2. They show the interface, not a live inference benchmark. Click an image for full resolution; see the <a href="Assets/screenshots/README.md">capture notes</a> for provenance.</sub>
+<sub>Competitor details were last verified on September 24, 2026; each link has the full comparison and sources. Trademarks belong to their owners.</sub>
 
 <a id="privacy--verify-it"></a>
 
@@ -108,6 +92,20 @@ Manage downloads, active model roles, and optional connections in one place.
 
 Recording and built-in AI processing happen on your Mac. LokalBot has no account system, analytics service, or telemetry backend. Your library lives in local files and SQLite under your macOS account.
 
+```mermaid
+flowchart LR
+  subgraph mac [Your Mac]
+    direction LR
+    audio["Mic + meeting-app audio"] --> asr["On-device<br/>transcription"]
+    asr --> llm["Local summaries<br/>built-in llama.cpp"]
+    screen["Opt-in screen text"] --> db[("Local library<br/>full-text + vector search")]
+    asr --> db
+    llm --> db
+    db --> use["Search · Ask · Today · Timeline"]
+    db -.->|read-only, off by default| cli["lokalbot-cli · MCP"]
+  end
+```
+
 - **You choose what to retain.** Activity-only tracking is the default. Visible screen text and encrypted screenshots are opt-in. Pause capture or exclude apps and domains at any time. Detection has limits; exclude anything you never want retained.
 - **You control retention.** Captured screen text and screenshots expire after 14 days by default. Adjust the window or explicitly save a moment to keep it until you unsave or delete it.
 - **Network access has boundaries.** Models, updates, and optional agent runtimes need downloads. Automatic update checks can be disabled. A remote model server receives context only after you approve its origin; optional Agent Mode and external CLI/MCP clients have separate permissions and data handling.
@@ -115,6 +113,22 @@ Recording and built-in AI processing happen on your Mac. LokalBot has no account
 To check the local processing path, download the models, select the built-in backend, disable automatic update checks, and observe network traffic while recording, transcribing, and summarizing. Approved agent commands and external clients are separate paths.
 
 [Read the full privacy policy](PRIVACY.md) · [Report a security issue privately](SECURITY.md)
+
+<a id="download"></a>
+
+## Get started
+
+You'll need an **Apple Silicon Mac running macOS 15 or later** and space for your selected models. **Settings → Models** shows download sizes and readiness; storage and memory needs depend on the models you choose.
+
+1. **Install the app.** [Download LokalBot.dmg](https://github.com/stevyhacker/lokalbot/releases/latest/download/LokalBot.dmg), drag LokalBot to Applications, and open it. Or run `brew install --cask stevyhacker/tap/lokalbot`.
+2. **Choose what to capture.** Review recording settings: automatic detection, ask-first, or manual recording. Day tracking starts with activity only; saving screen text or screenshots is a separate opt-in. Grant only the permissions for the features you enable.
+3. **Let the models download.** Built-in transcription, search, summaries, and writing can then work offline. No model server to set up and no API key to bring.
+
+**Try this first:** make a short test recording, let it transcribe, then search for a phrase you said and open the matching passage. Add screen memory or writing tools when you're ready.
+
+Let meeting participants know before recording and get their consent.
+
+[Release notes](https://github.com/stevyhacker/lokalbot/releases) · [Setup help](SUPPORT.md) · [Homebrew options](Distribution/homebrew/README.md)
 
 ## FAQ
 
@@ -143,34 +157,39 @@ Yes. Export meeting content or enable Markdown, Obsidian, or Logseq memory expor
 
 Start with the built-in models, then change them in **Settings → Models**. LokalBot supports its bundled llama.cpp runtime, Ollama, OpenAI-compatible servers, and Apple Intelligence on supported Macs running macOS 26 or later. Remote servers require approval before receiving context.
 
-<details>
-<summary><strong>Explore model options and benchmarks</strong></summary>
+Different jobs use different models. These are the defaults on a fresh install, about 6.8 GB of model files if you use every role. They are not a RAM requirement:
 
-Different jobs can use different models. These are example local choices, not a mandatory download stack or a RAM requirement:
-
-| Role | Example model | Format | Approx. model files |
+| Role | Default model | Format | Approx. model files |
 | --- | --- | --- | ---: |
-| Transcription | IBM Granite Speech 4.1 2B | `Q4_K_M` + F16 projector | 2.30 GB |
+| Transcription | Qwen3-ASR 1.7B | MLX 8-bit | 2.47 GB |
 | Summaries and chat | Qwen3.5 4B | `Q4_K_M` | 2.74 GB |
 | Autocomplete | LFM2.5 1.2B Instruct | `Q4_K_M` | 0.73 GB |
 | Semantic search | Harrier OSS v1 0.6B | `Q8_0` | 0.64 GB |
-| Speaker diarization | pyannote-community-1 via FluidAudio | Core ML | ~0.10 GB |
+| Speaker diarization | Nemotron 3 (preview) via FluidAudio | Core ML | ~0.20 GB |
 
-Transcription choices also include Qwen3-ASR, Parakeet, and WhisperKit. Model choices can vary by release; Settings shows the active selections and available presets. Speed and memory use depend on your Mac, model, context length, and other workloads.
+Qwen3-ASR covers 52 languages and dialects. Transcription alternatives include Parakeet, Granite Speech, Whisper large-v3 turbo, SenseVoice for Chinese, Japanese, and Korean, and GigaAM for Russian; Pyannote Community-1 remains available for diarization. Model choices can vary by release; Settings shows the active selections and available presets. Speed and memory use depend on your Mac, model, context length, and other workloads.
 
-[Model catalog](LokalBot/Engines/ModelCatalog.swift) · [Search implementation](LokalBot/Services/EmbeddingIndex.swift) · [Model and runtime details](DEVELOPMENT.md#built-in-llm-runtime--llamacpp--model-catalog) · [Project benchmarks](https://huggingface.co/spaces/stevyhacker/lokalbot-benchmarks)
+[Project benchmarks](https://huggingface.co/spaces/stevyhacker/lokalbot-benchmarks) · [Model catalog](LokalBot/Engines/ModelCatalog.swift) · [Search implementation](LokalBot/Services/EmbeddingIndex.swift) · [Model and runtime details](DEVELOPMENT.md#built-in-llm-runtime--llamacpp--model-catalog)
 
-</details>
+## For developers & agents
 
-<a id="contributing--security"></a>
+The app bundles **`lokalbot-cli`**, a read-only interface to your meeting library and a stdio **Model Context Protocol (MCP)** server. Access is off by default. Enable meeting-library access in **Settings → Privacy & Data**, then install the CLI from **Settings → Advanced → Agent CLI**.
 
-## Contributing
+<div align="center"><img src="Assets/cli-demo.svg" alt="Animated terminal session: lokalbot-cli lists meetings as a table, searches transcripts for redis and returns JSON, then prints the latest meeting summary" width="720" /></div>
 
-Bug reports, documentation improvements, and code contributions are welcome. [Report an issue](https://github.com/stevyhacker/lokalbot/issues/new/choose) with steps to reproduce, expected and actual behavior, app/macOS versions, Mac chip/RAM, and selected models. Keep private recordings and transcripts out of reports.
+```bash
+lokalbot-cli search "database decision"
+lokalbot-cli get latest --include metadata,summary
+lokalbot-cli mcp
+```
 
-For larger changes, [open an issue](https://github.com/stevyhacker/lokalbot/issues) to discuss the approach first. Follow the [working agreements](AGENTS.md) and [development guide](DEVELOPMENT.md), keep pull requests focused, and record your checks in the [PR template](.github/PULL_REQUEST_TEMPLATE.md). Include screenshots for UI changes; run UI tests on hosted CI or a remote runner.
+Without a PATH installation, use `/Applications/LokalBot.app/Contents/Helpers/lokalbot-cli`.
 
-[Setup help](SUPPORT.md) · [Report a security issue privately](SECURITY.md)
+Screen-memory MCP tools require separate permission scoped to today, the last seven days, or all retained history. They return text and metadata, not decrypted screenshots. External clients may send results to their own model providers.
+
+The app also has an optional **Agent Mode** for working with reviewed context. File and shell actions follow its approval settings; it is separate from the read-only CLI/MCP interface.
+
+[CLI examples](.agents/skills/lokalbot-cli/SKILL.md) · [Claude Code plugin](Distribution/claude-plugin/README.md) · [MCP architecture](DEVELOPMENT.md#agent-cli--mcp)
 
 ## Build from source
 
@@ -204,33 +223,23 @@ LokalBot/
 ├── Dictation/   # Voice typing
 └── Agent/       # Optional Agent Mode and approval flow
 CLI/             # Command-line interface and MCP entry points
-LokalBotTests/    # Unit tests
+LokalBotTests/   # Unit tests
 Scripts/         # Build, verification, capture, and release tooling
 project.yml      # XcodeGen source of truth
 ```
 
 </details>
 
-## For developers & agents
+<a id="contributing--security"></a>
 
-The app bundles **`lokalbot-cli`**, a read-only interface to your meeting library and a stdio **Model Context Protocol (MCP)** server. Access is off by default. Enable meeting-library access in **Settings → Privacy**, then install the CLI from **Settings → Advanced → Agent CLI**.
+## Contributing
 
-```bash
-lokalbot-cli search "database decision"
-lokalbot-cli get latest --include metadata,summary
-lokalbot-cli mcp
-```
+Bug reports, documentation improvements, and code contributions are welcome. [Report an issue](https://github.com/stevyhacker/lokalbot/issues/new/choose) with steps to reproduce, expected and actual behavior, app/macOS versions, Mac chip/RAM, and selected models. Keep private recordings and transcripts out of reports.
 
-Without a PATH installation, use `/Applications/LokalBot.app/Contents/Helpers/lokalbot-cli`.
-
-Screen-memory MCP tools require separate permission scoped to today, the last seven days, or all retained history. They return text and metadata, not decrypted screenshots. External clients may send results to their own model providers.
-
-The app also has an optional **Agent Mode** for working with reviewed context. File and shell actions follow its approval settings; it is separate from the read-only CLI/MCP interface.
-
-[CLI examples](.agents/skills/lokalbot-cli/SKILL.md) · [Claude Code plugin](Distribution/claude-plugin/README.md) · [MCP architecture](DEVELOPMENT.md#agent-cli--mcp)
+For larger changes, [open an issue](https://github.com/stevyhacker/lokalbot/issues) to discuss the approach first. Follow the [working agreements](AGENTS.md) and [development guide](DEVELOPMENT.md), keep pull requests focused, and record your checks in the [PR template](.github/PULL_REQUEST_TEMPLATE.md). Include screenshots for UI changes; run UI tests on hosted CI or a remote runner.
 
 ## License & acknowledgements
 
 LokalBot is free software under [GPLv3](LICENSE). Third-party components and models retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
 
-Built with [llama.cpp](https://github.com/ggml-org/llama.cpp), [Qwen3-ASR](https://huggingface.co/Qwen), [IBM Granite Speech](https://huggingface.co/ibm-granite), [Parakeet](https://huggingface.co/nvidia), [WhisperKit](https://github.com/argmaxinc/WhisperKit), [FluidAudio](https://github.com/FluidInference/FluidAudio), [Sparkle](https://github.com/sparkle-project/Sparkle), and [XcodeGen](https://github.com/yonaskolb/XcodeGen). The Autocomplete engine shares its loop with [Cotabby](https://cotabby.app).
+Built with [llama.cpp](https://github.com/ggml-org/llama.cpp), [MLX Swift](https://github.com/ml-explore/mlx-swift), [speech-swift](https://github.com/soniqo/speech-swift), [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx), [WhisperKit](https://github.com/argmaxinc/WhisperKit), [FluidAudio](https://github.com/FluidInference/FluidAudio), [Sparkle](https://github.com/sparkle-project/Sparkle), and [XcodeGen](https://github.com/yonaskolb/XcodeGen), with models including [Qwen3-ASR](https://huggingface.co/Qwen), [IBM Granite Speech](https://huggingface.co/ibm-granite), [Parakeet](https://huggingface.co/nvidia), and [LFM2.5](https://huggingface.co/LiquidAI). The Autocomplete engine shares its loop with [Cotabby](https://cotabby.app).
