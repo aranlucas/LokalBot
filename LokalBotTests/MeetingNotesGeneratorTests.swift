@@ -129,6 +129,186 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertEqual(result.outcomes.userActionItems.count, 1)
     }
 
+    func testOwnershipRepairReplacesTheUnresolvedTaskAndPersistsTheNewAnchor() async throws {
+        let obligation = "I think I still have to review the change."
+        var transcript = transcript
+        transcript.segments = [
+            .init(start: 0, end: 5, speaker: "me", text: "I have been doing reviews."),
+            .init(start: 5, end: 10, speaker: "me", text: obligation),
+        ]
+        var original = action(owner: "unknown")
+        original["text"] = "Review the remaining change"
+        original["basis"] = "unclear"
+        original["context"] = ["s2"]
+        var repaired = original
+        repaired["source"] = "s2"
+        repaired["context"] = ["s1"]
+        repaired["quote"] = obligation
+        let script = Script([.text(try response(actions: [original])), .text(try response(actions: [repaired]))])
+        let output = try folder()
+        let result = try await generate(script, transcript: transcript, folder: output)
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 2)
+        XCTAssertTrue(calls[1].prompt.contains("missing_ownership_evidence"))
+        XCTAssertTrue(calls[1].prompt.contains("Review the remaining change"))
+        XCTAssertFalse(calls[1].prompt.contains(#""reason":"missing_user_commitment""#))
+        XCTAssertEqual(result.outcomes.actionItems.count, 1)
+        let action = try XCTUnwrap(result.outcomes.userActionItems.first)
+        XCTAssertEqual(action.attribution?.quote, obligation)
+        XCTAssertEqual(action.citations.first?.segmentID, transcript.segmentID(at: 1))
+        let saved = try JSONDecoder().decode(MeetingOutcomes.self,
+            from: Data(contentsOf: output.appendingPathComponent("outcomes.partial.json")))
+        XCTAssertEqual(saved.actionItems.count, 1)
+        XCTAssertEqual(saved.actionItems[0].citations.first?.segmentID, transcript.segmentID(at: 1))
+        XCTAssertTrue(saved.actionItems[0].isForUser)
+        let evidence = MeetingNotesEvidence(transcript: transcript)
+        let previous = evidence.validate(try response(actions: [original]), units: evidence.units, template: .meeting,
+            meetingID: UUID(), maximumNotes: 12, maximumActions: 10).outcomes
+        let oldAction = try XCTUnwrap(previous.actionItems.first)
+        let edit = MeetingOutcomeState.ActionState(status: .done, ownerOverride: "Reviewed owner", dueOverride: "Monday",
+            textCorrection: "Review the release change", userEdited: true)
+        let state = MeetingOutcomeState(actions: [oldAction.id: edit])
+        let reconciled = MeetingOutcomeStore.reconcileState(state, from: previous, to: result.outcomes)
+        XCTAssertEqual(reconciled.actions[action.id], edit)
+        XCTAssertNil(reconciled.unmatchedActions, "Changing owner and citation order must preserve manual edits")
+    }
+
+    func testMixedActorRepairCanUseTheActualOtherSpeakersCommitment() async throws {
+        var transcript = transcript
+        transcript.segments[0].text = "I'll prepare the policy, and you will send the measurements."
+        transcript.segments[1].text = "I will send the measurements."
+        var original = action(owner: "unknown")
+        original["text"] = "Send the measurements"
+        original["quote"] = "I'll prepare the policy"
+        var repaired = original
+        repaired["source"] = "s2"
+        repaired["quote"] = transcript.segments[1].text
+        let script = Script([.text(try response(actions: [original])), .text(try response(actions: [repaired]))])
+        let result = try await generate(script, transcript: transcript)
+        XCTAssertEqual(result.outcomes.actionItems.count, 1)
+        XCTAssertTrue(result.outcomes.userActionItems.isEmpty)
+        XCTAssertEqual(result.outcomes.actionItems[0].attribution?.resolution, .other)
+        XCTAssertEqual(result.outcomes.actionItems[0].citations.first?.segmentID, transcript.segmentID(at: 1))
+    }
+
+    func testOwnershipRepairKeepsItsReplacementIdentityAcrossRepeatedExtractionPages() async throws {
+        var transcript = transcript
+        transcript.segments[0].text = "I have been doing reviews."
+        transcript.segments[1] = .init(start: 5, end: 10, speaker: "me", text: "I still have to review the change.")
+        var original = action(owner: "unknown")
+        original["text"] = "Review the change"
+        original["basis"] = "unclear"
+        original["context"] = ["s2"]
+        var repeated = original
+        repeated["context"] = ["s2", "s3"]
+        var repaired = original
+        repaired["source"] = "s2"
+        repaired["context"] = ["s1"]
+        repaired["quote"] = transcript.segments[1].text
+        let script = Script([
+            .text(try response(actions: [original], more: true)),
+            .text(try response(actions: [repeated])),
+            .text(try response(actions: [repaired])),
+        ])
+        let result = try await generate(script, transcript: transcript)
+        XCTAssertEqual(result.outcomes.actionItems.count, 1)
+        XCTAssertEqual(result.outcomes.userActionItems.first?.text, "Review the change")
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 3)
+    }
+
+    func testMissingCommitmentRepairsTheNearbyExistingTaskWithoutExtractingADuplicate() async throws {
+        var transcript = longTranscript()
+        transcript.segments[0].text = "By the end of the day."
+        transcript.segments[2] = .init(start: 10, end: 15, speaker: "me", text: "I still have to review the change.",
+            attribution: .init(source: .microphone, identity: .user, method: .confirmation))
+        var original = action("s1", owner: "unknown")
+        original["text"] = "Review the remaining change today"
+        original["context"] = ["s20"]
+        var unclear = original
+        unclear["context"] = ["s2"]
+        unclear["basis"] = "request"
+        unclear["quote"] = transcript.segments[0].text
+        var repaired = original
+        repaired["source"] = "s3"
+        repaired["context"] = ["s1"]
+        repaired["quote"] = transcript.segments[2].text
+        let script = Script([
+            .text(try response(notes: [note("s1", "The deadline is the end of the day.")], actions: [original])),
+            .text(try response(actions: [unclear])),
+            .text(try response(actions: [repaired])),
+        ])
+        let result = try await generate(script, transcript: transcript)
+        XCTAssertEqual(result.outcomes.actionItems.count, 1)
+        XCTAssertEqual(result.outcomes.userActionItems.first?.text, "Review the remaining change today")
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 3)
+        XCTAssertFalse(calls[1].prompt.contains(#""reason":"missing_user_commitment""#))
+        XCTAssertTrue(calls[2].prompt.contains("missing_ownership_evidence"))
+        XCTAssertFalse(calls[2].prompt.contains("Previously accepted records:"), "A repair must be allowed to repeat the task it replaces")
+    }
+
+    func testOwnershipRepairsBatchTasksButKeepEachOriginalNeighborhood() async throws {
+        var transcript = longTranscript()
+        transcript.segments[0].text = "I need to review the draft."
+        transcript.segments[19].text = "I must send the measurements."
+        var first = action("s1", owner: "source")
+        first["text"] = "Review the draft"
+        first["quote"] = "Invented quote"
+        var second = action("s20", owner: "source")
+        second["text"] = "Send the measurements"
+        second["quote"] = "Invented quote"
+        var fixedFirst = first
+        fixedFirst["quote"] = transcript.segments[0].text
+        var fixedSecond = second
+        fixedSecond["quote"] = transcript.segments[19].text
+        var outside = fixedFirst
+        outside["source"] = "s20"
+        outside["quote"] = transcript.segments[19].text
+        let script = Script([
+            .text(try response(actions: [first, second])),
+            .text(try response(actions: [outside, fixedSecond])),
+            .text(try response(actions: [fixedFirst])),
+        ])
+        let result = try await generate(script, transcript: transcript)
+        XCTAssertEqual(result.outcomes.actionItems.count, 2)
+        let reviewed = try XCTUnwrap(result.outcomes.actionItems.first { $0.text == "Review the draft" })
+        XCTAssertEqual(reviewed.citations.first?.segmentID, transcript.segmentID(at: 0))
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 3)
+        XCTAssertTrue(calls[1].prompt.contains("Review the draft"))
+        XCTAssertTrue(calls[1].prompt.contains("Send the measurements"))
+    }
+
+    func testRepeatedOwnershipRepairCannotSubstituteAnotherTaskOrClaimCompletion() async throws {
+        var transcript = transcript
+        transcript.segments[0].text = "I'll prepare the policy, and you will send the measurements."
+        transcript.segments[1].text = "I will prepare the policy."
+        var original = action(owner: "unknown")
+        original["text"] = "Send the measurements"
+        original["quote"] = "I'll prepare the policy"
+        var unrelated = action("s2", owner: "source")
+        unrelated["text"] = "Prepare the policy"
+        unrelated["quote"] = transcript.segments[1].text
+        let script = Script([
+            .text(try response(actions: [original])),
+            .text(try response(actions: [unrelated])),
+            .text(try response(actions: [original])),
+        ])
+        let output = try folder()
+        do {
+            _ = try await generate(script, transcript: transcript, folder: output)
+            XCTFail("Repeated ambiguous evidence must remain partial")
+        } catch is MeetingNotesGenerator.Incomplete {}
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 3, "Only two targeted repairs are allowed per part")
+        let saved = try JSONDecoder().decode(MeetingOutcomes.self,
+            from: Data(contentsOf: output.appendingPathComponent("outcomes.partial.json")))
+        XCTAssertEqual(saved.actionItems.map(\.text), ["Send the measurements"])
+        XCTAssertEqual(saved.actionItems[0].attribution?.rejectionReason, .ambiguousQuote)
+        XCTAssertTrue(saved.userActionItems.isEmpty)
+    }
+
     func testRepairFailureSavesEarlierValidRecordsWithoutReplacingFinalArtifacts() async throws {
         let output = try folder()
         try Data("Previous complete summary".utf8).write(to: output.appendingPathComponent("summary.md"))
@@ -441,6 +621,11 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         let noteProperties = try XCTUnwrap((notes["items"] as? [String: Any])?["properties"] as? [String: Any])
         XCTAssertEqual((noteProperties["source"] as? [String: Any])?["enum"] as? [String], ["s1"])
         XCTAssertEqual((noteProperties["text"] as? [String: Any])?["maxLength"] as? Int, 280)
+        let actions = try XCTUnwrap(properties["actions"] as? [String: Any])
+        let item = try XCTUnwrap(actions["items"] as? [String: Any])
+        let actionProperties = try XCTUnwrap(item["properties"] as? [String: Any])
+        XCTAssertEqual((actionProperties["quote"] as? [String: Any])?["maxLength"] as? Int, 1_000)
+        XCTAssertTrue((item["required"] as? [String] ?? []).contains("quote"))
     }
 
     func testProseCannotOverrideDerivedSpeakerWithAModelID() throws {
@@ -618,6 +803,20 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         do { _ = try await generate(fresh, transcript: changed, folder: output, contextTokens: 8_192); XCTFail("expected new request") } catch {}
         let observed7 = await fresh.recorded().count
         XCTAssertEqual(observed7, 1)
+    }
+
+    func testOldOwnershipPolicyCheckpointIsNotReused() async throws {
+        let output = try folder()
+        _ = try await generate(Script([.text(try response(actions: [action()]))]), folder: output)
+        let url = MeetingNotesGenerator.checkpointURL(in: output)
+        var checkpoint = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        XCTAssertEqual(checkpoint["version"] as? Int, 2)
+        checkpoint["version"] = 1
+        try JSONSerialization.data(withJSONObject: checkpoint).write(to: url)
+        let fresh = Script([.text(try response(actions: [action()]))])
+        _ = try await generate(fresh, folder: output)
+        let calls = await fresh.recorded()
+        XCTAssertEqual(calls.count, 1, "Accepted ownership under the old policy must be extracted again")
     }
 
     func testCloudChunkingCoversLongMeetingWithoutTreatingBytesAsTargetTokens() async throws {

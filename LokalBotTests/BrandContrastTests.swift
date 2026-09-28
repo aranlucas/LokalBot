@@ -29,6 +29,26 @@ final class BrandContrastTests: XCTestCase {
         }
     }
 
+    func testSemanticTextMeetsAAOnStatusSurfaces() {
+        let roles: [(String, Color, Color)] = [
+            ("accent", LBTokens.Palette.accentText, LBTokens.Palette.accentText),
+            ("attention", LBTokens.Palette.attentionText, LBTokens.Palette.attention),
+            ("success", LBTokens.Palette.successText, LBTokens.Palette.success),
+            ("recording", LBTokens.Palette.recordingText, LBTokens.Palette.recording),
+        ]
+        for (appearance, scheme) in schemes {
+            for (role, text, tint) in roles {
+                let foreground = resolve(NSColor(text), in: appearance)
+                let fill = resolve(NSColor(tint), in: appearance)
+                for (label, surface) in surfaces(for: scheme) {
+                    let statusSurface = blend(fill, over: surface, alpha: LBTokens.Palette.statusFillOpacity)
+                    XCTAssertGreaterThanOrEqual(contrast(foreground, statusSurface), 4.5,
+                                               "\(role) status on \(label) (\(scheme))")
+                }
+            }
+        }
+    }
+
     func testSettingsAndAgentUseTheSharedAccent() {
         for (appearance, scheme) in schemes {
             let brand = resolve(Brand.tealNSColor, in: appearance)
@@ -43,9 +63,14 @@ final class BrandContrastTests: XCTestCase {
         let appearance: NSAppearance.Name = scheme == .dark ? .darkAqua : .aqua
         var result: [(String, NSColor)] = []
         let groupFill = resolve(NSColor(LBTokens.Palette.groupFill), in: appearance)
+        // Native colors differ by macOS release. Keep a conservative reference
+        // for macOS 15's window gray even when tests run on a newer system.
+        let reference = scheme == .dark ? 0.20 : 0.92
+        let referenceWindow = NSColor(srgbRed: reference, green: reference, blue: reference, alpha: 1)
         for (name, color) in [("window", NSColor.windowBackgroundColor),
                               ("content", NSColor.textBackgroundColor),
-                              ("control", NSColor.controlBackgroundColor)] {
+                              ("control", NSColor.controlBackgroundColor),
+                              ("reference window", referenceWindow)] {
             let surface = resolve(color, in: appearance)
             result.append((name, surface))
             result.append(("grouped \(name)", blend(groupFill, over: surface,

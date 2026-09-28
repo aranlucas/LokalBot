@@ -272,6 +272,8 @@ final class RecordingController: ObservableObject {
     }
     private var systemAudioTarget: SystemAudioTarget?
     private var recordingHealthWatchdog: AnyCancellable?
+    private let healthSampler = RecordingHealthSampler()
+    private var lastWatchdogCheckAt: Date?
     private var lastMicRestartAt: Date?
     private var didWarnAboutMicCaptureStall = false
     private var lastSystemAudioReattachAt: Date?
@@ -368,9 +370,16 @@ final class RecordingController: ObservableObject {
                 systemAudioDroppedBuffers: 0,
                 lastRecoveryAt: latestRecoveryDate)
         }
+        guard let sample = healthSampler.latest else {
+            return RecordingMemoryHealthSnapshot(
+                isRecording: true, microphoneStatus: "Waiting for audio", microphoneLastWriteAt: nil,
+                microphoneDroppedBuffers: 0,
+                systemAudioStatus: systemAudioTarget == nil ? "Not attached" : "Waiting for audio",
+                systemAudioLastWriteAt: nil, systemAudioDroppedBuffers: 0, lastRecoveryAt: latestRecoveryDate)
+        }
         return RecordingMemoryHealthSnapshot.recording(
-            microphone: micRecorder.captureHealth(),
-            system: systemRecorder.captureHealth(),
+            microphone: sample.microphone,
+            system: sample.system,
             hasSystemTarget: systemAudioTarget != nil,
             lastRecoveryAt: latestRecoveryDate,
             at: current)
@@ -1001,24 +1010,38 @@ final class RecordingController: ObservableObject {
     // MARK: - Capture-health watchdog
 
     private func startRecordingHealthWatchdog() {
-        recordingHealthWatchdog = Timer.publish(
-            every: Self.recordingHealthWatchdogInterval,
-            on: .main,
-            in: .common)
+        recordingHealthWatchdog = Timer.publish(every: 0.2, on: .main, in: .common)
             .autoconnect()
-            .sink { [weak self] _ in
-                self?.checkMicCapture()
-                self?.checkSystemAudioCapture()
-                self?.updateCaptureWarnings()
-            }
+            .sink { [weak self] _ in self?.sampleCaptureHealth() }
+        sampleCaptureHealth()
     }
 
+    private func sampleCaptureHealth() {
+        guard isRecording, let meetingID = currentMeeting?.id else { return }
+        healthSampler.request(
+            microphone: { [micRecorder] in await micRecorder.captureHealthInBackground() },
+            system: { [systemRecorder] in await systemRecorder.captureHealthInBackground() }
+        ) { [weak self] sample in
+            guard let self, self.isRecording, self.currentMeeting?.id == meetingID else { return }
+            let time = Date()
+            guard self.lastWatchdogCheckAt.map({ time.timeIntervalSince($0) >= Self.recordingHealthWatchdogInterval }) != false else { return }
+            self.lastWatchdogCheckAt = time
+            self.checkMicCapture(health: sample.microphone)
+            self.checkSystemAudioCapture(health: sample.system)
+            self.updateCaptureWarnings(mic: sample.microphone, system: sample.system)
+        }
+    }
+
+    /// Lifecycle boundaries need authoritative writes, especially the final
+    /// report at Stop. Periodic sampling uses the asynchronous path.
     private func updateCaptureWarnings() {
+        updateCaptureWarnings(mic: micRecorder.captureHealth(), system: systemRecorder.captureHealth())
+    }
+
+    private func updateCaptureWarnings(mic: MicRecorder.CaptureHealth, system: SystemAudioRecorder.CaptureHealth) {
         guard isRecording, let meeting = currentMeeting else { return }
         let time = Date()
         let elapsed = time.timeIntervalSince(meeting.startedAt)
-        let mic = micRecorder.captureHealth()
-        let system = systemRecorder.captureHealth()
         var messages = Self.captureWarnings(
             systemAudioRequested: activeSystemAudioPolicy == .meetingAppWhenAvailable,
             hasSystemTarget: systemAudioTarget != nil,
@@ -1088,6 +1111,8 @@ final class RecordingController: ObservableObject {
     private func stopRecordingHealthWatchdog() {
         recordingHealthWatchdog?.cancel()
         recordingHealthWatchdog = nil
+        healthSampler.invalidate()
+        lastWatchdogCheckAt = nil
         lastMicRestartAt = nil
         didWarnAboutMicCaptureStall = false
         lastSystemAudioReattachAt = nil
@@ -1095,13 +1120,12 @@ final class RecordingController: ObservableObject {
         systemAudioTapLedger.reset()
     }
 
-    private func checkMicCapture() {
+    private func checkMicCapture(health: MicRecorder.CaptureHealth) {
         guard isRecording, let meeting = currentMeeting else { return }
         let now = Date()
         let elapsed = now.timeIntervalSince(meeting.startedAt)
         guard elapsed >= Self.micCaptureInitialGrace else { return }
 
-        let health = micRecorder.captureHealth()
         switch health.recoveryState {
         case .healthy:
             if health.isEngineRunning { didWarnAboutMicCaptureStall = false }
@@ -1140,13 +1164,13 @@ final class RecordingController: ObservableObject {
         }
     }
 
-    private func checkSystemAudioCapture() {
+    private func checkSystemAudioCapture(health: SystemAudioRecorder.CaptureHealth) {
         guard isRecording, var target = systemAudioTarget, let meeting = currentMeeting else { return }
         let now = Date()
         let elapsed = now.timeIntervalSince(meeting.startedAt)
         guard elapsed >= Self.systemAudioInitialGrace else { return }
 
-        let health = systemRecorder.captureHealth()
+        guard health.capturedPID == target.pid else { return }
         withdrawSilentSystemAudioWarningIfRecovered(health: health)
         systemAudioTapLedger.observe(pid: target.pid,
                                      audibleDuration: health.audibleDuration,

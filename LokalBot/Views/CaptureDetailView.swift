@@ -25,6 +25,8 @@ struct TimelineContextPanel: View {
             selectedContent
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("timeline.contextPanel")
     }
 
     private var rawCaptureScreenSelection: Binding<Int64?> {
@@ -45,10 +47,15 @@ struct TimelineContextPanel: View {
             ScreenMomentDetailView(
                 screenshot: screenshot,
                 onReload: { model.reload(app: app) },
-                onClear: { model.selectedSnapshotID = nil },
+                onClear: {
+                    model.selectedSnapshotID = nil
+                    if model.selection == nil, model.selectedSessionID == nil, !model.showsRawCapture {
+                        onDismiss?()
+                    }
+                },
                 backLabel: model.selection != nil ? "Back to activity"
                     : model.selectedSessionID != nil ? "Back to work session"
-                    : model.showsRawCapture ? "Back to raw capture" : "Back to day digest",
+                    : model.showsRawCapture ? "Back to raw capture" : "Back to day",
                 onDismiss: onDismiss)
                 .id(snapshotID)
         } else if app.selectedMeetingIDs.isEmpty, model.selection == nil, let session = model.selectedSession {
@@ -87,7 +94,7 @@ struct TimelineContextPanel: View {
                 title: "Raw capture",
                 subtitle: "\(CountLabel.format(model.blocks.count, "activity entry", plural: "activity entries")) · \(CountLabel.format(model.rewindFrames.count, "screen moment"))",
                 icon: "waveform.path.ecg.rectangle",
-                onBack: { model.showsRawCapture = false },
+                onBack: clearSelection,
                 onDismiss: onDismiss)
                 .accessibilityIdentifier("timeline.rawCapturePanel")
             TimelineRawCaptureView(model: model)
@@ -112,10 +119,13 @@ struct TimelineContextPanel: View {
     }
 
     private var dayBrief: some View {
-        ContentUnavailableView(
-            "Moment Details",
-            systemImage: "rectangle.and.text.magnifyingglass",
-            description: Text("Select a work session, meeting, or captured moment to review its details."))
+        VStack(alignment: .leading, spacing: 14) {
+            TimelinePanelHeader(title: "Moment Details", subtitle: "", icon: "rectangle.and.text.magnifyingglass",
+                                onBack: nil, onDismiss: onDismiss)
+            Text("Select a work session, meeting, or captured moment to review its details.")
+                .foregroundStyle(.secondary)
+        }
+        .padding(16)
     }
 
     private func sessionPreview(_ session: TimelineWorkSession) -> some View {
@@ -286,7 +296,7 @@ struct TimelineContextPanel: View {
                     },
                     onDismiss: onDismiss,
                     backLabel: model.selectedSession != nil ? "Back to work session"
-                        : model.showsRawCapture ? "Back to raw capture" : "Back to day digest")
+                        : model.showsRawCapture ? "Back to raw capture" : "Back to day")
                     .accessibilityIdentifier("timeline.activityPreview")
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -381,7 +391,7 @@ struct TimelineContextPanel: View {
                 icon: "checklist",
                 onBack: clearSelection,
                 onDismiss: onDismiss)
-            Text("Return to the day digest or select one meeting in Work sessions.")
+            Text("Return to the day or select one meeting in Work sessions.")
                 .font(Font.body)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -395,6 +405,7 @@ struct TimelineContextPanel: View {
         model.selectedSessionID = nil
         model.showsRawCapture = false
         app.selectedMeetingIDs = []
+        onDismiss?()
     }
 }
 
@@ -533,9 +544,9 @@ private struct TimelinePanelHeader: View {
     let icon: String
     let onBack: (() -> Void)?
     let onDismiss: (() -> Void)?
-    var backLabel = "Back to day digest"
+    var backLabel = "Back to day"
 
-    /// "Back to day digest" → "Day digest" for the visible button text.
+    /// "Back to day" → "Day" for the visible button text.
     private var backTitle: String {
         let destination = backLabel.hasPrefix("Back to ") ? String(backLabel.dropFirst(8)) : backLabel
         return destination.prefix(1).uppercased() + destination.dropFirst()

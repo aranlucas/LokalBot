@@ -19,10 +19,10 @@ struct GettingStartedCard: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                HeroPanel(radius: Brand.Radius.card) {
+                HeroPanel {
                     HStack(spacing: 14) {
                         IconTile(systemImage: "waveform.badge.magnifyingglass",
-                                 tint: Brand.tealFill, size: 48)
+                                 tint: Brand.teal, size: 48)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Welcome to LokalBot").font(.title2.bold())
                                 .foregroundStyle(.primary)

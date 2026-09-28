@@ -52,13 +52,17 @@ struct ExclusionRulesEditor: View {
                 .padding(.horizontal, 10).padding(.vertical, 7)
             }
             .lbGroupedSurface()
+            if let error, !addingRule {
+                Text(error).workspaceTextRole(.warning)
+                    .accessibilityIdentifier("exclusions.error")
+            }
             if kind == .writingDomains {
                 SettingsHelp("Matches this domain and its subdomains. A pasted URL applies to its whole domain.")
             } else if kind == .domains {
                 SettingsHelp("A domain excludes its subdomains too. A URL with a path excludes that URL prefix. Existing rules are kept until you remove them.")
             }
         }
-        .onChange(of: value) { selectedRule = nil }
+        .onChange(of: value) { selectedRule = nil; error = nil }
     }
 
     private var addRulePopover: some View {
@@ -69,7 +73,7 @@ struct ExclusionRulesEditor: View {
             if let error { Text(error).workspaceTextRole(.warning) }
             HStack {
                 Spacer()
-                Button("Cancel") { addingRule = false }.keyboardShortcut(.cancelAction)
+                Button("Cancel") { error = nil; addingRule = false }.keyboardShortcut(.cancelAction)
                 Button("Add", action: add).primaryActionButton()
                     .keyboardShortcut(.defaultAction)
                     .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -109,9 +113,11 @@ struct ExclusionRulesEditor: View {
                 return
             }
         }
-        if !rules.contains(where: { $0.caseInsensitiveCompare(candidate) == .orderedSame }) {
-            value = (rules + [candidate]).joined(separator: ", ")
+        guard !rules.contains(where: { $0.caseInsensitiveCompare(candidate) == .orderedSame }) else {
+            error = "This rule is already excluded."
+            return
         }
+        value = (rules + [candidate]).joined(separator: ", ")
         draft = ""
         error = nil
         addingRule = false
@@ -124,6 +130,7 @@ struct ExclusionRulesEditor: View {
     }
 
     private func chooseApplication() {
+        error = nil
         let panel = NSOpenPanel()
         panel.title = "Choose an application to exclude"
         panel.allowedContentTypes = [.applicationBundle]

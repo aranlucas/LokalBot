@@ -199,11 +199,6 @@ private struct ComposerChromeModifier: ViewModifier {
 }
 
 extension View {
-    /// Keeps the native window background visible throughout the workspace.
-    func workspaceSurface() -> some View {
-        self
-    }
-
     /// Quiet control chrome for search and other shell-level fields.
     func workspaceControl() -> some View {
         modifier(WorkspaceControlModifier())
@@ -476,7 +471,7 @@ struct IconTile: View {
 
             Image(systemName: systemImage)
                 .font(.system(size: size * 0.46, weight: .medium))
-                .foregroundStyle(LBTokens.Palette.accentText)
+                .foregroundStyle(tint)
         }
         .frame(width: size, height: size)
     }

@@ -137,10 +137,9 @@ final class MainWindowUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["sidebar.ask"]
             .waitForExistence(timeout: 5), "three-column sidebar did not return")
 
-        // Ask shows its own inference status, so the sidebar brand header
-        // anchors the leading edge instead of the privacy footer.
-        let sidebarHeader = identified("sidebar.brand")
-        XCTAssertLessThan(abs(sidebarHeader.frame.minX - app.windows.firstMatch.frame.minX), 4,
+        let privacyFooter = identified("sidebar.localPrivacy")
+        XCTAssertTrue(privacyFooter.waitForExistence(timeout: 4), "sidebar footer missing")
+        XCTAssertLessThan(abs(privacyFooter.frame.minX - app.windows.firstMatch.frame.minX), 4,
                           "three-column sidebar restored with an empty leading column")
     }
 
@@ -363,6 +362,7 @@ final class MainWindowUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["timeline.workSessions"]
             .waitForExistence(timeout: 6), "work sessions should be visible immediately")
         let usesContextDrawer = revealTimelineContext()
+        if usesContextDrawer { closeTimelineContext() }
         if !usesContextDrawer {
             XCTAssertLessThan(
                 identified("capture.dayOverview").frame.minY,
@@ -375,7 +375,7 @@ final class MainWindowUITests: XCTestCase {
                       "Timeline should expose copy and Markdown export actions")
         XCTAssertFalse(identified("timeline.activityEvidence").exists,
                        "the chronological track should not be hidden behind Activity evidence")
-        XCTAssertTrue(textWithContent("Needs attention").firstMatch.exists,
+        XCTAssertTrue(textWithContent("Needs Attention").firstMatch.exists,
                       "Timeline should expose the same actionable commitments as Today")
         XCTAssertFalse(textWithContent("Decisions").firstMatch.exists,
                        "empty decisions section should not consume Timeline space")
@@ -430,7 +430,7 @@ final class MainWindowUITests: XCTestCase {
                       "work sessions must be keyboard-focusable buttons")
         session.click()
         XCTAssertTrue(app.descendants(matching: .any)["timeline.sessionPreview"]
-            .waitForExistence(timeout: 4), "session preview did not replace the day brief")
+            .waitForExistence(timeout: 4), "session preview did not replace the empty details")
         XCTAssertTrue(app.descendants(matching: .any)["timeline.dayPicker"].exists,
                       "session selection replaced the persistent day header")
         XCTAssertTrue(app.descendants(matching: .any)["timeline.workSessions"].exists,
@@ -445,7 +445,7 @@ final class MainWindowUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["timeline.sessionPreview"]
             .waitForExistence(timeout: 4), "navigation discarded the selected work session")
 
-        let back = app.buttons["Back to day digest"].firstMatch
+        let back = app.buttons["Back to day"].firstMatch
         XCTAssertTrue(back.waitForExistence(timeout: 3))
         back.click()
         XCTAssertTrue(app.descendants(matching: .any)["capture.dayOverview"]
@@ -484,7 +484,7 @@ final class MainWindowUITests: XCTestCase {
                       "previous-day control is missing")
         previousDay.click()
 
-        _ = revealTimelineContext()
+        if revealTimelineContext() { closeTimelineContext() }
         XCTAssertTrue(textWithContent(SyntheticFixture.previousDayDigestMarker).firstMatch
             .waitForExistence(timeout: 4), "previous day's digest did not replace today's")
         XCTAssertFalse(textWithContent(SyntheticFixture.todayDigestMarker).firstMatch.exists,
@@ -1252,12 +1252,12 @@ final class MainWindowUITests: XCTestCase {
     /// needed so callers only make wide-layout frame assertions when valid.
     @discardableResult
     private func revealTimelineContext() -> Bool {
-        let overview = identified("capture.dayOverview")
         let toggle = identified("timeline.context.toggle")
         let usesDrawer = toggle.exists
-        if usesDrawer, !overview.exists { toggle.click() }
-        XCTAssertTrue(overview.waitForExistence(timeout: 6),
-                      "Timeline day context did not render")
+        let panel = identified(usesDrawer ? "timeline.contextPanel" : "timeline.evidencePane")
+        if usesDrawer, !panel.exists { toggle.click() }
+        XCTAssertTrue(panel.waitForExistence(timeout: 6),
+                      "Timeline context panel did not render")
         return usesDrawer
     }
 

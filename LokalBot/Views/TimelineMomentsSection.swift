@@ -5,6 +5,42 @@ enum TimelineBrowseMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+/// A constant-size task identity; only a debounced search copies capture IDs.
+struct TimelineMomentSearchRequest: Equatable {
+    let day: Date
+    let query: String
+    let shotsRevision: Int
+    let textRevision: Int
+
+    func hasSameScope(as other: Self) -> Bool {
+        day == other.day && query == other.query && textRevision == other.textRevision
+    }
+}
+
+struct TimelineMomentSearchResults {
+    private var request: TimelineMomentSearchRequest?
+    private var matches: Set<Int64> = []
+    private(set) var isSearching = false
+
+    func matches(for request: TimelineMomentSearchRequest) -> Set<Int64> {
+        self.request?.hasSameScope(as: request) == true ? matches : []
+    }
+
+    mutating func begin(_ request: TimelineMomentSearchRequest) {
+        matches = matches(for: request)
+        self.request = request
+        isSearching = !request.query.isEmpty
+    }
+
+    mutating func finish(_ request: TimelineMomentSearchRequest, matches: Set<Int64>) {
+        guard self.request == request else { return }
+        self.matches = matches
+        isSearching = false
+    }
+
+    mutating func invalidate() { self = Self() }
+}
+
 struct TimelineMomentsSection: View {
     @EnvironmentObject private var app: AppState
     @ObservedObject var model: CaptureModel
@@ -12,13 +48,18 @@ struct TimelineMomentsSection: View {
     let query: String
     let application: String
     let onOpenContext: () -> Void
-    @State private var textMatches: Set<Int64> = []
-    @State private var searching = false
+    @State private var searchResults = TimelineMomentSearchResults()
     @State private var textRevision = 0
 
     private var needle: String { query.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var searchRequest: TimelineMomentSearchRequest {
+        TimelineMomentSearchRequest(day: model.day, query: needle,
+                                    shotsRevision: model.shotsRevision, textRevision: textRevision)
+    }
+
     private var filtered: [ActivityStore.Screenshot] {
-        model.shots.filter { shot in
+        let textMatches = searchResults.matches(for: searchRequest)
+        return model.shots.filter { shot in
             (application.isEmpty || shot.app == application)
                 && (needle.isEmpty || [shot.app, shot.windowTitle, shot.documentName]
                     .contains { $0.localizedCaseInsensitiveContains(needle) } || textMatches.contains(shot.id))
@@ -34,7 +75,7 @@ struct TimelineMomentsSection: View {
                 Spacer()
                 Text("\(moments.count) of \(model.shots.count)").font(.callout).foregroundStyle(.secondary)
             }
-            if searching { LoadingStateLabel("Searching retained text…") }
+            if searchResults.isSearching { LoadingStateLabel("Searching retained text…") }
             if mode == .rewind {
                 ScreenRewindView(frames: ScreenRewindSequence.frames(from: moments),
                                  selectedSnapshotID: $model.selectedSnapshotID,
@@ -56,22 +97,21 @@ struct TimelineMomentsSection: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("timeline.moments")
         .onReceive(NotificationCenter.default.publisher(for: .retainedScreenTextChanged)) { _ in
-            textMatches = []
+            searchResults.invalidate()
             textRevision &+= 1
         }
-        .task(id: "\(model.day)|\(needle)|\(model.shots.map(\.id))|\(textRevision)") {
-            textMatches = []
-            guard !needle.isEmpty else { searching = false; return }
-            searching = true
-            let search = needle, ids = model.shots.map(\.id)
+        .task(id: searchRequest) {
+            let request = searchRequest
+            searchResults.begin(request)
+            guard !request.query.isEmpty else { return }
             try? await Task.sleep(for: .milliseconds(160))
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, request == searchRequest else { return }
+            let ids = model.shots.map(\.id)
             let matches = await ActivityStore.readInBackground(at: app.activityStore.databaseURL) { store in
-                store.matchingSnapshotIDs(ids, query: search)
+                store.matchingSnapshotIDs(ids, query: request.query)
             }
-            guard !Task.isCancelled else { return }
-            textMatches = matches
-            searching = false
+            guard !Task.isCancelled, request == searchRequest else { return }
+            searchResults.finish(request, matches: matches)
         }
     }
 

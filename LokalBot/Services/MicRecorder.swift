@@ -244,8 +244,11 @@ final class MicRecorder {
     /// one bounded PCM copy, then serialize conversion, AAC encoding, preview
     /// resampling, and filesystem writes here.
     var speakerAudioClock: RecordingAudioClock?
-    private let ioQueue = DispatchQueue(label: "lokalbot.microphone.write",
-                                        qos: .userInitiated)
+    private let ioQueue: DispatchQueue
+
+    init(writerQueue: DispatchQueue = DispatchQueue(label: "lokalbot.microphone.write", qos: .userInitiated)) {
+        ioQueue = writerQueue
+    }
     private static let bufferPoolSize = 16
     private static let pooledBufferFrameCapacity: AVAudioFrameCount = 32_768
     private var bufferPoolBroker: MicAudioBufferPoolBroker?
@@ -271,7 +274,7 @@ final class MicRecorder {
         }
     }
 
-    enum RecoveryState: Equatable {
+    enum RecoveryState: Equatable, Sendable {
         case healthy
         case recovering(attempt: Int)
         case degraded(errorDescription: String)
@@ -290,7 +293,7 @@ final class MicRecorder {
         return false
     }
 
-    struct CaptureHealth {
+    struct CaptureHealth: Sendable {
         let duration: TimeInterval
         let lastAudioWriteAt: Date?
         let isEngineRunning: Bool
@@ -414,6 +417,21 @@ final class MicRecorder {
     }
 
     func captureHealth() -> CaptureHealth {
+        let running = engine.isRunning
+        return ioQueue.sync { healthOnWriterQueue(isEngineRunning: running) }
+    }
+
+    @MainActor
+    func captureHealthInBackground() async -> CaptureHealth {
+        let running = engine.isRunning
+        return await withCheckedContinuation { continuation in
+            ioQueue.async {
+                continuation.resume(returning: self.healthOnWriterQueue(isEngineRunning: running))
+            }
+        }
+    }
+
+    private func healthOnWriterQueue(isEngineRunning: Bool) -> CaptureHealth {
         healthLock.lock()
         let duration = recordingSampleRate > 0
             ? Double(framesWritten) / recordingSampleRate
@@ -422,10 +440,10 @@ final class MicRecorder {
         let recoveryState = self.recoveryState
         healthLock.unlock()
         let droppedBufferCount = dropCounter.snapshot()
-        let writeError = ioQueue.sync { writeFailure ?? previewTee?.failureDescription }
+        let writeError = writeFailure ?? previewTee?.failureDescription
         return CaptureHealth(duration: duration,
                              lastAudioWriteAt: lastAudioWriteAt,
-                             isEngineRunning: engine.isRunning,
+                             isEngineRunning: isEngineRunning,
                              droppedBufferCount: droppedBufferCount,
                              recoveryState: recoveryState, writeError: writeError)
     }

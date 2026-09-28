@@ -4,9 +4,7 @@ import SwiftUI
 
 /// Adaptive welcome surface shared with the grouped content throughout the app.
 struct HeroPanel<Content: View>: View {
-    var radius: CGFloat = Brand.Radius.card
     @ViewBuilder var content: Content
-    @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
         content

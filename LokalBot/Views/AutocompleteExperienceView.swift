@@ -68,7 +68,7 @@ struct AutocompleteExperienceView: View {
     private var summary: some View {
         HStack(alignment: .top, spacing: 12) {
             IconTile(systemImage: "text.cursor",
-                     tint: app.settings.cotypingEnabled ? Brand.tealFill : Color(nsColor: .systemGray),
+                     tint: app.settings.cotypingEnabled ? Brand.teal : Color(nsColor: .systemGray),
                      size: 32)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 8) {

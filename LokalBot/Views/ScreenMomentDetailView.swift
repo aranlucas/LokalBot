@@ -90,7 +90,7 @@ struct ScreenMomentDetailView: View {
         }
     }
 
-    /// "Back to day digest" → "Day digest" for the visible button text.
+    /// "Back to day" → "Day" for the visible button text.
     private var backTitle: String {
         let destination = backLabel.hasPrefix("Back to ") ? String(backLabel.dropFirst(8)) : backLabel
         return destination.prefix(1).uppercased() + destination.dropFirst()
@@ -119,7 +119,7 @@ struct ScreenMomentDetailView: View {
             }
             HStack(alignment: .top, spacing: 8) {
                 IconTile(systemImage: screenshot.hasPixels ? "camera.viewfinder" : "text.viewfinder",
-                         tint: Brand.tealFill, size: 30)
+                         tint: Brand.teal, size: 30)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(screenshot.app)
                         .font(Font.title2.weight(.semibold))

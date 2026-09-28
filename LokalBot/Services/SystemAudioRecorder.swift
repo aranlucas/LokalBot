@@ -61,8 +61,11 @@ final class SystemAudioRecorder {
 
     /// IOProc writes hop here so the Core Audio real-time thread never
     /// blocks on AAC encoding or filesystem I/O. Serial → ordered writes.
-    private let ioQueue = DispatchQueue(label: "lokalbot.systemaudio.write",
-                                        qos: .userInitiated)
+    private let ioQueue: DispatchQueue
+
+    init(writerQueue: DispatchQueue = DispatchQueue(label: "lokalbot.systemaudio.write", qos: .userInitiated)) {
+        ioQueue = writerQueue
+    }
     /// The tap callback borrows from this fixed pool with a non-blocking lock.
     /// It never allocates an AVAudioPCMBuffer or waits for the writer queue.
     private let bufferPoolLock = NSLock()
@@ -78,7 +81,7 @@ final class SystemAudioRecorder {
     /// `stop()` was called (crash, user-quit, browser tab close).
     var onCapturedProcessTerminated: ((pid_t) -> Void)?
 
-    struct CaptureHealth {
+    struct CaptureHealth: Sendable {
         let duration: TimeInterval
         let audibleDuration: TimeInterval
         let framesSinceAttach: AVAudioFramePosition
@@ -154,27 +157,37 @@ final class SystemAudioRecorder {
     }
 
     func captureHealth() -> CaptureHealth {
+        let pid = capturedPID
+        return ioQueue.sync { healthOnWriterQueue(capturedPID: pid) }
+    }
+
+    /// Queue behind writes without making the caller wait on the main thread.
+    @MainActor
+    func captureHealthInBackground() async -> CaptureHealth {
+        let pid = capturedPID
+        return await withCheckedContinuation { continuation in
+            ioQueue.async {
+                continuation.resume(returning: self.healthOnWriterQueue(capturedPID: pid))
+            }
+        }
+    }
+
+    private func healthOnWriterQueue(capturedPID: pid_t) -> CaptureHealth {
         dropLock.lock()
         let dropped = droppedBufferCount
         dropLock.unlock()
-        return ioQueue.sync {
-            let duration = recordingSampleRate > 0
-                ? Double(framesWritten) / recordingSampleRate
-                : 0
-            let audibleDuration = recordingSampleRate > 0
-                ? Double(audibleFramesWritten) / recordingSampleRate
-                : 0
-            return CaptureHealth(duration: duration,
-                                 audibleDuration: audibleDuration,
-                                 framesSinceAttach: framesSinceAttach,
-                                 lastAudioWriteAt: lastAudioWriteAt,
-                                 lastAudibleWriteAt: lastAudibleWriteAt,
-                                 capturedPID: capturedPID,
-                                 lastRMSLevel: lastRMSLevel,
-                                 peakRMSLevel: peakRMSLevel,
-                                 droppedBufferCount: dropped,
-                                 writeError: writeFailure ?? previewTee?.failureDescription)
-        }
+        let duration = recordingSampleRate > 0 ? Double(framesWritten) / recordingSampleRate : 0
+        let audibleDuration = recordingSampleRate > 0 ? Double(audibleFramesWritten) / recordingSampleRate : 0
+        return CaptureHealth(duration: duration,
+                             audibleDuration: audibleDuration,
+                             framesSinceAttach: framesSinceAttach,
+                             lastAudioWriteAt: lastAudioWriteAt,
+                             lastAudibleWriteAt: lastAudibleWriteAt,
+                             capturedPID: capturedPID,
+                             lastRMSLevel: lastRMSLevel,
+                             peakRMSLevel: peakRMSLevel,
+                             droppedBufferCount: dropped,
+                             writeError: writeFailure ?? previewTee?.failureDescription)
     }
 
     private func attachTap(processObject: AudioObjectID, writingTo url: URL) throws {
