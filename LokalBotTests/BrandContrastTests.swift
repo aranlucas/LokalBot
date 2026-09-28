@@ -63,9 +63,14 @@ final class BrandContrastTests: XCTestCase {
         let appearance: NSAppearance.Name = scheme == .dark ? .darkAqua : .aqua
         var result: [(String, NSColor)] = []
         let groupFill = resolve(NSColor(LBTokens.Palette.groupFill), in: appearance)
+        // Native colors differ by macOS release. Keep a conservative reference
+        // for macOS 15's window gray even when tests run on a newer system.
+        let reference = scheme == .dark ? 0.20 : 0.92
+        let referenceWindow = NSColor(srgbRed: reference, green: reference, blue: reference, alpha: 1)
         for (name, color) in [("window", NSColor.windowBackgroundColor),
                               ("content", NSColor.textBackgroundColor),
-                              ("control", NSColor.controlBackgroundColor)] {
+                              ("control", NSColor.controlBackgroundColor),
+                              ("reference window", referenceWindow)] {
             let surface = resolve(color, in: appearance)
             result.append((name, surface))
             result.append(("grouped \(name)", blend(groupFill, over: surface,

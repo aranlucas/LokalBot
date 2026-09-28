@@ -894,6 +894,8 @@ private struct ConversationListContent: View {
                 }
             }
             .listStyle(.inset)
+            .accessibilityLabel("Saved conversations")
+            .accessibilityIdentifier("chat.history.list")
             .scrollContentBackground(.hidden)
             .tint(Brand.tealFill)
         }

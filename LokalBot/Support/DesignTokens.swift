@@ -26,12 +26,12 @@ enum LBTokens {
         static let attention = Color.orange
         /// "Owner unclear", "Download required". The system orange is too
         /// light for text on white, so light appearance uses a darker orange.
-        static let attentionText = Color(light: 0x984C00, dark: 0xFF9F0A)
+        static let attentionText = Color(light: 0x984C00, dark: 0xFFB84D)
         static let success = Color.green
         static let successText = Color(light: 0x176F2C, dark: 0x30D158)
         /// Recording, destructive actions and overdue dates.
         static let recording = Color.red
-        static let recordingText = Color(light: 0xC00013, dark: 0xFF756C)
+        static let recordingText = Color(light: 0xB60012, dark: 0xFF9C95)
 
         /// Fill and stroke for grouped sections (10 pt rounded rectangles):
         /// a light gray well on white, a faint white lift on dark.

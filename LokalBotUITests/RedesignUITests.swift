@@ -613,6 +613,9 @@ final class RedesignUITests: XCTestCase {
             XCTAssertTrue(element("meeting.contentTabs").isHittable)
         }
         UITestHarness.clickSidebar("sidebar.ask", in: app)
+        let history = app.outlines["chat.history.list"]
+        XCTAssertTrue(history.waitForExistence(timeout: 5))
+        XCTAssertEqual(history.label, "Saved conversations")
         app.textFields["search.field"].click()
         app.textFields["search.field"].typeText("failover")
         XCTAssertTrue(element("search.hit.\(fixture.designReview.id.uuidString).segment").waitForExistence(timeout: 6))
