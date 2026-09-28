@@ -2,7 +2,7 @@ import XCTest
 import LlamaCore
 
 /// Proves the LlamaCore module imports, the vendored libllama.dylib links, and
-/// the @rpath resolves at runtime by executing real v0.4.1 C calls.
+/// the @rpath resolves at runtime by executing real pinned-runtime C calls.
 final class LlamaCoreSmokeTests: XCTestCase {
     func testPenaltiesSamplerUsesVocabularySizeAndPenalizesAcceptedTokens() throws {
         let sampler = try XCTUnwrap(llama_sampler_init_penalties(2, 64, 2, 0, 0))
@@ -25,7 +25,7 @@ final class LlamaCoreSmokeTests: XCTestCase {
         llama_backend_init()
         let model = llama_model_default_params()
         // The n_gpu_layers field must be reachable through the imported struct.
-        // v0.4.1 defaults it to -1 ("a negative value means all layers" per
+        // The pinned runtime defaults it to -1 ("a negative value means all layers" per
         // llama.h) — i.e. full Metal offload, exactly what the runtime wants.
         XCTAssertEqual(model.n_gpu_layers, -1)
         let ctx = llama_context_default_params()
