@@ -180,7 +180,7 @@ struct ScreenSearchResultRow: View {
                     // window title leads, app and time follow, then the match.
                     VStack(alignment: .leading, spacing: 3) {
                         Text(title)
-                            .font(WorkspaceTypography.rowTitle)
+                            .font(Font.body.weight(.semibold))
                             .lineLimit(1)
                         HStack(spacing: 5) {
                             if !hit.windowTitle.isEmpty {

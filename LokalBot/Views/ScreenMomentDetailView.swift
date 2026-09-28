@@ -31,7 +31,7 @@ struct ScreenMomentDetailView: View {
                         cornerRadius: Brand.Radius.panel)
                         .background(.black.opacity(0.82),
                                     in: RoundedRectangle(cornerRadius: Brand.Radius.panel))
-                    Button("View full size") { showingImage = true }
+                    Button("View Full Size") { showingImage = true }
                 } else {
                     Label("This moment retained text context without screen pixels.",
                           systemImage: "text.viewfinder")
@@ -44,7 +44,7 @@ struct ScreenMomentDetailView: View {
                 }
                 if !screenshot.windowTitle.isEmpty {
                     Text(screenshot.windowTitle)
-                        .font(WorkspaceTypography.bodyEmphasis)
+                        .font(Font.body.weight(.semibold))
                         .lineLimit(3)
                         .textSelection(.enabled)
                 }
@@ -58,9 +58,12 @@ struct ScreenMomentDetailView: View {
                     identifier: "timeline.screenDetail.captureDetails") {
                         metadata
                     } label: {
-                        Label("Capture details", systemImage: "info.circle")
-                            .font(WorkspaceTypography.sectionTitle)
+                        Label("Capture Details", systemImage: "info.circle")
+                            .font(Font.headline)
                     }
+                Button("Delete Moment…", role: .destructive) { confirmingDeletion = true }
+                    .buttonStyle(.bordered)
+                    .accessibilityLabel("Delete context moment")
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -87,7 +90,7 @@ struct ScreenMomentDetailView: View {
         }
     }
 
-    /// "Back to day digest" → "Day digest" for the visible button text.
+    /// "Back to day" → "Day" for the visible button text.
     private var backTitle: String {
         let destination = backLabel.hasPrefix("Back to ") ? String(backLabel.dropFirst(8)) : backLabel
         return destination.prefix(1).uppercased() + destination.dropFirst()
@@ -98,7 +101,7 @@ struct ScreenMomentDetailView: View {
             HStack {
                 Button(action: onClear) {
                     Label(backTitle, systemImage: "chevron.left")
-                        .font(WorkspaceTypography.control)
+                        .font(Font.body)
                 }
                 .buttonStyle(.workspaceLink)
                 .help(backLabel)
@@ -116,13 +119,13 @@ struct ScreenMomentDetailView: View {
             }
             HStack(alignment: .top, spacing: 8) {
                 IconTile(systemImage: screenshot.hasPixels ? "camera.viewfinder" : "text.viewfinder",
-                         tint: Brand.tealFill, size: 30)
+                         tint: Brand.teal, size: 30)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(screenshot.app)
-                        .font(WorkspaceTypography.conversationTitle)
+                        .font(Font.title2.weight(.semibold))
                         .accessibilityIdentifier("timeline.screenDetail.\(screenshot.id)")
                     Text(screenshot.ts.formatted(date: .abbreviated, time: .shortened))
-                        .font(WorkspaceTypography.metadata.monospacedDigit())
+                        .font(Font.callout.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
@@ -154,7 +157,7 @@ struct ScreenMomentDetailView: View {
             }
             if !screenshot.sourceURL.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Source").font(WorkspaceTypography.bodyEmphasis)
+                    Text("Source").font(Font.body.weight(.semibold))
                     Text(screenshot.sourceURL)
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
@@ -176,70 +179,62 @@ struct ScreenMomentDetailView: View {
                 }
             }
         }
-        .font(WorkspaceTypography.body)
+        .font(Font.body)
     }
 
     private var capturedTextSection: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Label("Visible text excerpt", systemImage: "text.quote")
-                .font(WorkspaceTypography.sectionTitle)
+            Label("Text Context", systemImage: "text.quote")
+                .font(Font.headline)
             Text(fullTextExpanded ? capturedText : (SnippetCleaner.withoutTitleEcho(capturedText, title: screenshot.windowTitle) ?? capturedText))
-                .font(WorkspaceTypography.body)
+                .font(Font.body)
                 .textSelection(.enabled)
                 .lineLimit(fullTextExpanded ? nil : 6)
             if capturedText.count > 280 {
-                Button(fullTextExpanded ? "Show less" : "Show full captured text") {
+                Button(fullTextExpanded ? "Show Less" : "Show Full Captured Text") {
                     fullTextExpanded.toggle()
                 }
                 .buttonStyle(.plain)
-                .font(WorkspaceTypography.metadataEmphasis)
+                .font(Font.callout.weight(.semibold))
                 .foregroundStyle(Brand.teal)
             }
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary.opacity(0.3),
-                    in: RoundedRectangle(cornerRadius: Brand.Radius.control))
+        .lbGroupedSurface()
     }
 
     private var actions: some View {
-        HStack(spacing: 8) {
-            Button {
-                toggleSaved()
-            } label: {
-                Label(screenshot.isBookmarked ? "Saved" : "Save moment",
-                      systemImage: screenshot.isBookmarked ? "bookmark.fill" : "bookmark")
-            }
-            .tint(screenshot.isBookmarked ? Brand.amber : nil)
-            Button {
-                app.openAsk(
-                    query: "What was I looking at here?",
-                    screenSnapshotIDs: [screenshot.id],
-                    submit: false)
-            } label: {
-                Label("Ask about this", systemImage: "sparkles")
-            }
-            Spacer()
-            Button(role: .destructive) {
-                confirmingDeletion = true
-            } label: {
-                Image(systemName: "trash")
-            }
-            .help("Delete context moment")
-            .accessibilityLabel("Delete context moment")
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 8) { momentActions }
+            VStack(alignment: .leading, spacing: 8) { momentActions }
+        }
+        .buttonStyle(.bordered)
+    }
+
+    @ViewBuilder private var momentActions: some View {
+        Button(action: toggleSaved) {
+            Label(screenshot.isBookmarked ? "Saved" : "Save Moment",
+                  systemImage: screenshot.isBookmarked ? "bookmark.fill" : "bookmark")
+        }
+        .tint(screenshot.isBookmarked ? Brand.amber : nil)
+        Button {
+            app.openAsk(query: "What was I looking at here?", screenSnapshotIDs: [screenshot.id], submit: false)
+        } label: {
+            Label("Ask About This…", systemImage: "sparkles")
         }
     }
 
     private var savedNote: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Saved until you unsave or delete it.").workspaceTextRole(.supporting)
-            Text("Saved moment note").font(WorkspaceTypography.sectionTitle)
+            Text("Saved Moment Note").font(Font.headline)
             TextField("Why does this moment matter?", text: $note, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
                 .lineLimit(2...5)
             HStack {
                 Spacer()
-                Button("Save note") { saveNote() }
+                Button("Save Note") { saveNote() }
                     .disabled(note == savedNoteValue)
             }
         }

@@ -10,7 +10,7 @@ final class MeetingDetectionOwnershipTests: XCTestCase {
         XCTAssertTrue(event.ownsRecording(detectorSessionID: owned))
     }
 
-    func testUncertainEndsReleaseUserRecordingsAndNeverBlockARestart() {
+    func testUncertainEndsCannotStopOrReleaseAnyRecording() {
         let owned = UUID()
         let confident = MeetingDetectionEnd(sessionID: owned, contentEndedAt: nil)
         let uncertain = MeetingDetectionEnd(sessionID: owned, contentEndedAt: nil, confident: false)
@@ -20,9 +20,9 @@ final class MeetingDetectionOwnershipTests: XCTestCase {
             XCTAssertEqual(uncertain.action(detectorSessionID: UUID(), startedByUser: startedByUser), .ignore)
             XCTAssertEqual(uncertain.action(detectorSessionID: nil, startedByUser: startedByUser), .ignore)
         }
-        XCTAssertEqual(uncertain.action(detectorSessionID: owned, startedByUser: true), .release)
+        XCTAssertEqual(uncertain.action(detectorSessionID: owned, startedByUser: true), .ignore)
         XCTAssertEqual(uncertain.action(detectorSessionID: owned, startedByUser: false),
-                       .stop(allowsAutomaticRestart: true))
+                       .ignore)
     }
 
     func testRecordingJoinsOnlyTheCallItIsCapturing() {

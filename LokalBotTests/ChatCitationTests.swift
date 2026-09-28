@@ -1,10 +1,25 @@
 import XCTest
+import SwiftUI
 @testable import LokalBot
 
 /// Citation-marker parsing: meeting and screen markers the assistant emits are
 /// replaced with stable inline numbers and surfaced as deep-linkable sources, while
 /// ordinary bracketed text passes through untouched.
 final class ChatCitationTests: XCTestCase {
+    func testLinkedPresentationPreservesStableNumbersAndPlainCopy() {
+        let text = "A [screen:42]. B [meeting:aabbccdd@0:12]. C [screen:42]. Plain [3]."
+        let plain = ChatCitationParser.extract(text)
+        let linked = ChatCitationParser.extract(text, linked: true)
+        XCTAssertEqual(plain.display, "A [1]. B [2]. C [1]. Plain [3].")
+        XCTAssertEqual(linked.citations, plain.citations)
+        XCTAssertEqual(linked.display,
+                       "A [1](lokalbot-citation://source/1). B [2](lokalbot-citation://source/2). C [1](lokalbot-citation://source/1). Plain [3].")
+        let rendered = SelectableDigestText.attributedText(from: linked.display, style: .editorial)
+        XCTAssertEqual(rendered.runs.compactMap(\.link).map(\.absoluteString), [
+            "lokalbot-citation://source/1", "lokalbot-citation://source/2", "lokalbot-citation://source/1",
+        ])
+    }
+
     func testUnobservedSourcesAndUnsupportedTimesNeverBecomeLinks() {
         let id = UUID(uuidString: "AAAAAAAA-1111-4222-8333-444444444444")!
         var evidence = ChatEvidence(screenIDs: [42])
@@ -115,7 +130,7 @@ final class ChatCitationTests: XCTestCase {
             AttributedString.Index(citation.upperBound, within: rendered))
         let citationRun = try XCTUnwrap(rendered[lowerBound..<upperBound].runs.first)
 
-        XCTAssertEqual(citationRun.font, WorkspaceTypography.metadataEmphasis)
+        XCTAssertEqual(citationRun.font, Font.callout.weight(.semibold))
         XCTAssertEqual(citationRun.foregroundColor, Brand.teal)
     }
 

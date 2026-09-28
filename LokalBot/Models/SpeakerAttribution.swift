@@ -84,7 +84,7 @@ struct OutcomeAttribution: Codable, Equatable, Sendable {
     enum Resolution: String, Codable, Sendable { case user, other, unresolved }
     enum Basis: String, Codable, Sendable { case commitment, assignment, request, unclear, legacy }
     enum RejectionReason: String, Codable, Sendable {
-        case missingSpeaker, unknownSpeaker, unconfirmedIdentity, missingBasis, missingQuote, quoteNotFound
+        case missingSpeaker, unknownSpeaker, unconfirmedIdentity, missingBasis, missingQuote, quoteNotFound, ambiguousQuote
         case unsupportedCommitment, speakerMismatch, ambiguousName, targetNotExplicit, conflictingOwner
     }
     var resolution: Resolution

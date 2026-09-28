@@ -1,18 +1,11 @@
 import SwiftUI
 
 struct QuickRecallFooter: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.colorSchemeContrast) private var contrast
-
     let query: String
     let inference: InferencePresentation
     let hasResults: Bool
     let isSearching: Bool
     let ask: () -> Void
-
-    private var accent: Color {
-        colorScheme == .dark ? Brand.tealBright : Brand.teal
-    }
 
     var body: some View {
         HStack(spacing: 16) {
@@ -39,17 +32,8 @@ struct QuickRecallFooter: View {
                                 .padding(.leading, 3)
                         }
                         .font(.callout.weight(.medium))
-                        .foregroundStyle(isSearching ? Color.secondary : accent)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(accent.opacity(0.10),
-                                    in: RoundedRectangle(cornerRadius: Brand.Radius.tab))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: Brand.Radius.tab)
-                                .strokeBorder(accent.opacity(contrast == .increased ? 0.7 : 0.25))
-                        }
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.bordered)
                     .keyboardShortcut(.return, modifiers: .command)
                     .disabled(isSearching)
                     .accessibilityIdentifier("quickRecall.ask")

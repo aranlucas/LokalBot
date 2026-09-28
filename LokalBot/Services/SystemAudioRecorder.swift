@@ -36,6 +36,7 @@ final class SystemAudioRecorder {
     private var ioProcID: AudioDeviceIOProcID?
     private var file: AVAudioFile?
     private var previewTee: AudioPreviewTee?
+    private var writeFailure: String?
     private var previewTeeURL: URL?
     private var tapFormat: AVAudioFormat?
     private var outputURL: URL?
@@ -60,8 +61,11 @@ final class SystemAudioRecorder {
 
     /// IOProc writes hop here so the Core Audio real-time thread never
     /// blocks on AAC encoding or filesystem I/O. Serial → ordered writes.
-    private let ioQueue = DispatchQueue(label: "lokalbot.systemaudio.write",
-                                        qos: .userInitiated)
+    private let ioQueue: DispatchQueue
+
+    init(writerQueue: DispatchQueue = DispatchQueue(label: "lokalbot.systemaudio.write", qos: .userInitiated)) {
+        ioQueue = writerQueue
+    }
     /// The tap callback borrows from this fixed pool with a non-blocking lock.
     /// It never allocates an AVAudioPCMBuffer or waits for the writer queue.
     private let bufferPoolLock = NSLock()
@@ -77,7 +81,7 @@ final class SystemAudioRecorder {
     /// `stop()` was called (crash, user-quit, browser tab close).
     var onCapturedProcessTerminated: ((pid_t) -> Void)?
 
-    struct CaptureHealth {
+    struct CaptureHealth: Sendable {
         let duration: TimeInterval
         let audibleDuration: TimeInterval
         let framesSinceAttach: AVAudioFramePosition
@@ -87,6 +91,7 @@ final class SystemAudioRecorder {
         let lastRMSLevel: Float
         let peakRMSLevel: Float
         let droppedBufferCount: Int
+        var writeError: String?
     }
 
     /// `previewTee` mirrors the capture into a snapshot-safe PCM `.caf` for
@@ -111,6 +116,7 @@ final class SystemAudioRecorder {
                 lastAudioWriteAt = nil
                 lastAudibleWriteAt = nil
                 lastRMSLevel = 0
+                writeFailure = nil
                 peakRMSLevel = 0
             }
             dropLock.lock()
@@ -151,26 +157,37 @@ final class SystemAudioRecorder {
     }
 
     func captureHealth() -> CaptureHealth {
+        let pid = capturedPID
+        return ioQueue.sync { healthOnWriterQueue(capturedPID: pid) }
+    }
+
+    /// Queue behind writes without making the caller wait on the main thread.
+    @MainActor
+    func captureHealthInBackground() async -> CaptureHealth {
+        let pid = capturedPID
+        return await withCheckedContinuation { continuation in
+            ioQueue.async {
+                continuation.resume(returning: self.healthOnWriterQueue(capturedPID: pid))
+            }
+        }
+    }
+
+    private func healthOnWriterQueue(capturedPID: pid_t) -> CaptureHealth {
         dropLock.lock()
         let dropped = droppedBufferCount
         dropLock.unlock()
-        return ioQueue.sync {
-            let duration = recordingSampleRate > 0
-                ? Double(framesWritten) / recordingSampleRate
-                : 0
-            let audibleDuration = recordingSampleRate > 0
-                ? Double(audibleFramesWritten) / recordingSampleRate
-                : 0
-            return CaptureHealth(duration: duration,
-                                 audibleDuration: audibleDuration,
-                                 framesSinceAttach: framesSinceAttach,
-                                 lastAudioWriteAt: lastAudioWriteAt,
-                                 lastAudibleWriteAt: lastAudibleWriteAt,
-                                 capturedPID: capturedPID,
-                                 lastRMSLevel: lastRMSLevel,
-                                 peakRMSLevel: peakRMSLevel,
-                                 droppedBufferCount: dropped)
-        }
+        let duration = recordingSampleRate > 0 ? Double(framesWritten) / recordingSampleRate : 0
+        let audibleDuration = recordingSampleRate > 0 ? Double(audibleFramesWritten) / recordingSampleRate : 0
+        return CaptureHealth(duration: duration,
+                             audibleDuration: audibleDuration,
+                             framesSinceAttach: framesSinceAttach,
+                             lastAudioWriteAt: lastAudioWriteAt,
+                             lastAudibleWriteAt: lastAudibleWriteAt,
+                             capturedPID: capturedPID,
+                             lastRMSLevel: lastRMSLevel,
+                             peakRMSLevel: peakRMSLevel,
+                             droppedBufferCount: dropped,
+                             writeError: writeFailure ?? previewTee?.failureDescription)
     }
 
     private func attachTap(processObject: AudioObjectID, writingTo url: URL) throws {
@@ -215,18 +232,20 @@ final class SystemAudioRecorder {
 
         // 5. Output file (PCM → AAC handled by AVAudioFile). Reattaches keep
         // this writer open so samples already captured remain in the same M4A.
-        if file == nil {
+        if recordingSampleRate == 0 {
             let settings: [String: Any] = [
                 AVFormatIDKey: kAudioFormatMPEG4AAC,
                 AVSampleRateKey: format.sampleRate,
                 AVNumberOfChannelsKey: format.channelCount,
                 AVEncoderBitRateKey: 96_000,
             ]
-            file = try AVAudioFile(forWriting: url,
-                                   settings: settings,
-                                   commonFormat: format.commonFormat,
-                                   interleaved: format.isInterleaved)
+            do {
+                file = try AVAudioFile(forWriting: url, settings: settings,
+                                       commonFormat: format.commonFormat, interleaved: format.isInterleaved)
+            } catch { writeFailure = error.localizedDescription }
             previewTee = previewTeeURL.flatMap { AudioPreviewTee(url: $0, sourceFormat: format) }
+            guard file != nil || previewTee != nil else { throw CocoaError(.fileWriteUnknown) }
+            if previewTeeURL != nil, previewTee == nil { writeFailure = "Recovery audio could not be opened" }
             try prepareBufferPool(format: format)
             ioQueue.sync {
                 recordingSampleRate = format.sampleRate
@@ -266,7 +285,6 @@ final class SystemAudioRecorder {
                 : callbackHostTime - Double(frameLength) / fmt.sampleRate
             self.ioQueue.async {
                 defer { self.returnBuffer(copy) }
-                guard let fileRef = self.file else { return }
                 do {
                     // The real-time callback only performs one bounded copy.
                     // RMS traversal, AAC encoding, preview conversion, and I/O
@@ -274,12 +292,11 @@ final class SystemAudioRecorder {
                     let timelineHostStart = self.timeline?.hostTimeOnTimeline(
                         bufferHostTime: bufferHostStart, callbackHostTime: callbackHostTime,
                         callbackInstant: capturedAt) ?? bufferHostStart
-                    try self.appendTimelineSilence(before: timelineHostStart, file: fileRef, format: fmt)
+                    try self.appendTimelineSilence(before: timelineHostStart, format: fmt)
                     let rmsLevel = Self.measureRMS(of: copy)
-                    try fileRef.write(from: copy)
+                    try self.writeSafely(copy)
                     self.speakerAudioClock?.record(hostTime: sourceHostTime, valid: sourceHostValid,
                         startFrame: self.framesWritten, frames: Int64(copy.frameLength), sampleRate: fmt.sampleRate)
-                    self.previewTee?.write(copy)
                     let now = Date()
                     self.framesWritten += AVAudioFramePosition(copy.frameLength)
                     self.framesSinceAttach += AVAudioFramePosition(copy.frameLength)
@@ -387,15 +404,29 @@ final class SystemAudioRecorder {
     /// Commit missing meeting time only when a tap actually delivers a buffer.
     /// This includes initial late attachment, handoffs, and dropped callbacks;
     /// unsuccessful/dead reattachments cannot inflate capture health.
-    private func appendTimelineSilence(before hostTime: Double, file: AVAudioFile,
+    private func appendTimelineSilence(before hostTime: Double,
                                        format: AVAudioFormat) throws {
         guard let timeline else { return }
         let frames = timeline.silenceFrames(before: hostTime, framesWritten: framesWritten,
                                             sampleRate: format.sampleRate)
         try AudioTimelinePadding.write(frames: frames, format: format) { silence in
-            try file.write(from: silence)
-            previewTee?.write(silence)
+            try writeSafely(silence, isPadding: true)
             framesWritten += Int64(silence.frameLength)
+        }
+    }
+
+    private func writeSafely(_ buffer: AVAudioPCMBuffer, isPadding: Bool = false) throws {
+        let result = AudioWriteSafety.write(recovery: { previewTee?.write(buffer, isPadding: isPadding) ?? false }, primary: {
+            guard let file else { throw CocoaError(.fileWriteUnknown) }
+            do { try file.write(from: buffer) } catch {
+                self.file = nil
+                throw error
+            }
+        })
+        if let error = result.error { writeFailure = "Primary audio unavailable; using recovery audio. \(error)" }
+        guard result.saved else {
+            writeFailure = "No audio is being saved. Free disk space and restart recording."
+            throw CocoaError(.fileWriteUnknown)
         }
     }
 

@@ -9,14 +9,19 @@ struct ModelStackOverviewView: View {
     @ObservedObject private var setup: ModelSetupController
     let present: (ModelsSettingsSheet) -> Void
     let connections: () -> Void
+    let choosePreset: (ModelStackPreset) -> Void
+    let manageDownloads: () -> Void
 
-    init(app: AppState, present: @escaping (ModelsSettingsSheet) -> Void, connections: @escaping () -> Void) {
+    init(app: AppState, present: @escaping (ModelsSettingsSheet) -> Void, connections: @escaping () -> Void,
+         choosePreset: @escaping (ModelStackPreset) -> Void, manageDownloads: @escaping () -> Void) {
         self.app = app
         roles = app.modelRoles
         checks = app.modelChecks
         setup = app.modelSetup
         self.present = present
         self.connections = connections
+        self.choosePreset = choosePreset
+        self.manageDownloads = manageDownloads
     }
 
     private var snapshot: ModelRolesSnapshot {
@@ -33,22 +38,18 @@ struct ModelStackOverviewView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: 18) {
-                Text("Current setup").font(.system(size: 14, weight: .semibold))
+                Text("Current setup").font(.body.weight(.semibold))
                 Text((ModelStackPreset.matching(app.settings)?.title ?? "Custom")
                      + " · " + ModelSettingsPresentation.setupLocation(app.settings))
-                    .font(.system(size: 13)).settingsSecondary()
+                    .font(.body).settingsSecondary()
                 Spacer(minLength: 8)
-                Button("Choose preset…") { present(.presets) }
-                    .buttonStyle(.bordered)
-                    .disabled(setup.pending != nil)
-                    .accessibilityIdentifier("models.choosePreset")
             }
             .padding(.vertical, 4)
             VStack(alignment: .leading, spacing: 4) {
-                Text("Core models").font(.system(size: 16, weight: .semibold))
+                Text("Core Roles").font(.headline)
                 if checks.results.isEmpty, !checks.isTesting {
                     Text("Selected models have not been checked yet.")
-                        .font(.system(size: 13)).settingsSecondary()
+                        .font(.body).settingsSecondary()
                 }
                 coreRow(.transcribe, model: app.settings.transcriptionModelDisplayName,
                         detail: "Meeting audio to text", sheet: .transcription)
@@ -63,11 +64,14 @@ struct ModelStackOverviewView: View {
             }
             .padding(.horizontal, 16).padding(.vertical, 14)
             .settingsPanel()
+            ModelPresetsSection(settings: app.settings, switching: setup.pending != nil, choose: choosePreset)
+            ModelRemoteOverview(app: app, connections: connections)
+            ModelStorageSection(app: app, manage: manageDownloads)
             processingBudget
                 .padding(.horizontal, 16).padding(.vertical, 14)
                 .settingsPanel()
             VStack(alignment: .leading, spacing: 4) {
-                Text("Also used by LokalBot").font(.system(size: 16, weight: .semibold))
+                Text("Also used by LokalBot").font(.headline)
                     .padding(.bottom, 6)
                 supportingRow("Dictation composition", icon: "text.bubble",
                               value: ModelSettingsPresentation.dictationLabel(app.settings),
@@ -93,23 +97,23 @@ struct ModelStackOverviewView: View {
     /// Think backend, so it lives here rather than with one connection.
     private var processingBudget: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Think processing budget").font(.system(size: 16, weight: .semibold))
+            Text("Think processing budget").font(.headline)
             Picker("Think processing budget", selection: $app.settings.generationBudgetPreset) {
                 ForEach(GenerationBudgetPreset.allCases) { Text($0.displayName).tag($0) }
             }
-            .labelsHidden().pickerStyle(.segmented).frame(maxWidth: 420)
+            .labelsHidden().pickerStyle(.segmented).tint(Brand.tealFill).frame(maxWidth: 420)
             .accessibilityIdentifier("models.generationBudget")
             .settingTarget("settings.generationBudgetPreset", selected: app.focusedSettingID)
             Text("Applies to every Think model — built-in, Apple Intelligence, and servers. "
                  + app.settings.generationBudgetPreset.detail)
-                .font(.system(size: 12)).settingsSecondary()
+                .font(.callout).settingsSecondary()
                 .fixedSize(horizontal: false, vertical: true)
             if app.settings.generationBudgetPreset == .unlimited {
                 Label("Unlimited removes practical caps: a single meeting can process for up to "
                       + "6 hours. On a paid API this can run up significant token costs; on a "
                       + "local model it can keep this Mac busy and hot for a long time.",
                       systemImage: "exclamationmark.triangle")
-                    .font(.system(size: 12)).foregroundStyle(Brand.error)
+                    .font(.callout).foregroundStyle(Brand.error)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier("models.generationBudget.warning")
             }
@@ -153,8 +157,8 @@ struct ModelStackOverviewView: View {
                 .settingsModelIcon(role == .think ? InferencePresentation(settings: app.settings) : .onDevice)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
-                Text(role.settingsTitle).font(.system(size: 14, weight: .semibold))
-                Text(detail).font(.system(size: 12)).settingsSecondary()
+                Text(role.settingsTitle).font(.body.weight(.semibold))
+                Text(detail).font(.callout).settingsSecondary()
             }
         }
     }
@@ -163,25 +167,25 @@ struct ModelStackOverviewView: View {
         let status = snapshot[role]
         let destination = role == .think ? InferencePresentation(settings: app.settings) : .onDevice
         return VStack(alignment: .leading, spacing: 4) {
-            Text(model).font(.system(size: 14, weight: .semibold)).textSelection(.enabled)
+            Text(model).font(.body.weight(.semibold)).textSelection(.enabled)
             Label(locationLabel(role, status: status), systemImage: destination.icon)
-                .font(.system(size: 12)).settingsModelLocation(destination)
+                .font(.callout).settingsModelLocation(destination)
             if checks.testingRole == role {
                 Label("Checking…", systemImage: "ellipsis.circle")
-                    .font(.system(size: 12)).settingsSecondary()
+                    .font(.callout).settingsSecondary()
             } else if status.isReady, let result = checks.results[role] {
                 Label(result.label, systemImage: result.failure == nil ? "checkmark.circle" : "exclamationmark.triangle")
-                    .font(.system(size: 12))
+                    .font(.callout)
                     .foregroundStyle(result.failure == nil
                         ? SettingsPalette.secondary(colorScheme, contrast: contrast) : SettingsPalette.warning(colorScheme))
                     .lineLimit(2)
                     .accessibilityIdentifier("models.stack.status.\(role.rawValue)")
             } else if destination.isBlocked {
-                Button("Review connection…", action: connections)
-                    .font(.system(size: 12)).buttonStyle(.workspaceLink)
+                Button("Review Connection…", action: connections)
+                    .font(.callout).buttonStyle(.workspaceLink)
             } else if !status.isReady {
                 Label(status.label, systemImage: status.isWorking ? "arrow.down.circle" : "exclamationmark.circle")
-                    .font(.system(size: 12))
+                    .font(.callout)
                     .foregroundStyle(status.isWorking
                         ? SettingsPalette.secondary(colorScheme, contrast: contrast) : SettingsPalette.warning(colorScheme))
                     .lineLimit(2)
@@ -220,11 +224,11 @@ struct ModelStackOverviewView: View {
                     .settingsModelIcon(destination)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(title).font(.system(size: 13, weight: .medium))
-                    if let detail { Text(detail).font(.system(size: 12)).settingsSecondary() }
+                    Text(title).font(.body.weight(.medium))
+                    if let detail { Text(detail).font(.callout).settingsSecondary() }
                 }
                 Spacer(minLength: 12)
-                Text(value).font(.system(size: 12)).settingsModelLocation(destination)
+                Text(value).font(.callout).settingsModelLocation(destination)
                     .multilineTextAlignment(.trailing).fixedSize(horizontal: false, vertical: true)
                 Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold)).settingsSecondary()
             }

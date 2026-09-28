@@ -126,9 +126,9 @@ struct SpeakerIdentityReview: View {
                 Text(identityDescription)
                     .font(.subheadline.weight(.semibold))
                 HStack {
-                    if let time = assignment?.anchors.first?.start { Button("Play speech") { onPlay(time) } }
-                    Button("This is me") { onAction(.confirmUser, name, remember, profileID) }
-                    Button("Someone else") { onAction(.confirmOther, name, remember, profileID) }
+                    if let time = assignment?.anchors.first?.start { Button("Play Speech") { onPlay(time) } }
+                    Button("This Is Me") { onAction(.confirmUser, name, remember, profileID) }
+                    Button("Someone Else") { onAction(.confirmOther, name, remember, profileID) }
                 }
             } else {
                 Text("This audio mixes voices, so it can't be confirmed as one person. You can still name it.")
@@ -147,7 +147,7 @@ struct SpeakerIdentityReview: View {
                 Button("Resume automatic identification") { onAction(.resume, nil, false, nil) }
             }
             if let candidates = state?.suggestions[speaker], !candidates.isEmpty, assignment?.origin.isProtected != true {
-                Text("Suggested names").font(.subheadline.weight(.semibold))
+                Text("Suggested Names").font(.headline)
                 ForEach(candidates) { candidate in
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
@@ -157,7 +157,10 @@ struct SpeakerIdentityReview: View {
                             Button("Dismiss") { onAction(.dismiss, candidate.name, false, nil) }
                         }
                         Text(candidate.explanation).font(.caption).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
+                    .padding(12)
+                    .lbGroupedSurface()
                 }
             }
             if rememberingEnabled && speaker != "me" && isMicrophoneVoice {

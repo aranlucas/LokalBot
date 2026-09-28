@@ -37,7 +37,7 @@ struct MemoryHealthSection: View {
                 Button("Run retention now") { app.screenshots.pruneOldScreenshots() }
                 Spacer()
                 Text("Updates every 2 seconds")
-                    .font(WorkspaceTypography.metadata)
+                    .font(Font.callout)
                     .settingsSecondary()
             }
             SettingsHelp("Meeting recording and autocomplete take priority over OCR, embeddings, and routines, which catch up when those tasks are idle.")
@@ -304,7 +304,7 @@ private struct MemoryHealthRow: View {
                     Text(item.title)
                     if let detail = item.detail, !detail.isEmpty {
                         Text(detail)
-                            .font(WorkspaceTypography.metadata)
+                            .font(Font.callout)
                             .settingsSecondary()
                     }
                 }
@@ -326,13 +326,13 @@ struct MemoryHealthStatus: View {
     var body: some View {
         if tone == .neutral {
             Text(value)
-                .font(WorkspaceTypography.metadataEmphasis.monospacedDigit())
+                .font(Font.callout.weight(.semibold).monospacedDigit())
                 .settingsSecondary()
         } else {
             HStack(spacing: 6) {
                 StatusDot(color: dotColor, size: 7)
                 Text(value)
-                    .font(WorkspaceTypography.metadataEmphasis)
+                    .font(Font.callout.weight(.semibold))
                     .foregroundStyle(tone == .attention ? SettingsPalette.warning(scheme) : Color.primary)
             }
             .padding(.horizontal, 9)
@@ -357,18 +357,18 @@ private struct MemoryHealthSummary: View {
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             IconTile(systemImage: attention.isEmpty ? "checkmark.seal" : "exclamationmark.triangle",
-                     tint: attention.isEmpty ? Brand.tealFill : Color(nsColor: .systemOrange),
+                     tint: attention.isEmpty ? Brand.teal : LBTokens.Palette.attentionText,
                      size: 32)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(attention.isEmpty
                      ? "Memory capture is working"
                      : "\(CountLabel.format(attention.count, "item")) \(attention.count == 1 ? "needs" : "need") attention")
-                    .font(WorkspaceTypography.bodyEmphasis)
+                    .font(Font.body.weight(.semibold))
                 Text(attention.isEmpty
                      ? "Capture, audio, and background work are running as configured."
                      : attention.map(\.title).joined(separator: " · "))
-                    .font(WorkspaceTypography.metadata)
+                    .font(Font.callout)
                     .settingsSecondary()
                     .fixedSize(horizontal: false, vertical: true)
             }

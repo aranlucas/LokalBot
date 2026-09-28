@@ -123,7 +123,7 @@ struct ModelPickerSheet: View {
                     Text("Ollama").tag(AppSettings.SummarizerBackend.ollama)
                     Text("Connected provider").tag(AppSettings.SummarizerBackend.openAICompatible)
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.segmented).tint(Brand.tealFill)
                 .padding(.horizontal, 24).padding(.bottom, 16)
                 .accessibilityIdentifier("models.picker.provider")
             }
@@ -138,10 +138,10 @@ struct ModelPickerSheet: View {
             HStack(spacing: 14) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(needsDownload ? "Your current model stays active while this downloads." : "The change takes effect when you choose Use model.")
-                        .font(.system(size: 12)).foregroundStyle(.secondary)
+                        .font(.callout).foregroundStyle(.secondary)
                     if role == .assistant, app.settings.dictationCompositionBuiltInModelID.isEmpty {
                         Text("Dictation composition will also use this model.")
-                            .font(.system(size: 12)).foregroundStyle(.secondary)
+                            .font(.callout).foregroundStyle(.secondary)
                     }
                 }
                 Spacer(minLength: 0)
@@ -185,7 +185,7 @@ struct ModelPickerSheet: View {
                     .textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier("models.picker.search")
                 Toggle("Downloaded only", isOn: $installedOnly).toggleStyle(.checkbox)
-                    .font(.system(size: 12))
+                    .font(.callout)
             }
             .padding(.horizontal, 24).padding(.bottom, 12)
             List(selection: selection) {
@@ -264,12 +264,12 @@ struct ModelPickerSheet: View {
         VStack(alignment: .leading, spacing: 9) {
             Text(role == .transcription ? transcription.blurb
                  : selectedEntry?.blurb ?? "Uses the same model and processing destination as Think.")
-                .font(.system(size: 13)).foregroundStyle(.secondary)
+                .font(.body).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             if let entry = selectedEntry, role != .transcription {
                 let fit = ModelFit.evaluate(modelSizeGB: entry.sizeGB, capability: HardwareCapabilityProbe.current())
                 if let advisory = fit.advisory {
-                    Label(advisory, systemImage: "memorychip").font(.system(size: 12)).foregroundStyle(.orange)
+                    Label(advisory, systemImage: "memorychip").font(.callout).foregroundStyle(.orange)
                 }
             }
             Button { showingAdvanced.toggle() } label: {
@@ -282,7 +282,7 @@ struct ModelPickerSheet: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .font(.system(size: 12))
+            .font(.callout)
             .accessibilityLabel("Advanced")
             .accessibilityValue(showingAdvanced ? "Expanded" : "Collapsed")
             .accessibilityIdentifier("models.picker.advanced")
@@ -316,7 +316,7 @@ struct ModelPickerSheet: View {
                 }
             }
         }
-        .font(.system(size: 12)).foregroundStyle(.secondary).padding(.top, 8)
+        .font(.callout).foregroundStyle(.secondary).padding(.top, 8)
     }
 
     private var providerSelection: some View {
@@ -330,23 +330,23 @@ struct ModelPickerSheet: View {
             } else {
                 let target = patch.applying(to: app.settings)
                 Label(ModelSettingsPresentation.destination(target), systemImage: InferencePresentation(settings: target).icon)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.body.weight(.semibold))
                     .settingsModelLocation(InferencePresentation(settings: target))
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Model ID").font(.system(size: 13, weight: .medium))
+                    Text("Model ID").font(.body.weight(.medium))
                     TextField("Provider model identifier", text: backend == .ollama ? $ollamaModel : $remoteModel)
                         .textFieldStyle(.roundedBorder).accessibilityIdentifier("models.picker.modelID")
                 }
                 Text(backend == .ollama ? app.settings.ollamaBaseURL : app.settings.openAIBaseURL)
-                    .font(.system(size: 12)).foregroundStyle(.secondary).textSelection(.enabled)
+                    .font(.callout).foregroundStyle(.secondary).textSelection(.enabled)
                 if case .blocked(let reason) = InferencePresentation(settings: target) {
                     Label(reason, systemImage: "exclamationmark.triangle")
-                        .font(.system(size: 13)).foregroundStyle(.orange)
+                        .font(.body).foregroundStyle(.orange)
                 } else {
                     Text(InferencePresentation(settings: target).detail(
                         local: "This provider runs on this Mac.",
                         remote: "Summaries, Ask, Agent, and inherited dictation composition can send approved context to this provider."))
-                        .font(.system(size: 13)).foregroundStyle(.secondary)
+                        .font(.body).foregroundStyle(.secondary)
                 }
                 Button("Manage connection…") { openConnections() }
                     .accessibilityIdentifier("models.picker.connections")
@@ -366,13 +366,13 @@ private struct ModelChoiceRow: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 5) {
-                Text(title).font(.system(size: 14, weight: .medium))
-                Text(detail).font(.system(size: 12)).foregroundStyle(.secondary)
+                Text(title).font(.body.weight(.medium))
+                Text(detail).font(.callout).foregroundStyle(.secondary)
             }
             Spacer()
             if let progress { ProgressView(value: progress).frame(width: 70) }
             Text(inUse ? "In use" : available ? "Downloaded" : "Available")
-                .font(.system(size: 12)).foregroundStyle(.secondary)
+                .font(.callout).foregroundStyle(.secondary)
         }
         .padding(.vertical, 6)
         .accessibilityElement(children: .combine)
@@ -384,8 +384,8 @@ struct ModelSheetHeading: View {
     let subtitle: String
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(title).font(.system(size: 21, weight: .bold))
-            Text(subtitle).font(.system(size: 13)).foregroundStyle(.secondary)
+            Text(title).font(.largeTitle.bold())
+            Text(subtitle).font(.body).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading).padding(24)
     }

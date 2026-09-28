@@ -9,30 +9,65 @@ enum OutcomeEvidencePolicy {
         + #"(?:on|from) my (?:side|end)|for my part|as for me)[,!.: ]+)*"#
     private static let firstPersonUndertaking =
         #"(?:i (?:will|shall|am going to|am gonna|commit to|agree to|(?:do )?(?:plan|intend) to|am (?:planning|intending) to)"#
-        + #"|i['’]m (?:going to|gonna|planning to|intending to)|i['’]ll|my next step is)"#
+        + #"|i['’]m (?:going to|gonna|planning to|intending to)|i['’]ll|my next step is"#
+        + #"|(?:i think )?i (?:still )?(?:have to|need to|must))"#
 
-    /// Select a canonical clause from the exact source visible to the model.
-    /// The existing policy still checks the complete original clause, so a
-    /// clipped part cannot hide a preceding condition or following negation.
+    /// A missing quote is compatible only with one unambiguous undertaking.
+    /// Never choose the first promise from a passage containing other actors'
+    /// tasks: even a verbatim quote cannot establish which task was paraphrased.
     static func resolveFromSource(
         speakerID: String?, basis: String?, source: Transcript.Segment,
         visibleText: String, roster: [String: Transcript.SpeakerDescriptor],
-        addressedToUser: Bool = false
+        addressedToUser: Bool = false, quote: String? = nil
     ) -> OutcomeAttribution {
+        func reject(_ reason: OutcomeAttribution.RejectionReason) -> OutcomeAttribution {
+            .init(resolution: .unresolved, speakerID: speakerID.flatMap { roster[$0] == nil ? nil : $0 },
+                  basis: .unclear, rejectionReason: reason)
+        }
+        guard !hasCompetingActors(in: source.displayText) else { return reject(.ambiguousQuote) }
+        let supplied = quote.flatMap { normalized($0).isEmpty ? nil : $0 }
+        let clauses = supplied.map { [$0] } ?? canonicalClauses(visibleText)
+        // With no selected quote, a second task-bearing clause makes inference
+        // ambiguous even when only one of its owners passes identity checks.
+        if supplied == nil, clauses.filter({ expressesUndertaking($0) || isSecondPersonRequest($0) }).count > 1 {
+            return reject(.missingQuote)
+        }
         var failure = resolve(speakerID: speakerID, basis: basis, quote: nil, sources: [source], roster: roster)
-        for quote in canonicalClauses(visibleText) {
+        var accepted: [OutcomeAttribution] = []
+        for quote in clauses {
             let resolvedBasis = basis == "unclear" && isCommitment(quote) ? "commitment" : basis
             let attribution = resolve(speakerID: speakerID, basis: resolvedBasis,
                                       quote: quote, sources: [source], roster: roster,
                                       addressedToUser: addressedToUser)
-            if attribution.resolution != .unresolved { return attribution }
+            if attribution.resolution != .unresolved { accepted.append(attribution) }
             failure = attribution
         }
-        return failure
+        if accepted.count > 1 { return reject(.ambiguousQuote) }
+        return accepted.first ?? failure
     }
 
     static func hasCommitment(source: Transcript.Segment, visibleText: String) -> Bool {
-        canonicalClauses(visibleText).contains { isCommitment($0) && supportsCommitment($0, in: source.displayText) }
+        !hasCompetingActors(in: source.displayText)
+            && canonicalClauses(visibleText).contains { isCommitment($0) && supportsCommitment($0, in: source.displayText) }
+    }
+
+    /// Independent actor clauses, including coordinated promises, are not a
+    /// single ownership anchor. Purpose clauses ("so you can introduce us")
+    /// are deliberately not treated as another assignment.
+    static func hasCompetingActors(in raw: String) -> Bool {
+        let text = normalized(raw)
+        let boundary = #"(?:^|[.!?;]\s*|,\s*(?!so\b)|\b(?:and|but|while)\s+)(?:(?:and|but|then|also|so|yeah|yes)\s*,?\s*)*"#
+        let actor = #"([\p{L}][\p{L}'’-]*(?:\s+[\p{L}][\p{L}'’-]*){0,2}?)"#
+        let undertaking = #"(?:\s+(?:will|shall|must|should|can|have to|has to|need to|needs to|am going to|is going to|are going to|plan to|plans to|is responsible for)|['’]ll)\s+"#
+        guard let regex = try? NSRegularExpression(pattern: boundary + actor + undertaking) else { return true }
+        let actors = regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { match -> String? in
+            guard let range = Range(match.range(at: 1), in: text) else { return nil }
+            let value = String(text[range])
+            return value == "i" || value.hasPrefix("i ") || value.hasPrefix("i'm") || value.hasPrefix("i’m") ? "i" : value
+        }
+        let hasRequest = canonicalClauses(text).contains(where: isSecondPersonRequest)
+        let hasPersonalUndertaking = canonicalClauses(text).contains(where: isCommitment)
+        return Set(actors + (hasRequest ? ["you"] : []) + (hasPersonalUndertaking ? ["i"] : [])).count > 1
     }
 
     static func isBareAcceptance(_ raw: String) -> Bool {

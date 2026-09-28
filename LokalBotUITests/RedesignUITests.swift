@@ -19,6 +19,31 @@ final class RedesignUITests: XCTestCase {
         previousVisualFixtures.forEach { $0.cleanUp() }
     }
 
+    func testSavedAudioRecoveryIsReviewableAndCaptureWarningSurvivesProcessing() throws {
+        let folder = fixture.folder(for: fixture.designReview)
+        let metaURL = folder.appendingPathComponent("meta.json")
+        var meta = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: metaURL)) as? [String: Any])
+        meta["recordedDuration"] = 120
+        meta["contentRange"] = ["start": 0, "end": 60]
+        try JSONSerialization.data(withJSONObject: meta).write(to: metaURL, options: .atomic)
+        let report: [String: Any] = ["version": 1, "events": [], "microphoneDroppedBuffers": 0,
+            "systemDroppedBuffers": 0, "attachmentAttempts": 10, "hadMissingAudio": true]
+        try JSONSerialization.data(withJSONObject: report).write(to: folder.appendingPathComponent("recording-health.json"))
+        try launch(["LOKALBOT_INITIAL_SECTION": "meetings", "LOKALBOT_SELECT_INDEX": "0"])
+        XCTAssertTrue(element("meeting.captureWarning").waitForExistence(timeout: 8))
+        let review = app.buttons["meeting.reviewSavedAudio"]
+        XCTAssertTrue(review.waitForExistence(timeout: 5))
+        review.click()
+        XCTAssertTrue(app.buttons["Use full recording"].waitForExistence(timeout: 3))
+        app.buttons["Use full recording"].click()
+        app.buttons["Cancel"].click()
+        let unchanged = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: metaURL)) as? [String: Any])
+        XCTAssertEqual((unchanged["contentRange"] as? [String: Double])?["end"], 60,
+                       "Review and cancellation cannot expand a legacy or user-reviewed range")
+        XCTAssertTrue(element("meeting.captureWarning").exists)
+        snapshot("saved-audio-review-and-capture-warning")
+    }
+
     func testWorkspaceVisualMatrix() throws {
         // Collect route assertion failures across the matrix for review. Any
         // failed assertion still fails this test and the aggregate release gate.
@@ -286,6 +311,60 @@ final class RedesignUITests: XCTestCase {
         snapshot("meeting-review-ready-to-refresh")
     }
 
+    func testTimelineFiltersRetainedMomentsWithoutHidingWorkSessions() throws {
+        try launch(["LOKALBOT_INITIAL_SECTION": "timeline", "LOKALBOT_SCREEN_MEMORY_DEMO": "1"])
+        let search = app.textFields["timeline.search"]
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        search.click()
+        search.typeText("no-matching-retained-moment-9382")
+        XCTAssertTrue(UITestHarness.staticText(containing: "No moments match these filters", in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(element("timeline.workSessions").exists, "Moment filters must preserve work sessions")
+        search.typeKey("a", modifierFlags: .command)
+        search.typeKey(.delete, modifierFlags: [])
+        UITestHarness.selectSegment("Rewind", pickerIdentifier: "timeline.mode", in: app)
+        XCTAssertTrue(element("timeline.rewind").waitForExistence(timeout: 5))
+        snapshot("timeline-rewind-with-sessions")
+    }
+
+    func testTimelineResetsAppFilterOnDayChangeAndEmptyDetailsCanClose() throws {
+        try SyntheticFixture.plantActivityMoment(in: fixture)
+        try launch(["LOKALBOT_INITIAL_SECTION": "timeline", "LOKALBOT_CAPTURE_SIZE": "1000x700"])
+        let filter = app.popUpButtons["timeline.appFilter"]
+        XCTAssertTrue(filter.waitForExistence(timeout: 5))
+        filter.click()
+        XCTAssertTrue(app.menuItems["Xcode"].waitForExistence(timeout: 3))
+        app.menuItems["Xcode"].click()
+        XCTAssertTrue(UITestHarness.waitUntil { (filter.value as? String) == "Xcode" })
+        app.buttons["timeline.previousDay"].click()
+        XCTAssertTrue(UITestHarness.waitUntil { (filter.value as? String) == "All Apps" },
+                      "A previous day's app filter cannot hide this day's moments")
+        let toggle = app.buttons["timeline.context.toggle"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 3))
+        toggle.click()
+        XCTAssertTrue(element("timeline.contextPanel").waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["Close context panel"].waitForExistence(timeout: 3))
+        app.buttons["Close context panel"].click()
+        XCTAssertTrue(UITestHarness.waitUntil { !self.element("timeline.contextPanel").exists })
+    }
+
+    func testTranscriptSearchIsPersistentAndCommandFStillFindsAcrossMeeting() throws {
+        try launch(["LOKALBOT_INITIAL_SECTION": "meetings", "LOKALBOT_SELECT_INDEX": "0"])
+        UITestHarness.selectSegment("Transcript", pickerIdentifier: "meeting.contentTabs", in: app)
+        let search = app.textFields["meeting.search.field"]
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        XCTAssertEqual(search.placeholderValue, "Search Transcript")
+        search.click()
+        search.typeText("failover")
+        let status = app.staticTexts["meeting.search.status"]
+        XCTAssertTrue(status.waitForExistence(timeout: 3))
+        XCTAssertTrue((status.value as? String ?? status.label).contains("Transcript"))
+        app.typeKey("f", modifierFlags: .command)
+        XCTAssertTrue(UITestHarness.waitUntil { search.placeholderValue == "Search this meeting" })
+        app.buttons["meeting.search.close"].click()
+        XCTAssertTrue(search.exists, "Closing page find must keep the transcript search field")
+        XCTAssertFalse(status.exists, "Closing page find clears its query and matches")
+    }
+
     func testMeetingCorrectionKeepsReviewWithPageSearchOpenAndClearsReturnOrigin() throws {
         try launch(["LOKALBOT_INITIAL_SECTION": "meetings", "LOKALBOT_SELECT_INDEX": "0",
                     "LOKALBOT_DETAIL_TAB": "review"])
@@ -382,47 +461,47 @@ final class RedesignUITests: XCTestCase {
         snapshot("timeline-inspectable-title-evidence")
     }
 
-    func testTimelineReservesMostWidthForEvidence() throws {
+    func testTimelineUsesDayPageAndTrailingDetails() throws {
         try SyntheticFixture.plantActivityMoment(in: fixture)
         try launch(["LOKALBOT_INITIAL_SECTION": "timeline", "LOKALBOT_CAPTURE_SIZE": "1440x900"])
         let rail = element("timeline.sessionRail")
         let evidence = element("timeline.evidencePane")
         XCTAssertTrue(rail.waitForExistence(timeout: 5))
         XCTAssertTrue(evidence.waitForExistence(timeout: 5))
-        XCTAssertLessThanOrEqual(rail.frame.width, 361)
-        XCTAssertGreaterThan(evidence.frame.width, rail.frame.width * 1.5)
-        XCTAssertLessThanOrEqual(evidence.frame.maxX, rail.frame.minX,
-                                 "Work sessions belong to the right of the day digest")
+        XCTAssertEqual(evidence.frame.width, 320, accuracy: 4)
+        XCTAssertGreaterThan(rail.frame.width, evidence.frame.width)
+        XCTAssertLessThanOrEqual(rail.frame.maxX, evidence.frame.minX,
+                                 "Details belong to the right of the day page")
         app.buttons["timeline.session.1"].click()
         XCTAssertTrue(element("timeline.sessionPreview").waitForExistence(timeout: 5))
-        XCTAssertGreaterThan(evidence.frame.width, rail.frame.width * 1.5)
+        XCTAssertGreaterThan(rail.frame.width, evidence.frame.width)
         snapshot("timeline-reading-pane")
     }
 
-    func testTimelineRailResizesAgainstTheDigest() throws {
+    func testTimelineDetailsResizeBesideTheDay() throws {
         try launch(["LOKALBOT_INITIAL_SECTION": "timeline", "LOKALBOT_CAPTURE_SIZE": "1440x900"])
         let rail = element("timeline.sessionRail")
         let evidence = element("timeline.evidencePane")
         XCTAssertTrue(rail.waitForExistence(timeout: 5))
         XCTAssertTrue(evidence.waitForExistence(timeout: 5))
-        let opening = rail.frame.width
+        let opening = evidence.frame.width
         let divider = try XCTUnwrap(app.splitters.allElementsBoundByIndex.min {
-            abs($0.frame.midX - rail.frame.minX) < abs($1.frame.midX - rail.frame.minX)
+            abs($0.frame.midX - evidence.frame.minX) < abs($1.frame.midX - evidence.frame.minX)
         }, "Timeline divider missing")
 
         app.activate()
         let grip = divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         grip.press(forDuration: 0.1, thenDragTo: grip.withOffset(CGVector(dx: -160, dy: 0)))
-        XCTAssertTrue(UITestHarness.waitUntil { rail.frame.width >= opening + 120 },
-                      "Work sessions should widen past their opening width (\(rail.frame.width) from \(opening))")
-        XCTAssertGreaterThanOrEqual(evidence.frame.width, 420, "The digest keeps its readable minimum")
+        XCTAssertTrue(UITestHarness.waitUntil { evidence.frame.width >= opening + 120 },
+                      "Details should widen past their opening width (\(evidence.frame.width) from \(opening))")
+        XCTAssertGreaterThanOrEqual(rail.frame.width, 440, "The day keeps its readable minimum")
         snapshot("timeline-wide-sessions")
 
         // Divider positions persist in the host's defaults; leave the next
         // launch at the opening width.
         let widened = divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        widened.press(forDuration: 0.1, thenDragTo: widened.withOffset(CGVector(dx: rail.frame.width - opening, dy: 0)))
-        XCTAssertTrue(UITestHarness.waitUntil { abs(rail.frame.width - opening) < 8 })
+        widened.press(forDuration: 0.1, thenDragTo: widened.withOffset(CGVector(dx: evidence.frame.width - opening, dy: 0)))
+        XCTAssertTrue(UITestHarness.waitUntil { abs(evidence.frame.width - opening) < 8 })
     }
 
     func testSettingsCategoryResetsScrollAndDictationHasDirectNavigation() throws {
@@ -504,7 +583,7 @@ final class RedesignUITests: XCTestCase {
 
     func testHighContrastKeepsActionsAccessible() throws {
         try launch(["LOKALBOT_CAPTURE_APPEARANCE": "contrast-dark"])
-        XCTAssertTrue(app.buttons["toolbar.record"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["today.record"].waitForExistence(timeout: 5))
         app.typeKey(",", modifierFlags: .command)
         XCTAssertTrue(element("settings.categories").waitForExistence(timeout: 5))
         app.textFields["settings.search"].click()
@@ -534,6 +613,9 @@ final class RedesignUITests: XCTestCase {
             XCTAssertTrue(element("meeting.contentTabs").isHittable)
         }
         UITestHarness.clickSidebar("sidebar.ask", in: app)
+        let history = app.outlines["chat.history.list"]
+        XCTAssertTrue(history.waitForExistence(timeout: 5))
+        XCTAssertEqual(history.label, "Saved conversations")
         app.textFields["search.field"].click()
         app.textFields["search.field"].typeText("failover")
         XCTAssertTrue(element("search.hit.\(fixture.designReview.id.uuidString).segment").waitForExistence(timeout: 6))

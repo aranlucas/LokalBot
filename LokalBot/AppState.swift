@@ -850,6 +850,7 @@ final class AppState: ObservableObject {
             .removeDuplicates()
             .dropFirst()
             .sink { [weak self] status in
+                self?.pipeline.setCaptureActive(status != .idle)
                 switch status {
                 case .recording: self?.meetingRecordingStateDidChange(active: true)
                 case .idle: self?.meetingRecordingStateDidChange(active: false)
@@ -900,6 +901,7 @@ final class AppState: ObservableObject {
         // finished — a quit or crash mid-transcription used to lose the job.
         detector.onMeetingStarted = { [weak self] context in
             guard let self else { return }
+            self.recording.considerDetectedSource(context)
             // A recording already capturing this call follows its end from now on.
             if self.settings.autoRecordMode != .manual, self.recording.joinDetectorSession(context) {
                 RecordingNotifier.shared.invalidateMeetingDetections()
@@ -938,11 +940,20 @@ final class AppState: ObservableObject {
             switch event.action(detectorSessionID: self.recording.detectorSessionID,
                                 startedByUser: self.recording.startedByUser) {
             case .ignore: break
-            case .release: self.recording.leaveDetectorSession()
             case .stop(let allowsAutomaticRestart):
                 self.recording.stop(contentEndedAt: event.contentEndedAt,
                                     allowsAutomaticRestart: allowsAutomaticRestart)
             }
+        }
+        detector.onBrowserObservation = { [weak self] sessionID, unavailable, lastVerifiedAt in
+            self?.recording.updateCallObservation(sessionID: sessionID,
+                                                  unavailable: unavailable,
+                                                  lastVerifiedAt: lastVerifiedAt)
+        }
+        detector.onVerifiedSourceAvailable = { [weak self] context in
+            guard let self else { return }
+            self.recording.considerDetectedSource(context)
+            if self.settings.autoRecordMode != .manual { self.recording.joinDetectorSession(context) }
         }
         detector.stopDebounce = settings.stopDebounceSeconds
         detector.calendar = calendar
@@ -1455,6 +1466,7 @@ final class AppState: ObservableObject {
         }
         var updated = meeting
         updated.contentRange = range
+        updated.contentRangeSource = .userReviewed
         let folder = updated.folderURL(in: storage)
         let existing = try pipeline.loadTranscript(from: folder)
         // Invalidate derived claims even when no complete segment survives.

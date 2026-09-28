@@ -78,7 +78,7 @@ struct ModelPreparationView: View {
                     .font(.caption)
                     .foregroundStyle(tint)
                 Text(presentation.title)
-                    .font(.system(size: 11.5, weight: .semibold))
+                    .font(.callout.weight(.semibold))
                     .lineLimit(1)
                 Spacer(minLength: 6)
                 actionButton
@@ -86,7 +86,7 @@ struct ModelPreparationView: View {
             HStack(spacing: 7) {
                 preparationProgress(width: 72)
                 Text(presentation.status)
-                    .font(.system(size: 10.5))
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .truncationMode(.tail)

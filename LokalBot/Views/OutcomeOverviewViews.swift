@@ -6,7 +6,7 @@ import SwiftUI
 struct NeedsAttentionSection: View {
     @EnvironmentObject var app: AppState
     let threads: [ActionThread]
-    var title = "Needs attention"
+    var title = "Needs Attention"
     var limit = 4
     /// Today offers planning the open threads with Agent; Timeline's day view
     /// keeps the section to review only.
@@ -25,7 +25,7 @@ struct NeedsAttentionSection: View {
                     }
                 }
                 HStack(spacing: 8) {
-                    Button("Review all actions") {
+                    Button("Review Actions…") {
                         app.openActions()
                     }
                     .buttonStyle(.bordered)
@@ -34,7 +34,7 @@ struct NeedsAttentionSection: View {
                         Button {
                             planInAgent()
                         } label: {
-                            Label("Plan in Agent", systemImage: "wand.and.sparkles")
+                            Label("Plan in Agent…", systemImage: "wand.and.sparkles")
                         }
                         .buttonStyle(.bordered)
                         .help("Open a new Agent task with these action threads")
@@ -74,6 +74,7 @@ struct ActionThreadRow: View {
             } label: {
                 Image(systemName: thread.hasMixedStatus ? "minus.circle" : thread.status == .done
                       ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: LBTokens.Metric.actionToggleSize))
                     .foregroundStyle(thread.status == .done ? Brand.teal : .secondary)
             }
             .buttonStyle(.plain)
@@ -83,13 +84,13 @@ struct ActionThreadRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(thread.text)
-                    .font(WorkspaceTypography.bodyEmphasis)
+                    .font(.body)
                     .strikethrough(thread.status == .done)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 HStack(spacing: 6) {
                     if thread.hasMixedStatus {
                         Text("Mixed status")
-                            .font(WorkspaceTypography.metadata)
+                            .font(Font.callout)
                             .foregroundStyle(.secondary)
                     }
                     if thread.hasMultipleMeetings {
@@ -101,7 +102,7 @@ struct ActionThreadRow: View {
                                 systemImage: "link")
                         }
                         .buttonStyle(.plain)
-                        .font(WorkspaceTypography.metadata)
+                        .font(Font.callout)
                         .foregroundStyle(Brand.teal)
                         .accessibilityIdentifier("outcome.thread.sources.\(thread.id)")
                         .popover(isPresented: $showingSources) {
@@ -115,17 +116,17 @@ struct ActionThreadRow: View {
                             app.openMeeting(thread.latestReference.meetingID)
                         }
                         .buttonStyle(.plain)
-                        .font(WorkspaceTypography.metadata)
+                        .font(Font.callout)
                         .foregroundStyle(Brand.teal)
                     }
                     if let due = thread.due, let spokenAt = thread.dueSourceMeetingDate {
                         Text(ActionDuePresentation.label(due, spokenAt: spokenAt))
-                            .font(WorkspaceTypography.metadata)
+                            .font(Font.callout)
                             .foregroundStyle(.secondary)
                     }
                     if thread.dueHistory.count > 1 {
                         Text("Deadline updated")
-                            .font(WorkspaceTypography.metadata)
+                            .font(Font.callout)
                             .foregroundStyle(.secondary)
                     }
                     if !thread.hasMultipleMeetings,
@@ -223,9 +224,9 @@ private struct ActionThreadSourcesView: View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Action thread")
-                    .font(WorkspaceTypography.sectionTitle)
+                    .font(Font.headline)
                 Text("Every source remains attached to its original meeting.")
-                    .font(WorkspaceTypography.metadata)
+                    .font(Font.callout)
                     .foregroundStyle(.secondary)
             }
             Divider()
@@ -238,22 +239,22 @@ private struct ActionThreadSourcesView: View {
                             } label: {
                                 HStack {
                                     Text(reference.meetingTitle)
-                                        .font(WorkspaceTypography.bodyEmphasis)
+                                        .font(Font.body.weight(.semibold))
                                     Spacer()
                                     Text(reference.meetingStartedAt.formatted(
                                         date: .abbreviated,
                                         time: .shortened))
-                                        .font(WorkspaceTypography.metadata)
+                                        .font(Font.callout)
                                         .foregroundStyle(.secondary)
                                 }
                             }
                             .buttonStyle(.plain)
                             Text(reference.action.displayText)
-                                .font(WorkspaceTypography.body)
+                                .font(Font.body)
                                 .foregroundStyle(.secondary)
                             if reference.textWasCorrected {
                                 Label("Corrected to: \(reference.text)", systemImage: "pencil")
-                                    .font(WorkspaceTypography.metadata)
+                                    .font(Font.callout)
                                     .foregroundStyle(.secondary)
                             }
                             HStack(spacing: 6) {
@@ -268,7 +269,7 @@ private struct ActionThreadSourcesView: View {
                                 }
                                 Text(reference.status.label)
                             }
-                            .font(WorkspaceTypography.metadata)
+                            .font(Font.callout)
                             .foregroundStyle(.tertiary)
                             Button("Keep as separate action") {
                                 if app.outcomeIndex.setThreadExcluded(
@@ -279,7 +280,7 @@ private struct ActionThreadSourcesView: View {
                                 }
                             }
                             .buttonStyle(.borderless)
-                            .font(WorkspaceTypography.metadata)
+                            .font(Font.callout)
                             .accessibilityIdentifier("outcome.thread.separate.\(reference.id)")
                             ForEach(reference.action.citations) { citation in
                                 Button {
@@ -290,7 +291,7 @@ private struct ActionThreadSourcesView: View {
                                         Text(citation.excerpt)
                                             .lineLimit(2)
                                     }
-                                    .font(WorkspaceTypography.metadata)
+                                    .font(Font.callout)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                                 .buttonStyle(.plain)
@@ -324,6 +325,7 @@ struct OutcomeOverviewActionRow: View {
             } label: {
                 Image(systemName: reference.status == .done
                       ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: LBTokens.Metric.actionToggleSize))
                     .foregroundStyle(reference.status == .done ? Brand.teal : .secondary)
             }
             .buttonStyle(.plain)
@@ -331,17 +333,17 @@ struct OutcomeOverviewActionRow: View {
             .accessibilityLabel(reference.status == .done ? "Reopen action" : "Complete action")
             VStack(alignment: .leading, spacing: 4) {
                 Text(reference.text)
-                    .font(WorkspaceTypography.bodyEmphasis)
+                    .font(Font.body.weight(.semibold))
                     .strikethrough(reference.status == .done)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 HStack(spacing: 6) {
                     Button(reference.meetingTitle) { app.openMeeting(reference.meetingID) }
                         .buttonStyle(.plain)
-                        .font(WorkspaceTypography.metadata)
+                        .font(Font.callout)
                         .foregroundStyle(Brand.teal)
                     if let due = reference.due {
                         Text(ActionDuePresentation.label(due, spokenAt: reference.meetingStartedAt))
-                            .font(WorkspaceTypography.metadata)
+                            .font(Font.callout)
                             .foregroundStyle(.secondary)
                     }
                     if let citation = reference.action.citations.first {

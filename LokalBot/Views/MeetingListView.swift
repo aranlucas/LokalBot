@@ -16,14 +16,33 @@ struct MeetingListView: View {
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 10) {
+                HStack(spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Meetings").font(.title3.bold())
+                        Text("\(app.meetings.filter { !$0.isMergedSource }.count) meetings")
+                            .font(.callout).foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 4)
+                    Button {
+                        app.isRecording ? app.stopRecording()
+                            : app.startRecording(context: app.recordingContext(for: app.detector.activeApp))
+                    } label: {
+                        Label(app.isRecording ? "Stop Recording" : "Record",
+                              systemImage: app.isRecording ? "stop.circle.fill" : "record.circle.fill")
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                    .help(app.isRecording ? "Stop Recording" : "Record Now")
+                    .accessibilityIdentifier("toolbar.record")
+                }
                 TextField("Search meetings", text: $query)
                     .textFieldStyle(.roundedBorder)
-                    .font(WorkspaceTypography.control)
+                    .font(Font.body)
                     .accessibilityLabel("Search meetings")
                     .accessibilityIdentifier("meeting.search")
                 if app.evidenceMeetingID != nil, !query.isEmpty {
                     Text("The opened source remains visible outside these filters.")
-                        .font(WorkspaceTypography.metadata).foregroundStyle(.secondary)
+                        .font(.callout).foregroundStyle(.secondary).lineLimit(1)
                 }
                 if !failedMeetings.isEmpty {
                     HStack {
@@ -40,13 +59,12 @@ struct MeetingListView: View {
 
             }
             .padding(WorkspaceMetric.cardPadding)
-            .background(.bar)
-            Divider()
 
             List(selection: $app.selectedMeetingIDs) {
                 ForEach(groupedMeetings, id: \.label) { group in
                     Group {
                         SectionHeader(text: group.label)
+                            .selectionDisabled(true)
                         ForEach(group.items) { meeting in
                             MeetingRowView(meeting: meeting)
                                 .tag(meeting.id)
@@ -54,6 +72,8 @@ struct MeetingListView: View {
                     }
                 }
             }
+            .listStyle(.inset)
+            .tint(Brand.tealFill)
             .accessibilityIdentifier("meeting.list")
             .accessibilityLabel("Meeting library")
             .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -68,7 +88,7 @@ struct MeetingListView: View {
                 if !app.libraryReady {
                     LoadingStateLabel(
                         "Loading your meeting library…",
-                        font: WorkspaceTypography.body)
+                        font: Font.body)
                     .accessibilityIdentifier("meeting.libraryLoading")
                 } else if groupedMeetings.isEmpty {
                     meetingEmptyState
@@ -108,11 +128,11 @@ struct MeetingListView: View {
                 .foregroundStyle(Brand.teal)
             VStack(alignment: .leading, spacing: 1) {
                 Text("\(app.selectedMeetingIDs.count) meetings selected")
-                    .font(WorkspaceTypography.control.weight(.semibold))
+                    .font(Font.body.weight(.semibold))
                 Text(canMergeSelected
                      ? "Create one timeline and fold the originals into it"
                      : "Select completed meetings that are not processing")
-                    .font(WorkspaceTypography.metadata)
+                    .font(Font.callout)
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: 6)
@@ -171,13 +191,17 @@ struct MeetingListView: View {
     /// Live recording first, then finished meetings, grouped by day.
     private var groupedMeetings: [(label: String, items: [Meeting])] {
         let calendar = Calendar.current
-        let all = ((app.currentMeeting.map { [$0] } ?? []) + app.meetings)
+        let all = app.meetings
             .filter { !$0.isMergedSource }
             .filter { matchesQuery($0) || $0.id == app.evidenceMeetingID }
         let groups = Dictionary(grouping: all) { calendar.startOfDay(for: $0.startedAt) }
-        return groups.keys.sorted(by: >).map { day in
-            (Self.dayLabel(day), groups[day]!.sorted { $0.startedAt > $1.startedAt })
+        var result = groups.keys.sorted(by: >).map { day in
+            (label: Self.dayLabel(day), items: groups[day]!.sorted { $0.startedAt > $1.startedAt })
         }
+        if let live = app.currentMeeting, matchesQuery(live) || live.id == app.evidenceMeetingID {
+            result.insert((label: "Recording Now", items: [live]), at: 0)
+        }
+        return result
     }
 
     private func matchesQuery(_ meeting: Meeting) -> Bool {
@@ -206,10 +230,9 @@ struct MeetingListView: View {
     }
 
     private static func dayLabel(_ day: Date) -> String {
-        let datePart = day.formatted(.dateTime.month(.abbreviated).day()).uppercased()
-        if Calendar.current.isDateInToday(day) { return "TODAY — \(datePart)" }
-        if Calendar.current.isDateInYesterday(day) { return "YESTERDAY — \(datePart)" }
-        return "\(day.formatted(.dateTime.weekday(.wide)).uppercased()) — \(datePart)"
+        if Calendar.current.isDateInToday(day) { return "Today" }
+        if Calendar.current.isDateInYesterday(day) { return "Yesterday" }
+        return day.formatted(.dateTime.weekday(.wide).day().month(.wide))
     }
 
 }
@@ -220,6 +243,7 @@ struct MeetingListView: View {
 struct MeetingRowView: View {
     @EnvironmentObject var app: AppState
     let meeting: Meeting
+    @Environment(\.backgroundProminence) private var prominence
 
     var body: some View {
         if meeting.endedAt == nil {
@@ -236,12 +260,12 @@ struct MeetingRowView: View {
         let time = live ? "in progress"
                         : meeting.startedAt.formatted(date: .omitted, time: .shortened)
         let duration = live ? "\(max(1, Int(now.timeIntervalSince(meeting.startedAt) / 60))) min"
-                            : meeting.durationLabel
+                            : meeting.displayDuration
         return HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     if live { StatusDot(color: Brand.recording, size: 9) }
-                    Text(meeting.displayTitle).font(WorkspaceTypography.rowTitle)
+                    Text(meeting.displayTitle).font(.body.weight(.semibold)).lineLimit(1)
                     if live {
                         Spacer(minLength: 6)
                         LiveWaveform(barCount: 5, barWidth: 2.5, maxHeight: 10)
@@ -249,7 +273,7 @@ struct MeetingRowView: View {
                 }
                 Text(meeting.isMergedMeeting ? "\(time) · \(duration)"
                      : "\(meeting.appName) · \(time) · \(duration)")
-                    .font(WorkspaceTypography.metadata).foregroundStyle(.secondary)
+                    .font(.callout).foregroundStyle(prominence == .increased ? Color.white.opacity(0.85) : .secondary).lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
@@ -268,13 +292,13 @@ struct MeetingRowView: View {
         if stage.isFailure {
             VStack(alignment: .trailing, spacing: 2) {
                 Label("Failed", systemImage: "exclamationmark.triangle.fill")
-                    .font(WorkspaceTypography.metadata)
+                    .font(Font.callout)
                     .foregroundStyle(Brand.error)
                 Button("Retry") {
                     app.retryProcessing(meeting)
                 }
                 .buttonStyle(.borderless)
-                .font(WorkspaceTypography.metadata)
+                .font(Font.callout)
             }
             .help(stage.label)
             .accessibilityIdentifier("meeting.retry.\(meeting.id.uuidString)")
@@ -283,13 +307,13 @@ struct MeetingRowView: View {
             // about what it does — it starts the missing model downloads.
             VStack(alignment: .trailing, spacing: 2) {
                 Label("Waiting for models", systemImage: "arrow.down.circle")
-                    .font(WorkspaceTypography.metadata)
+                    .font(Font.callout)
                     .foregroundStyle(.secondary)
                 Button("Download & process") {
                     app.retryProcessing(meeting)
                 }
                 .buttonStyle(.borderless)
-                .font(WorkspaceTypography.metadata)
+                .font(Font.callout)
             }
             .help(stage.label)
             .accessibilityIdentifier("meeting.waitingModels.\(meeting.id.uuidString)")
@@ -299,5 +323,15 @@ struct MeetingRowView: View {
             .help(stage.label)
             .accessibilityIdentifier("meeting.status.\(meeting.id.uuidString)")
         }
+    }
+}
+
+// Expanded units are a visual presentation choice; exported summaries retain
+// their existing compact duration format.
+extension Meeting {
+    var displayDuration: String {
+        guard let seconds = recordedDuration ?? duration else { return "in progress" }
+        let minutes = Int(seconds) / 60
+        return minutes >= 60 ? "\(minutes / 60) hr \(minutes % 60) min" : "\(minutes) min"
     }
 }

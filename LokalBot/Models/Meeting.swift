@@ -88,6 +88,30 @@ struct Meeting: Identifiable, Codable, Equatable, Sendable {
     /// derived meeting evidence is limited to this reviewable range.
     var contentRange: ContentRange?
 
+    /// Nil on legacy recordings: a saved range may have been a user edit.
+    var contentRangeSource: ContentRangeSource?
+    enum ContentRangeSource: String, Codable { case userReviewed, confirmedCallEnd }
+
+    /// Retained across detector visibility gaps and late attachment attempts.
+    var captureIntent: CaptureIntent?
+    struct CaptureIntent: Codable, Equatable, Sendable {
+        var systemAudioRequested: Bool
+        var appBundleID: String?
+        var meetingURL: URL?
+
+        func accepts(appBundleID: String, meetingURL: URL?) -> Bool {
+            guard systemAudioRequested else { return false }
+            if let expected = self.appBundleID, expected != appBundleID { return false }
+            if let expected = self.meetingURL, expected != meetingURL { return false }
+            return true
+        }
+    }
+
+    var additionalSavedAudioDuration: TimeInterval {
+        guard let contentRange, let recordedDuration else { return 0 }
+        return max(0, recordedDuration - contentRange.end)
+    }
+
     struct ContentRange: Codable, Equatable, Sendable {
         var start: TimeInterval
         var end: TimeInterval

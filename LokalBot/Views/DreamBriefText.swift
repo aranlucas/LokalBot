@@ -4,7 +4,7 @@ import SwiftUI
 struct DreamBriefText: View {
     @EnvironmentObject private var app: AppState
     let text: String
-    var font: Font = WorkspaceTypography.body
+    var font: Font = Font.body
 
     var body: some View {
         SelectableDigestText(

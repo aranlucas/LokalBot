@@ -25,6 +25,8 @@ struct TimelineContextPanel: View {
             selectedContent
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("timeline.contextPanel")
     }
 
     private var rawCaptureScreenSelection: Binding<Int64?> {
@@ -45,10 +47,15 @@ struct TimelineContextPanel: View {
             ScreenMomentDetailView(
                 screenshot: screenshot,
                 onReload: { model.reload(app: app) },
-                onClear: { model.selectedSnapshotID = nil },
+                onClear: {
+                    model.selectedSnapshotID = nil
+                    if model.selection == nil, model.selectedSessionID == nil, !model.showsRawCapture {
+                        onDismiss?()
+                    }
+                },
                 backLabel: model.selection != nil ? "Back to activity"
                     : model.selectedSessionID != nil ? "Back to work session"
-                    : model.showsRawCapture ? "Back to raw capture" : "Back to day digest",
+                    : model.showsRawCapture ? "Back to raw capture" : "Back to day",
                 onDismiss: onDismiss)
                 .id(snapshotID)
         } else if app.selectedMeetingIDs.isEmpty, model.selection == nil, let session = model.selectedSession {
@@ -87,7 +94,7 @@ struct TimelineContextPanel: View {
                 title: "Raw capture",
                 subtitle: "\(CountLabel.format(model.blocks.count, "activity entry", plural: "activity entries")) · \(CountLabel.format(model.rewindFrames.count, "screen moment"))",
                 icon: "waveform.path.ecg.rectangle",
-                onBack: { model.showsRawCapture = false },
+                onBack: clearSelection,
                 onDismiss: onDismiss)
                 .accessibilityIdentifier("timeline.rawCapturePanel")
             TimelineRawCaptureView(model: model)
@@ -112,80 +119,13 @@ struct TimelineContextPanel: View {
     }
 
     private var dayBrief: some View {
-        // Locked-screen and shell processes (loginwindow, WindowServer…) are
-        // not apps the user worked in; the digest and work-session layers
-        // already exclude them, so the allocation chart must too.
-        let perApp = Dictionary(
-            grouping: model.blocks.filter { !TimelineWorkSession.isSystemOnly(app: $0.app) },
-            by: \.app)
-            .mapValues { $0.reduce(0) { $0 + $1.duration } }
-            .sorted { $0.value > $1.value }
-        return ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                TimelinePanelHeader(
-                    title: "Day digest",
-                    subtitle: model.day.formatted(date: .complete, time: .omitted),
-                    icon: "sparkles",
-                    onBack: nil,
-                    onDismiss: onDismiss)
-                    .accessibilityIdentifier("capture.dayOverview")
-
-                NeedsAttentionSection(threads: app.outcomeIndex.openUserActionThreads.filter { thread in
-                    thread.references.contains { Calendar.current.isDate($0.meetingStartedAt, inSameDayAs: model.day) }
-                }, limit: 3)
-                DayDigestCard(model: model, identifier: "capture", showsControls: false)
-
-                if !perApp.isEmpty {
-                    compactTimeAllocation(perApp)
-                }
-            }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+        VStack(alignment: .leading, spacing: 14) {
+            TimelinePanelHeader(title: "Moment Details", subtitle: "", icon: "rectangle.and.text.magnifyingglass",
+                                onBack: nil, onDismiss: onDismiss)
+            Text("Select a work session, meeting, or captured moment to review its details.")
+                .foregroundStyle(.secondary)
         }
-    }
-
-    private func compactTimeAllocation(
-        _ perApp: [(key: String, value: TimeInterval)]
-    ) -> some View {
-        let total = perApp.reduce(0) { $0 + $1.value }
-        let segments = ProportionBarMath.segments(
-            perApp: perApp.map { (label: $0.key, seconds: $0.value) })
-        let rows = AppTimePresentation.rows(
-            perApp: perApp.map { (label: $0.key, seconds: $0.value) })
-        return VStack(alignment: .leading, spacing: 9) {
-            HStack {
-                Label("Time allocation", systemImage: "chart.bar.xaxis")
-                    .font(WorkspaceTypography.sectionTitle)
-                Spacer()
-                Text("\(CaptureStyle.hm(total)) tracked")
-                    .font(WorkspaceTypography.metadata.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            }
-            ProportionBar(segments: segments.map {
-                ($0, $0.label == "Other"
-                    ? Color(nsColor: .tertiaryLabelColor)
-                    : CaptureStyle.color(for: $0.label))
-            })
-            ForEach(rows.prefix(5), id: \.label) { row in
-                HStack(spacing: 7) {
-                    StatusDot(
-                        color: row.isOther ? Color(nsColor: .tertiaryLabelColor)
-                                           : CaptureStyle.color(for: row.label),
-                        size: 8)
-                    Text(row.isOther ? "Other (\(row.appCount))" : row.label)
-                        .font(WorkspaceTypography.body)
-                        .lineLimit(1)
-                    Spacer()
-                    Text(CaptureStyle.hm(row.seconds))
-                        .font(WorkspaceTypography.metadata.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .padding(12)
-        .background(.quaternary.opacity(0.22),
-                    in: RoundedRectangle(cornerRadius: Brand.Radius.panel))
-        .accessibilityIdentifier("timeline.timeAllocation")
+        .padding(16)
     }
 
     private func sessionPreview(_ session: TimelineWorkSession) -> some View {
@@ -207,7 +147,7 @@ struct TimelineContextPanel: View {
                         VStack(alignment: .leading, spacing: 9) {
                             if representative.isEmpty {
                                 Text("No context moments were captured during this session.")
-                                    .font(WorkspaceTypography.body)
+                                    .font(Font.body)
                                     .foregroundStyle(.secondary)
                             } else {
                                 ForEach(representative) { frame in
@@ -215,7 +155,7 @@ struct TimelineContextPanel: View {
                                 }
                                 if frames.count > representative.count {
                                     Text("Showing \(representative.count) representative scenes from \(frames.count). Browse raw capture for every scene.")
-                                        .font(WorkspaceTypography.metadata)
+                                        .font(Font.callout)
                                         .foregroundStyle(.secondary)
                                 }
                             }
@@ -256,7 +196,7 @@ struct TimelineContextPanel: View {
                                     }
                                 } label: {
                                     VStack(alignment: .leading, spacing: 3) {
-                                        Text(evidence.title).font(WorkspaceTypography.bodyEmphasis)
+                                        Text(evidence.title).font(Font.body.weight(.semibold))
                                             .lineLimit(2).help(evidence.title)
                                         Text("\(CaptureStyle.hm(evidence.duration)) observed · \(evidence.blocks.count) activity \(evidence.blocks.count == 1 ? "block" : "blocks")")
                                             .workspaceTextRole(.supporting)
@@ -274,7 +214,7 @@ struct TimelineContextPanel: View {
                     VStack(alignment: .leading, spacing: 10) {
                         sessionMetrics(session)
                         Text(session.apps.prefix(5).joined(separator: " · "))
-                            .font(WorkspaceTypography.metadata)
+                            .font(Font.callout)
                             .foregroundStyle(.secondary)
                             .lineLimit(2)
                     }
@@ -356,13 +296,13 @@ struct TimelineContextPanel: View {
                     },
                     onDismiss: onDismiss,
                     backLabel: model.selectedSession != nil ? "Back to work session"
-                        : model.showsRawCapture ? "Back to raw capture" : "Back to day digest")
+                        : model.showsRawCapture ? "Back to raw capture" : "Back to day")
                     .accessibilityIdentifier("timeline.activityPreview")
 
                 VStack(alignment: .leading, spacing: 8) {
                     if !block.title.isEmpty {
                         Text(block.title)
-                            .font(WorkspaceTypography.bodyEmphasis)
+                            .font(Font.body.weight(.semibold))
                             .textSelection(.enabled)
                     }
                     HStack(spacing: 8) {
@@ -380,15 +320,15 @@ struct TimelineContextPanel: View {
                 VStack(alignment: .leading, spacing: 9) {
                     HStack {
                         Label("Related moments", systemImage: "rectangle.and.text.magnifyingglass")
-                            .font(WorkspaceTypography.sectionTitle)
+                            .font(Font.headline)
                         Spacer()
                         Text("\(scoped.count)")
-                            .font(WorkspaceTypography.metadata.monospacedDigit())
+                            .font(Font.callout.monospacedDigit())
                             .foregroundStyle(.secondary)
                     }
                     if scoped.isEmpty {
                         Text("No context moments were captured during this activity.")
-                            .font(WorkspaceTypography.body)
+                            .font(Font.body)
                             .foregroundStyle(.secondary)
                     } else {
                         VStack(spacing: 8) {
@@ -426,10 +366,10 @@ struct TimelineContextPanel: View {
                     .frame(width: 86)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(screenshot.windowTitle.isEmpty ? screenshot.app : screenshot.windowTitle)
-                        .font(WorkspaceTypography.bodyEmphasis)
+                        .font(Font.body.weight(.semibold))
                         .lineLimit(2)
                     Text(screenshot.ts.formatted(date: .omitted, time: .shortened))
-                        .font(WorkspaceTypography.metadata.monospacedDigit())
+                        .font(Font.callout.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
                 Spacer(minLength: 0)
@@ -451,8 +391,8 @@ struct TimelineContextPanel: View {
                 icon: "checklist",
                 onBack: clearSelection,
                 onDismiss: onDismiss)
-            Text("Return to the day digest or select one meeting in Work sessions.")
-                .font(WorkspaceTypography.body)
+            Text("Return to the day or select one meeting in Work sessions.")
+                .font(Font.body)
                 .foregroundStyle(.secondary)
             Spacer()
         }
@@ -465,6 +405,7 @@ struct TimelineContextPanel: View {
         model.selectedSessionID = nil
         model.showsRawCapture = false
         app.selectedMeetingIDs = []
+        onDismiss?()
     }
 }
 
@@ -487,7 +428,7 @@ private struct TimelineMeetingPreview: View {
             VStack(alignment: .leading, spacing: 16) {
                 TimelinePanelHeader(
                     title: meeting.displayTitle,
-                    subtitle: "\(meeting.startedAt.formatted(date: .abbreviated, time: .shortened)) · \(meeting.durationLabel)",
+                    subtitle: "\(meeting.startedAt.formatted(date: .abbreviated, time: .shortened)) · \(meeting.displayDuration)",
                     icon: "waveform",
                     onBack: onBack,
                     onDismiss: onDismiss)
@@ -495,7 +436,7 @@ private struct TimelineMeetingPreview: View {
 
                 if meeting.endedAt == nil {
                     Label("Recording in progress", systemImage: "record.circle.fill")
-                        .font(WorkspaceTypography.bodyEmphasis)
+                        .font(Font.body.weight(.semibold))
                         .foregroundStyle(Brand.recording)
                         .padding(12)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -532,7 +473,7 @@ private struct TimelineMeetingPreview: View {
                                     Image(systemName: "checkmark")
                                         .foregroundStyle(Brand.teal)
                                     Text(decision.displayText)
-                                        .font(WorkspaceTypography.body)
+                                        .font(Font.body)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                             }
@@ -545,7 +486,7 @@ private struct TimelineMeetingPreview: View {
                    projection?.outcomes.decisionRecords.isEmpty != false,
                    meeting.endedAt != nil {
                     Text("No outcome summary has been extracted for this meeting yet.")
-                        .font(WorkspaceTypography.body)
+                        .font(Font.body)
                         .foregroundStyle(.secondary)
                 }
 
@@ -589,7 +530,7 @@ private struct TimelineMeetingActionRow: View {
             }
             .buttonStyle(.plain)
             Text(reference.text)
-                .font(WorkspaceTypography.body)
+                .font(Font.body)
                 .strikethrough(reference.status == .done)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -603,9 +544,9 @@ private struct TimelinePanelHeader: View {
     let icon: String
     let onBack: (() -> Void)?
     let onDismiss: (() -> Void)?
-    var backLabel = "Back to day digest"
+    var backLabel = "Back to day"
 
-    /// "Back to day digest" → "Day digest" for the visible button text.
+    /// "Back to day" → "Day" for the visible button text.
     private var backTitle: String {
         let destination = backLabel.hasPrefix("Back to ") ? String(backLabel.dropFirst(8)) : backLabel
         return destination.prefix(1).uppercased() + destination.dropFirst()
@@ -618,7 +559,7 @@ private struct TimelinePanelHeader: View {
                     if let onBack {
                         Button(action: onBack) {
                             Label(backTitle, systemImage: "chevron.left")
-                                .font(WorkspaceTypography.control)
+                                .font(Font.body)
                         }
                         .buttonStyle(.workspaceLink)
                         .help(backLabel)
@@ -641,15 +582,15 @@ private struct TimelinePanelHeader: View {
 
     private var titleRow: some View {
         HStack(alignment: .top, spacing: 9) {
-            IconTile(systemImage: icon, tint: Brand.tealFill, size: 30)
+            Image(systemName: icon).font(.title3).foregroundStyle(LBTokens.Palette.accentText)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .lineLimit(2)
                     .help(title)
-                    .font(WorkspaceTypography.conversationTitle)
+                    .font(Font.title2.weight(.semibold))
                     .lineLimit(2)
                 Text(subtitle)
-                    .font(WorkspaceTypography.metadata)
+                    .font(Font.callout)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
@@ -666,12 +607,11 @@ private struct TimelineContextSection<Content: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label(title, systemImage: icon)
-                .font(WorkspaceTypography.sectionTitle)
+                .font(Font.headline)
             content
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.quaternary.opacity(0.22),
-                    in: RoundedRectangle(cornerRadius: Brand.Radius.panel))
+        .lbGroupedSurface()
     }
 }

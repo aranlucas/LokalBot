@@ -1,63 +1,23 @@
 import SwiftUI
 
-/// Workspace surfaces, teal actions, and indigo remote model badges.
+/// Native form surfaces with shared accent and semantic status colors.
 enum SettingsPalette {
-    /// Settings sits on the same warm canvas and secondary column as Agent
-    /// and Ask, so moving between them never changes the backdrop.
-    static func canvas(_ scheme: ColorScheme) -> Color { WorkspacePalette.canvas(for: scheme) }
-    static func navigation(_ scheme: ColorScheme) -> Color { WorkspacePalette.conversationColumn(for: scheme) }
-    static func panel(_ scheme: ColorScheme) -> Color { WorkspacePalette.surface(for: scheme) }
-    static func hover(_ scheme: ColorScheme) -> Color { color(scheme, light: 0xECECEE, dark: 0x39393D) }
-    /// The shared brand accent; kept as a palette entry so Settings call sites
-    /// read uniformly.
     static func accent(_ scheme: ColorScheme) -> Color { Brand.teal }
-    static func remote(_ scheme: ColorScheme) -> Color { color(scheme, light: 0x4D4B9C, dark: 0xB8B2FF) }
-    static func warning(_ scheme: ColorScheme) -> Color { color(scheme, light: 0x8C4D06, dark: 0xFFD08A) }
-
+    static func remote(_ scheme: ColorScheme) -> Color { LBTokens.Palette.attentionText }
+    static func warning(_ scheme: ColorScheme) -> Color { LBTokens.Palette.attentionText }
+    static func hover(_ scheme: ColorScheme) -> Color { Color.primary.opacity(0.06) }
     static func secondary(_ scheme: ColorScheme, contrast: ColorSchemeContrast) -> Color {
-        contrast == .increased ? .primary : color(scheme, light: 0x545458, dark: 0xBABAC2)
-    }
-
-    static func border(_ scheme: ColorScheme, contrast: ColorSchemeContrast) -> Color {
-        contrast == .increased
-            ? color(scheme, light: 0x747478, dark: 0x96969C)
-            : color(scheme, light: 0xD2D2D5, dark: 0x48484D)
-    }
-
-    private static func color(_ scheme: ColorScheme, light: UInt32, dark: UInt32) -> Color {
-        let value = scheme == .dark ? dark : light
-        return Color(.sRGB, red: Double((value >> 16) & 0xFF) / 255,
-                     green: Double((value >> 8) & 0xFF) / 255,
-                     blue: Double(value & 0xFF) / 255, opacity: 1)
+        contrast == .increased ? .primary : .secondary
     }
 }
 
 struct SettingsSeparator: View {
-    @Environment(\.colorScheme) private var scheme
-    @Environment(\.colorSchemeContrast) private var contrast
-
-    var body: some View {
-        SettingsPalette.border(scheme, contrast: contrast)
-            .frame(height: contrast == .increased ? 2 : 1)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
-    }
+    var body: some View { Divider() }
 }
 
 private struct SettingsPanelModifier: ViewModifier {
-    @Environment(\.colorScheme) private var scheme
-    @Environment(\.colorSchemeContrast) private var contrast
-
     func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: Brand.Radius.compactPanel, style: .continuous)
-        content
-            .background(SettingsPalette.panel(scheme), in: shape)
-            .overlay {
-                shape.strokeBorder(SettingsPalette.border(scheme, contrast: contrast),
-                                   lineWidth: contrast == .increased ? 2 : 1)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
+        content.lbGroupedSurface()
     }
 }
 
@@ -134,7 +94,7 @@ struct SettingsHelp: View {
 
     var body: some View {
         Text(text)
-            .font(.system(size: 12))
+            .font(.callout)
             .settingsSecondary()
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -176,7 +136,7 @@ struct SettingsDetails: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 4)
         } label: {
-            Text(title).font(.system(size: 12, weight: .medium)).settingsSecondary()
+            Text(title).font(.callout.weight(.medium)).settingsSecondary()
         }
     }
 }

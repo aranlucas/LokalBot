@@ -181,6 +181,7 @@ targetTemplates:
         SUEnableAutomaticChecks: true
     settings:
       base:
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         SWIFT_VERSION: "5.10"
         MACOSX_DEPLOYMENT_TARGET: "15.0"
         ENABLE_HARDENED_RUNTIME: NO   # turn ON (+ audio-input exception) for notarized release builds

@@ -14,7 +14,7 @@ struct AgentTaskSidebar: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("Tasks").font(WorkspaceTypography.sectionTitle)
+                Text("Tasks").font(.title3.bold())
                 Spacer()
                 Button { sessions.addSession() } label: { Image(systemName: "square.and.pencil").frame(width: 28, height: 28) }
                     .buttonStyle(.borderless).help("New task (⌘N)")
@@ -39,20 +39,20 @@ struct AgentTaskSidebar: View {
                 HStack {
                     Label("Archived", systemImage: "archivebox").font(.caption)
                     Spacer()
-                    Button("Show active") { showArchived = false }.buttonStyle(.workspaceLink)
+                    Button("Show Active") { showArchived = false }.buttonStyle(.workspaceLink)
                 }.padding(.horizontal, 12).padding(.bottom, 8)
             }
             List(selection: Binding<UUID?>(get: { sessions.selectedID }, set: { if let id = $0 { sessions.select(id) } })) {
                 if !pinned.isEmpty { Section("Pinned") { taskRows(pinned) } }
                 Section(showArchived ? "Archived tasks" : "Recent") { taskRows(recent) }
             }
-            .listStyle(.sidebar).scrollContentBackground(.hidden)
+            .listStyle(.inset)
+            .tint(Brand.tealFill)
             .accessibilityIdentifier("agent.tasks")
             .overlay {
                 if filtered.isEmpty { ContentUnavailableView.search(text: query) }
             }
         }
-        .background(AgentPalette.tasks(for: colorScheme))
         .onChange(of: sessions.searchRequest) { searchFocused = true }
         .alert("Rename task", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
             TextField("Task name", text: $name)
@@ -95,14 +95,14 @@ private struct AgentTaskRow: View {
     init(task: AgentSessionTabs.Tab) { self.task = task; _controller = ObservedObject(wrappedValue: task.controller) }
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
-            Image(systemName: icon).foregroundStyle(needsAttention ? Color.orange : Color.secondary)
+            Image(systemName: icon).foregroundStyle(needsAttention ? LBTokens.Palette.attentionText : Color.secondary)
                 .frame(width: 16).padding(.top, 2)
             VStack(alignment: .leading, spacing: 3) {
-                Text(task.title).lineLimit(2).font(.system(size: 13, weight: .semibold))
+                Text(task.title).lineLimit(2).font(.body.weight(.semibold))
                     .fixedSize(horizontal: false, vertical: true)
                 if let detail {
-                    Text(detail).font(WorkspaceTypography.metadata)
-                        .foregroundStyle(needsAttention ? Color.orange : Color.secondary).lineLimit(1)
+                    Text(detail).font(Font.callout)
+                        .foregroundStyle(needsAttention ? LBTokens.Palette.attentionText : Color.secondary).lineLimit(1)
                 }
             }
         }

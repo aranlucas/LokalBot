@@ -1,8 +1,9 @@
 {
-  "captured_on": "2026-09-17",
-  "source_release": "v0.8.2",
-  "source_commit": "540d183d403fa7a4d42b8b3b559f946b1aeac207",
-  "capture_method": "Scripts/capture-screenshots.sh --stills-only in an isolated archive of the release source",
+  "captured_on": "2026-09-28",
+  "source_release": null,
+  "source_branch": "codex/native-ui-refresh",
+  "source_commit": "2fde15dbc0484ac06be593b66c2e512ee0eb7516",
+  "capture_method": "Scripts/capture-screenshots.sh --stills-only in an isolated git archive of the branch source",
   "scheme": "LokalBot UI Test Host",
   "appearance": "dark",
   "scale": 2,
@@ -21,60 +22,48 @@
   "capture_only": true,
   "ui_tests_run": false,
   "production_recording_or_model_inference_verified": false,
-  "isolation": "Separate storage root, UserDefaults suite and DerivedData; only the capture processes were stopped. Installed app and user library were not used.",
-  "capture_script_adjustments": [
-    "Use checkout-local fixture library and DerivedData",
-    "Run fixture seeding with uv",
-    "Remove global pkill; stop only the process launched for each capture"
-  ],
+  "isolation": "Separate archive, temporary storage root and UserDefaults suite, and path-specific DerivedData. Prebuilt native runtimes were copied into the archive's Vendor directory. The script's pkill matches only 'LokalBot UI Test Host' processes. Installed app and user library were not used.",
+  "capture_script_adjustments": [],
   "visually_reviewed": true,
   "captures": [
     {
       "path": "quick-recall.png",
       "width": 1320,
       "height": 1024,
-      "bytes": 199554,
-      "sha256": "4edc41dd7d1e4557c6004809dc7b3414d8bd7bc49b6e8cd1dcb05038dfe66547",
+      "bytes": 199064,
+      "sha256": "9b6a9b69d500ac7806a334046a72135650a4f101d065b98aa9bc469085e06f3f",
       "image_edits": "none"
     },
     {
       "path": "meetings-summary.png",
       "width": 2800,
       "height": 1760,
-      "bytes": 632710,
-      "sha256": "069e90b26af52b0059b9cf07e70399f9ddcca09b037046d380a46b2681211df0",
+      "bytes": 621539,
+      "sha256": "e627178346aaf32f098c5a4994e277812fd1221bc5fce4a0c0d4d7a4742aef5d",
       "image_edits": "none"
     },
     {
       "path": "today.png",
       "width": 2800,
       "height": 1760,
-      "bytes": 566436,
-      "sha256": "15ce3ad63eac2a076aa958bd7500cf2d75cb7c08892b1f263e0d3f0b11c03456",
+      "bytes": 442615,
+      "sha256": "afca826b890338877c6fac36514bbb17dcccc4ab8f6b01053fc5daef070b6432",
       "image_edits": "none"
     },
     {
       "path": "timeline.png",
       "width": 2800,
       "height": 1760,
-      "bytes": 635615,
-      "sha256": "41c69a3afd29ea6a608be83c08977a96572d1f84e541bdc3275a05c0e8ed0b5d",
+      "bytes": 485438,
+      "sha256": "86c4bba14f9830f29e0c1c6044e58f298e52b0e4205ef0602d4c57458dfbd10c",
       "image_edits": "none"
     },
     {
       "path": "cotyping.png",
       "width": 2800,
       "height": 1760,
-      "bytes": 464683,
-      "sha256": "ac3ad37628328b5fbfe16179d46c48c6be8887a2366f9f384ac2808b5ec93200",
-      "image_edits": "none"
-    },
-    {
-      "path": "models.png",
-      "width": 2800,
-      "height": 1760,
-      "bytes": 592239,
-      "sha256": "84e872451df317cab7df2c89837da42e3d5bbe137404bb78051068ab88e7247b",
+      "bytes": 421325,
+      "sha256": "4acfdf4807667798de07815c023aa1c54abef0ff282e86e401a4b434a7ce610a",
       "image_edits": "none"
     }
   ],
@@ -95,5 +84,9 @@
     "recorded_on": "2026-09-15",
     "duration_seconds": 42.5,
     "context": "Poster from the real-app demo with fictional Northstar meeting data; unchanged from the published video poster."
-  }
+  },
+  "known_render_limits": [
+    "cacheDisplay draws the selected toolbar segment in meetings-summary.png as a blank light pill",
+    "cacheDisplay draws selected sidebar rows as solid black"
+  ]
 }

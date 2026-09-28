@@ -23,63 +23,72 @@ struct ActionsWorkspaceView: View {
     private var all: [OutcomeActionReference] {
         app.outcomeIndex.all.flatMap(\.actionReferences).filter(\.isForUser)
     }
-    private var visible: [OutcomeActionReference] {
+    private func visibleActions(in actions: [OutcomeActionReference]) -> [OutcomeActionReference] {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        return all.filter { action in
+        return actions.filter { action in
             (status.isEmpty || action.status.rawValue == status)
                 && (meetingID == nil || action.meetingID == meetingID)
                 && (needle.isEmpty || [action.text, action.meetingTitle, action.due ?? ""].contains { $0.localizedCaseInsensitiveContains(needle) })
                 && matchesDue(action)
         }.sorted { lhs, rhs in
-            if sort == "due" {
-                let left = ActionDuePresentation.date(lhs.due) ?? .distantFuture
-                let right = ActionDuePresentation.date(rhs.due) ?? .distantFuture
-                if left != right { return left < right }
+            if sort != "recent" {
+                return ActionDueSort(order: sort == "dueDescending" ? .reverse : .forward)
+                    .compare(lhs, rhs) == .orderedAscending
             }
             if lhs.meetingStartedAt != rhs.meetingStartedAt { return lhs.meetingStartedAt > rhs.meetingStartedAt }
             return lhs.id < rhs.id
         }
     }
-    private var inspected: OutcomeActionReference? {
-        visible.first { selection.contains($0.id) }
+    private var tableSort: Binding<[ActionDueSort]> {
+        Binding(get: {
+            sort == "recent" ? [] : [ActionDueSort(order: sort == "dueDescending" ? .reverse : .forward)]
+        }, set: { comparators in
+            sort = comparators.first.map { $0.order == .forward ? "due" : "dueDescending" } ?? "recent"
+        })
     }
-    private var visibleThreads: [ActionThread] {
+    private func threads(matching visible: [OutcomeActionReference]) -> [ActionThread] {
         let positions = Dictionary(uniqueKeysWithValues: visible.enumerated().map { ($0.element.id, $0.offset) })
         return app.outcomeIndex.userActionThreads.compactMap { thread -> (ActionThread, Int)? in
             guard let position = thread.references.compactMap({ positions[$0.id] }).min() else { return nil }
             return (thread, position)
         }.sorted { $0.1 < $1.1 }.map(\.0)
     }
-    private var visibleSelection: [OutcomeActionReference] { visible.filter { selection.contains($0.id) } }
-    private var hiddenSelectionCount: Int { selection.count - visibleSelection.count }
-    private var listSelection: Binding<Set<String>> {
-        Binding(get: { Set(visibleSelection.map(\.id)) }, set: { updated in
-            selection = selection.subtracting(visible.map(\.id)).union(updated)
+    private func listSelection(visibleIDs: Set<String>) -> Binding<Set<String>> {
+        // AppKit reads selection repeatedly while building table accessibility.
+        // Capture this render's IDs so those reads never rebuild/sort the library.
+        Binding(get: { selection.intersection(visibleIDs) }, set: { updated in
+            selection = selection.subtracting(visibleIDs).union(updated)
         })
     }
 
     var body: some View {
+        // Share one projection across counts, selection, rows, and the inspector.
+        let actions = all
+        let visible = visibleActions(in: actions)
+        let visibleIDs = Set(visible.map(\.id))
+        let selected = visible.filter { selection.contains($0.id) }
+        let visibleThreads = reviewMode == "threads" ? threads(matching: visible) : []
         VStack(spacing: 0) {
-            header
-            filters
+            header(total: actions.count, visible: visible.count, threads: visibleThreads.count, selected: selected)
+            filters(hiddenSelectionCount: selection.count - selected.count)
             if !failures.isEmpty {
                 Text("Could not update: " + failures.joined(separator: "; "))
                     .workspaceTextRole(.warning).padding(.horizontal, 20)
             }
             if reviewMode == "threads" {
-                threadList
+                threadList(visibleThreads)
             } else {
-                actionList
+                actionList(visible, visibleIDs: visibleIDs, inspected: selected.first)
             }
         }
         .navigationTitle("Actions")
-        .onChange(of: all.map(\.id)) { app.actionSelection.formIntersection(all.map(\.id)) }
+        .onChange(of: actions.map(\.id)) { _, ids in app.actionSelection.formIntersection(ids) }
         .sheet(item: $correction) { reference in
             ActionEditorSheet(reference: reference)
         }
     }
 
-    private var threadList: some View {
+    private func threadList(_ visibleThreads: [ActionThread]) -> some View {
         VStack(spacing: 8) {
             Text("A thread groups the same action across meetings. Changing its status updates every linked meeting.")
                 .workspaceTextRole(.supporting)
@@ -99,19 +108,77 @@ struct ActionsWorkspaceView: View {
         }
     }
 
-    private var actionList: some View {
+    private func actionList(
+        _ visible: [OutcomeActionReference],
+        visibleIDs: Set<String>,
+        inspected: OutcomeActionReference?
+    ) -> some View {
         HSplitView {
-            List(selection: listSelection) {
-                ForEach(visible) { reference in
-                    HStack(alignment: .top, spacing: 8) {
+            Table(visible, selection: listSelection(visibleIDs: visibleIDs), sortOrder: tableSort) {
+                TableColumn("") { reference in
+                    HStack(spacing: 6) {
                         if selecting { selectionToggle(reference.id) }
-                        OutcomeOverviewActionRow(reference: reference)
-                    }
-                    .tag(reference.id)
-                        .contextMenu {
-                            Button("Correct action…") { correction = reference }
-                            Button("Show details") { selection = [reference.id] }
+                        Button { setStatus(reference.status == .done ? .open : .done, for: reference) } label: {
+                            Image(systemName: reference.status == .done ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: LBTokens.Metric.actionToggleSize))
+                                .foregroundStyle(reference.status == .done ? Brand.teal : .secondary)
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(reference.status == .done ? "Reopen action" : "Complete action")
+                        .accessibilityValue(reference.text)
+                        .accessibilityIdentifier("outcome.action.toggle.\(reference.id)")
+                    }
+                    .frame(minHeight: LBTokens.Metric.tableRowHeight)
+                }.width(selecting ? 64 : 28)
+                TableColumn("Action") { reference in
+                    Text(reference.text).lineLimit(1)
+                        .strikethrough(reference.status == .done)
+                        .help(reference.text)
+                        .accessibilityIdentifier("outcome.action.\(reference.id)")
+                }.width(min: 150, ideal: 300)
+                TableColumn("Owner") { reference in
+                    Text(reference.owner.map { SpeakerDisplayName.label($0, identity: reference.isForUser ? .user : .unresolved) } ?? "Owner unclear")
+                        .foregroundStyle(reference.owner == nil ? LBTokens.Palette.attentionText : .secondary)
+                }.width(90)
+                TableColumn("Due", sortUsing: ActionDueSort()) { reference in
+                    Text(reference.due.map { ActionDuePresentation.label($0, spokenAt: reference.meetingStartedAt) } ?? "—")
+                        .foregroundStyle(isOverdue(reference) ? LBTokens.Palette.recordingText : .secondary)
+                }.width(110)
+                TableColumn("Meeting") { reference in
+                    Button(reference.meetingTitle) { app.openMeeting(reference.meetingID) }
+                        .buttonStyle(.plain).lineLimit(1).help(reference.meetingTitle)
+                }.width(160)
+                TableColumn("Passage") { reference in
+                    if let citation = reference.action.citations.first {
+                        EvidencePill(citation: citation) { app.openMeeting(reference.meetingID, seek: citation.start) }
+                    }
+                }.width(100)
+                TableColumn("") { reference in
+                    Menu {
+                        ForEach(OutcomeStatus.allCases, id: \.rawValue) { next in
+                            Button(next.label) { setStatus(next, for: reference) }
+                        }
+                        Divider()
+                        Button("Correct Action…") { correction = reference }
+                        Button("Show Details") { selection = [reference.id] }
+                        Button("Open Meeting") { app.openMeeting(reference.meetingID) }
+                        Button("Open in Agent") {
+                            app.openAgent(.init(title: reference.text,
+                                prompt: "Help me complete this action from \(reference.meetingTitle): \(reference.text)",
+                                meetingID: reference.meetingID, actionID: reference.action.id))
+                        }
+                    } label: { Image(systemName: "ellipsis") }
+                    .menuStyle(.borderlessButton).menuIndicator(.hidden)
+                    .accessibilityLabel("Action options")
+                    .accessibilityIdentifier("outcome.action.status.\(reference.id)")
+                }.width(28)
+            }
+            .tableStyle(.inset(alternatesRowBackgrounds: true))
+            .tint(Brand.tealFill)
+            .contextMenu(forSelectionType: String.self) { ids in
+                if let reference = visible.first(where: { ids.contains($0.id) }) {
+                    Button("Correct Action…") { correction = reference }
+                    Button("Show Details") { selection = [reference.id] }
                 }
             }
             .frame(minWidth: 360, maxWidth: .infinity)
@@ -125,32 +192,32 @@ struct ActionsWorkspaceView: View {
             }
             .splitPaneAccessibilityLabel("Action list")
             if let inspected {
-                inspector(inspected).frame(minWidth: 260, idealWidth: 300, maxWidth: 380)
-                    .splitPaneAccessibilityLabel("Action details")
+                inspector(inspected).frame(minWidth: 280, idealWidth: LBTokens.Metric.detailsPaneWidth, maxWidth: 380)
+                    .splitPaneAccessibilityLabel("Action details", autosaveName: "LokalBot.actions", initialWidth: LBTokens.Metric.detailsPaneWidth)
             }
         }
     }
 
-    private var header: some View {
+    private func header(total: Int, visible: Int, threads: Int, selected: [OutcomeActionReference]) -> some View {
         HStack(spacing: 12) {
             Button { app.showingActions = false } label: { Label("Today", systemImage: "chevron.left") }
-            Text("Actions").font(WorkspaceTypography.pageTitle)
-            Text(reviewMode == "threads" ? "\(visibleThreads.count) threads" : "\(visible.count) of \(all.count)")
+            Text("Actions").font(.title3.bold())
+            Text(reviewMode == "threads" ? "\(threads) threads" : "\(visible) of \(total)")
                 .foregroundStyle(.secondary)
             Spacer()
             if reviewMode == "actions" {
-                if visibleSelection.isEmpty {
+                if selected.isEmpty {
                     if selecting {
                         Text("Choose actions to change together")
-                            .font(WorkspaceTypography.metadata)
+                            .font(Font.callout)
                             .foregroundStyle(.secondary)
                             .accessibilityIdentifier("actions.batch.hint")
                     }
                 } else {
-                    Menu("Change \(CountLabel.format(visibleSelection.count, "selected action"))") {
+                    Menu("Change \(CountLabel.format(selected.count, "selected action"))") {
                         ForEach(OutcomeStatus.allCases, id: \.rawValue) { next in
                             Button(next.label) {
-                                failures = app.outcomeIndex.setStatus(next, for: visibleSelection)
+                                failures = app.outcomeIndex.setStatus(next, for: selected)
                             }
                         }
                     }
@@ -164,16 +231,16 @@ struct ActionsWorkspaceView: View {
                 .help(selecting ? "Stop selecting actions" : "Select several actions to change their status together")
                 .accessibilityIdentifier("actions.selectMode")
             }
-        }.padding(20)
+        }.padding(.horizontal, 20).padding(.vertical, 12)
     }
 
-    private var filters: some View {
+    private func filters(hiddenSelectionCount: Int) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Picker("Review", selection: $reviewMode) {
                     Text("Actions").tag("actions")
                     Text("Threads").tag("threads")
-                }.pickerStyle(.segmented).labelsHidden().frame(width: 180)
+                }.pickerStyle(.menu).frame(width: 170)
                     .accessibilityIdentifier("actions.reviewMode")
                 TextField("Search actions and meetings", text: $query).textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier("actions.search")
@@ -188,7 +255,7 @@ struct ActionsWorkspaceView: View {
                         .accessibilityIdentifier("actions.selection.hidden")
                     Button("Clear selection") { selection = [] }
                     Spacer()
-                }.font(WorkspaceTypography.metadata).foregroundStyle(.secondary)
+                }.font(Font.callout).foregroundStyle(.secondary)
             }
         }.padding(.horizontal, 20).padding(.bottom, 12)
     }
@@ -204,7 +271,6 @@ struct ActionsWorkspaceView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.top, WorkspaceMetric.rowVerticalPadding - 3)
         .accessibilityLabel(isSelected ? "Deselect action" : "Select action")
         .accessibilityIdentifier("actions.select.\(id)")
     }
@@ -232,11 +298,13 @@ struct ActionsWorkspaceView: View {
     private var sortPicker: some View {
         Picker("Sort", selection: $sort) {
             Text("Due, then recent").tag("due")
+            Text("Latest due first").tag("dueDescending")
             Text("Most recent").tag("recent")
         }
     }
 
     private func matchesDue(_ action: OutcomeActionReference) -> Bool {
+        guard dueFilter != "all" else { return true }
         let date = ActionDuePresentation.date(action.due)
         switch dueFilter {
         case "overdue": return date.map { $0 < Calendar.current.startOfDay(for: Date()) } == true && action.status == .open
@@ -249,8 +317,14 @@ struct ActionsWorkspaceView: View {
     private func inspector(_ reference: OutcomeActionReference) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text(reference.text).font(WorkspaceTypography.sectionTitle).textSelection(.enabled)
-                Text(reference.meetingTitle).foregroundStyle(.secondary)
+                Text("Action Details").font(.title3.bold())
+                Text(reference.text).font(.body.weight(.semibold)).textSelection(.enabled)
+                Button(reference.meetingTitle) { app.openMeeting(reference.meetingID) }
+                    .buttonStyle(.workspaceLink)
+                Picker("Status", selection: Binding(get: { reference.status }, set: { setStatus($0, for: reference) })) {
+                    ForEach(OutcomeStatus.allCases, id: \.rawValue) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.menu)
                 LabeledContent(
                     "Owner",
                     value: reference.owner.map {
@@ -259,21 +333,31 @@ struct ActionsWorkspaceView: View {
                             identity: reference.isForUser ? .user : .unresolved)
                     } ?? "Not stated")
                 if let due = reference.due { Text(ActionDuePresentation.label(due, spokenAt: reference.meetingStartedAt)) }
-                Button("Correct action or resolve date…") { correction = reference }
+                Button("Correct Action or Resolve Date…") { correction = reference }
                 Divider()
-                Text("Original wording").font(WorkspaceTypography.metadataEmphasis)
+                Text("Original Wording").font(Font.callout.weight(.semibold))
                 Text(reference.action.displayText).textSelection(.enabled)
                 if let originalDue = reference.action.due { Text("Original due phrase: \(originalDue)") }
-                ForEach(reference.action.citations) { citation in
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(citation.excerpt).textSelection(.enabled)
-                        Button("Show passage · \(Transcript.stamp(citation.start))") {
-                            app.openMeeting(reference.meetingID, seek: citation.start)
-                        }
-                    }
-                }
+                ActionEvidencePassages(reference: reference).id(reference.id)
+                Text("Saved corrections stay separate from the original action and its supporting passage.")
+                    .font(.callout).foregroundStyle(.secondary)
                 if reference.action.citations.isEmpty { Text("No supporting passage was stored.").foregroundStyle(.secondary) }
             }.padding(20)
+        }
+        .background(.background.secondary)
+    }
+
+    private func isOverdue(_ reference: OutcomeActionReference) -> Bool {
+        reference.status == .open && ActionDuePresentation.date(reference.due).map {
+            $0 < Calendar.current.startOfDay(for: Date())
+        } == true
+    }
+
+    private func setStatus(_ status: OutcomeStatus, for reference: OutcomeActionReference) {
+        if app.outcomeIndex.setStatus(status, actionID: reference.action.id, meetingID: reference.meetingID) {
+            app.lastError = nil
+        } else {
+            app.lastError = "Could not update this action. " + (app.outcomeIndex.lastError ?? "The action is no longer available.")
         }
     }
 }
@@ -299,8 +383,8 @@ private struct ActionEditorSheet: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Correct action").font(WorkspaceTypography.pageTitle)
-            Text("Action").font(WorkspaceTypography.metadataEmphasis)
+            Text("Correct action").font(Font.largeTitle.bold())
+            Text("Action").font(Font.callout.weight(.semibold))
             TextEditor(text: $text).frame(height: 100).padding(8).workspaceControl()
             LabeledContent("Owner") {
                 TextField("Me or named participant", text: Binding(

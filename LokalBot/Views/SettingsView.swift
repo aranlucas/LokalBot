@@ -29,33 +29,39 @@ struct SettingsView: View {
         HSplitView {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Settings")
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.title3.bold())
                     .padding(.horizontal, 20)
-                    .padding(.top, 20)
+                    .padding(.top, 14)
+                Text("LokalBot " + (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""))
+                    .font(.callout).foregroundStyle(.secondary)
+                    .padding(.horizontal, 20)
                 settingsSearchField.padding(.horizontal, 14)
                 List(selection: Binding(get: { queryIsEmpty ? Optional(app.settingsTab) : nil }, set: {
                     if let category = $0 { app.settingsTab = category; settingsQuery = ""; app.focusedSettingID = nil }
                 })) {
                     ForEach(AppState.SettingsTab.allCases, id: \.self) { category in
                         SettingsCategoryLabel(category: category)
-                            .padding(.vertical, 5)
+                            .padding(.vertical, 3)
                             .tag(category)
                     }
                 }
-                .listStyle(.sidebar)
+                .listStyle(.inset)
                 .scrollContentBackground(.hidden)
-                .tint(SettingsPalette.accent(colorScheme))
+                .tint(Brand.tealFill)
                 .accessibilityLabel("Settings categories")
                 .accessibilityIdentifier("settings.categories")
             }
-            .frame(minWidth: 205, idealWidth: 220, maxWidth: 250)
-            .background(SettingsPalette.navigation(colorScheme))
+            .frame(minWidth: 210, idealWidth: LBTokens.Metric.settingsCategoriesWidth, maxWidth: 280)
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Settings navigation")
-            .splitPaneAccessibilityLabel("Settings navigation", autosaveName: "LokalBot.settings")
+            .splitPaneAccessibilityLabel("Settings navigation", autosaveName: "LokalBot.settings", initialWidth: LBTokens.Metric.settingsCategoriesWidth)
             VStack(alignment: .leading, spacing: 0) {
-                settingsHeaderTitle.padding(20)
-                SettingsSeparator()
+                settingsHeaderTitle
+                    .frame(maxWidth: LBTokens.Metric.readingMaxWidth, alignment: .leading)
+                    .padding(.horizontal, LBTokens.Metric.detailPadding)
+                    .padding(.top, 16)
+                    .padding(.bottom, 12)
+                    .frame(maxWidth: .infinity)
                 if !queryIsEmpty {
                     searchResults
                 } else if app.settingsTab == .models {
@@ -65,6 +71,9 @@ struct SettingsView: View {
                     ScrollViewReader { proxy in
                         Form { sections(for: app.settingsTab) }
                             .formStyle(.grouped)
+                            .toggleStyle(LBAccentSwitchStyle())
+                            .frame(maxWidth: LBTokens.Metric.readingMaxWidth + 56)
+                            .frame(maxWidth: .infinity)
                             .scrollContentBackground(.hidden)
                             .accessibilityIdentifier("settings.form")
                             .onChange(of: app.focusedSettingID, initial: true) {
@@ -75,13 +84,12 @@ struct SettingsView: View {
                     .id("\(app.settingsTab)-\(writingSection.rawValue)")
                 }
             }.frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity)
-                .background(SettingsPalette.canvas(colorScheme))
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel(queryIsEmpty ? app.settingsTab.displayName : "Search settings")
                 .splitPaneAccessibilityLabel(queryIsEmpty ? app.settingsTab.displayName : "Search settings")
         }
         .frame(minWidth: 700, minHeight: 600)
-        .tint(SettingsPalette.accent(colorScheme))
+        .tint(Brand.teal)
         .navigationTitle(queryIsEmpty ? app.settingsTab.displayName : "Search settings")
         .onChange(of: app.focusedSettingID, initial: true) {
             if let id = app.focusedSettingID, app.settingsTab == .writing {
@@ -109,15 +117,11 @@ struct SettingsView: View {
     /// from any tab (including Models).
     private var settingsHeaderTitle: some View {
         HStack(alignment: .center, spacing: 12) {
-            IconTile(systemImage: queryIsEmpty ? app.settingsTab.icon : "magnifyingglass",
-                     tint: Brand.tealFill, size: 34)
-                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(queryIsEmpty ? app.settingsTab.displayName : "Search settings")
-                    .font(WorkspaceTypography.pageTitle)
-                    .tracking(-0.35)
+                    .font(Font.largeTitle.bold())
                 Text(queryIsEmpty ? settingsTabSubtitle : "Results across all categories. Choose a setting to edit its value.")
-                    .font(WorkspaceTypography.metadata)
+                    .font(Font.callout)
                     .settingsSecondary()
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -131,7 +135,7 @@ struct SettingsView: View {
                 .accessibilityHidden(true)
             TextField("Search settings…", text: $settingsQuery)
                 .textFieldStyle(.plain)
-                .font(WorkspaceTypography.control)
+                .font(Font.body)
                 .accessibilityIdentifier("settings.search")
             if !settingsQuery.isEmpty {
                 Button { settingsQuery = "" } label: {
@@ -181,7 +185,7 @@ struct SettingsView: View {
                 Picker("Writing tool", selection: $writingSection) {
                     ForEach(WritingSection.allCases, id: \.self) { Text($0.rawValue).tag($0) }
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.segmented).tint(Brand.tealFill)
                 .accessibilityIdentifier("settings.writing.sections")
             }
             if writingSection == .autocomplete {
@@ -214,11 +218,11 @@ struct SettingsView: View {
                 settingsQuery = ""
             } label: {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(result.title).font(WorkspaceTypography.bodyEmphasis)
+                    Text(result.title).font(Font.body.weight(.semibold))
                     Text(result.currentValue(in: app.settings) + " · " + result.category.displayName)
-                        .font(WorkspaceTypography.metadata).settingsSecondary()
+                        .font(Font.callout).settingsSecondary()
                     if let prerequisite = result.prerequisite(in: app.settings) {
-                        Text(prerequisite).font(WorkspaceTypography.metadata).settingsSecondary()
+                        Text(prerequisite).font(Font.callout).settingsSecondary()
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
             }.buttonStyle(.plain)
@@ -708,7 +712,7 @@ struct SettingsView: View {
                           help: "Shapes both scheduled and manual digests.")
             ZStack(alignment: .topLeading) {
                 TextEditor(text: $app.settings.dayDigestCustomPrompt)
-                    .font(WorkspaceTypography.editorialBody)
+                    .font(Font.body)
                     .multilineTextAlignment(.leading)
                     .scrollContentBackground(.hidden)
                     .padding(.horizontal, 6)
@@ -718,7 +722,7 @@ struct SettingsView: View {
 
                 if app.settings.dayDigestCustomPrompt.isEmpty {
                     Text("Example: Emphasize decisions, blockers, and next steps.")
-                        .font(WorkspaceTypography.editorialBody)
+                        .font(Font.body)
                         .settingsSecondary()
                         .padding(.horizontal, 10)
                         .padding(.vertical, 8)
@@ -839,7 +843,7 @@ struct SettingsView: View {
                     }
                     if let error = app.dreaming.lastError {
                         Label(error, systemImage: "exclamationmark.triangle")
-                            .font(WorkspaceTypography.editorialBody).foregroundStyle(Brand.error)
+                            .font(Font.body).foregroundStyle(Brand.error)
                     }
                 }
                 if let memory = app.dreamMemory,
@@ -943,7 +947,7 @@ struct SettingsView: View {
                 Link("Support", destination: URL(string: "https://www.lokalbot.com/support")!)
                     .buttonStyle(.workspaceLink)
             }
-            .font(WorkspaceTypography.control)
+            .font(Font.body)
         }
     }
 
@@ -980,10 +984,10 @@ struct SettingsView: View {
                     }
                     if power.isLowPower {
                         Label("Low Power Mode is on — summaries may run slower.", systemImage: "bolt.slash")
-                            .font(.system(size: 12)).settingsSecondary()
+                            .font(.callout).settingsSecondary()
                     } else if power.isOnBattery {
                         Label("Running on battery.", systemImage: "battery.75")
-                            .font(.system(size: 12)).settingsSecondary()
+                            .font(.callout).settingsSecondary()
                     }
                     if metrics.recent.isEmpty {
                         LabeledContent("Recent generations") {
@@ -994,7 +998,7 @@ struct SettingsView: View {
                             LabeledContent(metric.label) {
                                 Text(String(format: "%.1fs · ~%d tok · %.0f tok/s",
                                             metric.durationSec, metric.approxTokens, metric.tokensPerSec))
-                                    .font(WorkspaceTypography.metadata).settingsSecondary()
+                                    .font(Font.callout).settingsSecondary()
                             }
                         }
                     }
@@ -1084,7 +1088,7 @@ struct SettingsView: View {
                 Button("Grant Calendar Access…") { app.calendar.requestAccess { _ in } }
                 if let error = app.calendar.accessRequestError {
                     Text(error)
-                        .font(.system(size: 12))
+                        .font(.callout)
                         .foregroundStyle(Brand.error)
                         .multilineTextAlignment(.trailing)
                         .frame(maxWidth: 320, alignment: .trailing)
@@ -1179,7 +1183,7 @@ private struct SettingsCategoryLabel: View {
             Image(systemName: category.icon)
                 .foregroundStyle(prominence == .increased ? AnyShapeStyle(.primary) : AnyShapeStyle(Brand.teal))
         }
-        .font(.system(size: 14))
+        .font(.body)
     }
 }
 

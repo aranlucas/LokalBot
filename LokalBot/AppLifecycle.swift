@@ -163,9 +163,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 width: min(1180, max(900, visible.width - 40)),
                 height: min(740, max(620, visible.height - 40)))
         }
+        // Match a SwiftUI window's titlebar safe area. In particular, the
+        // native compact sidebar on macOS 26 draws its toolbar background
+        // inside the full-size content view.
         let window = MeetingFindWindow(
             contentRect: NSRect(origin: .zero, size: contentSize),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false)
         window.meetingFindAction = { [weak app] in
@@ -234,6 +237,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 QuickRecallView()
                     .environmentObject(app)
                     .brandTinted()
+            } else if windowKind == "menu-bar" {
+                // Synthetic in-process documentation capture; the production
+                // menu extra continues to own its normal presentation.
+                MenuBarView(dictation: app.dictation)
+                    .environmentObject(app)
+                    .brandTinted()
+            } else if windowKind == "live-preview", let meeting = app.meetings.first {
+                NavigationStack {
+                    LiveMeetingDetailView(meeting: meeting, transcriber: app.liveTranscriber)
+                }
+                .environmentObject(app)
+                .brandTinted()
             } else {
                 MainWindowView()
                     .environmentObject(app)

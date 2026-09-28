@@ -155,22 +155,12 @@ enum BrowserMeetingSession {
         observationLostAt: Date?,
         now: Date,
         grace: TimeInterval,
-        hostReconnectGrace: TimeInterval? = nil
+        hostReconnectGrace _: TimeInterval? = nil
     ) -> LifecycleDecision {
-        // A Chromium host can be replaced while its Meet tab and helper audio
-        // continue (for example during a renderer/browser restart). Treat that
-        // absence as a bounded reconnect window; an explicit ended snapshot is
-        // still authoritative and stops immediately.
-        if !hostPresent {
-            let effectiveGrace = hostReconnectGrace ?? grace
-            guard let observationLostAt,
-                  effectiveGrace.isFinite,
-                  effectiveGrace >= 0,
-                  now.timeIntervalSince(observationLostAt) >= effectiveGrace else {
-                return .waitForObservation
-            }
-            return .endAfterGrace
-        }
+        // A missing host/document or unreadable controls cannot prove an end.
+        // Keep the authorized capture and its binding alive until positive end
+        // evidence or the user's Stop action, however long observation takes.
+        guard hostPresent else { return .waitForObservation }
         switch snapshotState {
         case .some(.inCall):
             return .inCall
@@ -184,7 +174,9 @@ enum BrowserMeetingSession {
             return .visibilitySuspended
         case .some(.ended):
             return .endImmediately
-        case .some(.gone), .some(.unavailable), .none:
+        case .some(.unavailable), .none:
+            return .waitForObservation
+        case .some(.gone):
             guard let observationLostAt,
                   grace.isFinite,
                   grace >= 0,
@@ -195,10 +187,8 @@ enum BrowserMeetingSession {
         }
     }
 
-    /// One bound call's lifecycle across detector ticks: when certainty was
-    /// lost, the last moment the call was known to continue, and whether an
-    /// end is confident. Only a grace expiry with nothing readable at all is
-    /// uncertain; a readable page without call controls or a closed tab is not.
+    /// One bound call's lifecycle. Uncertainty never expires the authorization
+    /// to keep recording. Only continuously verified closure starts end grace.
     struct LifecycleTracker: Equatable {
         enum Event: Equatable {
             case none
@@ -213,7 +203,7 @@ enum BrowserMeetingSession {
         private var suspendedAt: Date?
         /// In-call controls, or the verified window still holding the call.
         private(set) var lastEvidenceAt: Date?
-        private var lastUncertainState: State?
+        private var closedAt: Date?
 
         init(verifiedAt: Date? = nil) {
             lastEvidenceAt = verifiedAt
@@ -223,7 +213,7 @@ enum BrowserMeetingSession {
                               grace: TimeInterval, hostReconnectGrace: TimeInterval) -> Event {
             let decision = BrowserMeetingSession.lifecycleDecision(
                 snapshotState: state, hostPresent: hostPresent,
-                observationLostAt: lostAt ?? now, now: now,
+                observationLostAt: state == .gone ? (closedAt ?? now) : lostAt, now: now,
                 grace: grace, hostReconnectGrace: hostReconnectGrace)
             switch decision {
             case .inCall:
@@ -236,25 +226,24 @@ enum BrowserMeetingSession {
                 let changed = suspension != state
                 if suspendedAt == nil { suspendedAt = lostAt ?? now }
                 lostAt = nil
-                lastUncertainState = nil
+                closedAt = nil
                 lastEvidenceAt = now
                 suspension = state
                 return changed ? state.map(Event.suspended) ?? .none : .none
             case .waitForObservation:
-                lastUncertainState = hostPresent ? state : nil
+                if hostPresent, state == .gone {
+                    if closedAt == nil { closedAt = now }
+                } else {
+                    closedAt = nil
+                }
                 guard lostAt == nil else { return .none }
                 lostAt = now
                 return .lost(state)
             case .endImmediately:
-                return .end(reason: "browser-ended", confident: true, contentEnd: lastEvidenceAt ?? now)
+                return .end(reason: "browser-ended", confident: true, contentEnd: now)
             case .endAfterGrace:
-                let known = state ?? lastUncertainState
-                let reason = !hostPresent ? "browser-host-reconnect-grace-expired"
-                    : known == .gone ? "browser-meeting-closed"
-                    : known == .unavailable ? "browser-call-controls-missing"
-                    : "browser-observation-grace-expired"
-                return .end(reason: reason, confident: reason != "browser-observation-grace-expired",
-                            contentEnd: lastEvidenceAt ?? lostAt ?? now)
+                return .end(reason: "browser-meeting-closed", confident: true,
+                            contentEnd: closedAt ?? now)
             }
         }
     }
@@ -296,9 +285,13 @@ enum BrowserMeetingSession {
     private static func boundWindowState(processID: pid_t, bound: Window, documentReadable: Bool) -> State? {
         let app = AXUIElementCreateApplication(processID)
         AXUIElementSetMessagingTimeout(app, 0.012)
-        // A closed window or replacement process no longer holds the call.
+        // A moved tab can replace its original window. Inspect every window
+        // before calling the bound call closed; unreadable strips abstain.
         guard let windows = value(app, kAXWindowsAttribute) as? [AXUIElement] else { return nil }
-        guard windows.contains(where: { CFEqual($0, bound.element) }) else { return .gone }
+        guard windows.count <= 32 else { return nil }
+        guard windows.contains(where: { CFEqual($0, bound.element) }) else {
+            return closureState(in: windows, bound: bound)
+        }
         guard let title = value(bound.element, kAXTitleAttribute) as? String,
               !ScreenContextPrivacy.isPrivateWindow(title: title) else { return nil }
         if value(bound.element, kAXMinimizedAttribute) as? Bool == true { return .minimized }
@@ -310,7 +303,21 @@ enum BrowserMeetingSession {
         }) else { return nil }
         if tabHoldsCall { return .present }
         // Only call a tab closed when its title was recognisable to begin with.
-        return titleNamesCall(bound.title, url: url, verifiedTitle: "") ? .gone : nil
+        return closureState(in: windows, bound: bound)
+    }
+
+    private static func closureState(in windows: [AXUIElement], bound: Window) -> State? {
+        guard titleNamesCall(bound.title, url: bound.snapshot.url, verifiedTitle: "") else { return nil }
+        for window in windows {
+            guard let title = value(window, kAXTitleAttribute) as? String,
+                  !ScreenContextPrivacy.isPrivateWindow(title: title) else { return nil }
+            if titleNamesCall(title, url: bound.snapshot.url, verifiedTitle: bound.title) { return .present }
+            guard let contains = tabStripContains(in: window, where: {
+                titleNamesCall($0, url: bound.snapshot.url, verifiedTitle: bound.title)
+            }) else { return nil }
+            if contains { return .present }
+        }
+        return .gone
     }
 
     /// Whether a window or tab title still names the verified call. Meet puts

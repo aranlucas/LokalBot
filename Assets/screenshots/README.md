@@ -1,17 +1,18 @@
 # README screenshots
 
-The six app screenshots used by the root [README](../../README.md) were captured
-on **September 17, 2026** from the published **v0.8.2** source:
-[`540d183d403fa7a4d42b8b3b559f946b1aeac207`](https://github.com/stevyhacker/lokalbot/tree/540d183d403fa7a4d42b8b3b559f946b1aeac207).
+The five app screenshots used by the root [README](../../README.md) were captured
+on **September 28, 2026** from the native UI refresh source on
+`codex/native-ui-refresh`, commit
+[`2fde15dbc0484ac06be593b66c2e512ee0eb7516`](https://github.com/stevyhacker/lokalbot/tree/2fde15dbc0484ac06be593b66c2e512ee0eb7516),
+before that UI shipped in a release.
 
 | File | Surface |
 | --- | --- |
 | [quick-recall.png](quick-recall.png) | Redis results from saved screen context and meeting transcripts |
 | [meetings-summary.png](meetings-summary.png) | Meeting overview with recap, actions, decisions, and source citations |
-| [today.png](today.png) | Outstanding actions and the day's brief |
-| [timeline.png](timeline.png) | Day digest, work sessions, and raw-capture entry |
-| [cotyping.png](cotyping.png) | Autocomplete preview and rehearsal |
-| [models.png](models.png) | Active model roles, readiness, and connections |
+| [today.png](today.png) | Items needing attention and the day digest |
+| [timeline.png](timeline.png) | Day overview, digest, open items, and work sessions |
+| [cotyping.png](cotyping.png) | Settings → Writing with the Autocomplete preview and rehearsal |
 
 These are unedited captures of the native SwiftUI views, with fictional content
 from `Scripts/seed_demo_library.py`. They are not composited product mockups.
@@ -19,16 +20,26 @@ The isolated capture host suppresses background capture and inference; displayed
 transcripts, summaries, suggestions, and permission states are fixture data.
 The images show the interface, not proof of live recording or model performance.
 
-The capture used `Scripts/capture-screenshots.sh --stills-only` in a temporary
-archive of the release source. It had its own storage root, UserDefaults suite,
-and DerivedData. The temporary script used `uv` for fixture seeding and stopped
-only the processes it launched. No production app or user library was used,
-and no UI tests were run.
+The capture ran `Scripts/capture-screenshots.sh --stills-only` unmodified in a
+temporary `git archive` of the commit above, with prebuilt native runtimes copied
+into its `Vendor/` directory. It had its own storage root, UserDefaults suite,
+and DerivedData. No production app or user library was used, and no UI tests
+were run.
 
 Main windows were rendered at 1400 × 880 points and 2× density. Quick Recall
-used a 660 × 480 point window, with its title bar included in the resulting
-1320 × 1024 PNG. Appearance was pinned to dark. All six frames were visually
-reviewed; [readme.source.json](readme.source.json) records dimensions and hashes.
+used a 660 × 480 point window, producing a 1320 × 1024 PNG. Appearance was
+pinned to dark. All five frames were visually reviewed;
+[readme.source.json](readme.source.json) records dimensions and hashes.
+
+`cacheDisplay` cannot draw some native selection materials: the selected
+toolbar segment in `meetings-summary.png` renders as a blank light pill, and
+selected sidebar rows render solid black. Judge those controls in a live window.
+
+The README no longer shows [models.png](models.png). The isolated host has no
+downloaded models, so a fresh Models capture shows "Download required" on every
+role; the README's model table covers the same information. The committed
+`models.png` remains the v0.8.2 capture described in
+[models.source.json](models.source.json).
 
 ## Demo video
 

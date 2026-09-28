@@ -15,7 +15,7 @@ final class MeetingIntegrityTests: XCTestCase {
             now: start.addingTimeInterval(7_200), grace: 120), .visibilitySuspended)
         XCTAssertEqual(BrowserMeetingSession.lifecycleDecision(
             snapshotState: .minimized, hostPresent: false, observationLostAt: start,
-            now: start.addingTimeInterval(121), grace: 120), .endAfterGrace)
+            now: start.addingTimeInterval(121), grace: 120), .waitForObservation)
         var gate = BrowserMeetingSession.StartGate()
         let url = URL(string: "https://meet.google.com/abc-defg-hij")!
         XCTAssertFalse(gate.observe(.init(url: url, state: .minimized), at: start))
@@ -74,7 +74,7 @@ final class MeetingIntegrityTests: XCTestCase {
                 observationLostAt: now,
                 now: now.addingTimeInterval(45),
                 grace: 45),
-            .endAfterGrace)
+            .waitForObservation)
         XCTAssertEqual(
             BrowserMeetingSession.lifecycleDecision(
                 snapshotState: .ended,
@@ -108,7 +108,7 @@ final class MeetingIntegrityTests: XCTestCase {
                 now: now.addingTimeInterval(15),
                 grace: 120,
                 hostReconnectGrace: 15),
-            .endAfterGrace)
+            .waitForObservation)
     }
 
     func testOpenCallTabKeepsTheCallWhileAClosedTabStillGetsGrace() {
@@ -159,31 +159,41 @@ final class MeetingIntegrityTests: XCTestCase {
         XCTAssertEqual(tracker.lastEvidenceAt, start.addingTimeInterval(3_720))
     }
 
-    func testTrackerOnlyCallsAGraceExpiryWithNothingReadableUncertain() {
+    func testIncidentObservationLossAndTenMinuteGapNeverEndTheRecording() {
         let start = Date(timeIntervalSince1970: 1_000)
-        func end(after states: [BrowserMeetingSession.State?], host: Bool = true)
-            -> BrowserMeetingSession.LifecycleTracker.Event {
-            var tracker = BrowserMeetingSession.LifecycleTracker(verifiedAt: start)
-            var last = BrowserMeetingSession.LifecycleTracker.Event.none
-            for (index, state) in states.enumerated() {
-                last = tracker.observe(state, hostPresent: host, now: start.addingTimeInterval(Double(index) * 60 + 5),
-                                       grace: 120, hostReconnectGrace: 15)
+        for state in [nil, .unavailable] as [BrowserMeetingSession.State?] {
+            for hostPresent in [true, false] {
+                var tracker = BrowserMeetingSession.LifecycleTracker(verifiedAt: start)
+                for seconds in [1.0, 122, 137, 600, 3_600] {
+                    let event = tracker.observe(state, hostPresent: hostPresent,
+                        now: start.addingTimeInterval(seconds), grace: 120, hostReconnectGrace: 15)
+                    if case .end = event { XCTFail("Missing observations must never stop or trim audio") }
+                }
+                XCTAssertEqual(tracker.lastEvidenceAt, start)
+                XCTAssertEqual(tracker.observe(.inCall, hostPresent: true,
+                    now: start.addingTimeInterval(3_610), grace: 120, hostReconnectGrace: 15),
+                    .recovered(after: 3_609))
             }
-            return last
         }
-        let verifiedEnd = start
-        XCTAssertEqual(end(after: [nil, nil, nil]),
-                       .end(reason: "browser-observation-grace-expired", confident: false, contentEnd: verifiedEnd))
-        XCTAssertEqual(end(after: [nil, .gone, nil]),
-                       .end(reason: "browser-meeting-closed", confident: true, contentEnd: verifiedEnd))
-        XCTAssertEqual(end(after: [.unavailable, .unavailable, .unavailable]),
-                       .end(reason: "browser-call-controls-missing", confident: true, contentEnd: verifiedEnd))
-        XCTAssertEqual(end(after: [nil], host: false), .lost(nil))
-        XCTAssertEqual(end(after: [nil, nil], host: false),
-                       .end(reason: "browser-host-reconnect-grace-expired", confident: true, contentEnd: verifiedEnd))
-        XCTAssertEqual(end(after: [.present, .ended]),
-                       .end(reason: "browser-ended", confident: true, contentEnd: start.addingTimeInterval(5)),
-                       "The call is known to continue while its tab is open")
+    }
+
+    func testConfirmedClosureGetsItsOwnContinuousGraceAndExplicitEndUsesCurrentTime() {
+        let start = Date(timeIntervalSince1970: 1_000)
+        var tracker = BrowserMeetingSession.LifecycleTracker(verifiedAt: start)
+        func observe(_ state: BrowserMeetingSession.State?, _ seconds: Double)
+            -> BrowserMeetingSession.LifecycleTracker.Event {
+            tracker.observe(state, hostPresent: true, now: start.addingTimeInterval(seconds),
+                            grace: 120, hostReconnectGrace: 15)
+        }
+        XCTAssertEqual(observe(nil, 10), .lost(nil))
+        XCTAssertEqual(observe(.gone, 600), .none)
+        XCTAssertEqual(observe(.gone, 719), .none)
+        XCTAssertEqual(observe(nil, 720), .none, "An unreadable observation breaks closure evidence")
+        XCTAssertEqual(observe(.gone, 800), .none)
+        XCTAssertEqual(observe(.gone, 920),
+            .end(reason: "browser-meeting-closed", confident: true, contentEnd: start.addingTimeInterval(800)))
+        XCTAssertEqual(observe(.ended, 930),
+            .end(reason: "browser-ended", confident: true, contentEnd: start.addingTimeInterval(930)))
     }
 
     func testUnrelatedSignalsNeverProveOrInvalidateBrowserSession() {

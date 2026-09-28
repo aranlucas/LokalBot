@@ -3,6 +3,24 @@ import XCTest
 
 @MainActor
 final class ActionThreadsTests: XCTestCase {
+    func testDueHeaderSortKeepsUnknownDatesLastAndTiesStable() {
+        let start = Date(timeIntervalSince1970: 1_780_000_000)
+        let early = reference(meetingID: UUID(), meetingTitle: "Early", startedAt: start, text: "Early", due: "2026-09-29")
+        let late = reference(meetingID: UUID(), meetingTitle: "Late", startedAt: start, text: "Late", due: "2026-09-30")
+        let recentTie = reference(meetingID: UUID(), meetingTitle: "Recent", startedAt: start.addingTimeInterval(60),
+                                  text: "Recent", due: "2026-09-29")
+        let unknown = reference(meetingID: UUID(), meetingTitle: "Unknown", startedAt: start, text: "Unknown", due: "Next week")
+        let undated = reference(meetingID: UUID(), meetingTitle: "Undated", startedAt: start, text: "Undated")
+        let actions = [unknown, early, undated, late, recentTie]
+        XCTAssertEqual(actions.sorted(using: ActionDueSort()).prefix(3).map(\.id), [recentTie.id, early.id, late.id])
+        XCTAssertEqual(actions.sorted(using: ActionDueSort(order: .reverse)).prefix(3).map(\.id), [late.id, recentTie.id, early.id])
+        for order in [SortOrder.forward, .reverse] {
+            let comparator = ActionDueSort(order: order)
+            XCTAssertEqual(comparator.compare(early, early), .orderedSame)
+            XCTAssertEqual(comparator.compare(unknown, undated), unknown.id < undated.id ? .orderedAscending : .orderedDescending)
+        }
+    }
+
     func testClustersCompatibleMentionsAndPrefersUserCorrection() throws {
         let older = reference(
             meetingID: UUID(),

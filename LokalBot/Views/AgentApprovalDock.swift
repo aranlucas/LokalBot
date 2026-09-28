@@ -3,22 +3,24 @@ import SwiftUI
 struct AgentApprovalDock: View {
     @ObservedObject var controller: AgentSessionController
     let request: AgentApprovalRequest
-    @State private var expanded = false
+    var detailsMaxHeight: CGFloat = 180
+    @State private var expanded = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Approval required: \(request.tool)", systemImage: "hand.raised.fill")
-                .font(.callout.weight(.semibold))
+                .font(.headline)
+                .foregroundStyle(LBTokens.Palette.attentionText)
 
             Text(approvalEffect(request.tool)).workspaceTextRole(.trust)
             if let path = request.path {
-                Text(path).font(.caption.monospaced()).lineLimit(2).textSelection(.enabled)
+                Text(path).font(LBTokens.Typography.path).lineLimit(2).textSelection(.enabled)
             }
             if let command = request.command {
-                Text(command).font(.caption.monospaced()).lineLimit(2).textSelection(.enabled)
+                Text(command).font(LBTokens.Typography.path).lineLimit(2).textSelection(.enabled)
             }
-            DisclosureGroup("Review details", isExpanded: $expanded) {
-                ScrollView { details }.frame(maxHeight: 180)
+            DisclosureGroup("Review Details", isExpanded: $expanded) {
+                ScrollView { details }.frame(maxHeight: detailsMaxHeight)
             }
 
             ViewThatFits(in: .horizontal) {
@@ -27,8 +29,8 @@ struct AgentApprovalDock: View {
             }
         }
         .padding(12)
-        .background(.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.orange.opacity(0.4)))
+        .lbStatusSurface(.orange)
+        .onChange(of: request.id) { expanded = true }
     }
 
     private var details: some View {
@@ -72,7 +74,7 @@ struct AgentApprovalDock: View {
                     id: request.id, approved: false, scope: .once)
             }
         }
-        .primaryActionButton()
+        .buttonStyle(.bordered)
         .keyboardShortcut(.cancelAction)
         .accessibilityIdentifier("agent.approve.deny")
 
@@ -93,6 +95,7 @@ struct AgentApprovalDock: View {
                     id: request.id, approved: true, scope: .once)
             }
         }
+        .primaryActionButton()
         .disabled(!request.canApprove)
         .accessibilityIdentifier("agent.approve.once")
     }
@@ -110,7 +113,7 @@ struct AgentApprovalDock: View {
     private func approvalText(label: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(label).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-            Text(value).font(.caption.monospaced()).textSelection(.enabled)
+            Text(value).font(LBTokens.Typography.path).textSelection(.enabled)
         }
     }
 
@@ -119,7 +122,7 @@ struct AgentApprovalDock: View {
             Text(label).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
             ScrollView([.horizontal, .vertical]) {
                 Text(value.isEmpty ? "(empty)" : value)
-                    .font(.caption.monospaced())
+                    .font(LBTokens.Typography.path)
                     .textSelection(.enabled)
                     .fixedSize(horizontal: true, vertical: false)
                     .frame(maxWidth: .infinity, alignment: .leading)

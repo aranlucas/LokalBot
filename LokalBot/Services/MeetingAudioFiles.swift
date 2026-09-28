@@ -9,7 +9,7 @@ enum MeetingAudioFiles {
     /// Container finalization and the PCM tee can differ by a small encoder
     /// tail. A larger gap means the primary track was truncated and the CAF is
     /// the more complete recording.
-    private static let completenessTolerance: TimeInterval = 2
+    private static let completenessTolerance: TimeInterval = 0.1
 
     enum Track: String, CaseIterable {
         case mic
@@ -61,15 +61,37 @@ enum MeetingAudioFiles {
         for track in Track.allCases {
             let primary = primaryURL(for: track, in: folder)
             guard readableURL(for: track, in: folder) == primary else { continue }
-            try? FileManager.default.removeItem(at: recoveryURL(for: track, in: folder))
+            let preview = recoveryURL(for: track, in: folder)
+            let rebuilt = try? AudioRecoveryJournal.recover(previewURL: preview)
+            if FileManager.default.fileExists(atPath: AudioRecoveryJournal.directory(for: preview).path),
+               AudioRecoveryJournal.receipt(previewURL: preview)?.complete != true { continue }
+            let sources = [preview, rebuilt].compactMap { $0 }
+            guard let complete = AudioFileInspector.fullyDecodedDuration(at: primary),
+                  sources.compactMap({ AudioFileInspector.duration(at: $0) }).allSatisfy({ $0 <= complete + 0.1 }) else {
+                continue
+            }
+            for source in sources { try? FileManager.default.removeItem(at: source) }
+            // Keep checkpoints if reconstruction failed: they may be the only
+            // surviving copies of intervals not described by the AAC header.
+            if rebuilt != nil, AudioRecoveryJournal.receipt(previewURL: preview)?.complete == true {
+                try? FileManager.default.removeItem(at: AudioRecoveryJournal.directory(for: preview))
+                try? FileManager.default.removeItem(at: AudioRecoveryJournal.receiptURL(for: preview))
+            }
         }
     }
 
     private static func preferredURL(for track: Track, in folder: URL,
                                      minimumDuration: TimeInterval) -> URL? {
         let primary = primaryURL(for: track, in: folder)
-        let recovery = recoveryURL(for: track, in: folder)
-        let primaryDuration = AudioFileInspector.duration(at: primary)
+        let preview = recoveryURL(for: track, in: folder)
+        let rebuilt = try? AudioRecoveryJournal.recover(previewURL: preview)
+        let recovery = [preview, rebuilt].compactMap { $0 }.max {
+            (AudioFileInspector.duration(at: $0) ?? 0) < (AudioFileInspector.duration(at: $1) ?? 0)
+        } ?? preview
+        // A readable AAC header alone cannot prove its payload is intact.
+        let hasRecovery = AudioFileInspector.duration(at: recovery) != nil
+        let primaryDuration = (hasRecovery ? AudioFileInspector.fullyDecodedDuration(at: primary)
+            : AudioFileInspector.duration(at: primary))
             .flatMap { $0 >= minimumDuration && $0 > 0 ? $0 : nil }
         let recoveryDuration = AudioFileInspector.duration(at: recovery)
             .flatMap { $0 >= minimumDuration && $0 > 0 ? $0 : nil }
@@ -83,6 +105,14 @@ enum MeetingAudioFiles {
             return recovery
         case (.none, .none):
             return nil
+        }
+    }
+
+    static func recoveryNeedsAttention(in folder: URL) -> Bool {
+        Track.allCases.contains { track in
+            let preview = recoveryURL(for: track, in: folder)
+            return FileManager.default.fileExists(atPath: AudioRecoveryJournal.directory(for: preview).path)
+                && AudioRecoveryJournal.receipt(previewURL: preview)?.complete != true
         }
     }
 }

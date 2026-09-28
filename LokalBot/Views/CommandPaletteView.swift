@@ -130,7 +130,7 @@ struct CommandPaletteView: View {
             let recents = app.meetings.prefix(8).map { meeting in
                 PaletteItem(id: "meeting.\(meeting.id.uuidString)", icon: "waveform",
                             title: meeting.title,
-                            subtitle: "Open · \(meeting.appName) · \(meeting.durationLabel)",
+                            subtitle: "Open · \(meeting.appName) · \(meeting.displayDuration)",
                             action: { app.openMeeting(meeting.id) })
             }
             return actions + recents

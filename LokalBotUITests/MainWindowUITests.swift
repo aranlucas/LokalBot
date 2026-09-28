@@ -53,23 +53,16 @@ final class MainWindowUITests: XCTestCase {
         XCTAssertFalse(identified("today.memoryStatus").exists)
         XCTAssertFalse(textWithContent("Morning brief").firstMatch.exists)
         XCTAssertFalse(textWithContent("Today’s brief").firstMatch.exists)
-        // macOS 26 exposes each toolbar item as an outer button wrapping the
-        // control, both carrying its identifier. Count toolbar items.
-        XCTAssertEqual(app.toolbars.firstMatch.children(matching: .button)
-            .matching(NSPredicate(format: "identifier == %@", "toolbar.record")).count, 1)
-        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label == %@ AND identifier != %@", "Record now", "toolbar.record")).firstMatch.exists)
+        XCTAssertFalse(app.toolbars.firstMatch.buttons["toolbar.record"].exists)
+        XCTAssertTrue(app.buttons["today.record"].exists)
     }
 
     // MARK: - Library
 
-    /// LokalBot owns one split-view sidebar toggle so every navigation topology
-    /// shares the same explicit visibility state. Count every sidebar control,
-    /// not just the app-owned identifier — NavigationSplitView's generated
-    /// toggle carries its own identity and must not ride along, in either
-    /// sidebar state.
+    /// The native split view supplies exactly one sidebar toggle in both states.
     func testToolbarShowsOneSidebarToggle() {
         XCTAssertTrue(toolbarSidebarButtons.firstMatch.waitForExistence(timeout: 4),
-                      "app-owned sidebar toolbar control missing")
+                      "native sidebar toolbar control missing")
         XCTAssertEqual(anySidebarToggleButtons.count, 1,
                        "toolbar should contain exactly one sidebar control while the sidebar is visible")
 
@@ -121,10 +114,12 @@ final class MainWindowUITests: XCTestCase {
         XCTAssertTrue(timeline.waitForExistence(timeout: 5), "sidebar did not return")
 
         let window = app.windows.firstMatch
+        // The redesigned footer has a 10-point content inset; a restored
+        // split must preserve that inset without adding an empty column.
         let privacyFooter = identified("sidebar.localPrivacy")
         XCTAssertTrue(privacyFooter.waitForExistence(timeout: 3),
                       "sidebar footer did not return")
-        XCTAssertLessThan(abs(privacyFooter.frame.minX - window.frame.minX), 4,
+        XCTAssertEqual(privacyFooter.frame.minX - window.frame.minX, 10, accuracy: 4,
                           "restored sidebar left an empty column at the window edge")
     }
 
@@ -144,10 +139,9 @@ final class MainWindowUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["sidebar.ask"]
             .waitForExistence(timeout: 5), "three-column sidebar did not return")
 
-        // Ask shows its own inference status, so the sidebar brand header
-        // anchors the leading edge instead of the privacy footer.
-        let sidebarHeader = identified("sidebar.brand")
-        XCTAssertLessThan(abs(sidebarHeader.frame.minX - app.windows.firstMatch.frame.minX), 4,
+        let privacyFooter = identified("sidebar.localPrivacy")
+        XCTAssertTrue(privacyFooter.waitForExistence(timeout: 4), "sidebar footer missing")
+        XCTAssertEqual(privacyFooter.frame.minX - app.windows.firstMatch.frame.minX, 10, accuracy: 4,
                           "three-column sidebar restored with an empty leading column")
     }
 
@@ -175,7 +169,7 @@ final class MainWindowUITests: XCTestCase {
         sidebarDivider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
             .press(forDuration: 0.1, thenDragTo: destination)
 
-        XCTAssertLessThan(abs(privacyFooter.frame.minX - window.frame.minX), 4,
+        XCTAssertEqual(privacyFooter.frame.minX - window.frame.minX, 10, accuracy: 4,
                           "resizing centered the sidebar inside an oversized column")
 
         toolbarSidebarButtons.firstMatch.click()
@@ -185,15 +179,15 @@ final class MainWindowUITests: XCTestCase {
         toolbarSidebarButtons.firstMatch.click()
         XCTAssertTrue(privacyFooter.waitForExistence(timeout: 5),
                       "resized sidebar did not return")
-        XCTAssertLessThan(abs(privacyFooter.frame.minX - window.frame.minX), 4,
+        XCTAssertEqual(privacyFooter.frame.minX - window.frame.minX, 10, accuracy: 4,
                           "restored resized sidebar detached from the window edge")
     }
 
-    /// Query the app-owned identifier among direct toolbar children so nested
+    /// Query the native sidebar control among direct toolbar children so nested
     /// accessibility wrappers cannot inflate the count.
     private var toolbarSidebarButtons: XCUIElementQuery {
         app.toolbars.firstMatch.children(matching: .button).matching(NSPredicate(
-            format: "identifier == 'toolbar.sidebarToggle'"))
+            format: "label CONTAINS[c] 'sidebar'"))
     }
 
     /// Any sidebar toggle among direct toolbar children, app-owned or
@@ -289,7 +283,7 @@ final class MainWindowUITests: XCTestCase {
             .waitForExistence(timeout: 6), "core readiness overview missing")
         XCTAssertTrue(app.descendants(matching: .any)["models.storage"].exists,
                       "model storage summary missing")
-        XCTAssertTrue(textWithContent("Core models").firstMatch.exists)
+        XCTAssertTrue(textWithContent("Core Roles").firstMatch.exists)
         XCTAssertFalse(app.buttons["models.advanced"].exists,
                        "Models should not hide configuration behind Advanced details")
         XCTAssertTrue(app.buttons["models.stack.change.transcribe"]
@@ -370,11 +364,12 @@ final class MainWindowUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["timeline.workSessions"]
             .waitForExistence(timeout: 6), "work sessions should be visible immediately")
         let usesContextDrawer = revealTimelineContext()
+        if usesContextDrawer { closeTimelineContext() }
         if !usesContextDrawer {
             XCTAssertLessThan(
-                identified("capture.dayOverview").frame.midX,
-                identified("timeline.workSessions").frame.midX,
-                "Day brief should stay left of Work sessions in the wide Timeline layout")
+                identified("capture.dayOverview").frame.minY,
+                identified("timeline.workSessions").frame.minY,
+                "Day overview should appear above Work Sessions")
         }
         XCTAssertTrue(identified("timeline.dayDigest.generate").waitForExistence(timeout: 5),
                       "day-digest action should remain directly visible")
@@ -382,12 +377,12 @@ final class MainWindowUITests: XCTestCase {
                       "Timeline should expose copy and Markdown export actions")
         XCTAssertFalse(identified("timeline.activityEvidence").exists,
                        "the chronological track should not be hidden behind Activity evidence")
-        XCTAssertTrue(textWithContent("Needs attention").firstMatch.exists,
+        XCTAssertTrue(textWithContent("Needs Attention").firstMatch.exists,
                       "Timeline should expose the same actionable commitments as Today")
         XCTAssertFalse(textWithContent("Decisions").firstMatch.exists,
                        "empty decisions section should not consume Timeline space")
-        XCTAssertTrue(textWithContent("Time allocation").firstMatch.waitForExistence(timeout: 6),
-                      "compact time allocation missing — seeded activity did not load")
+        XCTAssertTrue(textWithContent("Day Overview").firstMatch.waitForExistence(timeout: 6),
+                      "day overview missing — seeded activity did not load")
         XCTAssertTrue(textWithContent("Xcode").firstMatch.exists,
                       "seeded activity app 'Xcode' missing from Timeline")
         XCTAssertTrue(digestTasksVisible(),
@@ -437,7 +432,7 @@ final class MainWindowUITests: XCTestCase {
                       "work sessions must be keyboard-focusable buttons")
         session.click()
         XCTAssertTrue(app.descendants(matching: .any)["timeline.sessionPreview"]
-            .waitForExistence(timeout: 4), "session preview did not replace the day brief")
+            .waitForExistence(timeout: 4), "session preview did not replace the empty details")
         XCTAssertTrue(app.descendants(matching: .any)["timeline.dayPicker"].exists,
                       "session selection replaced the persistent day header")
         XCTAssertTrue(app.descendants(matching: .any)["timeline.workSessions"].exists,
@@ -452,7 +447,7 @@ final class MainWindowUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["timeline.sessionPreview"]
             .waitForExistence(timeout: 4), "navigation discarded the selected work session")
 
-        let back = app.buttons["Back to day digest"].firstMatch
+        let back = app.buttons["Back to day"].firstMatch
         XCTAssertTrue(back.waitForExistence(timeout: 3))
         back.click()
         XCTAssertTrue(app.descendants(matching: .any)["capture.dayOverview"]
@@ -491,7 +486,7 @@ final class MainWindowUITests: XCTestCase {
                       "previous-day control is missing")
         previousDay.click()
 
-        _ = revealTimelineContext()
+        if revealTimelineContext() { closeTimelineContext() }
         XCTAssertTrue(textWithContent(SyntheticFixture.previousDayDigestMarker).firstMatch
             .waitForExistence(timeout: 4), "previous day's digest did not replace today's")
         XCTAssertFalse(textWithContent(SyntheticFixture.todayDigestMarker).firstMatch.exists,
@@ -1242,6 +1237,8 @@ final class MainWindowUITests: XCTestCase {
 
     /// Prefer the stable identifier; fall back to visible copy if AX role differs.
     private func digestTasksVisible() -> Bool {
+        let fullDigest = app.disclosureTriangles["timeline.fullDigest"]
+        if fullDigest.exists { fullDigest.click() }
         let identifiedHeader = app.descendants(matching: .any)["dayDigest.tasks"]
         if identifiedHeader.waitForExistence(timeout: 5) { return true }
         return textWithContent("Work summary").firstMatch.exists
@@ -1257,21 +1254,20 @@ final class MainWindowUITests: XCTestCase {
     /// needed so callers only make wide-layout frame assertions when valid.
     @discardableResult
     private func revealTimelineContext() -> Bool {
-        let overview = identified("capture.dayOverview")
         let toggle = identified("timeline.context.toggle")
         let usesDrawer = toggle.exists
-        if usesDrawer, !overview.exists { toggle.click() }
-        XCTAssertTrue(overview.waitForExistence(timeout: 6),
-                      "Timeline day context did not render")
+        let panel = identified(usesDrawer ? "timeline.contextPanel" : "timeline.evidencePane")
+        if usesDrawer, !panel.exists { toggle.click() }
+        XCTAssertTrue(panel.waitForExistence(timeout: 6),
+                      "Timeline context panel did not render")
         return usesDrawer
     }
 
     private func closeTimelineContext() {
-        let overview = identified("capture.dayOverview")
-        let toggle = identified("timeline.context.toggle")
-        guard toggle.exists, overview.exists else { return }
-        toggle.click()
-        XCTAssertTrue(UITestHarness.waitUntil { !overview.exists },
+        let close = app.buttons["Close context panel"].firstMatch
+        guard close.exists else { return }
+        close.click()
+        XCTAssertTrue(UITestHarness.waitUntil { !close.exists },
                       "Timeline context drawer did not close")
     }
 
@@ -1280,7 +1276,7 @@ final class MainWindowUITests: XCTestCase {
     /// since SwiftUI may route the header text through either axis.
     private func hasDayHeader(in list: XCUIElement, prefix: String) -> Bool {
         list.staticTexts.matching(
-            NSPredicate(format: "label BEGINSWITH %@ OR value BEGINSWITH %@",
+            NSPredicate(format: "label BEGINSWITH[c] %@ OR value BEGINSWITH[c] %@",
                         prefix, prefix)).count > 0
     }
 

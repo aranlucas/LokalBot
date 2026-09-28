@@ -17,44 +17,31 @@ final class WorkspacePresentationTests: XCTestCase {
     }
 
     func testReadingAndTimelineWidthsStayWithinApprovedPolicy() {
-        XCTAssertGreaterThanOrEqual(WorkspaceMetric.readingMaxWidth, 720)
-        XCTAssertLessThanOrEqual(WorkspaceMetric.readingMaxWidth, 800)
-        XCTAssertGreaterThanOrEqual(WorkspaceMetric.timelineContextMinWidth, 420)
+        XCTAssertEqual(WorkspaceMetric.readingMaxWidth, 720)
+        XCTAssertEqual(WorkspaceMetric.timelineContextMinWidth, 320)
         XCTAssertGreaterThan(
             WorkspaceMetric.timelineDrawerBreakpoint,
-            WorkspaceMetric.timelineContextMinWidth + 360)
-    }
-
-    func testTimelineRailLeavesTheDigestReadableAtEveryWidth() {
-        // At the drawer breakpoint and a 1000 pt window the rail yields, so
-        // the digest never falls below its readable width.
-        for paneWidth: CGFloat in [WorkspaceMetric.timelineDrawerBreakpoint, 833] {
-            let rail = WorkspaceMetric.timelineRailMaxWidth(in: paneWidth)
-            XCTAssertGreaterThanOrEqual(paneWidth - rail, WorkspaceMetric.timelineEvidenceReadableWidth)
-            XCTAssertGreaterThanOrEqual(rail, WorkspaceMetric.timelineRailMinWidth)
-        }
-        // Large windows reach the full drag range.
-        XCTAssertEqual(WorkspaceMetric.timelineRailMaxWidth(in: 1_273), WorkspaceMetric.timelineRailMaxWidth)
+            WorkspaceMetric.timelineContextMinWidth + WorkspaceMetric.timelineDayMinWidth)
     }
 
     func testCompactRadiusTokensAreNamedAndOrdered() {
         XCTAssertLessThan(Brand.Radius.tab, Brand.Radius.row)
         XCTAssertLessThan(Brand.Radius.row, Brand.Radius.control)
-        XCTAssertLessThan(Brand.Radius.control, Brand.Radius.compactPanel)
-        XCTAssertLessThan(Brand.Radius.compactPanel, Brand.Radius.panel)
+        XCTAssertEqual(Brand.Radius.control, LBTokens.Metric.groupRadius)
+        XCTAssertEqual(Brand.Radius.compactPanel, LBTokens.Metric.groupRadius)
+        XCTAssertEqual(Brand.Radius.panel, LBTokens.Metric.groupRadius)
     }
 
     @MainActor
     func testSupportingTextContrastOnWorkspaceSurfaces() throws {
-        for (name, scheme) in [(NSAppearance.Name.aqua, ColorScheme.light), (.darkAqua, .dark)] {
+        for name in [NSAppearance.Name.aqua, .darkAqua] {
             let appearance = try XCTUnwrap(NSAppearance(named: name))
             var ratios: [Double] = []
             appearance.performAsCurrentDrawingAppearance {
                 for textColor in [WorkspaceTextColor.supporting, WorkspaceTextColor.warning] {
                     let foreground = luminance(textColor)
-                    for surface in [WorkspacePalette.canvas(for: scheme), WorkspacePalette.surface(for: scheme),
-                                    WorkspacePalette.control(for: scheme)] {
-                        let background = luminance(NSColor(surface))
+                    for surface in [NSColor.windowBackgroundColor, .textBackgroundColor, .controlBackgroundColor] {
+                        let background = luminance(surface)
                         ratios.append((max(foreground, background) + 0.05) / (min(foreground, background) + 0.05))
                     }
                 }

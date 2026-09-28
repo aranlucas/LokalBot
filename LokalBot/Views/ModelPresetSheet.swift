@@ -6,9 +6,10 @@ struct ModelPresetSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selected = ModelStackPreset.recommended
 
-    init(app: AppState) {
+    init(app: AppState, initialPreset: ModelStackPreset = .recommended) {
         self.app = app
         setup = app.modelSetup
+        _selected = State(initialValue: initialPreset)
     }
 
     private var target: AppSettings { selected.patch.applying(to: app.settings) }
@@ -40,7 +41,7 @@ struct ModelPresetSheet: View {
                         Text("Current")
                         Text("After applying")
                     }
-                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(.secondary)
+                    .font(.callout.weight(.semibold)).foregroundStyle(.secondary)
                     previewRow("Transcribe", before: app.settings.transcriptionModelDisplayName,
                                after: selected.transcription.displayName)
                     previewRow("Think", before: ModelSettingsPresentation.assistantName(app.settings),
@@ -48,7 +49,7 @@ struct ModelPresetSheet: View {
                     previewRow("Autocomplete", before: name(app.settings.cotypingBuiltInModelID),
                                after: name(selected.autocompleteModelID))
                 }
-                .font(.system(size: 13))
+                .font(.body)
                 Divider()
                 VStack(alignment: .leading, spacing: 9) {
                     Label("All three core models will run on this Mac.", systemImage: "desktopcomputer")
@@ -60,7 +61,7 @@ struct ModelPresetSheet: View {
                     Text("Existing models are kept. Your current setup stays active until preparation finishes. You can undo the switch.")
                         .foregroundStyle(.secondary)
                 }
-                .font(.system(size: 13))
+                .font(.body)
             }
             .padding(.horizontal, 24).padding(.bottom, 24)
             Divider()

@@ -31,7 +31,7 @@ struct DayDigestCard: View {
                             .accessibilityIdentifier("\(identifier).dayDigest.stale")
                     }
                 }
-                .font(WorkspaceTypography.metadata).foregroundStyle(.secondary)
+                .font(Font.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             }
             if let yesterday {
@@ -49,12 +49,13 @@ struct DayDigestControls: View {
     @EnvironmentObject private var app: AppState
     @ObservedObject var model: CaptureModel
     let identifier: String
+    var showsAsk = true
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) { ask; generate; actions }
+            HStack(spacing: 8) { if showsAsk { ask }; generate; actions }
             VStack(alignment: .leading, spacing: 8) {
-                ask
+                if showsAsk { ask }
                 HStack(spacing: 8) { generate; actions }
             }
         }
@@ -63,7 +64,7 @@ struct DayDigestControls: View {
 
     private var ask: some View {
         Button { app.openAsk(dayScope: model.day) } label: {
-            Label("Ask about day", systemImage: "sparkle.magnifyingglass")
+            Label("Ask About This Day", systemImage: "sparkle.magnifyingglass")
         }
         .buttonStyle(.bordered)
         .accessibilityIdentifier(identifier == "timeline" ? "capture.askDay" : "\(identifier).askDay")
@@ -71,7 +72,7 @@ struct DayDigestControls: View {
 
     private var generate: some View {
         Button { Task { await model.generateDigest(app: app) } } label: {
-            Label(model.generating ? "Writing digest…" : model.digest == nil ? "Write digest" : "Update digest",
+            Label(model.generating ? "Writing Digest…" : model.digest == nil ? "Write Digest" : "Regenerate",
                   systemImage: model.generating ? "hourglass" : "arrow.clockwise")
         }
         .buttonStyle(.bordered)
@@ -82,7 +83,7 @@ struct DayDigestControls: View {
     @ViewBuilder private var actions: some View {
         if let digest = model.digest {
             Menu {
-                Button { model.copyDigest(digest) } label: { Label("Copy digest", systemImage: "doc.on.doc") }
+                Button { model.copyDigest(digest) } label: { Label("Copy Digest", systemImage: "doc.on.doc") }
                     .accessibilityIdentifier("capture.dayDigest.copyAll")
                 Button { model.exportDigest(digest) } label: { Label("Export Markdown", systemImage: "square.and.arrow.up") }
             } label: { Label("Digest actions", systemImage: "ellipsis.circle") }
@@ -129,7 +130,7 @@ struct YesterdayDigestLine: View {
             }
         } label: {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(label).font(WorkspaceTypography.bodyEmphasis)
+                Text(label).font(Font.body.weight(.semibold))
                 Text(report.narrative).lineLimit(1).foregroundStyle(.secondary)
             }
         }

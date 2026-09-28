@@ -1,12 +1,13 @@
+import AppKit
 import SwiftUI
 
 struct ModelsView: View {
     /// Matches the width of the grouped settings forms on the other tabs.
-    static let contentWidth: CGFloat = 760
+    static let contentWidth: CGFloat = LBTokens.Metric.readingMaxWidth
     @EnvironmentObject var app: AppState
-    @Environment(\.colorScheme) private var colorScheme
     @SceneStorage("settings.models.page") private var pageValue = ModelsSettingsPage.active.rawValue
     @State private var sheet: ModelsSettingsSheet?
+    @State private var selectedPreset = ModelStackPreset.recommended
 
     private var page: Binding<ModelsSettingsPage> {
         Binding(get: { ModelsSettingsPage(rawValue: pageValue) ?? .active }, set: { pageValue = $0.rawValue })
@@ -16,15 +17,15 @@ struct ModelsView: View {
         VStack(alignment: .leading, spacing: 0) {
             // The page title and subtitle come from the shared Settings header.
             HStack(spacing: 12) {
-                Picker("Models view", selection: page) {
-                    ForEach(ModelsSettingsPage.allCases) { Text($0.title).tag($0) }
+                if page.wrappedValue != .active {
+                    Button { page.wrappedValue = .active } label: {
+                        Label("Models", systemImage: "chevron.left")
+                    }
+                    .accessibilityIdentifier("models.back")
+                    Text(page.wrappedValue.title).font(.headline)
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
-                .accessibilityIdentifier("models.pages")
                 Spacer(minLength: 12)
-                Button("Check setup…") { sheet = .checks }
+                Button("Check Setup…") { sheet = .checks }
                     .buttonStyle(.bordered)
                     .accessibilityIdentifier("models.testAll")
             }
@@ -37,30 +38,35 @@ struct ModelsView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 28)
 
-            ScrollView {
-                Group {
-                    switch page.wrappedValue {
-                    case .active:
-                        ModelStackOverviewView(app: app, present: { sheet = $0 }, connections: showConnections)
-                    case .downloaded:
-                        ModelDownloadsView(app: app)
-                    case .connections:
-                        ModelConnectionsView(app: app)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    Group {
+                        switch page.wrappedValue {
+                        case .active:
+                            ModelStackOverviewView(app: app, present: { sheet = $0 }, connections: showConnections,
+                                                   choosePreset: { selectedPreset = $0; sheet = .presets },
+                                                   manageDownloads: { page.wrappedValue = .downloaded })
+                        case .downloaded:
+                            ModelDownloadsView(app: app)
+                        case .connections:
+                            ModelConnectionsView(app: app)
+                        }
                     }
+                    // Every page shares one centered column, like other Settings tabs.
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: Self.contentWidth)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 28).padding(.bottom, 18)
                 }
-                // Every page shares one centered column, like other Settings tabs.
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(maxWidth: Self.contentWidth)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 28).padding(.bottom, 18)
+                .accessibilityIdentifier("models.content")
+                .id(page.wrappedValue)
+                .onChange(of: app.focusedSettingID, initial: true) {
+                    guard app.focusedSettingID == "settings.generationBudgetPreset" else { return }
+                    DispatchQueue.main.async { proxy.scrollTo("settings.generationBudgetPreset", anchor: .center) }
+                }
             }
-            .accessibilityIdentifier("models.content")
-            ModelStorageFooter(app: app) { page.wrappedValue = .downloaded }
-                .padding(.horizontal, 28).padding(.vertical, 16)
-                .background(SettingsPalette.panel(colorScheme))
-                .overlay(alignment: .top) { SettingsSeparator() }
+
         }
-        .background(SettingsPalette.canvas(colorScheme))
         .controlSize(.regular)
         .onChange(of: app.settings, initial: true) { app.modelChecks.invalidate(for: app.settings) }
         .onChange(of: app.focusedSettingID, initial: true) { revealFocusedSetting() }
@@ -69,7 +75,7 @@ struct ModelsView: View {
                 ModelPickerSheet(app: app, role: role, openConnections: showConnections)
             } else {
                 switch destination {
-                case .presets: ModelPresetSheet(app: app)
+                case .presets: ModelPresetSheet(app: app, initialPreset: selectedPreset)
                 case .checks: ModelChecksSheet(app: app)
                 case .speech: ModelSpeechSettingsSheet(app: app)
                 case .search: ModelSearchSettingsSheet(app: app)
@@ -111,19 +117,19 @@ struct ModelSetupFeedback: View {
             HStack(spacing: 10) {
                 ProgressView().controlSize(.small)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Preparing \(pending.title)…").font(.system(size: 13, weight: .medium))
+                    Text("Preparing \(pending.title)…").font(.body.weight(.medium))
                     Text("Your current models stay active until preparation finishes.")
-                        .font(.system(size: 12)).settingsSecondary()
+                        .font(.callout).settingsSecondary()
                 }
                 Spacer()
-                Button("Cancel switch") { controller.cancelSwitch() }
+                Button("Cancel Switch") { controller.cancelSwitch() }
                     .help("Keep the current selection. Shared downloads continue in Downloaded.")
             }
             .padding(.vertical, 14)
         } else if let failure = controller.failure {
             HStack(alignment: .top, spacing: 10) {
                 Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
-                Text(failure).font(.system(size: 13)).textSelection(.enabled)
+                Text(failure).font(.body).textSelection(.enabled)
                 Spacer()
                 Button("Retry") { controller.retry() }
                 Button("Dismiss") { controller.dismissFeedback() }
@@ -132,7 +138,7 @@ struct ModelSetupFeedback: View {
         } else if let completed = controller.completed {
             HStack {
                 Label("Using \(completed.title)", systemImage: "checkmark.circle")
-                    .font(.system(size: 13))
+                    .font(.body)
                 Spacer()
                 if completed.patch != completed.previous {
                     Button("Undo") { controller.undo() }.accessibilityIdentifier("models.undo")
@@ -145,7 +151,7 @@ struct ModelSetupFeedback: View {
     }
 }
 
-private struct ModelStorageFooter: View {
+struct ModelStorageSection: View {
     @ObservedObject var app: AppState
     @ObservedObject private var roles: ModelRoles
     @ObservedObject private var residency = ModelResidency.shared
@@ -160,22 +166,30 @@ private struct ModelStorageFooter: View {
     }
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Model Storage").font(.headline)
             HStack(spacing: 12) {
                 Image(systemName: "internaldrive").font(.system(size: 20)).settingsSecondary()
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Text models: \(roles.snapshot.storageSummary)").font(.system(size: 13))
-                    Text(memorySummary).font(.system(size: 12)).settingsSecondary()
+                    Text("Text models: \(roles.snapshot.storageSummary)").font(.body)
+                    Text(memorySummary).font(.callout).settingsSecondary()
                 }
                 Spacer(minLength: 8)
+                Button("Show in Finder") {
+                    let directory = app.storage.rootURL.appendingPathComponent("models", isDirectory: true)
+                    NSWorkspace.shared.selectFile(directory.path, inFileViewerRootedAtPath: app.storage.rootURL.path)
+                }
+                .buttonStyle(.bordered)
                 Button(activeDownloads > 0
-                       ? "Downloads (\(activeDownloads))" : "Manage downloads", action: manage)
+                       ? "Downloads (\(activeDownloads))" : "Manage Downloads", action: manage)
                     .buttonStyle(.workspaceLink)
                     .accessibilityIdentifier("models.manageDownloads")
             }
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("models.storage")
+        .padding(16)
+        .settingsPanel()
     }
 
     private var activeDownloads: Int {

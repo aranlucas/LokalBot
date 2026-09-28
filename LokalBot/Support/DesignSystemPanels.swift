@@ -2,25 +2,14 @@ import SwiftUI
 
 // MARK: - Hero panel
 
-/// Slate "plate" card echoing the app icon: dark in both appearances, with
-/// a faint bright-teal hairline. Content on it must use fixed light
-/// foregrounds (white / Brand.tealBright), never semantic label colors —
-/// the plate does not flip with the system appearance.
+/// Adaptive welcome surface shared with the grouped content throughout the app.
 struct HeroPanel<Content: View>: View {
-    var radius: CGFloat = Brand.Radius.card
     @ViewBuilder var content: Content
-    @Environment(\.colorSchemeContrast) private var contrast
 
     var body: some View {
         content
             .padding(14)
-            .background(Brand.plateGradient,
-                        in: RoundedRectangle(cornerRadius: radius, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: radius, style: .continuous)
-                    .strokeBorder(contrast == .increased
-                                  ? Color.white.opacity(0.5)
-                                  : Brand.tealBright.opacity(0.14)))
+            .lbGroupedSurface()
     }
 }
 

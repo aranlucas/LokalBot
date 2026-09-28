@@ -1,9 +1,9 @@
 import SwiftUI
 
 private enum DayDigestTaskType {
-    static let sectionTitle = Font.system(size: 15, weight: .semibold)
-    static let taskTitle = Font.system(size: 14, weight: .semibold)
-    static let summary = Font.system(size: 12.5)
+    static let sectionTitle = Font.headline
+    static let taskTitle = Font.body.weight(.semibold)
+    static let summary = Font.callout
 }
 
 /// Human-first rendering of the lossless Markdown day journal. Summary and
@@ -46,7 +46,7 @@ struct DayDigestView: View {
     private var fullContent: some View {
         VStack(alignment: .leading, spacing: 20) {
             if let decisions = presentation.decisionsMarkdown {
-                digestSection("Decisions and next steps", icon: "checklist") {
+                digestSection("Decisions and Next Steps", icon: "checklist") {
                     SelectableDigestText(decisions)
                         .frame(maxWidth: proseMaxWidth, alignment: .leading)
                 }
@@ -64,7 +64,7 @@ struct DayDigestView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "briefcase")
                             .accessibilityHidden(true)
-                        Text("Work summary")
+                        Text(mode == .today ? "Tasks" : "Work Summary")
                             .font(DayDigestTaskType.sectionTitle)
                             .accessibilityIdentifier("dayDigest.tasks")
                     }
@@ -86,7 +86,7 @@ struct DayDigestView: View {
                                         Text(extraFocusExpanded
                                              ? "Hide additional sessions"
                                              : "Show \(additional.count) more session\(additional.count == 1 ? "" : "s")")
-                                            .font(WorkspaceTypography.control)
+                                            .font(Font.body)
                                     })
                                 .accessibilityIdentifier("dayDigest.moreSummaryDetails")
                             }
@@ -197,7 +197,7 @@ struct DayDigestView: View {
                     extraFocusExpanded.toggle()
                 }
                 .buttonStyle(.workspaceLink)
-                .font(WorkspaceTypography.control)
+                .font(Font.body)
                 .accessibilityIdentifier("dayDigest.moreSummaryDetails")
             }
         }
@@ -280,10 +280,10 @@ struct DayDigestView: View {
                     if let shot = app.activityStore.screenshot(id: id) {
                         Button { app.openScreenSnapshot(id) } label: {
                             Label("\(shot.documentName.isEmpty ? shot.app : shot.documentName) · \(shot.ts.formatted(date: .omitted, time: .shortened))", systemImage: "doc.text.magnifyingglass")
-                                .font(WorkspaceTypography.metadata)
+                                .font(Font.callout)
                         }.buttonStyle(.workspaceLink)
                     } else {
-                        Text("Source moment unavailable").font(WorkspaceTypography.metadata).foregroundStyle(.secondary)
+                        Text("Source moment unavailable").font(Font.callout).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -371,7 +371,7 @@ private struct ExpandableDigestSummary: View {
                     expanded.toggle()
                 }
                 .buttonStyle(.plain)
-                .font(WorkspaceTypography.control)
+                .font(Font.body)
                 .foregroundStyle(Brand.teal)
                 .accessibilityHint(expanded
                     ? "Hides the extra task description"
