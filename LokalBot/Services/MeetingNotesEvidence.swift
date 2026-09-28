@@ -3,6 +3,8 @@ import Foundation
 /// Shared compact evidence for narrative facts and actionable outcomes. Model
 /// IDs are local to this immutable snapshot; durable artifacts use stable IDs.
 struct MeetingNotesEvidence {
+    static let ownershipPolicyVersion = "action-evidence-v2"
+
     struct Unit: Codable, Equatable {
         var source: String
         var speaker: String
@@ -15,6 +17,10 @@ struct MeetingNotesEvidence {
         var sources: [String]
         var kind: String
         var reason: String
+        var text: String?
+        /// Identifies an unresolved action that must be replaced, not appended
+        /// to, if a targeted ownership repair succeeds.
+        var actionID: String?
     }
 
     /// Compact, source-bound ledger for paging. Text is data, never a new
@@ -73,7 +79,7 @@ struct MeetingNotesEvidence {
     }
 
     static func schema(units: [Unit], speakers: [String], template: NoteTemplate,
-                       maximumNotes: Int, maximumActions: Int) -> [String: Any] {
+                       maximumNotes: Int, maximumActions: Int, actionTexts: [String]? = nil) -> [String: Any] {
         let source: [String: Any] = ["type": "string", "enum": Array(Set(units.map(\.source))).sorted()]
         let text: [String: Any] = ["type": "string", "minLength": 1, "maxLength": 280]
         func object(_ properties: [String: Any]) -> [String: Any] {
@@ -88,10 +94,11 @@ struct MeetingNotesEvidence {
                 "text": text, "source": source,
             ])],
             "actions": ["type": "array", "maxItems": maximumActions, "items": object([
-                "text": text, "source": source,
+                "text": actionTexts.map { ["type": "string", "enum": Array(Set($0)).sorted()] } ?? text, "source": source,
                 "context": ["type": "array", "maxItems": 2, "items": source],
                 "owner": ["type": "string", "enum": ["source", "unknown"] + speakers.sorted()],
                 "basis": ["type": "string", "enum": ["commitment", "assignment", "request", "unclear"]],
+                "quote": ["type": "string", "maxLength": 1_000],
                 "due": ["type": "string", "maxLength": 80],
                 "importance": ["type": "integer", "enum": [1, 2, 3, 4, 5]],
             ])],
@@ -133,7 +140,8 @@ struct MeetingNotesEvidence {
             // Rebuild its neighborhood from the transcript instead of feeding
             // those untrusted context references back into the repair.
             let ids = (item["source"] as? String).map { [$0] } ?? []
-            result.rejected.append(Rejection(sources: ids, kind: kind, reason: reason))
+            result.rejected.append(Rejection(sources: ids, kind: kind, reason: reason,
+                text: kind == "actions" ? (item["text"] as? String).map { String($0.prefix(280)) } : nil))
         }
         func citation(_ id: String, _ segment: Transcript.Segment, _ visible: String) -> OutcomeSourceCitation {
             .init(meetingID: meetingID, segmentID: id, start: segment.start, end: segment.end,
@@ -171,12 +179,13 @@ struct MeetingNotesEvidence {
                   let context = item["context"] as? [String], context.count <= 2 else {
                 reject(item, "invalid_action", kind: "actions"); continue
             }
-            let ids = [primary] + context.filter { $0 != primary }
+            var seenIDs: Set<String> = []
+            var ids = ([primary] + context).filter { seenIDs.insert($0).inserted }
             guard
                   ids.allSatisfy({ visible[$0] != nil && citationIDs[$0].flatMap { sources[$0] } != nil }) else {
                 reject(item, "unknown_source", kind: "actions"); continue
             }
-            guard let stable = citationIDs[primary], let source = sources[stable] else { continue }
+            guard let stable = citationIDs[primary], sources[stable] != nil else { continue }
             let primaryIndex = transcript.segments.indices.first { transcript.segmentID(at: $0) == stable }
             guard let primaryIndex, context.allSatisfy({ id in
                 guard let contextStable = citationIDs[id],
@@ -192,33 +201,87 @@ struct MeetingNotesEvidence {
                   let importance = item["importance"] as? Int, (1...5).contains(importance) else {
                 reject(item, "invalid_action", kind: "actions"); continue
             }
+            let quote = (item["quote"] as? String).map { raw -> String in
+                var value = normalized(raw)
+                // Some providers wrap a copied clause in quotation marks.
+                // Removing one balanced wrapper cannot invent evidence.
+                if value.count > 1, (value.first == "\"" && value.last == "\"") || (value.first == "“" && value.last == "”") {
+                    value = String(value.dropFirst().dropLast()).trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+                return value
+            }
+            guard item["quote"] == nil || quote != nil, (quote?.count ?? 0) <= 1_000 else {
+                reject(item, "invalid_action", kind: "actions"); continue
+            }
+            var anchor = primary
+            var quoteFailure: OutcomeAttribution.RejectionReason?
+            if let quote, !quote.isEmpty {
+                let matches = ids.flatMap { id -> [String] in
+                    let text = normalized((visible[id] ?? []).map(\.text).joined(separator: " "))
+                    return Array(repeating: id, count: max(0, text.components(separatedBy: quote).count - 1))
+                }
+                if matches.count == 1 {
+                    anchor = matches[0]
+                    let anchorStable = citationIDs[anchor]!
+                    let anchorIndex = transcript.segments.indices.first { transcript.segmentID(at: $0) == anchorStable }!
+                    // Two contexts eight rows either side of the old source
+                    // must not become sixteen rows apart after re-anchoring.
+                    guard ids.allSatisfy({ id in
+                        let index = transcript.segments.indices.first { transcript.segmentID(at: $0) == citationIDs[id] }!
+                        return abs(index - anchorIndex) <= 8
+                    }) else { reject(item, "distant_action_context", kind: "actions"); continue }
+                    ids = [anchor] + ids.filter { $0 != anchor }
+                } else {
+                    quoteFailure = matches.isEmpty ? .quoteNotFound : .ambiguousQuote
+                }
+            }
+            let source = sources[citationIDs[anchor]!]!
+            let anchorIndex = transcript.segments.indices.first { transcript.segmentID(at: $0) == citationIDs[anchor] }!
+            // A mixed primary cannot borrow a different task's promise from
+            // context. A mixed recap used only as context does not invalidate
+            // an independently quoted, unambiguous primary undertaking.
+            if OutcomeEvidencePolicy.hasCompetingActors(in: sources[stable]!.displayText) {
+                quoteFailure = .ambiguousQuote
+            }
             var basis = claimedBasis
             let sourceOwner = ["commitment", "unclear"].contains(basis) ? Transcript.canonicalSpeakerKey(source.speaker) : nil
-            let visibleSource = (visible[primary] ?? []).map(\.text).joined(separator: " ")
-            if OutcomeEvidencePolicy.isBareAcceptance(visibleSource), context.isEmpty {
+            let visibleSource = (visible[anchor] ?? []).map(\.text).joined(separator: " ")
+            if OutcomeEvidencePolicy.isBareAcceptance(visibleSource), ids.count == 1 {
                 reject(item, "missing_task_context", kind: "actions"); continue
             }
             if OutcomeEvidencePolicy.isConversationManagement(visibleSource) {
                 reject(item, "conversation_management", kind: "actions"); continue
             }
-            if basis == "commitment", !OutcomeEvidencePolicy.hasCommitment(source: source, visibleText: visibleSource) {
+            let hasCitedCommitment = ids.contains { id in
+                OutcomeEvidencePolicy.hasCommitment(source: sources[citationIDs[id]!]!,
+                    visibleText: (visible[id] ?? []).map(\.text).joined(separator: " "))
+            }
+            if basis == "commitment", quoteFailure == nil,
+               !OutcomeEvidencePolicy.hasCommitment(source: source, visibleText: visibleSource) {
                 // Unrecognized phrasing must not lose a task; it only loses
                 // the ownership claim. Negated, conditional, or questioned
                 // undertakings and fragments without one are still not tasks.
-                guard OutcomeEvidencePolicy.expressesUndertaking(visibleSource),
+                guard hasCitedCommitment || OutcomeEvidencePolicy.expressesUndertaking(visibleSource),
                       !OutcomeEvidencePolicy.isQualified(visibleSource) else {
                     reject(item, "unsupported_commitment", kind: "actions"); continue
                 }
                 basis = "unclear"
             }
             let requestAnswer = ["request", "assignment"].contains(basis)
-                ? userReply(after: primaryIndex, roster: roster) : nil
+                ? userReply(after: anchorIndex, roster: roster) : nil
             let ownerID = ["source", "unknown"].contains(owner) ? (sourceOwner ?? requestAnswer) : speakers[owner]?.id
-            let attribution = OutcomeEvidencePolicy.resolveFromSource(speakerID: ownerID, basis: basis,
+            var attribution = OutcomeEvidencePolicy.resolveFromSource(speakerID: ownerID, basis: basis,
                 source: source, visibleText: visibleSource,
-                roster: roster, addressedToUser: requestAnswer != nil)
+                roster: roster, addressedToUser: requestAnswer != nil, quote: quote)
+            if quoteFailure == nil, attribution.resolution == .unresolved,
+               attribution.rejectionReason == .missingBasis, hasCitedCommitment {
+                quoteFailure = .missingQuote
+            }
+            if let quoteFailure {
+                attribution = .init(resolution: .unresolved, speakerID: ownerID, basis: .unclear, rejectionReason: quoteFailure)
+            }
             let compactOwner = speakers.first { $0.value.id == attribution.speakerID && attribution.resolution != .unresolved }?.key
-            guard let text = prose(rawText, expectedSpeaker: compactOwner ?? visible[primary]?.first?.speaker) else {
+            guard let text = prose(rawText, expectedSpeaker: compactOwner ?? visible[anchor]?.first?.speaker) else {
                 reject(item, "speaker_reference", kind: "actions"); continue
             }
             // A past/status report is not a pending task. This catches the
@@ -235,10 +298,18 @@ struct MeetingNotesEvidence {
                 guard let stable = citationIDs[id], let segment = sources[stable] else { return nil }
                 return citation(stable, segment, (visible[id] ?? []).map(\.text).joined(separator: " "))
             }
-            result.outcomes.actionItems.append(.init(text: text, owner: resolvedOwner,
+            let action = MeetingOutcomes.ActionItem(text: text, owner: resolvedOwner,
                 due: due.isEmpty ? nil : due, isForUser: attribution.resolution == .user,
-                importance: importance, citations: citations, attribution: attribution))
-            result.records.append(.init(kind: "actions", source: primary, text: text))
+                importance: importance, citations: citations, attribution: attribution)
+            result.outcomes.actionItems.append(action)
+            result.records.append(.init(kind: "actions", source: anchor, text: text))
+            let repairReasons: [OutcomeAttribution.RejectionReason: String] = [
+                .missingQuote: "missing_ownership_evidence", .ambiguousQuote: "ambiguous_ownership_evidence",
+                .quoteNotFound: "ownership_quote_not_found",
+            ]
+            if let reason = attribution.rejectionReason.flatMap({ repairReasons[$0] }) {
+                result.rejected.append(.init(sources: [anchor], kind: "actions", reason: reason, text: text, actionID: action.id))
+            }
         }
         return result
     }
