@@ -8,6 +8,17 @@ final class MeetingAudioRecoveryTests: XCTestCase {
         .init(name: "Chrome", bundleID: "com.google.Chrome", pid: 42, meetingURL: room)
     }
 
+    func testIdleNativeAppsCannotClaimAnUnboundManualRecording() {
+        let zoom = MeetingDetector.DetectedApp(name: "Zoom", bundleID: "us.zoom.xos", pid: 10)
+        let teams = MeetingDetector.DetectedApp(name: "Teams", bundleID: "com.microsoft.teams2", pid: 11)
+        XCTAssertNil(MeetingDetector.idleCaptureCandidate(in: [zoom], expectedBundleID: nil, frontmostPID: zoom.pid))
+        XCTAssertNil(MeetingDetector.idleCaptureCandidate(in: [zoom, teams], expectedBundleID: nil, frontmostPID: teams.pid))
+        XCTAssertNil(MeetingDetector.idleCaptureCandidate(in: [zoom, teams], expectedBundleID: candidate.bundleID,
+                                                        frontmostPID: zoom.pid))
+        XCTAssertEqual(MeetingDetector.idleCaptureCandidate(in: [zoom, teams], expectedBundleID: zoom.bundleID,
+                                                           frontmostPID: teams.pid), zoom)
+    }
+
     func testSourceFoundAfterOldRetryDeadlineAttachesOnceToExistingRecording() async {
         let recovery = MeetingAudioRecovery()
         let recording = UUID()

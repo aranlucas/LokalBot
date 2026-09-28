@@ -1097,19 +1097,23 @@ final class MeetingDetector {
                 meetingURL: target.meetingURL)
         }
         guard expectedMeetingURL == nil else { return nil }
-        // A single idle native app is still a useful silent tap target: it may
-        // begin emitting after the user presses Record. When several are open,
-        // choose only a frontmost one; otherwise abstain rather than mixing an
-        // unrelated app into the meeting.
+        // An idle native target is useful only when the recording is already
+        // bound to it. An unrelated idle Zoom/Teams window must not seize an
+        // unbound manual recording while its intended browser call is hidden.
         let nativeCandidates = meetingAppCandidates(bundleIDs: running.compactMap { app in
             guard let bundleID = app.bundleIdentifier else { return nil }
             return (bundleID: bundleID, pid: app.processIdentifier)
         })
-        if nativeCandidates.count == 1 { return nativeCandidates[0] }
-        if let frontmostPID = NSWorkspace.shared.frontmostApplication?.processIdentifier {
-            return nativeCandidates.first { $0.pid == frontmostPID }
-        }
-        return nil
+        return idleCaptureCandidate(in: nativeCandidates, expectedBundleID: expectedBundleID,
+                                    frontmostPID: NSWorkspace.shared.frontmostApplication?.processIdentifier)
+    }
+
+    static func idleCaptureCandidate(in candidates: [DetectedApp], expectedBundleID: String?,
+                                     frontmostPID: pid_t?) -> DetectedApp? {
+        guard let expectedBundleID else { return nil }
+        let bound = candidates.filter { $0.bundleID == expectedBundleID }
+        if bound.count == 1 { return bound[0] }
+        return bound.first { $0.pid == frontmostPID }
     }
 
     static func currentCaptureTargetProcess(
