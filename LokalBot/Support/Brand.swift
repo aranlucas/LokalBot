@@ -20,8 +20,6 @@ enum Brand {
     /// tiles, and meeting blocks. Stays deep in both appearances.
     static let tealFillNSColor = NSColor(srgbRed: 0x0C / 255, green: 0x82 / 255, blue: 0x75 / 255, alpha: 1)
     static let tealFill = Color(nsColor: tealFillNSColor)
-    /// Bright end of the gradient — glows, active states, the recording eye.
-    static let tealBright = Color(red: 0.431, green: 0.949, blue: 0.863) // #6ef2dc
     /// Attention indicators, remote inference, and bookmarks.
     static let amber = LBTokens.Palette.attention
     /// Failure and warning text, icons, and borders. One semantic hook —
@@ -33,19 +31,6 @@ enum Brand {
     static let me = teal
     /// "Them" speaker (system track) — other participants.
     static let them = Color(red: 0.49, green: 0.62, blue: 0.76)
-
-    /// The icon's dark plate, brought into the app for hero surfaces and
-    /// HUDs. Deliberately stays dark in both appearances — hero surfaces
-    /// read as "plated" like the icon, so content on slate must use fixed
-    /// light foregrounds (white / tealBright), never semantic label colors.
-    static let slate = Color(red: 0.059, green: 0.090, blue: 0.165)          // #0f172a
-    static let slateElevated = Color(red: 0.118, green: 0.161, blue: 0.231)  // #1e293b
-
-    /// Plate gradient for hero panels — elevated slate falling to slate,
-    /// echoing the icon's plate lighting.
-    static let plateGradient = LinearGradient(
-        colors: [slateElevated, slate],
-        startPoint: .topLeading, endPoint: .bottomTrailing)
 
     /// A view modifier that sets the brand tint and offers a softer fallback
     /// in High Contrast / Increase Contrast where the teal can read thin.

@@ -27,7 +27,8 @@ struct MeetingListView: View {
                         app.isRecording ? app.stopRecording()
                             : app.startRecording(context: app.recordingContext(for: app.detector.activeApp))
                     } label: {
-                        Label(app.isRecording ? "Recording" : "Record", systemImage: "record.circle.fill")
+                        Label(app.isRecording ? "Stop Recording" : "Record",
+                              systemImage: app.isRecording ? "stop.circle.fill" : "record.circle.fill")
                     }
                     .buttonStyle(.bordered)
                     .tint(.red)

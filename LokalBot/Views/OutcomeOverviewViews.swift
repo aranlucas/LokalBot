@@ -25,7 +25,7 @@ struct NeedsAttentionSection: View {
                     }
                 }
                 HStack(spacing: 8) {
-                    Button("Review \(threads.count) Open Items…") {
+                    Button("Review Actions…") {
                         app.openActions()
                     }
                     .buttonStyle(.bordered)

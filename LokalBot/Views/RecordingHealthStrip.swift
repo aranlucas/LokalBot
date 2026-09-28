@@ -9,7 +9,7 @@ struct RecordingHealthStrip: View {
             VStack(alignment: .leading, spacing: 4) {
                 ForEach(recording.captureWarnings, id: \.self) { warning in
                     Label(warning, systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(LBTokens.Palette.attentionText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 if recording.callObservationUnavailable {

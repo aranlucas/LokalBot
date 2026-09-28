@@ -326,6 +326,27 @@ final class RedesignUITests: XCTestCase {
         snapshot("timeline-rewind-with-sessions")
     }
 
+    func testTimelineResetsAppFilterOnDayChangeAndEmptyDetailsCanClose() throws {
+        try SyntheticFixture.plantActivityMoment(in: fixture)
+        try launch(["LOKALBOT_INITIAL_SECTION": "timeline", "LOKALBOT_CAPTURE_SIZE": "1000x700"])
+        let filter = app.popUpButtons["timeline.appFilter"]
+        XCTAssertTrue(filter.waitForExistence(timeout: 5))
+        filter.click()
+        XCTAssertTrue(app.menuItems["Xcode"].waitForExistence(timeout: 3))
+        app.menuItems["Xcode"].click()
+        XCTAssertTrue(UITestHarness.waitUntil { (filter.value as? String) == "Xcode" })
+        app.buttons["timeline.previousDay"].click()
+        XCTAssertTrue(UITestHarness.waitUntil { (filter.value as? String) == "All Apps" },
+                      "A previous day's app filter cannot hide this day's moments")
+        let toggle = app.buttons["timeline.context.toggle"]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 3))
+        toggle.click()
+        XCTAssertTrue(element("timeline.contextPanel").waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["Close context panel"].waitForExistence(timeout: 3))
+        app.buttons["Close context panel"].click()
+        XCTAssertTrue(UITestHarness.waitUntil { !self.element("timeline.contextPanel").exists })
+    }
+
     func testTranscriptSearchIsPersistentAndCommandFStillFindsAcrossMeeting() throws {
         try launch(["LOKALBOT_INITIAL_SECTION": "meetings", "LOKALBOT_SELECT_INDEX": "0"])
         UITestHarness.selectSegment("Transcript", pickerIdentifier: "meeting.contentTabs", in: app)

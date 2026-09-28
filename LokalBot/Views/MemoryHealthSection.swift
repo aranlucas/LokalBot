@@ -357,7 +357,7 @@ private struct MemoryHealthSummary: View {
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             IconTile(systemImage: attention.isEmpty ? "checkmark.seal" : "exclamationmark.triangle",
-                     tint: attention.isEmpty ? Brand.tealFill : Color(nsColor: .systemOrange),
+                     tint: attention.isEmpty ? Brand.teal : LBTokens.Palette.attentionText,
                      size: 32)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {

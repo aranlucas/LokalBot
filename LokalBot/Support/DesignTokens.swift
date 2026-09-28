@@ -26,15 +26,16 @@ enum LBTokens {
         static let attention = Color.orange
         /// "Owner unclear", "Download required". The system orange is too
         /// light for text on white, so light appearance uses a darker orange.
-        static let attentionText = Color(light: 0xB85C00, dark: 0xFF9F0A)
+        static let attentionText = Color(light: 0x984C00, dark: 0xFF9F0A)
         static let success = Color.green
-        static let successText = Color(light: 0x1E7E34, dark: 0x30D158)
+        static let successText = Color(light: 0x176F2C, dark: 0x30D158)
         /// Recording, destructive actions and overdue dates.
         static let recording = Color.red
-        static let recordingText = Color(light: 0xD70015, dark: 0xFF453A)
+        static let recordingText = Color(light: 0xC00013, dark: 0xFF756C)
 
         /// Fill and stroke for grouped sections (10 pt rounded rectangles):
         /// a light gray well on white, a faint white lift on dark.
+        static let statusFillOpacity = 0.10
         static let groupFill = Color(nsColor: .adaptive(light: NSColor(white: 0, alpha: 0.035), dark: NSColor(white: 1, alpha: 0.05)))
         static let groupStroke = Color(nsColor: .adaptive(light: NSColor(white: 0, alpha: 0.07), dark: NSColor(white: 1, alpha: 0.06)))
 
@@ -116,7 +117,7 @@ private struct LBGroupedSurface: ViewModifier {
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: LBTokens.Metric.groupRadius, style: .continuous)
         content
-            .background(tint?.opacity(0.10) ?? LBTokens.Palette.groupFill, in: shape)
+            .background(tint?.opacity(LBTokens.Palette.statusFillOpacity) ?? LBTokens.Palette.groupFill, in: shape)
             .overlay {
                 shape.strokeBorder(
                     contrast == .increased ? Color.primary.opacity(0.5)

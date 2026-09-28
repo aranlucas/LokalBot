@@ -29,6 +29,26 @@ final class BrandContrastTests: XCTestCase {
         }
     }
 
+    func testSemanticTextMeetsAAOnStatusSurfaces() {
+        let roles: [(String, Color, Color)] = [
+            ("accent", LBTokens.Palette.accentText, LBTokens.Palette.accentText),
+            ("attention", LBTokens.Palette.attentionText, LBTokens.Palette.attention),
+            ("success", LBTokens.Palette.successText, LBTokens.Palette.success),
+            ("recording", LBTokens.Palette.recordingText, LBTokens.Palette.recording),
+        ]
+        for (appearance, scheme) in schemes {
+            for (role, text, tint) in roles {
+                let foreground = resolve(NSColor(text), in: appearance)
+                let fill = resolve(NSColor(tint), in: appearance)
+                for (label, surface) in surfaces(for: scheme) {
+                    let statusSurface = blend(fill, over: surface, alpha: LBTokens.Palette.statusFillOpacity)
+                    XCTAssertGreaterThanOrEqual(contrast(foreground, statusSurface), 4.5,
+                                               "\(role) status on \(label) (\(scheme))")
+                }
+            }
+        }
+    }
+
     func testSettingsAndAgentUseTheSharedAccent() {
         for (appearance, scheme) in schemes {
             let brand = resolve(Brand.tealNSColor, in: appearance)

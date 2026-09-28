@@ -45,7 +45,7 @@ struct DictationView: View {
     private var statusSection: some View {
         Section {
             HStack(alignment: .center, spacing: 12) {
-                IconTile(systemImage: "mic", tint: Brand.tealFill, size: 32)
+                IconTile(systemImage: "mic", tint: Brand.teal, size: 32)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Dictation").font(Font.body.weight(.semibold))

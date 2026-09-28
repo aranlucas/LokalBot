@@ -820,7 +820,7 @@ private struct MeetingWorkspaceDetail: View {
         TranscriptEvidenceList(
             transcript: transcript, display: transcriptDisplay, player: player,
             speakerPresentation: speakerPresentation,
-            searchQuery: visibleSearchQuery, activeMatch: activeSearchMatch,
+            searchQuery: transcriptSearchQuery, activeMatch: activeSearchMatch,
             evidenceSegment: evidenceSegment,
             onRenameSpeaker: { beginRenameSpeaker($0) })
             .id(MeetingPageSearchMatch.Location.sectionHeader(.transcript))
@@ -833,6 +833,10 @@ private struct MeetingWorkspaceDetail: View {
     }
 
     private var visibleSearchQuery: String {
+        isSearchPresented ? searchQuery : ""
+    }
+
+    private var transcriptSearchQuery: String {
         (isSearchPresented || tab == .transcript) ? searchQuery : ""
     }
 

@@ -12,7 +12,14 @@ final class CaptureModel: ObservableObject {
     @Published var blocks: [ActivityBlock] = [] {
         didSet { workSessions = DayActivityProjection(blocks: blocks, day: day).sessions }
     }
-    @Published var shots: [ActivityStore.Screenshot] = []
+    @Published var shots: [ActivityStore.Screenshot] = [] {
+        didSet {
+            shotsRevision &+= 1
+            momentApplications = Array(Set(shots.map(\.app))).sorted()
+        }
+    }
+    private(set) var shotsRevision = 0
+    private(set) var momentApplications: [String] = []
     @Published private(set) var rewindFrames: [ScreenRewindFrame] = []
     @Published var selection: ActivityBlock.ID?
     @Published var selectedSessionID: TimelineWorkSession.ID?
@@ -364,6 +371,12 @@ struct TimelineContentView: View {
         }
         .onAppear(perform: consumePendingScreenMoment)
         .onChange(of: app.navigationHandoff.revision) { consumePendingScreenMoment() }
+        .onChange(of: model.day) { momentApplication = "" }
+        .onChange(of: model.shotsRevision) {
+            if !momentApplication.isEmpty, !model.momentApplications.contains(momentApplication) {
+                momentApplication = ""
+            }
+        }
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 TrackingPauseButton(sampler: app.sampler, presentation: .toolbar)
@@ -441,7 +454,7 @@ private struct TimelineWorkspaceHeader: View {
                     .accessibilityIdentifier("timeline.search")
                 Picker("App", selection: $application) {
                     Text("All Apps").tag("")
-                    ForEach(Array(Set(model.shots.map(\.app))).sorted(), id: \.self) { Text($0).tag($0) }
+                    ForEach(model.momentApplications, id: \.self) { Text($0).tag($0) }
                 }
                 .labelsHidden().frame(maxWidth: 160)
                 .accessibilityIdentifier("timeline.appFilter")
@@ -872,7 +885,7 @@ private struct TimelineSessionMeetingRow: View {
                 .font(TimelineRailStyle.detail.monospacedDigit())
                 .lineLimit(1)
                 .frame(width: TimelineRailStyle.timeWidth, alignment: .trailing)
-                IconTile(systemImage: "waveform", tint: Brand.tealFill, size: TimelineRailStyle.iconSize)
+                IconTile(systemImage: "waveform", tint: Brand.teal, size: TimelineRailStyle.iconSize)
                 // Same anatomy as work sessions: one-line title, kind and
                 // duration beneath, chevron centered on the trailing edge.
                 VStack(alignment: .leading, spacing: 3) {

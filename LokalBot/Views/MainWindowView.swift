@@ -57,7 +57,6 @@ struct MainWindowView: View {
                 .splitPaneAccessibilityLabel("Workspace navigation")
         } detail: {
             workspace
-                .workspaceSurface()
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     VStack(spacing: 0) {
                         errorFeedback
@@ -193,7 +192,8 @@ struct MainWindowView: View {
         section: AppState.NavSection,
         identifier: String
     ) -> some View {
-        sidebarLabel(title, systemImage: systemImage, section: section)
+        SidebarDestinationLabel(title: title, systemImage: systemImage,
+                                scriptedLabelColor: isScriptedCapture ? scriptedSidebarLabelColor : nil)
         .tag(section)
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
         .listRowBackground(Color.clear)
@@ -201,33 +201,6 @@ struct MainWindowView: View {
         .accessibilityLabel(title)
         .accessibilityIdentifier(identifier)
         .accessibilityAddTraits(app.navSection == section ? .isSelected : [])
-    }
-
-    @ViewBuilder
-    private func sidebarLabel(
-        _ title: String,
-        systemImage: String,
-        section: AppState.NavSection
-    ) -> some View {
-
-        HStack(spacing: 10) {
-            Image(systemName: systemImage)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(Brand.teal)
-                .frame(width: 18)
-                .accessibilityHidden(true)
-
-            Text(title)
-                .font(.body)
-                .foregroundStyle(isScriptedCapture ? scriptedSidebarLabelColor : Color.primary)
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 10)
-        .frame(minHeight: LBTokens.Metric.sidebarRowHeight)
-        // The native source list owns the single selection background. An
-        // additional rounded fill doubles the highlight and loses contrast.
-        .contentShape(Rectangle())
     }
 
     @ViewBuilder
@@ -263,6 +236,31 @@ struct MainWindowView: View {
 
 }
 
+/// Read prominence inside the row so native selection supplies its foreground.
+private struct SidebarDestinationLabel: View {
+    @Environment(\.backgroundProminence) private var prominence
+    let title: String
+    let systemImage: String
+    let scriptedLabelColor: Color?
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(prominence == .increased ? AnyShapeStyle(.primary) : AnyShapeStyle(Brand.teal))
+                .frame(width: 18)
+                .accessibilityHidden(true)
+            Text(title)
+                .font(.body)
+                .foregroundStyle(scriptedLabelColor.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.primary))
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 10)
+        .frame(minHeight: LBTokens.Metric.sidebarRowHeight)
+        .contentShape(Rectangle())
+    }
+}
+
 /// Reflects the *actual* privacy posture instead of a hardcoded claim: with a
 /// remote Think backend configured, "No data leaves your Mac" would be false —
 /// meeting and workday text goes to the approved origin.
@@ -274,16 +272,14 @@ private struct SidebarPrivacyFooter: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if let meeting = app.currentMeeting {
+            if app.currentMeeting != nil {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
                         StatusDot(color: Brand.recording)
                         Text("Recording").font(.callout.weight(.semibold))
                         Spacer(minLength: 0)
-                        TimelineView(.periodic(from: .now, by: 1)) { context in
-                            Text(Transcript.stamp(max(0, context.date.timeIntervalSince(meeting.startedAt))))
-                                .font(.callout.monospacedDigit())
-                        }
+                        MeetingRecordingTimerText(recording: app.recording)
+                            .font(.callout.monospacedDigit())
                     }
                     Button("Live Transcript & Notes", action: app.showLiveMeeting)
                         .buttonStyle(.plain)
