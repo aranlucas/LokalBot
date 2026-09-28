@@ -28,7 +28,7 @@ enum LBTokens {
         /// light for text on white, so light appearance uses a darker orange.
         static let attentionText = Color(light: 0x984C00, dark: 0xFFB84D)
         static let success = Color.green
-        static let successText = Color(light: 0x176F2C, dark: 0x30D158)
+        static let successText = Color(light: 0x176F2C, dark: 0x4BDC71)
         /// Recording, destructive actions and overdue dates.
         static let recording = Color.red
         static let recordingText = Color(light: 0xB60012, dark: 0xFF9C95)

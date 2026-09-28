@@ -114,10 +114,12 @@ final class MainWindowUITests: XCTestCase {
         XCTAssertTrue(timeline.waitForExistence(timeout: 5), "sidebar did not return")
 
         let window = app.windows.firstMatch
+        // The redesigned footer has a 10-point content inset; a restored
+        // split must preserve that inset without adding an empty column.
         let privacyFooter = identified("sidebar.localPrivacy")
         XCTAssertTrue(privacyFooter.waitForExistence(timeout: 3),
                       "sidebar footer did not return")
-        XCTAssertLessThan(abs(privacyFooter.frame.minX - window.frame.minX), 4,
+        XCTAssertEqual(privacyFooter.frame.minX - window.frame.minX, 10, accuracy: 4,
                           "restored sidebar left an empty column at the window edge")
     }
 
@@ -139,7 +141,7 @@ final class MainWindowUITests: XCTestCase {
 
         let privacyFooter = identified("sidebar.localPrivacy")
         XCTAssertTrue(privacyFooter.waitForExistence(timeout: 4), "sidebar footer missing")
-        XCTAssertLessThan(abs(privacyFooter.frame.minX - app.windows.firstMatch.frame.minX), 4,
+        XCTAssertEqual(privacyFooter.frame.minX - app.windows.firstMatch.frame.minX, 10, accuracy: 4,
                           "three-column sidebar restored with an empty leading column")
     }
 
@@ -167,7 +169,7 @@ final class MainWindowUITests: XCTestCase {
         sidebarDivider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
             .press(forDuration: 0.1, thenDragTo: destination)
 
-        XCTAssertLessThan(abs(privacyFooter.frame.minX - window.frame.minX), 4,
+        XCTAssertEqual(privacyFooter.frame.minX - window.frame.minX, 10, accuracy: 4,
                           "resizing centered the sidebar inside an oversized column")
 
         toolbarSidebarButtons.firstMatch.click()
@@ -177,7 +179,7 @@ final class MainWindowUITests: XCTestCase {
         toolbarSidebarButtons.firstMatch.click()
         XCTAssertTrue(privacyFooter.waitForExistence(timeout: 5),
                       "resized sidebar did not return")
-        XCTAssertLessThan(abs(privacyFooter.frame.minX - window.frame.minX), 4,
+        XCTAssertEqual(privacyFooter.frame.minX - window.frame.minX, 10, accuracy: 4,
                           "restored resized sidebar detached from the window edge")
     }
 

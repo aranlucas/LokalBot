@@ -23,9 +23,9 @@ struct ActionsWorkspaceView: View {
     private var all: [OutcomeActionReference] {
         app.outcomeIndex.all.flatMap(\.actionReferences).filter(\.isForUser)
     }
-    private var visible: [OutcomeActionReference] {
+    private func visibleActions(in actions: [OutcomeActionReference]) -> [OutcomeActionReference] {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        return all.filter { action in
+        return actions.filter { action in
             (status.isEmpty || action.status.rawValue == status)
                 && (meetingID == nil || action.meetingID == meetingID)
                 && (needle.isEmpty || [action.text, action.meetingTitle, action.due ?? ""].contains { $0.localizedCaseInsensitiveContains(needle) })
@@ -46,46 +46,49 @@ struct ActionsWorkspaceView: View {
             sort = comparators.first.map { $0.order == .forward ? "due" : "dueDescending" } ?? "recent"
         })
     }
-    private var inspected: OutcomeActionReference? {
-        visible.first { selection.contains($0.id) }
-    }
-    private var visibleThreads: [ActionThread] {
+    private func threads(matching visible: [OutcomeActionReference]) -> [ActionThread] {
         let positions = Dictionary(uniqueKeysWithValues: visible.enumerated().map { ($0.element.id, $0.offset) })
         return app.outcomeIndex.userActionThreads.compactMap { thread -> (ActionThread, Int)? in
             guard let position = thread.references.compactMap({ positions[$0.id] }).min() else { return nil }
             return (thread, position)
         }.sorted { $0.1 < $1.1 }.map(\.0)
     }
-    private var visibleSelection: [OutcomeActionReference] { visible.filter { selection.contains($0.id) } }
-    private var hiddenSelectionCount: Int { selection.count - visibleSelection.count }
-    private var listSelection: Binding<Set<String>> {
-        Binding(get: { Set(visibleSelection.map(\.id)) }, set: { updated in
-            selection = selection.subtracting(visible.map(\.id)).union(updated)
+    private func listSelection(visibleIDs: Set<String>) -> Binding<Set<String>> {
+        // AppKit reads selection repeatedly while building table accessibility.
+        // Capture this render's IDs so those reads never rebuild/sort the library.
+        Binding(get: { selection.intersection(visibleIDs) }, set: { updated in
+            selection = selection.subtracting(visibleIDs).union(updated)
         })
     }
 
     var body: some View {
+        // Share one projection across counts, selection, rows, and the inspector.
+        let actions = all
+        let visible = visibleActions(in: actions)
+        let visibleIDs = Set(visible.map(\.id))
+        let selected = visible.filter { selection.contains($0.id) }
+        let visibleThreads = reviewMode == "threads" ? threads(matching: visible) : []
         VStack(spacing: 0) {
-            header
-            filters
+            header(total: actions.count, visible: visible.count, threads: visibleThreads.count, selected: selected)
+            filters(hiddenSelectionCount: selection.count - selected.count)
             if !failures.isEmpty {
                 Text("Could not update: " + failures.joined(separator: "; "))
                     .workspaceTextRole(.warning).padding(.horizontal, 20)
             }
             if reviewMode == "threads" {
-                threadList
+                threadList(visibleThreads)
             } else {
-                actionList
+                actionList(visible, visibleIDs: visibleIDs, inspected: selected.first)
             }
         }
         .navigationTitle("Actions")
-        .onChange(of: all.map(\.id)) { app.actionSelection.formIntersection(all.map(\.id)) }
+        .onChange(of: actions.map(\.id)) { _, ids in app.actionSelection.formIntersection(ids) }
         .sheet(item: $correction) { reference in
             ActionEditorSheet(reference: reference)
         }
     }
 
-    private var threadList: some View {
+    private func threadList(_ visibleThreads: [ActionThread]) -> some View {
         VStack(spacing: 8) {
             Text("A thread groups the same action across meetings. Changing its status updates every linked meeting.")
                 .workspaceTextRole(.supporting)
@@ -105,9 +108,13 @@ struct ActionsWorkspaceView: View {
         }
     }
 
-    private var actionList: some View {
+    private func actionList(
+        _ visible: [OutcomeActionReference],
+        visibleIDs: Set<String>,
+        inspected: OutcomeActionReference?
+    ) -> some View {
         HSplitView {
-            Table(visible, selection: listSelection, sortOrder: tableSort) {
+            Table(visible, selection: listSelection(visibleIDs: visibleIDs), sortOrder: tableSort) {
                 TableColumn("") { reference in
                     HStack(spacing: 6) {
                         if selecting { selectionToggle(reference.id) }
@@ -191,15 +198,15 @@ struct ActionsWorkspaceView: View {
         }
     }
 
-    private var header: some View {
+    private func header(total: Int, visible: Int, threads: Int, selected: [OutcomeActionReference]) -> some View {
         HStack(spacing: 12) {
             Button { app.showingActions = false } label: { Label("Today", systemImage: "chevron.left") }
             Text("Actions").font(.title3.bold())
-            Text(reviewMode == "threads" ? "\(visibleThreads.count) threads" : "\(visible.count) of \(all.count)")
+            Text(reviewMode == "threads" ? "\(threads) threads" : "\(visible) of \(total)")
                 .foregroundStyle(.secondary)
             Spacer()
             if reviewMode == "actions" {
-                if visibleSelection.isEmpty {
+                if selected.isEmpty {
                     if selecting {
                         Text("Choose actions to change together")
                             .font(Font.callout)
@@ -207,10 +214,10 @@ struct ActionsWorkspaceView: View {
                             .accessibilityIdentifier("actions.batch.hint")
                     }
                 } else {
-                    Menu("Change \(CountLabel.format(visibleSelection.count, "selected action"))") {
+                    Menu("Change \(CountLabel.format(selected.count, "selected action"))") {
                         ForEach(OutcomeStatus.allCases, id: \.rawValue) { next in
                             Button(next.label) {
-                                failures = app.outcomeIndex.setStatus(next, for: visibleSelection)
+                                failures = app.outcomeIndex.setStatus(next, for: selected)
                             }
                         }
                     }
@@ -227,7 +234,7 @@ struct ActionsWorkspaceView: View {
         }.padding(.horizontal, 20).padding(.vertical, 12)
     }
 
-    private var filters: some View {
+    private func filters(hiddenSelectionCount: Int) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Picker("Review", selection: $reviewMode) {
@@ -297,6 +304,7 @@ struct ActionsWorkspaceView: View {
     }
 
     private func matchesDue(_ action: OutcomeActionReference) -> Bool {
+        guard dueFilter != "all" else { return true }
         let date = ActionDuePresentation.date(action.due)
         switch dueFilter {
         case "overdue": return date.map { $0 < Calendar.current.startOfDay(for: Date()) } == true && action.status == .open
