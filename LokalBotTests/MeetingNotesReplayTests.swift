@@ -110,6 +110,21 @@ final class MeetingNotesReplayTests: XCTestCase {
         try SummaryClaimEvidence.commit(transcript: transcript, in: folder)
         try result.outcomes.write(to: folder)
         try Data(result.body.utf8).write(to: folder.appendingPathComponent("summary.md"), options: .atomic)
+        // Optional prior outcomes/state live only in the copied replay input.
+        // Exercise the same reconciliation as a notes-only regeneration, while
+        // preserving unmatched manual edits for review rather than losing them.
+        let input = source.deletingLastPathComponent()
+        let previousURL = input.appendingPathComponent(MeetingOutcomes.fileName)
+        if FileManager.default.fileExists(atPath: previousURL.path) {
+            let previous = try JSONDecoder().decode(MeetingOutcomes.self, from: Data(contentsOf: previousURL))
+            let state = MeetingOutcomeStore.loadState(from: input)
+            let reconciled = MeetingOutcomeStore.reconcileState(state, from: previous, to: result.outcomes)
+            try MeetingOutcomeStore.writeState(reconciled, to: folder)
+            let edits = Array(state.actions.values) + Array((state.unmatchedActions ?? [:]).values)
+            let retained = Array(reconciled.actions.values) + Array((reconciled.unmatchedActions ?? [:]).values)
+            XCTAssertEqual(edits.count, retained.count)
+            for edit in edits { XCTAssertTrue(retained.contains(edit), "Replay must retain every manual action edit") }
+        }
         // Mechanical source/identity checks supplement manual coverage review.
         let claimsJSON = try SummaryClaimEvidence.encode(result.claims)
         XCTAssertNoThrow(try SummaryClaimEvidence.decode(claimsJSON, transcript: transcript, template: .meeting))

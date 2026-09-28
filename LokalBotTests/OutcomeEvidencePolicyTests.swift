@@ -39,6 +39,25 @@ final class OutcomeEvidencePolicyTests: XCTestCase {
         }
     }
 
+    func testPersonalObligationsKeepTheCitedOwner() {
+        for text in ["I have to review the change.", "I still have to review the change.",
+                     "I need to review it.", "I must review it.", "I think I still have to review it.",
+                     "So, I think I need to review it."] {
+            XCTAssertTrue(OutcomeEvidencePolicy.isCommitment(text), text)
+            XCTAssertEqual(resolve(text).resolution, .other, text)
+        }
+    }
+
+    func testObligationRecognitionPreservesNegationConditionsAndReportedSpeech() {
+        for text in ["I don't have to review it.", "I have to not review it.", "I no longer have to review it.",
+                     "I had to review it.", "Do I have to review it?", "If approved, I have to review it.",
+                     "I think you have to review it.", "I think I might have to review it.", "We need to review it.",
+                     "Yesterday I said I have to review it.", "I need to review it unless it is cancelled."] {
+            XCTAssertFalse(OutcomeEvidencePolicy.isCommitment(text), text)
+            XCTAssertEqual(resolve(text).resolution, .unresolved, text)
+        }
+    }
+
     func testPersonalPlansStillRejectConditionsNegationReportsAndCollectiveOwnership() {
         for text in ["On my side, I might send the draft.", "I plan to send the draft if approved.",
                      "If approved, I do plan to send the draft.", "Maybe I plan to send it.",

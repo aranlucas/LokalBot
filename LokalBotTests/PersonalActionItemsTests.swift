@@ -59,6 +59,136 @@ final class PersonalActionItemsTests: XCTestCase {
 
     // MARK: - Requests directed to the user
 
+    func testPersonalObligationQuotedFromContextOwnsTheTaskAndAnchorsItsCitation() throws {
+        let obligation = "I think I still have to review one change."
+        let transcript = Transcript(segments: [
+            microphone(0, "Also, I have been doing some reviews."),
+            microphone(5, obligation),
+        ], engine: "fixture")
+        var raw = action("s1", text: "Review the remaining change", owner: "unknown", basis: "unclear", context: ["s2"])
+        raw["quote"] = obligation
+        let result = try validate(transcript, [raw])
+        let item = try XCTUnwrap(result.outcomes.actionItems.first)
+        XCTAssertTrue(result.rejected.isEmpty)
+        XCTAssertTrue(item.isForUser)
+        XCTAssertEqual(item.owner, "Me")
+        XCTAssertEqual(item.attribution?.quote, obligation)
+        XCTAssertEqual(item.attribution?.basis, .commitment)
+        XCTAssertEqual(item.citations.first?.segmentID, transcript.segmentID(at: 1))
+        XCTAssertEqual(Set(item.citations.map(\.segmentID)), Set(transcript.segments.indices.map { transcript.segmentID(at: $0) }))
+        XCTAssertEqual(MeetingNotesEvidence(transcript: transcript).units.filter(\.isUserCommitment).map(\.source), ["s2"])
+    }
+
+    func testMixedActorPassageCannotLendTheUsersCommitmentToAnotherTask() throws {
+        for text in ["I'll prepare the policy, and you will send the measurements.",
+                     "I'll prepare the policy. Alice will send the measurements.",
+                     "I'll prepare the policy; could you send the measurements?",
+                     "I'm going to prepare the policy, and you will send the measurements.",
+                     "I still have to prepare the policy, and you will send the measurements."] {
+            let transcript = Transcript(segments: [microphone(0, text)], engine: "fixture")
+            for quote in ["", text, String(text.prefix { $0 != "," && $0 != "." && $0 != ";" })] {
+                var raw = action("s1", text: "Send the measurements", owner: "unknown")
+                raw["quote"] = quote
+                let result = try validate(transcript, [raw])
+                XCTAssertTrue(result.outcomes.userActionItems.isEmpty, quote)
+                XCTAssertEqual(result.outcomes.actionItems.first?.attribution?.rejectionReason, .ambiguousQuote, text)
+                XCTAssertEqual(result.rejected.first?.reason, "ambiguous_ownership_evidence")
+            }
+        }
+    }
+
+    func testDirectObligationKeepsTheActualSpeakersIdentity() throws {
+        let quote = "I think I still have to review the change."
+        for segment in [microphone(0, quote), remote(0, "them 1", quote)] {
+            let transcript = Transcript(segments: [segment], engine: "fixture")
+            var raw = action("s1", text: "Review the change", owner: "unknown", basis: "unclear")
+            raw["quote"] = quote
+            let result = try validate(transcript, [raw])
+            XCTAssertTrue(result.rejected.isEmpty)
+            XCTAssertEqual(result.outcomes.actionItems.first?.isForUser, segment.resolvedAttribution.identity == .user)
+            XCTAssertEqual(result.outcomes.actionItems.first?.attribution?.quote, quote)
+        }
+    }
+
+    func testMixedRecapCannotOverrideAnIndependentlyQuotedUndertaking() throws {
+        let quote = "I will send the measurements."
+        let transcript = Transcript(segments: [
+            microphone(0, "I'll prepare the policy, and you will send the measurements."),
+            remote(10, "them 1", quote),
+        ], engine: "fixture")
+        var raw = action("s2", text: "Send the measurements", owner: "unknown", context: ["s1"])
+        raw["quote"] = quote
+        let result = try validate(transcript, [raw])
+        XCTAssertTrue(result.rejected.isEmpty)
+        XCTAssertEqual(result.outcomes.actionItems.first?.attribution?.resolution, .other)
+        raw["source"] = "s1"
+        raw["context"] = ["s2"]
+        let mixedPrimary = try validate(transcript, [raw])
+        XCTAssertEqual(mixedPrimary.outcomes.actionItems.first?.attribution?.rejectionReason, .ambiguousQuote)
+    }
+
+    func testPurposeClauseDoesNotTurnTheSpeakersPromiseIntoMixedOwnership() throws {
+        for quote in ["I will send the deck so you can introduce us.", "I will send the deck, so you can introduce us."] {
+            var raw = action("s1", text: "Send the deck for introductions", owner: "unknown")
+            raw["quote"] = quote
+            let result = try validate(Transcript(segments: [microphone(0, quote)], engine: "fixture"), [raw])
+            XCTAssertTrue(result.rejected.isEmpty, quote)
+            XCTAssertEqual(result.outcomes.userActionItems.count, 1, quote)
+        }
+    }
+
+    func testOwnershipQuoteMustBeVisibleUniqueAndVerbatim() throws {
+        let quote = "I need to review the change."
+        let transcript = Transcript(segments: [microphone(0, quote), remote(30, "them 1", quote)], engine: "fixture")
+        var raw = action("s1", text: "Review the change", context: ["s2"])
+        raw["quote"] = quote
+        let duplicate = try validate(transcript, [raw])
+        XCTAssertEqual(duplicate.outcomes.actionItems.first?.attribution?.rejectionReason, .ambiguousQuote)
+        raw["context"] = [String]()
+        raw["quote"] = "\"\(quote)\""
+        let wrapped = try validate(transcript, [raw])
+        XCTAssertTrue(try XCTUnwrap(wrapped.outcomes.actionItems.first).isForUser)
+        XCTAssertEqual(wrapped.outcomes.actionItems.first?.attribution?.quote, quote)
+        raw["quote"] = "I need to review the document."
+        let fabricated = try validate(transcript, [raw])
+        XCTAssertEqual(fabricated.outcomes.actionItems.first?.attribution?.rejectionReason, .quoteNotFound)
+        let evidence = MeetingNotesEvidence(transcript: transcript)
+        var clipped = evidence.units[0]
+        clipped.text = "review the change."
+        raw["quote"] = quote
+        let invisible = evidence.validate(try response(actions: [raw]), units: [clipped], template: .meeting,
+            meetingID: UUID(), maximumNotes: 12, maximumActions: 10)
+        XCTAssertEqual(invisible.outcomes.actionItems.first?.attribution?.rejectionReason, .quoteNotFound)
+        XCTAssertTrue(invisible.outcomes.userActionItems.isEmpty)
+    }
+
+    func testReanchoredContextStillFitsWithinEightSegments() throws {
+        var segments = (0..<17).map { microphone(Double($0 * 5), "Status update \($0).") }
+        segments[0].text = "I need to review the change."
+        let transcript = Transcript(segments: segments, engine: "fixture")
+        var raw = action("s9", text: "Review the change", context: ["s1", "s17"])
+        raw["quote"] = segments[0].text
+        let result = try validate(transcript, [raw])
+        XCTAssertTrue(result.outcomes.actionItems.isEmpty)
+        XCTAssertEqual(result.rejected.first?.reason, "distant_action_context")
+        XCTAssertEqual(result.rejected.first?.sources, ["s9"])
+    }
+
+    func testQuoteCannotClipAConditionOrAssignAMicrophoneRequestToMe() throws {
+        for text in ["If approved, I have to review the change.", "I need to review the change if approved."] {
+            let transcript = Transcript(segments: [microphone(0, text)], engine: "fixture")
+            var raw = action("s1", text: "Review the change")
+            raw["quote"] = text.contains("have to") ? "I have to review the change" : "I need to review the change"
+            let result = try validate(transcript, [raw])
+            XCTAssertTrue(result.outcomes.userActionItems.isEmpty)
+        }
+        let text = "Could you check the question on Discord?"
+        var raw = action("s1", text: "Check the question on Discord", owner: "unknown", basis: "request")
+        raw["quote"] = text
+        let result = try validate(Transcript(segments: [microphone(0, text)], engine: "fixture"), [raw])
+        XCTAssertFalse(try XCTUnwrap(result.outcomes.actionItems.first).isForUser)
+    }
+
     func testRemoteRequestAnsweredByTheUserBelongsToTheUser() throws {
         let transcript = Transcript(segments: [
             remote(0, "them 1", "Could you send me the product doc after the call?"),

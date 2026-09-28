@@ -97,7 +97,7 @@ enum MeetingOutcomesGenerator {
             due: lhs.due ?? rhs.due,
             isForUser: isForUser,
             importance: max(lhs.importance, rhs.importance),
-            citations: mergedCitations(lhs.citations, rhs.citations), attribution: lhs.attribution)
+            citations: mergedCitations(lhs.citations, rhs.citations, anchor: lhs.citations.first?.segmentID), attribution: lhs.attribution)
     }
 
     private static func rebuiltAction(
@@ -109,7 +109,7 @@ enum MeetingOutcomesGenerator {
             due: action.due,
             isForUser: action.isForUser,
             importance: action.importance,
-            citations: mergedCitations(action.citations, []), attribution: action.attribution)
+            citations: mergedCitations(action.citations, [], anchor: action.citations.first?.segmentID), attribution: action.attribution)
     }
 
     private static func mergedDecision(
@@ -135,13 +135,15 @@ enum MeetingOutcomesGenerator {
 
     private static func mergedCitations(
         _ lhs: [OutcomeSourceCitation],
-        _ rhs: [OutcomeSourceCitation]
+        _ rhs: [OutcomeSourceCitation],
+        anchor: String? = nil
     ) -> [OutcomeSourceCitation] {
         var byID: [String: OutcomeSourceCitation] = [:]
         for citation in lhs + rhs where byID[citation.segmentID] == nil {
             byID[citation.segmentID] = citation
         }
         return byID.values.sorted {
+            if ($0.segmentID == anchor) != ($1.segmentID == anchor) { return $0.segmentID == anchor }
             if $0.start == $1.start { return $0.segmentID < $1.segmentID }
             return $0.start < $1.start
         }

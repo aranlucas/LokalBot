@@ -52,7 +52,33 @@ extension MeetingNotesGenerator {
         }
         func accept(_ value: MeetingNotesEvidence.Validated) {
             part.claims = distinctClaims(part.claims + value.claims)
-            part.outcomes = MeetingOutcomesGenerator.merge([part.outcomes, value.outcomes])
+            let pendingIDs = Set(recovery.pending.compactMap(\.actionID))
+            var held = part.outcomes.actionItems.filter { pendingIDs.contains($0.id) }
+            var previous = part.outcomes
+            previous.actionItems.removeAll { pendingIDs.contains($0.id) }
+            let newPendingIDs = Set(value.rejected.compactMap(\.actionID))
+            var incoming = value.outcomes
+            incoming.actionItems.removeAll { newPendingIDs.contains($0.id) }
+            func sameTask(_ lhs: MeetingOutcomes.ActionItem, _ rhs: MeetingOutcomes.ActionItem) -> Bool {
+                OutcomeTextSimilarity.normalized(lhs.text) == OutcomeTextSimilarity.normalized(rhs.text)
+                    && !Set(lhs.citations.map(\.segmentID)).isDisjoint(with: rhs.citations.map(\.segmentID))
+            }
+            // Keep pending IDs stable across extraction pages. Merging their
+            // citations/text first would strand the repair's replacement ID.
+            for action in incoming.actionItems {
+                let replaced = Set(held.filter { sameTask($0, action) }.map(\.id))
+                held.removeAll { replaced.contains($0.id) }
+                recovery.pending.removeAll { $0.actionID.map { replaced.contains($0) } == true }
+            }
+            for rejection in value.rejected {
+                guard let actionID = rejection.actionID,
+                      let action = value.outcomes.actionItems.first(where: { $0.id == actionID }),
+                      !held.contains(where: { sameTask($0, action) }) else { continue }
+                held.append(action)
+                recovery.pending.append(rejection)
+            }
+            part.outcomes = MeetingOutcomesGenerator.merge([previous, incoming])
+            part.outcomes.actionItems += held
             var seen = Set(recovery.records.map(\.key))
             recovery.records += value.records.filter { seen.insert($0.key).inserted }
         }
@@ -63,7 +89,7 @@ extension MeetingNotesGenerator {
             try Task.checkCancellation()
             let allowance = try await job.budget.allowance(remainingParts: job.remainingParts, minimum: minimum)
             let maximumNotes = min(12, max(3, allowance / 200))
-            let maximumActions = min(10, max(2, allowance / 250))
+            let maximumActions = min(10, max(2, allowance / 350))
             let stage = recovery.nextPage == 0 ? "extract-\(job.number)" : "continue-\(job.number)-\(recovery.nextPage)"
             var userPrompt = prompt(units: job.units, roster: job.evidence.roster)
                 + (recovery.nextPage == 0 ? "" : try continuation(recovery.records))
@@ -99,7 +125,7 @@ extension MeetingNotesGenerator {
             // the rejection in validation telemetry and only queue source-bound
             // records for targeted repair.
             for rejection in validated.rejected
-                where !rejection.sources.isEmpty && !recovery.pending.contains(rejection) {
+                where rejection.actionID == nil && !rejection.sources.isEmpty && !recovery.pending.contains(rejection) {
                 recovery.pending.append(rejection)
             }
             // Some OpenAI-compatible providers occasionally return an
@@ -153,12 +179,7 @@ extension MeetingNotesGenerator {
 
         let terminalReasons: Set<String> = ["unsupported_commitment", "conversation_management", "status_not_task", "empty_outcome"]
         recovery.pending.removeAll { terminalReasons.contains($0.reason) }
-        if recovery.scanComplete {
-            for source in missingCommitments(part, job: job) {
-                let missing = MeetingNotesEvidence.Rejection(sources: [source], kind: "actions", reason: "missing_user_commitment")
-                if !recovery.pending.contains(missing) { recovery.pending.append(missing) }
-            }
-        }
+        queueMissingCommitments(part, job: job, recovery: &recovery)
         try checkpoint()
 
         var previousRepairTokens = 0
@@ -169,23 +190,24 @@ extension MeetingNotesGenerator {
             let noteLimit = repairable.filter { $0.kind == "notes" }.count
             let actionLimit = repairable.filter { $0.kind == "actions" }.count
             let desired = min(4_096, max(minimum, recovery.repairTokenFloor ?? 0, attempt == 0
-                ? min(2_048, 512 + (noteLimit + actionLimit) * 128) : previousRepairTokens * 2))
+                ? min(2_048, 512 + noteLimit * 128 + actionLimit * 384) : previousRepairTokens * 2))
             let repairTokens = try await job.budget.allowance(remainingParts: job.remainingParts, desired: desired, minimum: minimum)
             if attempt > 0, recovery.repairTokenFloor != nil, repairTokens <= previousRepairTokens { break }
             let userPrompt = try repairPrompt(repairable, units: repairUnits, roster: job.evidence.roster,
                 noteLimit: noteLimit, actionLimit: actionLimit)
-                + (attempt == 0 ? "" : try continuation(recovery.records.filter { record in repairUnits.contains { $0.source == record.source } }))
+                + (attempt == 0 || repairable.first?.actionID != nil ? ""
+                    : try continuation(recovery.records.filter { record in repairUnits.contains { $0.source == record.source } }))
             let system = PromptTemplates.meetingNotesRepairSystem(language: job.language)
             try await requireInputRoom(system: system, prompt: userPrompt, context: [], tokens: repairTokens, job: job)
             let stage = attempt == 0 ? "repair-\(job.number)" : "continue-repair-\(job.number)"
             let raw = try await request(engine: job.engine, system: system, prompt: userPrompt, context: [],
                 schema: MeetingNotesEvidence.schema(units: repairUnits, speakers: Array(job.evidence.speakers.keys),
-                    template: job.template, maximumNotes: noteLimit, maximumActions: actionLimit),
+                    template: job.template, maximumNotes: noteLimit, maximumActions: actionLimit,
+                    actionTexts: repairable.allSatisfy { $0.actionID != nil } ? repairable.compactMap(\.text) : nil),
                 tokens: repairTokens, stage: stage, contextTokens: job.contextTokens, budget: job.budget)
             let started = ProcessInfo.processInfo.systemUptime
             let fixed = job.evidence.validate(raw.content, units: repairUnits, template: job.template,
                 meetingID: job.meetingID, maximumNotes: noteLimit, maximumActions: actionLimit)
-            accept(fixed)
             await recordValidation(fixed, stage: stage, truncated: raw.truncated, budget: job.budget)
             let repairSources = Set(repairUnits.map(\.source))
             if fixed.rejected.contains(where: { repairSources.isDisjoint(with: $0.sources) }) {
@@ -193,14 +215,24 @@ extension MeetingNotesGenerator {
                 try checkpoint()
                 throw TextEngineError.badResponse(recovery.terminalFailure!)
             }
+            let ownershipRepair = repairable.first?.actionID != nil
+            if ownershipRepair {
+                acceptOwnershipRepairs(fixed, requested: repairable, job: job, complete: fixed.complete && !raw.truncated,
+                                       part: &part, recovery: &recovery)
+            } else {
+                accept(fixed)
+            }
             if fixed.complete && !raw.truncated {
                 // Unsupported records may be omitted after a complete repair;
                 // independently validated facts never depend on their survival.
-                recovery.pending.removeAll { repairable.contains($0) }
+                if !ownershipRepair {
+                    recovery.pending.removeAll { repairable.contains($0) }
+                }
                 recovery.repairTokenFloor = nil
             } else if raw.truncated {
                 recovery.repairTokenFloor = min(4_096, repairTokens * 2)
             }
+            queueMissingCommitments(part, job: job, recovery: &recovery)
             previousRepairTokens = repairTokens
             try checkpoint()
             await job.budget.recordPhase("validation", seconds: ProcessInfo.processInfo.systemUptime - started)
@@ -209,6 +241,71 @@ extension MeetingNotesGenerator {
         }
         part.complete = recovery.scanComplete && recovery.pending.isEmpty && missingCommitments(part, job: job).isEmpty
         try checkpoint()
+    }
+
+    /// Ownership repairs keep each existing task's text fixed so
+    /// a different promise from the same neighborhood cannot replace it. The
+    /// unresolved task remains visible on failure, and replacement is atomic.
+    private static func acceptOwnershipRepairs(
+        _ fixed: MeetingNotesEvidence.Validated,
+        requested: [MeetingNotesEvidence.Rejection], job: PartJob, complete: Bool,
+        part: inout Part, recovery: inout Recovery
+    ) {
+        for request in requested {
+            guard let actionID = request.actionID, let text = request.text,
+                  let index = recovery.pending.firstIndex(of: request) else { continue }
+            func matches(_ value: String?) -> Bool { value.map(OutcomeTextSimilarity.normalized) == OutcomeTextSimilarity.normalized(text) }
+            let allowed = Set(repairEvidence([request], units: job.units).compactMap { job.evidence.transcript.summaryCitationSources[$0.source] })
+            let actions = fixed.outcomes.actionItems.filter { matches($0.text) && $0.citations.allSatisfy { allowed.contains($0.segmentID) } }
+            guard actions.count == 1, let action = actions.first else {
+                // A grounded repair can discover that the alleged task was
+                // negated, completed, or just conversation management.
+                let terminal = fixed.rejected.contains { rejection in
+                    matches(rejection.text) && !rejection.sources.isEmpty
+                        && rejection.sources.allSatisfy { job.evidence.transcript.summaryCitationSources[$0].map { allowed.contains($0) } == true }
+                        && ["unsupported_commitment", "conversation_management", "status_not_task"].contains(rejection.reason)
+                }
+                if complete && terminal {
+                    part.outcomes.actionItems.removeAll { $0.id == actionID }
+                    recovery.pending.remove(at: index)
+                }
+                continue
+            }
+            part.outcomes.actionItems.removeAll { $0.id == actionID }
+            part.outcomes.actionItems.append(action)
+            recovery.records.removeAll { $0.kind == "actions" && matches($0.text) }
+            recovery.records += fixed.records.filter { $0.kind == "actions" && matches($0.text) }
+            if let rejection = fixed.rejected.first(where: { $0.actionID == action.id }) {
+                recovery.pending[index] = rejection
+            } else if complete {
+                recovery.pending.remove(at: index)
+            } else {
+                recovery.pending[index].actionID = action.id
+            }
+        }
+    }
+
+    /// Finish repairing a nearby existing task before extracting an omission
+    /// from the same exchange. Proximity only schedules a model re-read; it
+    /// never establishes ownership or merges different task descriptions.
+    private static func queueMissingCommitments(_ part: Part, job: PartJob, recovery: inout Recovery) {
+        guard recovery.scanComplete else { return }
+        let compact = Dictionary(uniqueKeysWithValues: job.evidence.transcript.summaryCitationSources.map { ($0.value, $0.key) })
+        for source in missingCommitments(part, job: job) {
+            let missing = MeetingNotesEvidence.Rejection(sources: [source], kind: "actions", reason: "missing_user_commitment")
+            let nearby = Set(repairEvidence([missing], units: job.units).map(\.source))
+            if recovery.pending.contains(where: { $0.kind == "actions" && !nearby.isDisjoint(with: $0.sources) }) { continue }
+            let candidates = part.outcomes.unresolvedActionItems.filter { action in
+                action.citations.first.flatMap { compact[$0.segmentID] }.map { nearby.contains($0) } == true
+            }
+            if candidates.count == 1, let action = candidates.first,
+               let anchor = action.citations.first.flatMap({ compact[$0.segmentID] }) {
+                recovery.pending.append(.init(sources: [anchor], kind: "actions", reason: "missing_ownership_evidence",
+                                              text: action.text, actionID: action.id))
+            } else if candidates.isEmpty {
+                recovery.pending.append(missing)
+            }
+        }
     }
 
     private static func continuation(_ records: [MeetingNotesEvidence.Record]) throws -> String {
@@ -249,6 +346,8 @@ extension MeetingNotesGenerator {
     private static func repairBatch(_ rejected: [MeetingNotesEvidence.Rejection], units: [MeetingNotesEvidence.Unit]) -> [MeetingNotesEvidence.Rejection] {
         let sources = Set(units.map(\.source))
         let known = rejected.filter { !sources.isDisjoint(with: $0.sources) }
+        let ownership = known.filter { $0.actionID != nil }
+        if !ownership.isEmpty { return Array(ownership.prefix(10)) }
         return Array(known.filter { $0.kind == "notes" }.prefix(12)) + Array(known.filter { $0.kind == "actions" }.prefix(10))
     }
 
@@ -265,13 +364,21 @@ extension MeetingNotesGenerator {
     private static func repairPrompt(_ rejected: [MeetingNotesEvidence.Rejection], units: [MeetingNotesEvidence.Unit],
                                      roster: String, noteLimit: Int, actionLimit: Int) throws -> String {
         let sources = Set(units.map(\.source))
-        let feedback = rejected.map { ["kind": $0.kind, "reason": $0.reason, "sources": $0.sources.filter { sources.contains($0) }.joined(separator: ", ")] }
+        let feedback = rejected.map { rejection -> [String: String] in
+            var value = ["kind": rejection.kind, "reason": rejection.reason,
+                         "sources": rejection.sources.filter { sources.contains($0) }.joined(separator: ", ")]
+            if let text = rejection.text { value["text"] = String(text.prefix(280)) }
+            return value
+        }
         let json = String(decoding: try JSONSerialization.data(withJSONObject: feedback), as: UTF8.self)
         return "This is a targeted repair. Repair at most \(noteLimit) notes and \(actionLimit) actions from the rejected sources. "
             + "Return empty arrays for unrequested kinds. Do not add a TL;DR or unrelated facts from neighboring context. "
             + "Previously accepted source-linked records are retained. Omit unsupported records. "
             + "For missing_user_commitment, extract the user's undertaking and its nearest relevant task context. "
             + "For distant_action_context, cite only sources within eight segments of the primary source. "
+            + "For missing_ownership_evidence, ambiguous_ownership_evidence, or ownership_quote_not_found, "
+            + "repair only the action in feedback.text and copy that task text unchanged. Select a verbatim quote "
+            + "for that task and its actual source; never substitute another person's task from the neighborhood. "
             + "has_more refers only to these requested repairs.\nValidation feedback: \(json)\n"
             + prompt(units: units, roster: roster)
     }
