@@ -14,6 +14,7 @@ struct QuickRecallView: View {
 private struct QuickRecallContent: View {
     @EnvironmentObject private var app: AppState
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @ObservedObject var model: ChatViewModel
 
 #if LOKALBOT_UI_TEST_HOST
@@ -48,7 +49,13 @@ private struct QuickRecallContent: View {
             }
         }
         .frame(width: 660, height: 480)
-        .background(.regularMaterial)
+        .background {
+            if reduceTransparency {
+                Color(nsColor: .windowBackgroundColor)
+            } else {
+                Rectangle().fill(.regularMaterial)
+            }
+        }
         .onAppear {
             inputFocused = true
             savedMoments = app.activityStore.savedMoments(limit: 200)
@@ -108,7 +115,7 @@ private struct QuickRecallContent: View {
                 showingConversation ? "Ask a follow-up…" : "Search your memory…",
                 text: $query)
                 .textFieldStyle(.plain)
-                .font(.title3)
+                .font(.system(size: 22))
                 .focused($inputFocused)
                 .onSubmit { runSelectedResult() }
                 .accessibilityIdentifier("quickRecall.input")

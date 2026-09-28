@@ -7,8 +7,7 @@ struct MainWindowView: View {
     @EnvironmentObject var app: AppState
     @Environment(\.openWindow) private var openWindow
     @Environment(\.colorScheme) private var colorScheme
-    /// Mirrors the current split controller for the app-owned toolbar label.
-    /// AppKit owns the actual collapse animation through the responder chain.
+    /// Native sidebar toggle and restored visibility share the same binding.
     @SceneStorage("workspace.sidebar.visible") private var sidebarVisible = true
     @State private var pendingDelete: Set<Meeting.ID>?
     /// Shared by Timeline's chronology and bounded context panel.
@@ -27,35 +26,13 @@ struct MainWindowView: View {
         } message: {
             Text("This permanently deletes the audio, transcript and summary files.")
         }
-        // NavigationSplitView's generated sidebar item can drift away from the
-        // explicit `sidebarVisible` binding when this view swaps between its
-        // two- and three-column topologies. Own the command so the toolbar,
-        // keyboard shortcut, and split-view state always use one source of
-        // truth. (The generated item itself is removed inside `sidebar` —
-        // the only attachment point where SwiftUI honors the removal.)
         .toolbar {
-            sidebarToolbarItem
             if app.navSection == .timeline, app.evidenceReturnSection != nil {
                 ToolbarItem(placement: .navigation) {
                     Button(action: app.returnFromEvidence) {
                         Label("Back", systemImage: "chevron.left")
                     }.help("Return to the source search or conversation")
                 }
-            }
-            if #available(macOS 26.0, *) {
-                ToolbarSpacer(.flexible)
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    app.isRecording
-                        ? app.stopRecording()
-                        : app.startRecording(context: app.recordingContext(for: app.detector.activeApp))
-                } label: {
-                    Label(app.isRecording ? "Stop recording" : "Record now",
-                          systemImage: app.isRecording ? "stop.circle.fill" : "record.circle")
-                }
-                .tint(app.isRecording ? .red : nil)
-                .accessibilityIdentifier("toolbar.record")
             }
         }
         .task {
@@ -64,41 +41,6 @@ struct MainWindowView: View {
             WindowAccess.shared.register { openWindow(id: $0) }
         }
 
-    }
-
-    /// macOS 26 automatically groups navigation items into a Liquid Glass
-    /// capsule. The approved reference uses a quiet standalone control, so
-    /// hide only that shared background while retaining the native toolbar.
-    @ToolbarContentBuilder
-    private var sidebarToolbarItem: some ToolbarContent {
-        if #available(macOS 26.0, *) {
-            ToolbarItem(placement: .navigation) {
-                sidebarToggleButton
-            }
-            .sharedBackgroundVisibility(.hidden)
-        } else {
-            ToolbarItem(placement: .navigation) {
-                sidebarToggleButton
-            }
-        }
-    }
-
-    private var sidebarToggleButton: some View {
-        Button {
-            sidebarVisible.toggle()
-        } label: {
-            Image(systemName: "sidebar.left")
-                .font(.system(size: 13, weight: .semibold))
-                .frame(width: 28, height: 28)
-                .background(.quaternary.opacity(0.34), in: Circle())
-                .overlay { Circle().strokeBorder(Color.primary.opacity(0.08)) }
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(sidebarVisible ? "Hide Sidebar" : "Show Sidebar")
-        .help(sidebarVisible ? "Hide Sidebar" : "Show Sidebar")
-        .keyboardShortcut("s", modifiers: [.command, .control])
-        .accessibilityIdentifier("toolbar.sidebarToggle")
     }
 
     /// Timeline is one day-explorer workspace inside the global shell. Its
@@ -130,7 +72,7 @@ struct MainWindowView: View {
                                 Spacer()
                                 Button("Dismiss") { app.outcomeIndex.dismissUndo() }
                             }
-                            .font(WorkspaceTypography.control)
+                            .font(Font.body)
                             .padding(12).background(.bar)
                         }
                     }
@@ -166,8 +108,8 @@ struct MainWindowView: View {
         case .meetings:
             HSplitView {
                 MeetingListView(pendingDelete: $pendingDelete)
-                    .frame(minWidth: 240, idealWidth: 300, maxWidth: 440)
-                    .splitPaneAccessibilityLabel("Meeting library", autosaveName: "LokalBot.meetings")
+                    .frame(minWidth: 240, idealWidth: LBTokens.Metric.contentColumnWidth, maxWidth: 340)
+                    .splitPaneAccessibilityLabel("Meeting library", autosaveName: "LokalBot.meetings", initialWidth: LBTokens.Metric.contentColumnWidth)
                 MeetingLibraryDetailView(pendingDelete: $pendingDelete)
                     .frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
                     .splitPaneAccessibilityLabel("Meeting details")
@@ -176,8 +118,8 @@ struct MainWindowView: View {
         case .ask:
             HSplitView {
                 ChatConversationList()
-                        .frame(minWidth: 200, idealWidth: 250, maxWidth: 340)
-                        .splitPaneAccessibilityLabel("Conversations", autosaveName: "LokalBot.recall")
+                        .frame(minWidth: 240, idealWidth: LBTokens.Metric.contentColumnWidth, maxWidth: 340)
+                        .splitPaneAccessibilityLabel("Conversations", autosaveName: "LokalBot.recall", initialWidth: LBTokens.Metric.contentColumnWidth)
                 AskView().frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
                     .splitPaneAccessibilityLabel("Search and conversation")
             }
@@ -216,25 +158,14 @@ struct MainWindowView: View {
                 identifier: "sidebar.settings")
         }
         .listStyle(.sidebar)
-        .tint(Brand.teal)
-        .safeAreaInset(edge: .top, spacing: 0) {
-            SidebarBrandHeader()
-        }
+        .tint(Brand.tealFill)
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if app.navSection != .ask { SidebarPrivacyFooter() }
+            SidebarPrivacyFooter()
         }
-        .scrollContentBackground(.hidden)
-        .background(WorkspacePalette.sidebar(for: colorScheme))
-        // Keep the sidebar attached to the window edge even if macOS restores
-        // or accepts a wider split column. Capping this child at 190 points
-        // centers it inside the oversized column and creates blank gutters.
-        .frame(minWidth: 167, idealWidth: 167, maxWidth: .infinity, alignment: .leading)
-        .navigationSplitViewColumnWidth(min: 167, ideal: 167, max: 190)
-        // The system toggle is only removable from the sidebar column's own
-        // content — applied outside the NavigationSplitView the removal is a
-        // no-op and the generated toggle duplicates the owned one in the
-        // window toolbar.
-        .toolbar(removing: .sidebarToggle)
+        .frame(minWidth: LBTokens.Metric.sidebarMinWidth, maxWidth: .infinity, alignment: .leading)
+        .navigationSplitViewColumnWidth(min: LBTokens.Metric.sidebarMinWidth,
+                                        ideal: LBTokens.Metric.sidebarWidth, max: 260)
+
     }
 
     /// Native source-list selection gives VoiceOver and keyboard navigation
@@ -262,15 +193,14 @@ struct MainWindowView: View {
         section: AppState.NavSection,
         identifier: String
     ) -> some View {
-        let selected = app.navSection == section
         sidebarLabel(title, systemImage: systemImage, section: section)
         .tag(section)
-        .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: -5))
+        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
         .listRowBackground(Color.clear)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(title)
         .accessibilityIdentifier(identifier)
-        .accessibilityAddTraits(selected ? .isSelected : [])
+        .accessibilityAddTraits(app.navSection == section ? .isSelected : [])
     }
 
     @ViewBuilder
@@ -279,26 +209,22 @@ struct MainWindowView: View {
         systemImage: String,
         section: AppState.NavSection
     ) -> some View {
-        let selected = app.navSection == section
 
         HStack(spacing: 10) {
             Image(systemName: systemImage)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(
-                    selected
-                        ? (isScriptedCapture ? scriptedSidebarLabelColor : Color.primary)
-                        : (isScriptedCapture ? scriptedSidebarHeaderColor : Color.secondary))
+                .foregroundStyle(Brand.teal)
                 .frame(width: 18)
                 .accessibilityHidden(true)
 
             Text(title)
-                .font(.system(size: 13, weight: selected ? .semibold : .medium))
+                .font(.body)
                 .foregroundStyle(isScriptedCapture ? scriptedSidebarLabelColor : Color.primary)
 
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 9)
+        .frame(minHeight: LBTokens.Metric.sidebarRowHeight)
         // The native source list owns the single selection background. An
         // additional rounded fill doubles the highlight and loses contrast.
         .contentShape(Rectangle())
@@ -306,13 +232,12 @@ struct MainWindowView: View {
 
     @ViewBuilder
     private func sidebarSectionHeader(_ title: String) -> some View {
-        Text(title.uppercased())
-            .font(.system(size: 10, weight: .semibold))
-            .tracking(0.7)
+        Text(title)
+            .font(.subheadline.bold())
             .foregroundStyle(isScriptedCapture ? scriptedSidebarHeaderColor : Color.secondary)
             .padding(.leading, 11)
             .padding(.top, title == "Remember" ? 3 : 8)
-            .padding(.bottom, title == "Remember" ? 10 : 5)
+            .padding(.bottom, 4)
             .accessibilityAddTraits(.isHeader)
             .selectionDisabled(true)
             .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
@@ -348,27 +273,47 @@ private struct SidebarPrivacyFooter: View {
     private var destination: InferencePresentation { InferencePresentation(settings: app.settings) }
 
     var body: some View {
-        // Two parallel status lines, same weight, aligned after the dot.
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 6) {
-                StatusDot(color: destination == .onDevice ? Brand.teal : Brand.amber, size: 7)
-                Text("Storage: this Mac")
+        VStack(alignment: .leading, spacing: 10) {
+            if let meeting = app.currentMeeting {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 6) {
+                        StatusDot(color: Brand.recording)
+                        Text("Recording").font(.callout.weight(.semibold))
+                        Spacer(minLength: 0)
+                        TimelineView(.periodic(from: .now, by: 1)) { context in
+                            Text(Transcript.stamp(max(0, context.date.timeIntervalSince(meeting.startedAt))))
+                                .font(.callout.monospacedDigit())
+                        }
+                    }
+                    Button("Live Transcript & Notes", action: app.showLiveMeeting)
+                        .buttonStyle(.plain)
+                        .font(.callout)
+                        .help("Open the current recording")
+                }
+                .foregroundStyle(LBTokens.Palette.recordingText)
+                .padding(10)
+                .lbStatusSurface(.red)
             }
-            Text(processingLabel)
-                .padding(.leading, 13)
-            if case .remote(let host) = destination {
-                Text(host).workspaceTextRole(.metadata).padding(.leading, 13)
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "lock.shield").foregroundStyle(Brand.teal)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Storage: this Mac").font(.callout.weight(.semibold))
+                    HStack(spacing: 4) {
+                        Text(processingLabel)
+                        if case .remote = destination { StatusDot(color: .orange, size: 5) }
+                    }
+                    .font(.subheadline).foregroundStyle(.secondary)
+                    if case .remote(let host) = destination {
+                        Text(host).font(.subheadline).foregroundStyle(.secondary)
+                    }
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(10)
+            .lbGroupedSurface()
         }
-        .font(WorkspaceTypography.metadataEmphasis)
-        .foregroundStyle(.primary)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, 20)
-        .padding(.trailing, 12)
-        .padding(.vertical, 22)
-        .background(WorkspacePalette.sidebar(for: colorScheme))
-        .overlay(alignment: .top) { Divider() }
-        .accessibilityElement(children: .combine)
+        .padding(10)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("sidebar.localPrivacy")
     }
 
@@ -378,36 +323,5 @@ private struct SidebarPrivacyFooter: View {
         case .remote: "AI: local + remote"
         case .blocked: "AI: connection blocked"
         }
-    }
-}
-
-private struct SidebarBrandHeader: View {
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Image(nsImage: NSApp.applicationIconImage ?? NSImage())
-                .resizable()
-                .scaledToFit()
-                .frame(width: 30, height: 30)
-                .clipShape(RoundedRectangle(
-                    cornerRadius: Brand.Radius.row, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text("LokalBot")
-                    .font(.system(size: 14, weight: .semibold))
-                Text("Private work\nmemory")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 20)
-        .padding(.top, 20)
-        .padding(.bottom, 17)
-        .background(WorkspacePalette.sidebar(for: colorScheme))
-        .overlay(alignment: .bottom) { Divider() }
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("sidebar.brand")
     }
 }

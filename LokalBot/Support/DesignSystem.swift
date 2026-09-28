@@ -3,11 +3,8 @@ import SwiftUI
 // MARK: - Semantic brand roles
 
 extension Brand {
-    /// Live-capture indicator (recording, dictating): the icon's amber antenna
-    /// dot, and the same convention as macOS's amber mic-in-use dot. Buttons
-    /// that *stop* a capture stay `.red` — amber marks state, red marks the
-    /// destructive action.
-    static let recording = amber
+    /// Recording state uses the same red role on every capture surface.
+    static let recording = LBTokens.Palette.recording
 
     /// Shared corner radii. Chips are capsules; everything rectangular snaps
     /// to one of these instead of a per-view magic number.
@@ -19,11 +16,11 @@ extension Brand {
         /// Inline wells and small controls (text areas, thumbnails).
         static let control: CGFloat = 10
         /// Dense content cards that need one step less rounding than panels.
-        static let compactPanel: CGFloat = 12
+        static let compactPanel: CGFloat = 10
         /// Panels, cards, toasts, and chat bubbles.
-        static let panel: CGFloat = 14
+        static let panel: CGFloat = 10
         /// Hero surfaces (getting-started card, onboarding cards).
-        static let card: CGFloat = 16
+        static let card: CGFloat = 10
         /// Floating capsules (dictation HUD, banners, the recording pill).
         static let hud: CGFloat = 20
     }
@@ -34,74 +31,29 @@ extension Brand {
 /// A compact native-macOS hierarchy shared by every workspace surface.
 /// Hierarchy comes primarily from weight and spacing rather than oversized
 /// type, keeping dense meeting and evidence views comfortable by default.
-enum WorkspaceTypography {
-    static let display = Font.system(size: 22, weight: .bold)
-    static let pageTitle = Font.system(size: 20, weight: .bold)
-    static let sectionTitle = Font.system(size: 15, weight: .semibold)
-    static let body = Font.system(size: 15, weight: .regular)
-    static let bodyEmphasis = Font.system(size: 15, weight: .semibold)
-    /// Ask is a dense reading surface rather than a presentation page. Its
-    /// question and answer hierarchy stays compact without shrinking titles
-    /// elsewhere in the app.
-    static let conversationTitle = Font.system(size: 17, weight: .semibold)
-    static let editorialSectionTitle = Font.system(size: 14, weight: .semibold)
-    static let editorialBody = Font.system(size: 14, weight: .regular)
-    static let editorialBodyEmphasis = Font.system(size: 14, weight: .semibold)
-    static let rowTitle = Font.system(size: 14, weight: .semibold)
-    static let control = Font.system(size: 13, weight: .medium)
-    static let metadata = Font.system(size: 13, weight: .regular)
-    static let metadataEmphasis = Font.system(size: 13, weight: .semibold)
-    static let overline = Font.system(size: 12, weight: .semibold)
-}
 
 enum WorkspaceMetric {
-    static let pagePadding: CGFloat = 24
+    static let pagePadding: CGFloat = LBTokens.Metric.detailPadding
     static let sectionGap: CGFloat = 22
-    static let panelPadding: CGFloat = 18
+    static let panelPadding: CGFloat = 14
     /// Inner padding of small rounded cards (morning brief, outcome card) —
     /// one step tighter than `panelPadding` panels.
     static let cardPadding: CGFloat = 14
-    static let rowVerticalPadding: CGFloat = 11
+    static let rowVerticalPadding: CGFloat = 10
     /// At the approved 1584-point window this leaves a compact outer gutter
     /// while allowing the outcome tables to use the same broad working area
     /// as the reference instead of collapsing into a narrow centered column.
     static let contentMaxWidth: CGFloat = 1360
     /// Long-form answers and summaries stay within a comfortable reading line.
-    static let readingMaxWidth: CGFloat = 780
+    static let readingMaxWidth: CGFloat = LBTokens.Metric.readingMaxWidth
     /// Today is a glanceable page: wide enough for a row of session cards,
     /// with prose still held to `readingMaxWidth`.
-    static let todayMaxWidth: CGFloat = 1120
-    /// Timeline context remains useful beside the chronology before it drawers.
-    static let timelineContextMinWidth: CGFloat = 420
+    static let todayMaxWidth: CGFloat = 956
+    /// Keep the day readable beside a 320-point inspector, then use a drawer.
+    static let timelineDayMinWidth: CGFloat = 440
+    static let timelineContextMinWidth: CGFloat = LBTokens.Metric.detailsPaneWidth
     static let timelineDrawerBreakpoint: CGFloat = 820
     static let timelineDrawerMaxWidth: CGFloat = 520
-    /// The work-session rail is user-resizable against the digest. It opens
-    /// at a readable width and can take up to about half of a large window.
-    static let timelineRailMinWidth: CGFloat = 260
-    static let timelineRailIdealWidth: CGFloat = 360
-    static let timelineRailMaxWidth: CGFloat = 640
-    /// However far the rail is dragged, the digest keeps this much width so
-    /// its evidence headers never clip.
-    static let timelineEvidenceReadableWidth: CGFloat = 480
-
-    static func timelineRailMaxWidth(in paneWidth: CGFloat) -> CGFloat {
-        min(timelineRailMaxWidth, max(timelineRailMinWidth, paneWidth - timelineEvidenceReadableWidth))
-    }
-}
-
-/// Agent's three working surfaces remain neutral; accent marks focus and
-/// available primary actions. All colors adapt to the system appearance.
-enum AgentPalette {
-    static let conversation = Color(nsColor: .textBackgroundColor)
-    /// The task list shares the secondary-column tone of Ask's conversations
-    /// and Settings' categories.
-    static func tasks(for scheme: ColorScheme) -> Color {
-        WorkspacePalette.conversationColumn(for: scheme)
-    }
-
-    static func composer(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color(white: 0.20) : Color(white: 0.975)
-    }
 
 }
 
@@ -126,19 +78,19 @@ private struct WorkspaceTextRoleModifier: ViewModifier {
         switch role {
         case .metadata:
             content
-                .font(WorkspaceTypography.metadata)
+                .font(Font.callout)
                 .foregroundStyle(contrast == .increased ? Color.primary : Color(nsColor: WorkspaceTextColor.supporting))
         case .supporting:
             content
-                .font(WorkspaceTypography.editorialBody)
+                .font(Font.body)
                 .foregroundStyle(contrast == .increased ? Color.primary : Color(nsColor: WorkspaceTextColor.supporting))
         case .trust:
             content
-                .font(WorkspaceTypography.editorialBody)
+                .font(Font.body)
                 .foregroundStyle(Color.primary)
         case .warning:
             content
-                .font(WorkspaceTypography.editorialBody)
+                .font(Font.body)
                 .foregroundStyle(contrast == .increased ? Color.primary : Color(nsColor: WorkspaceTextColor.warning))
         }
     }
@@ -179,7 +131,7 @@ struct InferenceDisclosure: View {
             Image(systemName: destination.icon)
                 .foregroundStyle(destination == .onDevice ? Brand.teal : Brand.amber)
             VStack(alignment: .leading, spacing: 3) {
-                Text(destination.label).font(WorkspaceTypography.metadataEmphasis)
+                Text(destination.label).font(Font.callout.weight(.semibold))
                 Text(destination.detail(local: localText, remote: remoteText))
                     .workspaceTextRole(destination.isBlocked ? .warning : .trust)
                     .fixedSize(horizontal: false, vertical: true)
@@ -220,104 +172,36 @@ enum WorkspaceMotion {
 
 // MARK: - Workspace shell
 
-/// Warm, low-contrast workspace colors inspired by focused writing tools.
-/// Every role has a dark equivalent so LokalBot still follows the Mac's
-/// appearance instead of forcing a fixed light theme.
-enum WorkspacePalette {
-    static func canvas(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark
-            ? Color(red: 0.140, green: 0.145, blue: 0.150)
-            : Color(red: 0.970, green: 0.968, blue: 0.958)
-    }
-
-    static func surface(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark
-            ? Color(red: 0.180, green: 0.185, blue: 0.190)
-            : Color(red: 0.995, green: 0.994, blue: 0.988)
-    }
-
-    /// The approved shell uses a cooler, deeper global rail than its content
-    /// columns. Keeping this explicit avoids AppKit's brighter gray sidebar
-    /// material changing the visual hierarchy between OS releases.
-    static func sidebar(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark
-            ? Color(red: 0.120, green: 0.130, blue: 0.135)
-            : Color(red: 0.935, green: 0.946, blue: 0.944)
-    }
-
-    static func conversationColumn(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark
-            ? Color(red: 0.165, green: 0.170, blue: 0.175)
-            : Color(red: 0.950, green: 0.949, blue: 0.944)
-    }
-
-    static func control(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark
-            ? Color(red: 0.210, green: 0.215, blue: 0.220)
-            : Color(red: 0.945, green: 0.943, blue: 0.934)
-    }
-
-    static func border(
-        for colorScheme: ColorScheme,
-        contrast: ColorSchemeContrast
-    ) -> Color {
-        if colorScheme == .dark {
-            return Color.white.opacity(contrast == .increased ? 0.18 : 0.09)
-        }
-        return Color.black.opacity(contrast == .increased ? 0.18 : 0.08)
-    }
-}
-
-private struct WorkspaceSurfaceModifier: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
-
-    func body(content: Content) -> some View {
-        content
-            .background(WorkspacePalette.canvas(for: colorScheme))
-    }
-}
-
+/// Only inset control surfaces supply their own fill. The window and sidebar
+/// retain the platform's native background and materials.
 private struct WorkspaceControlModifier: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.colorSchemeContrast) private var contrast
-
     func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: Brand.Radius.control, style: .continuous)
-
-        content
-            .background(WorkspacePalette.control(for: colorScheme), in: shape)
-            .overlay {
-                shape.strokeBorder(
-                    WorkspacePalette.border(for: colorScheme, contrast: contrast),
-                    lineWidth: 1)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
+        content.lbGroupedSurface()
     }
 }
 
-/// The raised input surface shared by Agent and Ask, docked at the bottom of
-/// each pane. Its border takes the accent while the field has focus.
 private struct ComposerChromeModifier: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
     let focused: Bool
 
     func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 16)
         content
-            .background(AgentPalette.composer(for: colorScheme), in: shape)
-            .overlay(shape.strokeBorder(
-                focused ? Brand.teal : Color.primary.opacity(contrast == .increased ? 0.6 : 0.22),
-                lineWidth: focused || contrast == .increased ? 1.5 : 1))
-            .shadow(color: .black.opacity(colorScheme == .dark ? 0.16 : 0.06), radius: 8, y: 3)
+            .lbFloatingComposer()
+            .overlay {
+                if focused {
+                    RoundedRectangle(cornerRadius: LBTokens.Metric.composerRadius, style: .continuous)
+                        .strokeBorder(Brand.teal.opacity(contrast == .increased ? 1 : 0.45))
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
     }
 }
 
 extension View {
-    /// Insets a detail pane into the soft canvas used by the main workspace.
+    /// Keeps the native window background visible throughout the workspace.
     func workspaceSurface() -> some View {
-        modifier(WorkspaceSurfaceModifier())
+        self
     }
 
     /// Quiet control chrome for search and other shell-level fields.
@@ -343,13 +227,7 @@ extension View {
     /// Shared quiet panel chrome for outcome groups and disclosure sections.
     func workspacePanel() -> some View {
         padding(WorkspaceMetric.panelPadding)
-            .background(.quaternary.opacity(0.24),
-                        in: RoundedRectangle(cornerRadius: Brand.Radius.panel,
-                                             style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: Brand.Radius.panel, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.11))
-            }
+            .lbGroupedSurface()
     }
 }
 
@@ -446,7 +324,7 @@ enum ChipSize {
     case regular, compact
 
     var font: Font {
-        self == .regular ? WorkspaceTypography.metadata : .system(size: 11, weight: .medium)
+        self == .regular ? Font.callout : .system(size: 11, weight: .medium)
     }
     var horizontalPadding: CGFloat { self == .regular ? 10 : 8 }
     var verticalPadding: CGFloat { self == .regular ? 5 : 3 }
@@ -528,7 +406,7 @@ struct LoadingStateLabel: View {
 
     init(
         _ text: String,
-        font: Font = WorkspaceTypography.metadata,
+        font: Font = Font.callout,
         controlSize: ControlSize = .small
     ) {
         self.text = text
@@ -585,8 +463,7 @@ struct ErrorToast: View {
 
 // MARK: - Icon tile
 
-/// The gradient icon tile from onboarding, promoted app-wide so feature
-/// headers and hero cards share one visual anchor.
+/// A quiet symbol well for secondary feature surfaces.
 struct IconTile: View {
     let systemImage: String
     let tint: Color
@@ -595,18 +472,11 @@ struct IconTile: View {
     var body: some View {
         ZStack {
             RoundedRectangle(cornerRadius: size * 0.26, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [tint.opacity(0.84), tint],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
-                .shadow(color: tint.opacity(0.32), radius: size * 0.14, y: size * 0.06)
+                .fill(tint.opacity(0.10))
 
             Image(systemName: systemImage)
-                .font(.system(size: size * 0.46, weight: .semibold))
-                .foregroundStyle(.white)
+                .font(.system(size: size * 0.46, weight: .medium))
+                .foregroundStyle(LBTokens.Palette.accentText)
         }
         .frame(width: size, height: size)
     }
@@ -614,15 +484,14 @@ struct IconTile: View {
 
 // MARK: - Section header
 
-/// Uppercase caption header for list groupings (meeting-list day labels,
+/// Native caption header for list groupings (meeting-list day labels,
 /// menu-bar Recent, inspector headings) — one treatment everywhere.
 struct SectionHeader: View {
     let text: String
 
     var body: some View {
-        Text(text.uppercased())
-            .font(WorkspaceTypography.overline)
-            .tracking(0.65)
+        Text(text)
+            .font(Font.subheadline.weight(.semibold))
             .foregroundStyle(.secondary)
     }
 }
@@ -638,9 +507,9 @@ struct StatTile: View {
 
     var body: some View {
         HStack(spacing: 5) {
-            Image(systemName: icon).font(WorkspaceTypography.metadata).foregroundStyle(.secondary)
-            Text(value).font(WorkspaceTypography.metadataEmphasis.monospacedDigit())
-            Text(label).font(WorkspaceTypography.metadata).foregroundStyle(.secondary)
+            Image(systemName: icon).font(Font.callout).foregroundStyle(.secondary)
+            Text(value).font(Font.callout.weight(.semibold).monospacedDigit())
+            Text(label).font(Font.callout).foregroundStyle(.secondary)
         }
         .fixedSize()
         .chipChrome()

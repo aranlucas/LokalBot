@@ -264,6 +264,7 @@ struct TimelineContentView: View {
     var body: some View {
         GeometryReader { proxy in
             let usesDrawer = proxy.size.width < WorkspaceMetric.timelineDrawerBreakpoint
+                || (model.showsRawCapture && proxy.size.width < 1_100)
             VStack(spacing: 0) {
                 TimelineWorkspaceHeader(
                     model: model,
@@ -288,7 +289,7 @@ struct TimelineContentView: View {
                                 model: model,
                                 onDismiss: { contextDrawerPresented = false })
                                 .frame(width: min(
-                                    WorkspaceMetric.timelineDrawerMaxWidth,
+                                    model.showsRawCapture ? 900 : WorkspaceMetric.timelineDrawerMaxWidth,
                                     max(320, proxy.size.width - 72)))
                                 .background(.regularMaterial)
                                 .shadow(color: .black.opacity(0.24), radius: 20, x: -8)
@@ -298,22 +299,24 @@ struct TimelineContentView: View {
                     }
                 } else {
                     HSplitView {
-                        TimelineContextPanel(model: model, onDismiss: nil)
-                            .frame(minWidth: WorkspaceMetric.timelineContextMinWidth,
+                        CaptureDayView(model: model, onOpenContext: {})
+                            .frame(minWidth: WorkspaceMetric.timelineDayMinWidth,
                                    maxWidth: .infinity, maxHeight: .infinity)
                             .accessibilityElement(children: .contain)
-                            .accessibilityIdentifier("timeline.evidencePane")
-                            .splitPaneAccessibilityLabel("Timeline evidence")
-                        CaptureDayView(model: model, onOpenContext: {})
-                            .frame(minWidth: WorkspaceMetric.timelineRailMinWidth,
-                                   idealWidth: WorkspaceMetric.timelineRailIdealWidth,
-                                   maxWidth: WorkspaceMetric.timelineRailMaxWidth(in: proxy.size.width))
-                            .accessibilityElement(children: .contain)
                             .accessibilityIdentifier("timeline.sessionRail")
+                            .splitPaneAccessibilityLabel("Timeline day")
+                        TimelineContextPanel(model: model, onDismiss: nil)
+                            .frame(minWidth: model.showsRawCapture ? 500 : WorkspaceMetric.timelineContextMinWidth,
+                                   idealWidth: model.showsRawCapture ? 600 : LBTokens.Metric.detailsPaneWidth,
+                                   maxWidth: model.showsRawCapture ? 720 : 520,
+                                   maxHeight: .infinity)
+                            .background(.background.secondary)
+                            .accessibilityElement(children: .contain)
+                            .accessibilityIdentifier("timeline.evidencePane")
                             .splitPaneAccessibilityLabel(
-                                "Work sessions",
-                                autosaveName: "LokalBot.timeline.reading.v5",
-                                initialWidth: WorkspaceMetric.timelineRailIdealWidth)
+                                "Timeline details",
+                                autosaveName: "LokalBot.timeline.details.v6",
+                                initialWidth: LBTokens.Metric.detailsPaneWidth)
                     }
                     .id("workspace.timeline")
                 }
@@ -402,9 +405,6 @@ private struct TimelineWorkspaceHeader: View {
     @State private var showingCalendar = false
 
     var body: some View {
-        let meetings = model.meetings(in: app)
-        let sessions = model.workSessions
-        let active = sessions.reduce(0) { $0 + $1.activeDuration }
         VStack(alignment: .leading, spacing: 10) {
             if usesCompactHeader {
                 VStack(alignment: .leading, spacing: 8) {
@@ -423,10 +423,6 @@ private struct TimelineWorkspaceHeader: View {
                 }
             }
 
-            TimelineSessionStatRow(
-                activeSeconds: active,
-                sessionCount: sessions.count,
-                meetingCount: meetings.count)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -490,7 +486,7 @@ private struct TimelineWorkspaceHeader: View {
         if model.selectedSessionID != nil { return "Session" }
         if model.selection != nil { return "Activity" }
         if model.showsRawCapture { return "Raw capture" }
-        return "Day digest"
+        return "Details"
     }
 
     private var digestUpdatedHelp: String {
@@ -521,37 +517,59 @@ struct CaptureDayView: View {
     @EnvironmentObject var app: AppState
     @ObservedObject var model: CaptureModel
     let onOpenContext: () -> Void
+    @State private var digestExpanded = false
 
     var body: some View {
         let meetings = model.meetings(in: app)
         let sessions = model.workSessions
-        VStack(alignment: .leading, spacing: 10) {
-            if model.blocks.isEmpty && meetings.isEmpty && model.shots.isEmpty {
-                ContentUnavailableView(
-                    "No activity recorded",
-                    systemImage: "clock",
-                    description: Text(app.settings.trackingEnabled
-                        ? "Blocks appear as you use your Mac (sampled every 5 s, idle-aware)."
-                        : "Day tracking is off — enable it in Settings."))
-                    .frame(maxHeight: .infinity)
-            } else {
-                HStack(spacing: 8) {
-                    Label("Work sessions", systemImage: "rectangle.stack")
-                        .font(WorkspaceTypography.sectionTitle)
-                        .accessibilityIdentifier("timeline.workSessions")
-                    Spacer()
-                }
-                if meetings.contains(where: { $0.endedAt == nil }) {
-                    TimelineView(.periodic(from: .now, by: 1)) { context in
-                        sessionList(sessions: sessions, meetings: meetings, now: context.date)
+        ScrollView {
+            VStack(alignment: .leading, spacing: LBTokens.Metric.sectionSpacing) {
+                DayActivityOverview(model: model)
+                    .accessibilityIdentifier("capture.dayOverview")
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Day Digest").font(.headline)
+                    if let digest = model.digest {
+                        let highlights = DayDigestPresentation(markdown: digest).atAGlanceMarkdown
+                        if !highlights.isEmpty, !digestExpanded {
+                            SelectableDigestText(highlights)
+                                .lineLimit(4)
+                        }
+                        DisclosureGroup("Show Full Digest", isExpanded: $digestExpanded) {
+                            DayDigestCard(model: model, identifier: "capture", showsControls: false)
+                                .padding(.top, 10)
+                        }
+                        .accessibilityIdentifier("timeline.fullDigest")
+                    } else {
+                        DayDigestCard(model: model, identifier: "capture", showsControls: false)
                     }
+                }.workspacePanel()
+
+                NeedsAttentionSection(threads: app.outcomeIndex.openUserActionThreads.filter { thread in
+                    thread.references.contains { Calendar.current.isDate($0.meetingStartedAt, inSameDayAs: model.day) }
+                }, limit: 3)
+
+                if model.blocks.isEmpty && meetings.isEmpty && model.shots.isEmpty {
+                    ContentUnavailableView(
+                        "No activity recorded",
+                        systemImage: "clock",
+                        description: Text(app.settings.trackingEnabled
+                            ? "Blocks appear as you use your Mac (sampled every 5 s, idle-aware)."
+                            : "Day tracking is off — enable it in Settings."))
                 } else {
-                    sessionList(sessions: sessions, meetings: meetings, now: Date())
+                    Text("Work Sessions").font(.headline)
+                        .accessibilityIdentifier("timeline.workSessions")
+                    if meetings.contains(where: { $0.endedAt == nil }) {
+                        TimelineView(.periodic(from: .now, by: 1)) { context in
+                            sessionList(sessions: sessions, meetings: meetings, now: context.date)
+                        }
+                    } else {
+                        sessionList(sessions: sessions, meetings: meetings, now: Date())
+                    }
                 }
             }
+            .padding(LBTokens.Metric.detailPadding)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private func sessionList(
@@ -560,8 +578,7 @@ struct CaptureDayView: View {
         now: Date
     ) -> some View {
         let items = TimelineDayItem.items(sessions: sessions, meetings: meetings, now: now)
-        return ScrollView {
-            LazyVStack(spacing: 6) {
+        return LazyVStack(spacing: 8) {
                 if items.isEmpty {
                     ContentUnavailableView(
                         "No meaningful sessions",
@@ -591,7 +608,6 @@ struct CaptureDayView: View {
                     .padding(.top, 4)
             }
             .padding(.bottom, 8)
-        }
     }
 
     /// Opens raw activity and screen moments full width in the main pane,
@@ -613,7 +629,7 @@ struct CaptureDayView: View {
                     .foregroundStyle(.secondary)
                     .frame(width: TimelineRailStyle.iconSize)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Browse raw capture")
+                    Text("Browse Raw Capture")
                         .font(TimelineRailStyle.title)
                     Text("\(CountLabel.format(model.blocks.count, "activity entry", plural: "activity entries")) · \(CountLabel.format(model.rewindFrames.count, "screen moment"))")
                         .font(TimelineRailStyle.detail.monospacedDigit())
@@ -676,11 +692,11 @@ struct TimelineRawCaptureView: View {
         let meetings = model.meetings(in: app)
         VStack(alignment: .leading, spacing: 14) {
             Text("Individual app activity and retained screen moments. Use this for exact evidence or cleanup.")
-                .font(WorkspaceTypography.metadata)
+                .font(Font.callout)
                 .foregroundStyle(.secondary)
             if !model.blocks.isEmpty || !meetings.isEmpty {
                 Label("App activity", systemImage: "calendar.day.timeline.left")
-                    .font(WorkspaceTypography.sectionTitle)
+                    .font(Font.headline)
                     .accessibilityIdentifier("timeline.track")
                 CaptureTrackView(
                     items: CaptureTrackItem.items(blocks: model.blocks, meetings: meetings, now: Date()),
@@ -979,7 +995,7 @@ private struct CaptureTrackView: View {
                             Text(meeting.title).font(.caption.weight(.medium)).lineLimit(1)
                         }
                         if h >= 38 {
-                            Text(meeting.durationLabel).font(.caption2).opacity(0.8)
+                            Text(meeting.displayDuration).font(.caption2).opacity(0.8)
                         }
                     }
                     .foregroundStyle(.white)
@@ -992,9 +1008,9 @@ private struct CaptureTrackView: View {
         }
         .buttonStyle(.plain)
         .offset(x: x, y: y)
-        .help("\(meeting.title)\n\(meeting.startedAt.formatted(date: .omitted, time: .shortened)) · \(meeting.durationLabel)")
+        .help("\(meeting.title)\n\(meeting.startedAt.formatted(date: .omitted, time: .shortened)) · \(meeting.displayDuration)")
         .accessibilityLabel("Meeting, \(meeting.displayTitle)")
-        .accessibilityValue("\(meeting.startedAt.formatted(date: .omitted, time: .shortened)), \(meeting.durationLabel)\(isSelected ? ", selected" : "")")
+        .accessibilityValue("\(meeting.startedAt.formatted(date: .omitted, time: .shortened)), \(meeting.displayDuration)\(isSelected ? ", selected" : "")")
         .accessibilityHint("Show this meeting in the context panel")
         .accessibilityIdentifier("capture.meeting.\(meeting.id.uuidString)")
     }

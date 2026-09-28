@@ -25,14 +25,14 @@ struct GettingStartedCard: View {
                                  tint: Brand.tealFill, size: 48)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Welcome to LokalBot").font(.title2.bold())
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.primary)
                             Text("Your private AI memory for work — on-device by default.")
-                                .font(.callout).foregroundStyle(.white.opacity(0.65))
+                                .font(.callout).foregroundStyle(.secondary)
                         }
                         Spacer()
                         Button { dismissed = true } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .font(.title3).foregroundStyle(.white.opacity(0.4))
+                                .font(.title3).foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
                         .help("Dismiss")

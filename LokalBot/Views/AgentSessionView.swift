@@ -23,7 +23,6 @@ struct AgentSessionView: View {
             conversation(width: geometry.size.width)
                 .frame(width: geometry.size.width, height: geometry.size.height)
         }
-        .background(WorkspacePalette.canvas(for: agentColorScheme))
         .toolbar { ToolbarItemGroup(placement: .primaryAction) { taskActions } }
         .inspector(isPresented: $showingResults) {
             AgentResultsPanel(controller: controller, selection: $preview)
@@ -53,7 +52,6 @@ struct AgentSessionView: View {
     private func conversation(width: CGFloat) -> some View {
         VStack(spacing: 0) {
             taskHeader.frame(width: readingWidth(width)).padding(.top, 20).padding(.bottom, 16)
-            Divider()
             if findVisible { findBar }
             transcript
             if let request = controller.pendingApprovals.first {
@@ -70,16 +68,21 @@ struct AgentSessionView: View {
                 .frame(width: readingWidth(width))
                 .padding(.top, 12)
                 .padding(.bottom, 14)
+                .overlay(alignment: .top) {
+                    LinearGradient(colors: [.clear, Color(nsColor: .windowBackgroundColor).opacity(0.7)],
+                                   startPoint: .top, endPoint: .bottom)
+                        .frame(height: 14).offset(y: -14).allowsHitTesting(false).accessibilityHidden(true)
+                }
         }
     }
 
     private var taskHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(sessions.selectedTab?.title ?? "New task")
-                .font(.system(size: 22, weight: .semibold)).lineLimit(2)
+                .font(.title2.weight(.semibold)).lineLimit(2)
                 .help(sessions.selectedTab?.title ?? "New task")
                 .accessibilityIdentifier("agent.taskTitle")
-            Text(controller.taskStatus).font(WorkspaceTypography.metadata).foregroundStyle(.secondary)
+            Text(controller.taskStatus).font(Font.callout).foregroundStyle(.secondary)
         }.frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
     }
 
@@ -188,7 +191,7 @@ struct AgentSessionView: View {
                     Divider().padding(.top, 16).padding(.bottom, 20)
                 }
                 Text(text).font(.system(size: sessions.textSize)).textSelection(.enabled)
-                    .padding(12).background(.quaternary.opacity(0.3), in: RoundedRectangle(cornerRadius: 14))
+                    .padding(12).lbGroupedSurface()
                 HStack(spacing: 16) {
                     copyButton(text)
                     Menu {
@@ -255,7 +258,7 @@ struct AgentSessionView: View {
                 Button("Reconnect") { Task { _ = await sessions.start(taskID) } }.accessibilityIdentifier("agent.restart")
                 if controller.failedPrompt != nil { Button("Review & retry") { controller.reviewRetry(); sessions.composerFocusRequest += 1 } }
             }
-        }.padding(14).background(.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+        }.padding(14).lbStatusSurface(.orange)
     }
     private var results: [AgentResultPreview] { controller.items.compactMap(AgentResultPreview.tool) }
     private func show(_ value: AgentResultPreview) { preview = value; showingResults = true }
@@ -272,7 +275,7 @@ private struct AgentMessageActionStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 12, weight: .semibold))
+            .font(.callout.weight(.semibold))
             .foregroundStyle(enabled ? Color.primary : Color.secondary)
             .opacity(configuration.isPressed ? 0.65 : 1)
             .padding(.vertical, 4)

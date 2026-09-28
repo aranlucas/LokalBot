@@ -16,7 +16,7 @@ struct ExclusionRulesEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
-            Text(title).font(WorkspaceTypography.metadataEmphasis)
+            Text(title).font(Font.callout.weight(.semibold))
             ForEach(Array(rules.enumerated()), id: \.offset) { index, rule in
                 HStack {
                     Label {
@@ -25,7 +25,7 @@ struct ExclusionRulesEditor: View {
                         ruleIcon(rule)
                     }
                     if kind != .applications, !validDomain(rule) {
-                        Text("Legacy rule · review").font(WorkspaceTypography.metadata).foregroundStyle(Brand.amber)
+                        Text("Legacy rule · review").font(Font.callout).foregroundStyle(Brand.amber)
                     }
                     Spacer()
                     Button {

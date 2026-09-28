@@ -32,11 +32,23 @@ struct MeetingSpeakerPresentation {
     private var replacements: [String: String] = [:]
     private var ownerIdentities: [String: SpeakerAttribution.Identity] = [:]
     private var identities: [String: SpeakerAttribution.Identity] = [:]
+    private var colorIndices: [String: Int] = [:]
 
     init(transcript: Transcript?) {
         guard let transcript else { return }
         let roster = transcript.speakerRoster
         identities = roster.mapValues(\.identity)
+        var nextColor = 1
+        for segment in transcript.segments {
+            let key = Transcript.canonicalSpeakerKey(segment.speaker)
+            guard colorIndices[key] == nil else { continue }
+            if roster[key]?.identity == .user {
+                colorIndices[key] = 0
+            } else {
+                colorIndices[key] = nextColor
+                nextColor += 1
+            }
+        }
         for group in Dictionary(grouping: roster.values, by: { $0.name.lowercased() }).values {
             if let only = group.first, group.count == 1 { ownerIdentities[only.name.lowercased()] = only.identity }
         }
@@ -69,6 +81,11 @@ struct MeetingSpeakerPresentation {
         SpeakerDisplayName.label(
             names[Transcript.canonicalSpeakerKey(key)] ?? transcript.displaySpeaker(for: key),
             identity: identities[Transcript.canonicalSpeakerKey(key)] ?? .unresolved)
+    }
+
+    /// Stable across alias edits and the action-prioritized review ordering.
+    func colorIndex(for key: String) -> Int {
+        colorIndices[Transcript.canonicalSpeakerKey(key)] ?? 1
     }
 
     /// An action owner as people should read it ("You", "Other speaker").

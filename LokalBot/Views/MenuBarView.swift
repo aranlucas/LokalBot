@@ -22,6 +22,7 @@ struct MenuBarLabel: View {
         if app.isRecording {
             HStack(spacing: 3) {
                 Image(systemName: "record.circle.fill")
+                    .foregroundStyle(LBTokens.Palette.recording)
                 MeetingRecordingTimerText(recording: app.recording)
             }
                 .monospacedDigit()
@@ -169,7 +170,7 @@ struct MenuBarView: View {
             footer
         }
         .padding(12)
-        .frame(width: 320)
+        .frame(width: 340)
         .onAppear {
             // Register so non-View code (AppDelegate reopen, AppState first-run
             // onboarding) can open windows even when none are on screen.
@@ -182,35 +183,21 @@ struct MenuBarView: View {
     // MARK: Recording status
 
     private var statusCard: some View {
-        HeroPanel(radius: Brand.Radius.panel) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 10) {
-                    statusDot
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(statusTitle)
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                        Text(statusSubtitle)
-                            .font(.caption).foregroundStyle(.white.opacity(0.65)).lineLimit(1)
-                    }
-                    Spacer()
-                    if app.isRecording || app.dictation.state.isRecording {
-                        // MenuBarExtra keeps this view mounted after its popover
-                        // closes, so never leave a display-linked animation here.
-                        LiveWaveform(barCount: 7, barWidth: 3, maxHeight: 14,
-                                     animated: false)
-                    }
-                }
-
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                statusDot
+                Text(statusTitle).font(.headline)
+                Spacer()
                 if app.isRecording || app.dictation.state.isWorking {
-                    primaryTimer
-                        .font(.system(size: 30, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(.white)
-                    Label(audioSourceLabel, systemImage: "waveform")
-                        .font(.caption).foregroundStyle(.white.opacity(0.65))
+                    primaryTimer.font(.body.monospacedDigit())
                 }
-
+            }
+            Text(statusSubtitle).font(.callout).foregroundStyle(.secondary).lineLimit(2)
+            if app.isRecording || app.dictation.state.isWorking {
+                Label(audioSourceLabel, systemImage: "waveform")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+            HStack(spacing: 8) {
                 Button {
                     if app.isRecording {
                         app.stopRecording()
@@ -221,26 +208,18 @@ struct MenuBarView: View {
                     }
                 } label: {
                     Label(primaryActionTitle, systemImage: primaryActionIcon)
-                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                .buttonStyle(.bordered)
                 .tint((app.isRecording || app.dictation.state.isRecording) ? .red : Brand.tealFill)
-
                 if app.isRecording {
-                    Button {
-                        app.showLiveMeeting()
-                    } label: {
-                        Label("Live transcript & notes", systemImage: "text.bubble")
-                            .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
+                    Button("Live Transcript…") { app.showLiveMeeting() }
+                        .buttonStyle(.bordered)
                 }
             }
         }
-        .overlay(
-            RoundedRectangle(cornerRadius: Brand.Radius.panel)
-                .strokeBorder(app.isRecording ? Brand.recording.opacity(0.5) : Color.clear))
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .lbStatusSurface(app.isRecording || app.dictation.state.isRecording ? .red : .gray)
     }
 
     /// Keep the always-mounted menu extra static while recording. Repeating
@@ -301,10 +280,10 @@ struct MenuBarView: View {
     }
 
     private var primaryActionTitle: String {
-        if app.isRecording { return "Stop recording" }
+        if app.isRecording { return "Stop Recording" }
         if app.dictation.isStarting { return "Cancel dictation" }
         switch app.dictation.state {
-        case .idle: return "Record now"
+        case .idle: return "Record Now"
         case .recording: return "Stop dictation"
         case .transcribing, .composing: return "Cancel dictation"
         }
@@ -371,7 +350,7 @@ struct MenuBarView: View {
                                         .lineLimit(1)
                                 }
                                 Spacer(minLength: 8)
-                                Text(meeting.durationLabel)
+                                Text(meeting.displayDuration)
                                     .font(.caption2.monospacedDigit())
                                     .foregroundStyle(.secondary)
                             }
@@ -410,51 +389,29 @@ struct MenuBarView: View {
     // MARK: Footer
 
     private var footer: some View {
-        HStack(spacing: 8) {
-            Button {
-                WindowAccess.shared.open("quick-recall")
-            } label: {
-                Label("Ask", systemImage: "sparkle.magnifyingglass")
-                    .frame(maxWidth: .infinity)
+        VStack(alignment: .leading, spacing: 2) {
+            Divider().padding(.vertical, 4)
+            menuAction("Ask", icon: "sparkle.magnifyingglass") { WindowAccess.shared.open("quick-recall") }
+            menuAction("Open LokalBot", icon: "macwindow") { WindowAccess.shared.open("main") }
+            menuAction("Settings…", icon: "gearshape") { app.openSettings() }
+            if app.settings.trackingEnabled {
+                TrackingPauseButton(sampler: app.sampler, presentation: .overflowMenu)
+                    .padding(.horizontal, 8).padding(.vertical, 6)
             }
-            .buttonStyle(.bordered)
-
-            Button {
-                WindowAccess.shared.open("main")
-            } label: {
-                Label("Open App", systemImage: "macwindow")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-
-            Menu {
-                Button {
-                    app.openSettings()
-                } label: {
-                    Label("Settings", systemImage: "gearshape")
-                }
-
-                if app.settings.trackingEnabled {
-                    TrackingPauseButton(
-                        sampler: app.sampler,
-                        presentation: .overflowMenu
-                    )
-                }
-
-                Divider()
-                Button("Quit LokalBot", role: .destructive) { NSApp.terminate(nil) }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .frame(width: 24, height: 24)
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .help("More actions")
-            .accessibilityLabel("More actions")
+            Divider().padding(.vertical, 4)
+            menuAction("Quit LokalBot", icon: "power") { NSApp.terminate(nil) }
         }
-        .font(.callout)
-        .controlSize(.regular)
+        .buttonStyle(.plain)
+        .font(.body)
+    }
+
+    private func menuAction(_ title: String, icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: icon)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 8).padding(.vertical, 6)
+                .contentShape(Rectangle())
+        }
     }
 
     private var cotypingRow: some View {

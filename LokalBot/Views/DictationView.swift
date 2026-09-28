@@ -48,9 +48,9 @@ struct DictationView: View {
                 IconTile(systemImage: "mic", tint: Brand.tealFill, size: 32)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Dictation").font(WorkspaceTypography.bodyEmphasis)
+                    Text("Dictation").font(Font.body.weight(.semibold))
                     Text(statusText)
-                        .font(WorkspaceTypography.metadata)
+                        .font(Font.callout)
                         .settingsSecondary()
                 }
                 Spacer()
@@ -66,7 +66,7 @@ struct DictationView: View {
                 ForEach(DictationIntent.allCases) { Text($0.rawValue).tag($0) }
             } label: {
                 SettingsLabel("Intent", help: operation.dictationIntent.detail)
-            }.pickerStyle(.segmented).disabled(app.dictation.state != .idle || app.dictation.isStarting)
+            }.pickerStyle(.segmented).tint(Brand.tealFill).disabled(app.dictation.state != .idle || app.dictation.isStarting)
             if operation.dictationIntent == .compose {
                 Toggle("Use the focused window as context", isOn: Binding(
                     get: { operation.dictationUseScreenContext }, set: { app.settings.dictationUseScreenContext = $0 }))

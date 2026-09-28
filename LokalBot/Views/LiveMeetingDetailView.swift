@@ -30,17 +30,30 @@ struct LiveMeetingDetailView: View {
 
             HSplitView {
                 transcriptColumn
-                    .frame(minWidth: 320, maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(minWidth: 240, maxWidth: .infinity, maxHeight: .infinity)
                     .layoutPriority(1)
                     .splitPaneAccessibilityLabel("Live transcript")
                 notesColumn
-                    .frame(minWidth: 240, idealWidth: 300, maxHeight: .infinity)
+                    .frame(minWidth: 200, idealWidth: 300, maxHeight: .infinity)
                     .splitPaneAccessibilityLabel("Meeting notes")
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .padding(WorkspaceMetric.sectionGap)
+        .padding(.horizontal, LBTokens.Metric.detailPadding)
+        .padding(.top, 8)
+        .padding(.bottom, 20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { app.stopRecording() } label: {
+                    Label("Stop Recording", systemImage: "stop.circle.fill")
+                        .labelStyle(.titleAndIcon)
+                        .foregroundStyle(LBTokens.Palette.recordingText)
+                }
+                .tint(.red)
+                .accessibilityIdentifier("live.stop")
+            }
+        }
         .onAppear {
             loadNotes()
         }
@@ -54,32 +67,19 @@ struct LiveMeetingDetailView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(meeting.title).font(.title2.bold())
-                    .accessibilityIdentifier("live.title")
-                Spacer()
-                Button {
-                    app.stopRecording()
-                } label: {
-                    Label("Stop Recording", systemImage: "stop.circle.fill")
-                }
-                .tint(.red)
-                .primaryActionButton()
-                .accessibilityIdentifier("live.stop")
-            }
-            RecordingHealthStrip(recording: app.recording)
-            previewControls
+            Text(meeting.title).font(.largeTitle.bold())
+                .accessibilityIdentifier("live.title")
             HStack(spacing: 6) {
                 HStack(spacing: 6) {
                     StatusDot(color: Brand.recording, size: 7, pulses: true)
-                    Text("recording").font(.caption)
+                    Text("Recording").font(.callout)
                     LiveWaveform(barCount: 5, barWidth: 2.5, maxHeight: 10)
                     MeetingRecordingTimerText(recording: app.recording)
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 5)
-                .hudCapsule(shadowed: false)
+                .lbStatusSurface(.red)
                 BrandChip(icon: "calendar",
                           text: meeting.startedAt.formatted(date: .omitted, time: .shortened))
                 BrandChip(icon: "video", text: meeting.appName)
@@ -87,6 +87,7 @@ struct LiveMeetingDetailView: View {
                           text: meeting.hasSystemTrack ? "Mic + system" : "Mic only")
                     .help(meeting.hasSystemTrack ? "" : "Only your microphone is being recorded.")
             }
+            RecordingHealthStrip(recording: app.recording)
         }
     }
 
@@ -97,18 +98,18 @@ struct LiveMeetingDetailView: View {
             HStack {
                 switch transcriber.state {
                 case .running:
-                    Button("Pause preview") { transcriber.pause() }
+                    Button("Pause Preview") { transcriber.pause() }
                         .accessibilityIdentifier("live.pausePreview")
                 case .paused:
-                    Button("Resume preview") { transcriber.activate() }
+                    Button("Resume Preview") { transcriber.activate() }
                         .accessibilityIdentifier("live.resumePreview")
                 case .failed:
-                    Button("Retry preview") { transcriber.activate() }
+                    Button("Retry Preview") { transcriber.activate() }
                         .accessibilityIdentifier("live.retryPreview")
                 case .off:
-                    Button("Start live transcript preview") { transcriber.activate() }
+                    Button("Start Live Transcript Preview") { transcriber.activate() }
                         .accessibilityIdentifier("live.startPreview")
-                    Button("From beginning") { transcriber.activate(from: .beginning) }
+                    Button("From Beginning") { transcriber.activate(from: .beginning) }
                         .accessibilityIdentifier("live.previewFromBeginning")
                 }
             }
@@ -128,9 +129,8 @@ struct LiveMeetingDetailView: View {
 
     private var transcriptColumn: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Live transcript")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+            Text("Live Transcript").font(.headline)
+            previewControls
             if let error = transcriber.errorMessage, !transcriber.lines.isEmpty {
                 Label(error, systemImage: "exclamationmark.triangle")
                     .font(.callout).foregroundStyle(Brand.error)
@@ -138,7 +138,7 @@ struct LiveMeetingDetailView: View {
             }
             transcript
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 9))
+                .lbGroupedSurface()
             Text("Preview — the full transcript and summary arrive after the meeting.")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
@@ -194,7 +194,7 @@ struct LiveMeetingDetailView: View {
                     }
                     .overlay(alignment: .bottomTrailing) {
                         if !followingLive {
-                            Button("Follow live") {
+                            Button("Follow Live") {
                                 followingLive = true
                                 if let last = transcriber.lines.last { proxy.scrollTo(last.id, anchor: .bottom) }
                             }.buttonStyle(.bordered).padding(8)
@@ -218,13 +218,13 @@ struct LiveMeetingDetailView: View {
     private func lineView(_ line: LiveMeetingTranscriber.Line) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
             Text(Self.timestamp(line.time))
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.tertiary)
+                .font(.callout.monospacedDigit())
+                .foregroundStyle(LBTokens.Palette.accentText)
             Text(line.speaker == "local" || line.speaker == "me" ? "Me" : "Remote speaker")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             Text(line.text)
-                .font(.callout)
+                .font(LBTokens.Typography.reading)
                 .textSelection(.enabled)
         }
     }
@@ -233,19 +233,17 @@ struct LiveMeetingDetailView: View {
 
     private var notesColumn: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Notes")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+            Text("Meeting Notes").font(.headline)
             TextEditor(text: $notes)
                 .font(.callout)
                 .scrollContentBackground(.hidden)
                 .padding(6)
-                .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 9))
+                .lbGroupedSurface()
                 .accessibilityLabel("Live meeting notes")
                 .accessibilityIdentifier("live.notes")
                 .onChange(of: notes) { scheduleSave() }
             Text(notesSaveState)
-                .font(WorkspaceTypography.metadata)
+                .font(Font.callout)
                 .foregroundStyle(notesSaveState.hasPrefix("Not saved:") ? Brand.error : .secondary)
         }
         .padding(.leading, 12)

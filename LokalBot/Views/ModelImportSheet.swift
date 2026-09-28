@@ -40,7 +40,7 @@ struct ModelImportSheet: View {
                     } label: {
                         HStack {
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(model.id).font(.system(size: 12.5, weight: .medium))
+                                Text(model.id).font(.body.weight(.medium))
                                 Text("↓ \(model.downloads)   ♥ \(model.likes)")
                                     .font(.caption2).foregroundStyle(.secondary)
                             }

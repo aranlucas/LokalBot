@@ -34,12 +34,12 @@ struct AgentActivityGroup: View {
         } label: {
             HStack(spacing: 8) {
                 if running { ProgressView().controlSize(.mini) } else { Image(systemName: failed ? "exclamationmark.circle" : "checkmark.circle").foregroundStyle(failed ? Color.orange : Color.secondary) }
-                Text(group.summary).font(WorkspaceTypography.metadataEmphasis)
+                Text(group.summary).font(Font.callout.weight(.semibold))
                 if running { Text("In progress").font(.caption).foregroundStyle(.secondary) }
             }
         }
         .padding(.vertical, 8).padding(.horizontal, 10)
-        .background(.quaternary.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
+        .lbGroupedSurface()
         .onChange(of: searchQuery) {
             if !searchQuery.isEmpty && group.items.contains(where: { $0.searchableText.localizedCaseInsensitiveContains(searchQuery) }) { expanded = true }
         }

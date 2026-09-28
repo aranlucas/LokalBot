@@ -49,13 +49,13 @@ struct ModelSpeechSettingsSheet: View {
                 }
                 Text(download.isDownloaded ? "Downloaded. Voice synthesis runs locally."
                      : "Download once to use this voice offline.")
-                    .font(.system(size: 12)).foregroundStyle(.secondary)
+                    .font(.callout).foregroundStyle(.secondary)
                 if let error = sampleError ?? download.error {
                     Label(error, systemImage: "exclamationmark.triangle")
-                        .font(.system(size: 13)).foregroundStyle(.orange)
+                        .font(.body).foregroundStyle(.orange)
                 }
             }
-            .font(.system(size: 14)).padding(.horizontal, 24).padding(.bottom, 24)
+            .font(.body).padding(.horizontal, 24).padding(.bottom, 24)
             Divider()
             HStack { Spacer(); Button("Done") { dismiss() }.keyboardShortcut(.defaultAction) }.padding(20)
         }
@@ -118,7 +118,7 @@ struct ModelTranscriptionOptionsSheet: View {
         VStack(alignment: .leading, spacing: 0) {
             ModelSheetHeading(title: "Language & vocabulary", subtitle: "Options for the transcription model currently in use.")
             VStack(alignment: .leading, spacing: 18) {
-                Text(app.settings.transcriptionModelDisplayName).font(.system(size: 14, weight: .semibold))
+                Text(app.settings.transcriptionModelDisplayName).font(.body.weight(.semibold))
                 Picker("Language", selection: $app.settings.transcriptionLanguage) {
                     ForEach(TranscriptionLanguage.allCases) { Text($0.displayName).tag($0) }
                 }
@@ -126,10 +126,10 @@ struct ModelTranscriptionOptionsSheet: View {
                 .settingTarget("settings.transcriptionLanguage", selected: app.focusedSettingID)
                 if app.settings.transcriptionModel == .graniteTurbo {
                     Text("This model supports English only and does not use vocabulary prompts.")
-                        .font(.system(size: 12)).foregroundStyle(.secondary)
+                        .font(.callout).foregroundStyle(.secondary)
                 } else {
                     VStack(alignment: .leading, spacing: 7) {
-                        Text("Names and vocabulary").font(.system(size: 13, weight: .medium))
+                        Text("Names and vocabulary").font(.body.weight(.medium))
                         TextField("Names, acronyms, and domain vocabulary", text: $app.settings.transcriptionPrompt, axis: .vertical)
                             .lineLimit(3...6).textFieldStyle(.roundedBorder)
                             .settingTarget("settings.transcriptionPrompt", selected: app.focusedSettingID)
@@ -158,7 +158,7 @@ struct ModelSearchSettingsSheet: View {
                 Text("LokalBot manages this model and rebuilds the local index when it changes.")
                     .foregroundStyle(.secondary)
             }
-            .font(.system(size: 13)).padding(.horizontal, 24).padding(.bottom, 24)
+            .font(.body).padding(.horizontal, 24).padding(.bottom, 24)
             Divider()
             HStack { Spacer(); Button("Done") { dismiss() }.keyboardShortcut(.defaultAction) }.padding(20)
         }

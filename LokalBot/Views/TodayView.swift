@@ -14,8 +14,7 @@ struct TodayView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 32) {
-                header
+            VStack(alignment: .leading, spacing: LBTokens.Metric.sectionSpacing) {
                 nowCard
                 UpcomingMeetingSection(model: upcomingMeeting)
                 NeedsAttentionSection(
@@ -26,12 +25,24 @@ struct TodayView: View {
                 if let dream { previousDayCard(dream) }
                 if !gettingStartedDismissed { GettingStartedCard() }
             }
-            .padding(.horizontal, 36)
-            .padding(.vertical, 32)
+            .padding(.horizontal, LBTokens.Metric.detailPadding)
+            .padding(.top, 8)
+            .padding(.bottom, 28)
             .frame(maxWidth: WorkspaceMetric.todayMaxWidth, alignment: .leading)
             .frame(maxWidth: .infinity, alignment: .top)
         }
         .navigationTitle("Today")
+        .navigationSubtitle(Date().formatted(date: .complete, time: .omitted))
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) {
+                Button { app.openAsk(dayScope: model.day) } label: {
+                    Label("Ask About Today", systemImage: "sparkle.magnifyingglass")
+                }.accessibilityIdentifier("today.askDay")
+                Button { app.navSection = .timeline } label: {
+                    Label("Open Timeline", systemImage: "calendar.day.timeline.left")
+                }.accessibilityIdentifier("today.header")
+            }
+        }
         .overlay(alignment: .topTrailing) {
             if model.overviewLoading { ProgressView().controlSize(.small).padding(12) }
         }
@@ -78,24 +89,6 @@ struct TodayView: View {
         }
     }
 
-    private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Today")
-                    .font(WorkspaceTypography.display)
-                    .accessibilityIdentifier("today.header")
-                Text(Date().formatted(date: .complete, time: .omitted))
-                    .font(WorkspaceTypography.metadata).foregroundStyle(.secondary)
-            }
-            Spacer()
-            Button { app.navSection = .timeline } label: {
-                Label("Open timeline", systemImage: "calendar.day.timeline.left")
-            }
-            .buttonStyle(.workspaceLink)
-            .font(WorkspaceTypography.control)
-        }
-    }
-
     // MARK: Digest
 
     /// The digest is the page's main content, so it sits directly on the
@@ -106,23 +99,27 @@ struct TodayView: View {
                 HStack(alignment: .center, spacing: 12) {
                     digestTitle
                     Spacer(minLength: 12)
-                    DayDigestControls(model: model, identifier: "today").fixedSize()
+                    DayDigestControls(model: model, identifier: "today", showsAsk: false).fixedSize()
                 }
                 VStack(alignment: .leading, spacing: 10) {
                     digestTitle
-                    DayDigestControls(model: model, identifier: "today")
+                    DayDigestControls(model: model, identifier: "today", showsAsk: false)
                 }
             }
-            Divider()
-            DayDigestCard(model: model, identifier: "today", showsControls: false, mode: .today)
+            VStack(alignment: .leading, spacing: 18) {
+                DayActivityOverview(model: model, title: "Day So Far", showsLegend: false)
+                Divider()
+                DayDigestCard(model: model, identifier: "today", showsControls: false, mode: .today)
+            }
+            .padding(16)
+            .lbGroupedSurface()
         }
     }
 
     private var digestTitle: some View {
         HStack(spacing: 10) {
-            IconTile(systemImage: "sparkles", tint: Brand.tealFill, size: 28)
-                .accessibilityHidden(true)
-            Text("Day digest").font(WorkspaceTypography.sectionTitle)
+            Image(systemName: "sparkles").foregroundStyle(Brand.teal).accessibilityHidden(true)
+            Text("Day Digest").font(Font.headline)
         }
     }
 
@@ -150,29 +147,34 @@ struct TodayView: View {
 
     // MARK: Now
 
-    /// Live recording status; the title bar owns the recording control, so an
-    /// idle Today shows nothing here.
+    /// Same recording actions as the menu bar and Meetings toolbar.
     @ViewBuilder private var nowCard: some View {
         if let live = app.currentMeeting {
-            HeroPanel(radius: Brand.Radius.panel) {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 8) {
-                        StatusDot(color: Brand.recording, size: 9)
-                        Text("Recording — \(live.title)")
-                            .font(.headline).foregroundStyle(.white)
-                        Spacer()
-                        LiveWaveform(barCount: 7, barWidth: 3, maxHeight: 14)
-                    }
-                    HStack(spacing: 8) {
-                        Button {
-                            app.showLiveMeeting()
-                        } label: {
-                            Label("Live transcript & notes", systemImage: "text.bubble")
-                        }
-                        .primaryActionButton()
-                    }
+            HStack(spacing: 10) {
+                StatusDot(color: Brand.recording)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Recording — \(live.title)").font(.body.weight(.semibold))
+                    MeetingRecordingTimerText(recording: app.recording).font(.callout.monospacedDigit())
                 }
+                Spacer()
+                Button("Live Transcript & Notes") { app.showLiveMeeting() }.buttonStyle(.bordered)
+                Button("Stop Recording") { app.stopRecording() }.buttonStyle(.bordered).tint(.red)
             }
+            .padding(14)
+            .lbStatusSurface(.red)
+        } else {
+            HStack(spacing: 10) {
+                Image(systemName: "waveform.circle").foregroundStyle(.secondary)
+                Text("Nothing recording right now")
+                Spacer(minLength: 8)
+                Button("Record Now") {
+                    app.startRecording(context: app.recordingContext(for: app.detector.activeApp))
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("today.record")
+            }
+            .padding(14)
+            .lbGroupedSurface()
         }
     }
 

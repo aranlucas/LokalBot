@@ -40,20 +40,17 @@ final class BrandContrastTests: XCTestCase {
     // MARK: - Surfaces
 
     private func surfaces(for scheme: ColorScheme) -> [(String, NSColor)] {
-        var result: [(String, NSColor)] = [
-            ("canvas", NSColor(WorkspacePalette.canvas(for: scheme))),
-            ("surface", NSColor(WorkspacePalette.surface(for: scheme))),
-            ("conversation column", NSColor(WorkspacePalette.conversationColumn(for: scheme))),
-            ("control", NSColor(WorkspacePalette.control(for: scheme))),
-            ("settings canvas", NSColor(SettingsPalette.canvas(scheme))),
-            ("settings panel", NSColor(SettingsPalette.panel(scheme))),
-        ]
-        // Nested quiet panels (`.quaternary` fills over the canvas) measured
-        // from the 1440×900 design captures; they are the darkest light and
-        // lightest dark surfaces accent text sits on.
-        result.append(("nested panel", scheme == .dark
-            ? NSColor(srgbRed: 0x2E / 255, green: 0x32 / 255, blue: 0x33 / 255, alpha: 1)
-            : NSColor(srgbRed: 0xE6 / 255, green: 0xEC / 255, blue: 0xE8 / 255, alpha: 1)))
+        let appearance: NSAppearance.Name = scheme == .dark ? .darkAqua : .aqua
+        var result: [(String, NSColor)] = []
+        let groupFill = resolve(NSColor(LBTokens.Palette.groupFill), in: appearance)
+        for (name, color) in [("window", NSColor.windowBackgroundColor),
+                              ("content", NSColor.textBackgroundColor),
+                              ("control", NSColor.controlBackgroundColor)] {
+            let surface = resolve(color, in: appearance)
+            result.append((name, surface))
+            result.append(("grouped \(name)", blend(groupFill, over: surface,
+                                                     alpha: Double(groupFill.alphaComponent))))
+        }
         return result
     }
 

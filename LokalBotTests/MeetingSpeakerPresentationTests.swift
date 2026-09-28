@@ -74,6 +74,21 @@ final class MeetingSpeakerPresentationTests: XCTestCase {
         XCTAssertEqual(display.speaker("them", in: transcript), "Me")
         XCTAssertEqual(display.owner("Me", isForUser: false), "Me")
         XCTAssertTrue(transcript.confirmedUserSpeakerIDs.isEmpty)
+        XCTAssertEqual(display.colorIndex(for: "them"), 1)
+    }
+
+    func testSpeakerColorsFollowFirstAppearanceAndConfirmedIdentity() {
+        let transcript = Transcript(segments: [
+            .init(start: 0, end: 1, speaker: "them 2", text: "First voice."),
+            .init(start: 1, end: 2, speaker: "me", text: "My voice.",
+                  attribution: .init(source: .microphone, identity: .user, method: .confirmation)),
+            .init(start: 2, end: 3, speaker: "them", text: "Third voice."),
+            .init(start: 3, end: 4, speaker: "them 2", text: "First voice again.")
+        ], engine: "fixture", speakerAliases: ["me": "Ana"])
+        let display = MeetingSpeakerPresentation(transcript: transcript)
+        XCTAssertEqual(display.colorIndex(for: "them 2"), 1)
+        XCTAssertEqual(display.colorIndex(for: "me"), 0)
+        XCTAssertEqual(display.colorIndex(for: "them"), 2)
     }
 
     private func fixture(_ speakers: [(String, String)]) -> Transcript {

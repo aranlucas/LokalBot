@@ -283,7 +283,7 @@ struct SelectableDigestText: View {
 
     private static func baseFont(for style: Style, fallback: Font) -> Font {
         switch style {
-        case .editorial: return WorkspaceTypography.body
+        case .editorial: return Font.body
         case .agent: return fallback
         case .standard: return fallback
         }
@@ -494,9 +494,9 @@ struct SelectableDigestText: View {
         switch style {
         case .editorial, .agent:
             switch level {
-            case 1: return WorkspaceTypography.conversationTitle
-            case 2: return WorkspaceTypography.sectionTitle
-            default: return WorkspaceTypography.bodyEmphasis
+            case 1: return Font.title2.weight(.semibold)
+            case 2: return Font.headline
+            default: return Font.body.weight(.semibold)
             }
         case .standard:
             switch level {
@@ -610,7 +610,7 @@ struct SelectableDigestText: View {
                digits.allSatisfy(\.isNumber),
                let lowerBound = AttributedString.Index(open, within: attributedText),
                let upperBound = AttributedString.Index(afterClose, within: attributedText) {
-                attributedText[lowerBound..<upperBound].font = WorkspaceTypography.metadataEmphasis
+                attributedText[lowerBound..<upperBound].font = Font.callout.weight(.semibold)
                 attributedText[lowerBound..<upperBound].foregroundColor = Brand.teal
             }
 

@@ -216,7 +216,7 @@ private struct ConversationDateDivider: View {
     var body: some View {
         HStack(spacing: 10) {
             Text(title)
-                .font(WorkspaceTypography.metadataEmphasis)
+                .font(Font.callout.weight(.semibold))
                 .foregroundStyle(.secondary)
             Color.primary.opacity(0.10)
                 .frame(height: 1)
@@ -269,7 +269,7 @@ private struct EditorialTurn: View {
                 systemImage: "person.crop.circle",
                 scopeSummary: showsQuestionScope ? questionScopeSummary : nil)
             Text(message.text)
-                .font(WorkspaceTypography.conversationTitle)
+                .font(Font.title2.weight(.semibold))
                 .lineLimit(questionIsExpanded ? nil : 3)
                 .textSelection(.enabled)
             if ChatTranscriptPresentation.isLongQuestion(message.text), !isLatestQuestion {
@@ -277,7 +277,7 @@ private struct EditorialTurn: View {
                     questionExpanded.toggle()
                 }
                 .buttonStyle(.plain)
-                .font(WorkspaceTypography.metadataEmphasis)
+                .font(Font.callout.weight(.semibold))
                 .foregroundStyle(Brand.teal)
                 .frame(minHeight: 28)
                 .accessibilityIdentifier("chat.question.expand")
@@ -408,11 +408,11 @@ private struct EditorialTurn: View {
             Image(systemName: systemImage)
                 .frame(width: 14)
             Text(title)
-                .font(WorkspaceTypography.metadataEmphasis)
+                .font(Font.callout.weight(.semibold))
             if !message.createdAtIsEstimated {
                 Text("·").foregroundStyle(.tertiary)
                 Text(message.createdAt.formatted(date: .omitted, time: .shortened))
-                    .font(WorkspaceTypography.metadata.monospacedDigit())
+                    .font(Font.callout.monospacedDigit())
             }
             if let scopeSummary {
                 Text("·").foregroundStyle(.tertiary)
@@ -420,7 +420,7 @@ private struct EditorialTurn: View {
                 Text(scopeSummary).lineLimit(1)
             }
         }
-        .font(WorkspaceTypography.metadata)
+        .font(Font.callout)
         .foregroundStyle(Color.primary.opacity(0.68))
         .accessibilityElement(children: .combine)
     }
@@ -437,9 +437,9 @@ private struct EditorialTurn: View {
                 .foregroundStyle(tint)
                 .frame(width: 20, height: 20)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(WorkspaceTypography.bodyEmphasis)
+                Text(title).font(Font.body.weight(.semibold))
                 Text(detail)
-                    .font(WorkspaceTypography.metadata)
+                    .font(Font.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -450,7 +450,7 @@ private struct EditorialTurn: View {
                 } label: {
                     Label("Retry", systemImage: "arrow.clockwise")
                 }
-                .buttonStyle(ChatAnswerActionButtonStyle())
+                .buttonStyle(.bordered)
                 .accessibilityIdentifier("chat.answer.retry")
             }
         }
@@ -511,7 +511,7 @@ private struct EditorialTurn: View {
                 .accessibilityIdentifier("chat.answer.stop")
             }
         }
-        .buttonStyle(ChatAnswerActionButtonStyle())
+        .buttonStyle(.bordered)
         .padding(.top, 2)
     }
 
@@ -641,23 +641,6 @@ private struct EditorialTurn: View {
     }
 }
 
-private struct ChatAnswerActionButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(WorkspaceTypography.metadataEmphasis)
-            .foregroundStyle(
-                isEnabled ? Color.primary.opacity(0.72) : Color.secondary.opacity(0.45))
-            .padding(.horizontal, 7)
-            .frame(minHeight: 28)
-            .background(
-                configuration.isPressed ? Color.primary.opacity(0.08) : Color.clear,
-                in: Capsule())
-            .contentShape(Capsule())
-    }
-}
-
 /// One compact evidence disclosure matching inline `[n]` references in the answer.
 private struct EvidenceDisclosure: View {
     @EnvironmentObject var app: AppState
@@ -676,16 +659,16 @@ private struct EvidenceDisclosure: View {
                 }
             }
             Text("LokalBot used only the sources enabled for this question. Citation numbers remain stable even when a local source is later removed.")
-                .font(WorkspaceTypography.metadata)
+                .font(Font.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 10)
         } label: {
             HStack(spacing: 8) {
                 Label("Evidence", systemImage: "checkmark.shield")
-                    .font(WorkspaceTypography.control)
+                    .font(Font.body)
                 Text(evidenceSummary)
-                    .font(WorkspaceTypography.metadata)
+                    .font(Font.callout)
                     .foregroundStyle(.secondary)
             }
         }
@@ -721,21 +704,21 @@ private struct EvidenceDisclosure: View {
         } label: {
             HStack(spacing: 10) {
                 Text("\(number)")
-                    .font(WorkspaceTypography.metadataEmphasis.monospacedDigit())
+                    .font(Font.callout.weight(.semibold).monospacedDigit())
                     .foregroundStyle(.white)
-                    .frame(width: 28, height: 28)
-                    .background(Brand.tealFill, in: Circle())
+                    .frame(width: 20, height: 20)
+                    .background(Brand.tealFill, in: RoundedRectangle(cornerRadius: 4))
                 Image(systemName: source.icon)
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(.secondary)
                     .frame(width: 20)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(source.title)
-                        .font(WorkspaceTypography.rowTitle)
+                        .font(Font.body.weight(.semibold))
                         .foregroundStyle(source.available ? .primary : .secondary)
                         .lineLimit(1)
                     Text(source.detail)
-                        .font(WorkspaceTypography.metadata).foregroundStyle(.secondary)
+                        .font(Font.callout).foregroundStyle(.secondary)
                 }
                 Spacer()
                 if source.available {
@@ -744,7 +727,7 @@ private struct EvidenceDisclosure: View {
                         .foregroundStyle(.tertiary)
                 } else {
                     Text("Unavailable")
-                        .font(WorkspaceTypography.metadata)
+                        .font(Font.callout)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -817,7 +800,7 @@ private struct WorkedLine: View {
                             .font(.caption2)
                     }
                 }
-                .font(WorkspaceTypography.metadata)
+                .font(Font.callout)
                 .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
@@ -837,7 +820,7 @@ private struct ActivityRow: View {
         HStack(spacing: 6) {
             if activity.done {
                 Image(systemName: activity.icon).font(.caption2).foregroundStyle(.secondary)
-                Text(activity.text).font(WorkspaceTypography.metadata).foregroundStyle(.secondary)
+                Text(activity.text).font(Font.callout).foregroundStyle(.secondary)
             } else {
                 LoadingStateLabel(activity.text, controlSize: .mini)
             }
@@ -863,17 +846,16 @@ private struct ConversationListContent: View {
     var body: some View {
         VStack(spacing: 0) {
             historyHeader
-            Divider()
             List(selection: conversationSelection) {
                 if historySections.isEmpty {
                     Text("No questions match “\(historyQuery)”.")
-                        .font(WorkspaceTypography.metadata)
+                        .font(Font.callout)
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(historySections, id: \.title) { section in
                         Group {
                             Text(section.title)
-                                .font(WorkspaceTypography.metadataEmphasis)
+                                .font(Font.callout.weight(.semibold))
                                 .workspaceTextRole(.metadata)
                                 .accessibilityAddTraits(.isHeader)
                             ForEach(section.conversations) { conversation in
@@ -893,11 +875,10 @@ private struct ConversationListContent: View {
                     }
                 }
             }
-            .listStyle(.sidebar)
+            .listStyle(.inset)
             .scrollContentBackground(.hidden)
-            .tint(Brand.teal)
+            .tint(Brand.tealFill)
         }
-        .background(WorkspacePalette.conversationColumn(for: colorScheme))
         // One native title owns both the visible toolbar label and the window's
         // accessibility title. The detail column deliberately adds no second
         // Ask label.
@@ -924,27 +905,34 @@ private struct ConversationListContent: View {
 
     private var historyHeader: some View {
         VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Conversations").font(.title3.bold())
+                    Text("\(model.conversations.count) conversations").font(.callout).foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 4)
             Button {
                 model.newConversation()
             } label: {
-                Label("New conversation", systemImage: "square.and.pencil")
-                    .font(WorkspaceTypography.control)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                Label("New Conversation", systemImage: "square.and.pencil").labelStyle(.iconOnly)
+                    .font(Font.body)
                     .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.bordered)
             .foregroundStyle(.primary)
             .frame(minHeight: 28)
             .keyboardShortcut("n", modifiers: [.command])
             .help("Start a new question")
             .accessibilityIdentifier("chat.new")
 
+            }
+
             HStack(spacing: 7) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
                 TextField("Search questions", text: $historyQuery)
                     .textFieldStyle(.plain)
-                    .font(WorkspaceTypography.control)
+                    .font(Font.body)
                     .accessibilityIdentifier("chat.history.search")
                 if !historyQuery.isEmpty {
                     Button {
@@ -963,7 +951,7 @@ private struct ConversationListContent: View {
             .workspaceControl()
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 9)
+        .padding(.vertical, 14)
     }
 
     private var deletionConfirmationPresented: Binding<Bool> {
@@ -1019,10 +1007,10 @@ private struct ConversationListContent: View {
         return Button { model.select(conversation.id) } label: {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(WorkspaceTypography.rowTitle)
+                    .font(Font.body.weight(.semibold))
                     .lineLimit(1)
                 Text(timestamp)
-                    .font(WorkspaceTypography.metadata).foregroundStyle(.secondary)
+                    .font(Font.callout).foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 5)

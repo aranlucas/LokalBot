@@ -1,4 +1,5 @@
 import XCTest
+import SwiftUI
 @testable import LokalBot
 
 /// Citation-marker parsing: meeting and screen markers the assistant emits are
@@ -115,7 +116,7 @@ final class ChatCitationTests: XCTestCase {
             AttributedString.Index(citation.upperBound, within: rendered))
         let citationRun = try XCTUnwrap(rendered[lowerBound..<upperBound].runs.first)
 
-        XCTAssertEqual(citationRun.font, WorkspaceTypography.metadataEmphasis)
+        XCTAssertEqual(citationRun.font, Font.callout.weight(.semibold))
         XCTAssertEqual(citationRun.foregroundColor, Brand.teal)
     }
 

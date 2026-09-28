@@ -175,6 +175,7 @@ struct LokalBotApp: App {
         }
         .defaultSize(width: 1180, height: 740)
         .commands {
+            SidebarCommands()
             AgentCommands(app: app)
             CommandMenu("Recording") {
                 Button(app.isRecording ? "Stop Recording" : "Start Recording") {

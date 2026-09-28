@@ -9,11 +9,11 @@ struct QuickRecallRow: View {
     @State private var hovered = false
 
     private var accent: Color {
-        colorScheme == .dark ? Brand.tealBright : Brand.teal
+        LBTokens.Palette.accentText
     }
 
     private var background: Color {
-        if selected { return accent.opacity(contrast == .increased ? 0.20 : 0.10) }
+        if selected { return LBTokens.Palette.accentFill }
         return hovered ? Color.primary.opacity(0.05) : .clear
     }
 
@@ -31,7 +31,7 @@ struct QuickRecallRow: View {
                     // Slot is always reserved so selection doesn't reflow the line.
                     Image(systemName: "return")
                         .font(.caption)
-                        .foregroundStyle(accent)
+                        .foregroundStyle(selected ? .white : accent)
                         .opacity(selected ? 1 : 0)
                         .frame(width: 14, alignment: .trailing)
                         .accessibilityHidden(true)
@@ -39,7 +39,7 @@ struct QuickRecallRow: View {
                 if let snippet = row.snippet, !snippet.isEmpty {
                     highlighted(snippet)
                         .font(.callout)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(selected ? Color.white : Color.secondary)
                         .lineLimit(1)
                 }
                 HStack(spacing: 5) {
@@ -59,9 +59,10 @@ struct QuickRecallRow: View {
                     }
                 }
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(selected ? Color.white : Color.secondary)
             }
         }
+        .foregroundStyle(selected ? Color.white : Color.primary)
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(
@@ -69,7 +70,8 @@ struct QuickRecallRow: View {
             in: RoundedRectangle(cornerRadius: Brand.Radius.control, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: Brand.Radius.control, style: .continuous)
-                .strokeBorder(selected ? accent.opacity(contrast == .increased ? 0.8 : 0.3) : .clear)
+                .strokeBorder(selected && contrast == .increased ? Color.primary : .clear,
+                              lineWidth: 2)
         }
         .onHover { hovered = $0 }
     }
@@ -95,7 +97,7 @@ struct QuickRecallRow: View {
         } else {
             Image(systemName: row.icon)
                 .font(.title3)
-                .foregroundStyle(accent)
+                .foregroundStyle(selected ? .white : accent)
                 .frame(width: 40, height: 40)
                 .background(.quaternary.opacity(0.45),
                             in: RoundedRectangle(cornerRadius: Brand.Radius.row))
@@ -105,7 +107,7 @@ struct QuickRecallRow: View {
     private func highlighted(_ snippet: String) -> Text {
         SnippetHighlighter.segments(snippet).reduce(Text("")) { text, segment in
             text + (segment.isMatch
-                ? Text(segment.text).bold().foregroundStyle(.primary)
+                ? Text(segment.text).bold().foregroundStyle(selected ? Color.white : Color.primary)
                 : Text(segment.text))
         }
     }

@@ -77,7 +77,7 @@ private struct AskContent: View {
                     Spacer()
                     Button("Retry") { model.retryPersistence() }
                 }
-                .font(WorkspaceTypography.metadata)
+                .font(Font.callout)
                 .padding(12)
                 .accessibilityIdentifier("ask.persistenceError")
             }
@@ -224,6 +224,11 @@ private struct AskContent: View {
         .padding(.bottom, 14)
         .workspaceReadingWidth()
         .frame(maxWidth: .infinity)
+        .overlay(alignment: .top) {
+            LinearGradient(colors: [.clear, Color(nsColor: .windowBackgroundColor).opacity(0.7)],
+                           startPoint: .top, endPoint: .bottom)
+                .frame(height: 14).offset(y: -14).allowsHitTesting(false).accessibilityHidden(true)
+        }
     }
 
     private var composerPanel: some View {
@@ -232,11 +237,11 @@ private struct AskContent: View {
 
         return VStack(alignment: .leading, spacing: 12) {
             TextField(
-                "Search or ask about your work…",
+                "Ask your work memory",
                 text: queryBinding,
                 axis: .vertical)
                 .textFieldStyle(.plain)
-                .font(WorkspaceTypography.body)
+                .font(Font.body)
                 .lineLimit(1...4)
                 .frame(minWidth: 60, maxWidth: .infinity, alignment: .topLeading)
                 .focused($inputFocused)
@@ -341,7 +346,7 @@ private struct AskContent: View {
                  ? "Answer sources: \(CountLabel.format(groupedMeetings.count, "meeting")) · \(CountLabel.format(answerScreenIDs.count, "screen moment"))"
                  : "Answer sources: \(sourceSummary) · \(timeScopeLabel)")
         }
-        .font(WorkspaceTypography.metadata)
+        .font(Font.callout)
         .foregroundStyle(.secondary)
         .accessibilityIdentifier("ask.answerScope")
     }
@@ -386,7 +391,7 @@ private struct AskContent: View {
             sourceScopeControl
             dateScopeControls
         }
-        .font(WorkspaceTypography.metadataEmphasis)
+        .font(Font.callout.weight(.semibold))
         .controlSize(.small)
     }
 
@@ -448,7 +453,7 @@ private struct AskContent: View {
                 HStack(spacing: 8) { searchFilterButtons }
                 VStack(alignment: .leading, spacing: 6) { searchFilterButtons }
             }
-            .font(WorkspaceTypography.control)
+            .font(Font.body)
             .controlSize(.small)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("ask.activeFilters")
@@ -505,7 +510,7 @@ private struct AskContent: View {
         Button { showingTimeScope.toggle() } label: {
             Label(timeScopeLabel, systemImage: "calendar")
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(.bordered)
         .foregroundStyle(.primary)
         .fixedSize()
         .popover(isPresented: $showingTimeScope, arrowEdge: .bottom) { timeScopePopover }
@@ -515,7 +520,7 @@ private struct AskContent: View {
 
     private var timeScopePopover: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Date scope").font(WorkspaceTypography.sectionTitle)
+            Text("Date scope").font(Font.headline)
             Text("Applies to search results and answers across all selected sources.")
                 .workspaceTextRole(.supporting)
                 .fixedSize(horizontal: false, vertical: true)
@@ -570,7 +575,7 @@ private struct AskContent: View {
                 Text(inferenceState.label)
                     .foregroundStyle(inferenceState.isRemote || inferenceState.isBlocked ? .primary : .secondary)
             }
-            .font(WorkspaceTypography.metadata)
+            .font(Font.callout)
             .frame(minHeight: 24)
             .contentShape(Rectangle())
         }
@@ -592,7 +597,7 @@ private struct AskContent: View {
     private var pinnedContextRow: some View {
         HStack(spacing: 8) {
             Label("Context", systemImage: "pin.fill")
-                .font(WorkspaceTypography.metadataEmphasis)
+                .font(Font.callout.weight(.semibold))
                 .foregroundStyle(.secondary)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
@@ -601,9 +606,9 @@ private struct AskContent: View {
                             ScreenThumbnailView(snapshotID: context.snapshotID, height: 34)
                                 .frame(width: 54)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(context.app).font(WorkspaceTypography.metadataEmphasis).lineLimit(1)
+                                Text(context.app).font(Font.callout.weight(.semibold)).lineLimit(1)
                                 Text(context.timestamp.formatted(date: .omitted, time: .shortened))
-                                    .font(WorkspaceTypography.metadata.monospacedDigit())
+                                    .font(Font.callout.monospacedDigit())
                                     .foregroundStyle(.secondary)
                             }
                             Button {
@@ -623,7 +628,7 @@ private struct AskContent: View {
             }
             Button("Clear") { clearPinnedScreens(restoringScope: true) }
                 .buttonStyle(.plain)
-                .font(WorkspaceTypography.metadata)
+                .font(Font.callout)
                 .foregroundStyle(.secondary)
         }
         .accessibilityIdentifier("ask.screen.context")
@@ -858,11 +863,11 @@ private struct AskContent: View {
                 .font(.system(size: 32))
                 .accessibilityHidden(true)
             Text("Ask your work memory")
-                .font(WorkspaceTypography.display)
+                .font(Font.largeTitle.bold())
                 .foregroundStyle(.primary)
             VStack(spacing: 10) {
                 Text("Type keywords to find meetings and screen moments, or ask a question. Return opens a keyword result or asks a question; ⌘Return always asks.")
-                    .font(WorkspaceTypography.editorialBody)
+                    .font(Font.body)
                     .foregroundStyle(Color.primary)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 400)

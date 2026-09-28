@@ -39,16 +39,28 @@ struct OnboardingView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 9) {
+            VStack(spacing: 16) {
+                Image(systemName: stepIcon)
+                    .font(.system(size: 32, weight: .medium))
+                    .foregroundStyle(LBTokens.Palette.accentText)
+                    .frame(width: 64, height: 64)
+                    .lbGroupedSurface()
                 if mode == .welcome {
-                    Text("Step \(step.rawValue + 1) of 4")
-                        .font(WorkspaceTypography.metadata).foregroundStyle(.secondary)
-                    ProgressView(value: Double(step.rawValue + 1), total: 4)
-                        .accessibilityIdentifier("onboarding.progress")
+                    HStack(spacing: 8) {
+                        ForEach(Step.allCases, id: \.rawValue) { item in
+                            Circle().fill(item == step ? LBTokens.Palette.accentText : Color.secondary.opacity(0.25))
+                                .frame(width: 6, height: 6)
+                        }
+                    }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Setup progress")
+                    .accessibilityValue("Step \(step.rawValue + 1) of 4")
+                    .accessibilityIdentifier("onboarding.progress")
                 }
-                Text(step.title).font(WorkspaceTypography.display)
-            }.padding(24)
-            Divider()
+                Text(step.title).font(.largeTitle.bold()).multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 28).padding(.top, 24).padding(.bottom, 8)
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     switch step {
@@ -61,27 +73,30 @@ struct OnboardingView: View {
             }
             Divider()
             HStack {
+                if mode == .welcome {
+                    Text("Step \(step.rawValue + 1) of 4").font(.callout).foregroundStyle(.secondary)
+                }
+                Spacer()
                 if mode == .welcome, step != .capture {
                     Button("Back") { step = Step(rawValue: step.rawValue - 1) ?? .capture }
                 }
-                Spacer()
                 if mode == .permissions {
                     Button("Done") { dismiss() }.primaryActionButton()
                 } else if step == .review {
-                    Button("Apply choices and start") {
+                    Button("Apply Choices and Start") {
                         app.settings = draft.applying(to: app.settings)
                         UserDefaults.standard.set(true, forKey: AppState.onboardingShownKey)
                         dismiss()
                     }.primaryActionButton().accessibilityIdentifier("onboarding.finish")
                 } else {
-                    Button(step == .permissions ? "Continue with current access" : "Continue") {
+                    Button(step == .permissions ? "Continue with Current Access" : "Continue") {
                         step = Step(rawValue: step.rawValue + 1) ?? .review
                     }.primaryActionButton().keyboardShortcut(.defaultAction)
                 }
             }.padding(24)
         }
         .frame(width: 650, height: 640)
-        .workspaceSurface()
+        .toggleStyle(LBAccentSwitchStyle())
         .onAppear {
             draft = CaptureSetupDraft(settings: app.settings)
             permissions.refresh()
@@ -92,23 +107,35 @@ struct OnboardingView: View {
         .onDisappear { permissions.stopPolling(); PermissionGuidanceController.shared.dismiss() }
     }
 
+    private var stepIcon: String {
+        switch step {
+        case .capture: "brain.head.profile"
+        case .permissions: "hand.raised"
+        case .models: "cpu"
+        case .review: "checkmark.circle"
+        }
+    }
+
     private var captureChoices: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 16) {
             Text("Keep meeting evidence and a useful memory of your day. You can change each choice later in Settings.")
-                .font(WorkspaceTypography.body)
-            Picker("Detected meetings", selection: $draft.meetingMode) {
-                ForEach(AppSettings.AutoRecordMode.allCases) { Text($0.rawValue).tag($0) }
-            }.accessibilityIdentifier("onboarding.meetingMode")
-            Text("Ask via notification waits for you to start recording. Manual mode keeps Record now available.")
-                .workspaceTextRole(.supporting)
-            Divider()
-            Toggle("Remember app and window activity", isOn: $draft.dayMemory)
-            Picker("Day-memory detail", selection: $draft.contextMode) {
-                ForEach(AppSettings.ScreenContextCaptureMode.allCases) { Text($0.rawValue).tag($0) }
-            }.disabled(!draft.dayMemory)
-            Text(draft.contextMode.detail).workspaceTextRole(.trust)
-            Text("Text and images build on app activity. Images are encrypted on disk; captured text remains searchable under your retention policy.")
-                .workspaceTextRole(.supporting)
+                .font(.body).foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 10) {
+                Picker("Detected Meetings", selection: $draft.meetingMode) {
+                    ForEach(AppSettings.AutoRecordMode.allCases) { Text($0.rawValue).tag($0) }
+                }.accessibilityIdentifier("onboarding.meetingMode")
+                Text("Ask via notification waits for you to start recording. Manual mode keeps Record now available.")
+                    .workspaceTextRole(.supporting)
+            }.workspacePanel()
+            VStack(alignment: .leading, spacing: 10) {
+                Toggle("Remember app and window activity", isOn: $draft.dayMemory)
+                Picker("Day-Memory Detail", selection: $draft.contextMode) {
+                    ForEach(AppSettings.ScreenContextCaptureMode.allCases) { Text($0.rawValue).tag($0) }
+                }.disabled(!draft.dayMemory)
+                Text(draft.contextMode.detail).workspaceTextRole(.trust)
+                Text("Text and images build on app activity. Images are encrypted on disk; captured text remains searchable under your retention policy.")
+                    .workspaceTextRole(.supporting)
+            }.workspacePanel()
             Label("These choices are applied on the final Review step.", systemImage: "checklist")
                 .workspaceTextRole(.supporting)
         }
@@ -120,6 +147,7 @@ struct OnboardingView: View {
                 .workspaceTextRole(.trust)
             ForEach(relevantPermissions, id: \.self) { permission in
                 PermissionRow(permission: permission, prominentRationale: true)
+                    .workspacePanel()
             }
             if newlyGrantedRestartPermission {
                 Text("A newly granted permission may require a relaunch. Finish setup first; relaunch from Settings if the feature remains unavailable.")
@@ -142,7 +170,7 @@ struct OnboardingView: View {
             Toggle("Also prepare Autocomplete (optional)", isOn: $includeAutocomplete)
                 .accessibilityLabel("Also prepare Autocomplete (optional)")
             if includeAutocomplete { modelRow("Autocomplete", model: app.settings.cotypingBuiltInModelID, role: .autocomplete) }
-            Button("Prepare selected models") {
+            Button("Prepare Selected Models") {
                 app.modelRoles.startCoreModelDownloads(includeAutocomplete: includeAutocomplete)
             }.buttonStyle(.bordered).accessibilityIdentifier("onboarding.downloadModels")
             Text("Downloads use the model provider. They do not send your meeting content. Existing downloaded models are kept.")
@@ -153,12 +181,12 @@ struct OnboardingView: View {
     private func modelRow(_ title: String, model: String, role: ModelRole) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(WorkspaceTypography.bodyEmphasis)
-                Text(model).font(WorkspaceTypography.metadata).foregroundStyle(.secondary)
+                Text(title).font(Font.body.weight(.semibold))
+                Text(model).font(Font.callout).foregroundStyle(.secondary)
             }
             Spacer()
-            Text(app.modelRoles.snapshot[role].label).font(WorkspaceTypography.metadataEmphasis)
-        }
+            Text(app.modelRoles.snapshot[role].label).font(.callout.weight(.semibold))
+        }.workspacePanel()
     }
 
     private var review: some View {

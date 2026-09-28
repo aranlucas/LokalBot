@@ -237,7 +237,7 @@ final class AgentModeUITests: XCTestCase {
 
             // Query the toolbar's direct child to avoid its nested AX wrapper.
             app.windows["main.window"].toolbars.firstMatch.children(matching: .button)
-                .matching(identifier: "toolbar.sidebarToggle").firstMatch.click()
+                .matching(NSPredicate(format: "label CONTAINS[c] 'sidebar'")).firstMatch.click()
             XCTAssertTrue(UITestHarness.waitUntil {
                 !self.app.descendants(matching: .any)["sidebar.settings"].exists
             })

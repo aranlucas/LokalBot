@@ -5,7 +5,7 @@ struct AgentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @ObservedObject var sessions: AgentSessionTabs
     @ObservedObject var installer: AgentRuntimeInstaller
-    @SceneStorage("agent.tasks.width") private var taskColumnWidth = 230.0
+    @SceneStorage("agent.tasks.width") private var taskColumnWidth = 272.0
 
     var body: some View {
         Group {
@@ -15,9 +15,9 @@ struct AgentView: View {
                 // with the transcript and can prevent the window shrinking.
                 HSplitView {
                     AgentTaskSidebar(sessions: sessions, verifyRuntime: verifyRuntime)
-                        .frame(minWidth: 190, idealWidth: taskColumnWidth, maxWidth: 280)
+                        .frame(minWidth: 240, idealWidth: taskColumnWidth, maxWidth: 340)
                         .onGeometryChange(for: Double.self) { Double($0.size.width) } action: { taskColumnWidth = $0 }
-                        .splitPaneAccessibilityLabel("Agent tasks")
+                        .splitPaneAccessibilityLabel("Agent tasks", autosaveName: "LokalBot.agent", initialWidth: LBTokens.Metric.contentColumnWidth)
                     if let tab = sessions.selectedTab {
                         AgentSessionView(controller: tab.controller, sessions: sessions, taskID: tab.id)
                             .id(tab.id)

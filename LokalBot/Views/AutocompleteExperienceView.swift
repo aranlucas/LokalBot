@@ -74,9 +74,9 @@ struct AutocompleteExperienceView: View {
             VStack(alignment: .leading, spacing: 8) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(app.settings.cotypingEnabled ? "Autocomplete on" : "Autocomplete off")
-                        .font(WorkspaceTypography.bodyEmphasis)
+                        .font(Font.body.weight(.semibold))
                     Text(summaryDetail)
-                        .font(WorkspaceTypography.metadata)
+                        .font(Font.callout)
                         .settingsSecondary()
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -126,7 +126,7 @@ struct AutocompleteExperienceView: View {
 
             HStack {
                 Text("\(app.settings.cotypingAcceptKey.label) accepts · Esc dismisses")
-                    .font(WorkspaceTypography.metadata)
+                    .font(Font.callout)
                     .settingsSecondary()
                 if generating { ProgressView().controlSize(.small) }
                 Spacer()
@@ -136,7 +136,7 @@ struct AutocompleteExperienceView: View {
             }
             if let error {
                 Label(error, systemImage: "exclamationmark.triangle")
-                    .font(WorkspaceTypography.metadata).foregroundStyle(Brand.error)
+                    .font(Font.callout).foregroundStyle(Brand.error)
             }
         }
     }

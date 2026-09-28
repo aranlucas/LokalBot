@@ -101,17 +101,71 @@ struct ActionsWorkspaceView: View {
 
     private var actionList: some View {
         HSplitView {
-            List(selection: listSelection) {
-                ForEach(visible) { reference in
-                    HStack(alignment: .top, spacing: 8) {
+            Table(visible, selection: listSelection) {
+                TableColumn("") { reference in
+                    HStack(spacing: 6) {
                         if selecting { selectionToggle(reference.id) }
-                        OutcomeOverviewActionRow(reference: reference)
-                    }
-                    .tag(reference.id)
-                        .contextMenu {
-                            Button("Correct action…") { correction = reference }
-                            Button("Show details") { selection = [reference.id] }
+                        Button { setStatus(reference.status == .done ? .open : .done, for: reference) } label: {
+                            Image(systemName: reference.status == .done ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: LBTokens.Metric.actionToggleSize))
+                                .foregroundStyle(reference.status == .done ? Brand.teal : .secondary)
                         }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(reference.status == .done ? "Reopen action" : "Complete action")
+                        .accessibilityValue(reference.text)
+                        .accessibilityIdentifier("outcome.action.toggle.\(reference.id)")
+                    }
+                    .frame(minHeight: LBTokens.Metric.tableRowHeight)
+                }.width(selecting ? 64 : 28)
+                TableColumn("Action") { reference in
+                    Text(reference.text).lineLimit(1)
+                        .strikethrough(reference.status == .done)
+                        .help(reference.text)
+                        .accessibilityIdentifier("outcome.action.\(reference.id)")
+                }.width(min: 150, ideal: 300)
+                TableColumn("Owner") { reference in
+                    Text(reference.owner.map { SpeakerDisplayName.label($0, identity: reference.isForUser ? .user : .unresolved) } ?? "Owner unclear")
+                        .foregroundStyle(reference.owner == nil ? LBTokens.Palette.attentionText : .secondary)
+                }.width(90)
+                TableColumn("Due") { reference in
+                    Text(reference.due.map { ActionDuePresentation.label($0, spokenAt: reference.meetingStartedAt) } ?? "—")
+                        .foregroundStyle(isOverdue(reference) ? LBTokens.Palette.recordingText : .secondary)
+                }.width(110)
+                TableColumn("Meeting") { reference in
+                    Button(reference.meetingTitle) { app.openMeeting(reference.meetingID) }
+                        .buttonStyle(.plain).lineLimit(1).help(reference.meetingTitle)
+                }.width(160)
+                TableColumn("Passage") { reference in
+                    if let citation = reference.action.citations.first {
+                        EvidencePill(citation: citation) { app.openMeeting(reference.meetingID, seek: citation.start) }
+                    }
+                }.width(100)
+                TableColumn("") { reference in
+                    Menu {
+                        ForEach(OutcomeStatus.allCases, id: \.rawValue) { next in
+                            Button(next.label) { setStatus(next, for: reference) }
+                        }
+                        Divider()
+                        Button("Correct Action…") { correction = reference }
+                        Button("Show Details") { selection = [reference.id] }
+                        Button("Open Meeting") { app.openMeeting(reference.meetingID) }
+                        Button("Open in Agent") {
+                            app.openAgent(.init(title: reference.text,
+                                prompt: "Help me complete this action from \(reference.meetingTitle): \(reference.text)",
+                                meetingID: reference.meetingID, actionID: reference.action.id))
+                        }
+                    } label: { Image(systemName: "ellipsis") }
+                    .menuStyle(.borderlessButton).menuIndicator(.hidden)
+                    .accessibilityLabel("Action options")
+                    .accessibilityIdentifier("outcome.action.status.\(reference.id)")
+                }.width(28)
+            }
+            .tableStyle(.inset(alternatesRowBackgrounds: true))
+            .tint(Brand.tealFill)
+            .contextMenu(forSelectionType: String.self) { ids in
+                if let reference = visible.first(where: { ids.contains($0.id) }) {
+                    Button("Correct Action…") { correction = reference }
+                    Button("Show Details") { selection = [reference.id] }
                 }
             }
             .frame(minWidth: 360, maxWidth: .infinity)
@@ -125,8 +179,8 @@ struct ActionsWorkspaceView: View {
             }
             .splitPaneAccessibilityLabel("Action list")
             if let inspected {
-                inspector(inspected).frame(minWidth: 260, idealWidth: 300, maxWidth: 380)
-                    .splitPaneAccessibilityLabel("Action details")
+                inspector(inspected).frame(minWidth: 280, idealWidth: LBTokens.Metric.detailsPaneWidth, maxWidth: 380)
+                    .splitPaneAccessibilityLabel("Action details", autosaveName: "LokalBot.actions", initialWidth: LBTokens.Metric.detailsPaneWidth)
             }
         }
     }
@@ -134,7 +188,7 @@ struct ActionsWorkspaceView: View {
     private var header: some View {
         HStack(spacing: 12) {
             Button { app.showingActions = false } label: { Label("Today", systemImage: "chevron.left") }
-            Text("Actions").font(WorkspaceTypography.pageTitle)
+            Text("Actions").font(.title3.bold())
             Text(reviewMode == "threads" ? "\(visibleThreads.count) threads" : "\(visible.count) of \(all.count)")
                 .foregroundStyle(.secondary)
             Spacer()
@@ -142,7 +196,7 @@ struct ActionsWorkspaceView: View {
                 if visibleSelection.isEmpty {
                     if selecting {
                         Text("Choose actions to change together")
-                            .font(WorkspaceTypography.metadata)
+                            .font(Font.callout)
                             .foregroundStyle(.secondary)
                             .accessibilityIdentifier("actions.batch.hint")
                     }
@@ -164,7 +218,7 @@ struct ActionsWorkspaceView: View {
                 .help(selecting ? "Stop selecting actions" : "Select several actions to change their status together")
                 .accessibilityIdentifier("actions.selectMode")
             }
-        }.padding(20)
+        }.padding(.horizontal, 20).padding(.vertical, 12)
     }
 
     private var filters: some View {
@@ -173,7 +227,7 @@ struct ActionsWorkspaceView: View {
                 Picker("Review", selection: $reviewMode) {
                     Text("Actions").tag("actions")
                     Text("Threads").tag("threads")
-                }.pickerStyle(.segmented).labelsHidden().frame(width: 180)
+                }.pickerStyle(.menu).frame(width: 170)
                     .accessibilityIdentifier("actions.reviewMode")
                 TextField("Search actions and meetings", text: $query).textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier("actions.search")
@@ -188,7 +242,7 @@ struct ActionsWorkspaceView: View {
                         .accessibilityIdentifier("actions.selection.hidden")
                     Button("Clear selection") { selection = [] }
                     Spacer()
-                }.font(WorkspaceTypography.metadata).foregroundStyle(.secondary)
+                }.font(Font.callout).foregroundStyle(.secondary)
             }
         }.padding(.horizontal, 20).padding(.bottom, 12)
     }
@@ -204,7 +258,6 @@ struct ActionsWorkspaceView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.top, WorkspaceMetric.rowVerticalPadding - 3)
         .accessibilityLabel(isSelected ? "Deselect action" : "Select action")
         .accessibilityIdentifier("actions.select.\(id)")
     }
@@ -249,8 +302,14 @@ struct ActionsWorkspaceView: View {
     private func inspector(_ reference: OutcomeActionReference) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text(reference.text).font(WorkspaceTypography.sectionTitle).textSelection(.enabled)
-                Text(reference.meetingTitle).foregroundStyle(.secondary)
+                Text("Action Details").font(.title3.bold())
+                Text(reference.text).font(.body.weight(.semibold)).textSelection(.enabled)
+                Button(reference.meetingTitle) { app.openMeeting(reference.meetingID) }
+                    .buttonStyle(.workspaceLink)
+                Picker("Status", selection: Binding(get: { reference.status }, set: { setStatus($0, for: reference) })) {
+                    ForEach(OutcomeStatus.allCases, id: \.rawValue) { Text($0.label).tag($0) }
+                }
+                .pickerStyle(.menu)
                 LabeledContent(
                     "Owner",
                     value: reference.owner.map {
@@ -259,21 +318,39 @@ struct ActionsWorkspaceView: View {
                             identity: reference.isForUser ? .user : .unresolved)
                     } ?? "Not stated")
                 if let due = reference.due { Text(ActionDuePresentation.label(due, spokenAt: reference.meetingStartedAt)) }
-                Button("Correct action or resolve date…") { correction = reference }
+                Button("Correct Action or Resolve Date…") { correction = reference }
                 Divider()
-                Text("Original wording").font(WorkspaceTypography.metadataEmphasis)
+                Text("Original Wording").font(Font.callout.weight(.semibold))
                 Text(reference.action.displayText).textSelection(.enabled)
                 if let originalDue = reference.action.due { Text("Original due phrase: \(originalDue)") }
                 ForEach(reference.action.citations) { citation in
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(citation.excerpt).textSelection(.enabled)
-                        Button("Show passage · \(Transcript.stamp(citation.start))") {
+                        Text("“" + citation.excerpt + "”").textSelection(.enabled)
+                        Button("Show Passage · \(Transcript.stamp(citation.start))") {
                             app.openMeeting(reference.meetingID, seek: citation.start)
                         }
                     }
+                    .padding(12).lbGroupedSurface()
                 }
+                Text("Saved corrections stay separate from the original action and its supporting passage.")
+                    .font(.callout).foregroundStyle(.secondary)
                 if reference.action.citations.isEmpty { Text("No supporting passage was stored.").foregroundStyle(.secondary) }
             }.padding(20)
+        }
+        .background(.background.secondary)
+    }
+
+    private func isOverdue(_ reference: OutcomeActionReference) -> Bool {
+        reference.status == .open && ActionDuePresentation.date(reference.due).map {
+            $0 < Calendar.current.startOfDay(for: Date())
+        } == true
+    }
+
+    private func setStatus(_ status: OutcomeStatus, for reference: OutcomeActionReference) {
+        if app.outcomeIndex.setStatus(status, actionID: reference.action.id, meetingID: reference.meetingID) {
+            app.lastError = nil
+        } else {
+            app.lastError = "Could not update this action. " + (app.outcomeIndex.lastError ?? "The action is no longer available.")
         }
     }
 }
@@ -299,8 +376,8 @@ private struct ActionEditorSheet: View {
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Correct action").font(WorkspaceTypography.pageTitle)
-            Text("Action").font(WorkspaceTypography.metadataEmphasis)
+            Text("Correct action").font(Font.largeTitle.bold())
+            Text("Action").font(Font.callout.weight(.semibold))
             TextEditor(text: $text).frame(height: 100).padding(8).workspaceControl()
             LabeledContent("Owner") {
                 TextField("Me or named participant", text: Binding(

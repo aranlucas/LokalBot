@@ -62,14 +62,14 @@ struct ModelDownloadsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Models on this Mac").font(.system(size: 16, weight: .semibold))
+                Text("Models on this Mac").font(.headline)
                 Text("Manage downloads and free up disk space. Each model shows the features that use it.")
-                    .font(.system(size: 13)).settingsSecondary()
+                    .font(.body).settingsSecondary()
             }
             HStack(spacing: 14) {
                 TextField("Find a downloaded model", text: $query).textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier("models.downloads.search")
-                Toggle("Only unused", isOn: $unusedOnly).toggleStyle(.checkbox).font(.system(size: 12))
+                Toggle("Only unused", isOn: $unusedOnly).toggleStyle(.checkbox).font(.callout)
             }
             if !entries.isEmpty {
                 sectionTitle("Text models")
@@ -98,13 +98,13 @@ struct ModelDownloadsView: View {
                 HStack(spacing: 12) {
                     Image(systemName: "magnifyingglass").settingsModelIcon().frame(width: 24)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Harrier 0.6B").font(.system(size: 14, weight: .medium))
+                        Text("Harrier 0.6B").font(.body.weight(.medium))
                         Text("Search by meaning · Managed automatically")
-                            .font(.system(size: 12)).settingsSecondary()
+                            .font(.callout).settingsSecondary()
                     }
                     Spacer()
                     Text(app.settings.semanticSearchEnabled ? "Search enabled" : "Search off")
-                        .font(.system(size: 12)).settingsSecondary()
+                        .font(.callout).settingsSecondary()
                 }
                 .padding(.vertical, 12)
             }
@@ -135,7 +135,7 @@ struct ModelDownloadsView: View {
     private func matches(_ text: String) -> Bool { query.isEmpty || text.localizedCaseInsensitiveContains(query) }
 
     private func sectionTitle(_ title: String) -> some View {
-        Text(title).font(.system(size: 12, weight: .semibold)).settingsSecondary()
+        Text(title).font(.headline).settingsSecondary()
     }
 
     private func textRow(_ entry: ModelCatalog.Entry) -> some View {
@@ -144,12 +144,12 @@ struct ModelDownloadsView: View {
         return HStack(alignment: .center, spacing: 12) {
             Image(systemName: "shippingbox").settingsModelIcon().frame(width: 24)
             VStack(alignment: .leading, spacing: 5) {
-                Text(entry.displayName).font(.system(size: 14, weight: .medium))
+                Text(entry.displayName).font(.body.weight(.medium))
                 Text(ModelSettingsPresentation.sizeLabel(entry) + " · "
                      + (uses.isEmpty ? "Not assigned" : uses.joined(separator: ", ")))
-                    .font(.system(size: 12)).settingsSecondary()
+                    .font(.callout).settingsSecondary()
                 if let error = downloads.errors[entry.id] {
-                    Text(error).font(.system(size: 12)).foregroundStyle(.orange).textSelection(.enabled)
+                    Text(error).font(.callout).foregroundStyle(.orange).textSelection(.enabled)
                 }
             }
             Spacer(minLength: 8)
@@ -157,7 +157,7 @@ struct ModelDownloadsView: View {
                 VStack(alignment: .trailing, spacing: 4) {
                     ProgressView(value: progress).frame(width: 100)
                     Text(progress >= 1 ? "Verifying…" : "\(Int(progress * 100))%")
-                        .font(.system(size: 11)).settingsSecondary()
+                        .font(.subheadline).settingsSecondary()
                 }
                 Button("Cancel") { downloads.cancel(entry) }
             } else if available {
@@ -177,19 +177,19 @@ struct ModelDownloadsView: View {
             Image(systemName: "waveform").settingsModelIcon().frame(width: 24)
             VStack(alignment: .leading, spacing: 5) {
                 Text(choice == .graniteSpeech ? app.settings.graniteSpeechModel.displayName : choice.displayName)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.body.weight(.medium))
                 Text(([choice.sizeLabel] + [choice == app.settings.transcriptionModel ? "Used by Transcribe" : "Not assigned"])
                      .compactMap { $0 }.joined(separator: " · "))
-                    .font(.system(size: 12)).settingsSecondary()
+                    .font(.callout).settingsSecondary()
                 if let error = status.errorMessage {
-                    Text(error).font(.system(size: 12)).foregroundStyle(.orange)
+                    Text(error).font(.callout).foregroundStyle(.orange)
                 }
             }
             Spacer(minLength: 8)
             if status.isWorking {
                 VStack(alignment: .trailing, spacing: 4) {
                     if let progress = status.progress { ProgressView(value: progress).frame(width: 100) }
-                    Text(status.label).font(.system(size: 11)).settingsSecondary()
+                    Text(status.label).font(.subheadline).settingsSecondary()
                 }
                 Button("Cancel") { roles.cancelTranscriptionPreparation(choice) }
             } else if status.errorMessage != nil {
@@ -205,9 +205,9 @@ struct ModelDownloadsView: View {
         HStack(spacing: 12) {
             Image(systemName: "speaker.wave.2").settingsModelIcon().frame(width: 24)
             VStack(alignment: .leading, spacing: 5) {
-                Text("Kokoro 82M").font(.system(size: 14, weight: .medium))
-                Text(speech.status ?? "Used by Read aloud").font(.system(size: 12)).settingsSecondary()
-                if let error = speech.error { Text(error).font(.system(size: 12)).foregroundStyle(.orange) }
+                Text("Kokoro 82M").font(.body.weight(.medium))
+                Text(speech.status ?? "Used by Read aloud").font(.callout).settingsSecondary()
+                if let error = speech.error { Text(error).font(.callout).foregroundStyle(.orange) }
             }
             Spacer()
             if speech.isPreparing {
