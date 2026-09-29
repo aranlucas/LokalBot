@@ -331,9 +331,9 @@ private struct SidebarPrivacyFooter: View {
                         Text(processingLabel)
                         if case .remote = destination { StatusDot(color: .orange, size: 5) }
                     }
-                    .font(.scaled(.subheadline)).foregroundStyle(.secondary)
+                    .font(.scaled(.subheadline)).workspaceSupportingForeground()
                     if case .remote(let host) = destination {
-                        Text(host).font(.scaled(.subheadline)).foregroundStyle(.secondary)
+                        Text(host).font(.scaled(.subheadline)).workspaceSupportingForeground()
                     }
                 }
             }

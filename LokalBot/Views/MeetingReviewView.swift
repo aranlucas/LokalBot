@@ -33,7 +33,7 @@ struct MeetingSpeakerReviewSection: View {
                         }
                     }
                     if let sample = speaker.sample {
-                        Text("“" + sample.text + "”").font(.scaled(.body)).foregroundStyle(.secondary)
+                        Text("“" + sample.text + "”").workspaceTextRole(.supporting)
                             .lineLimit(3).textSelection(.enabled)
                     } else {
                         Text("No clear voice excerpt available. Review the transcript before assigning a name.")

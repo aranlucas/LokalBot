@@ -130,7 +130,9 @@ final class ChatCitationTests: XCTestCase {
             AttributedString.Index(citation.upperBound, within: rendered))
         let citationRun = try XCTUnwrap(rendered[lowerBound..<upperBound].runs.first)
 
-        XCTAssertEqual(citationRun.font, Font.callout.weight(.semibold))
+        // Citations follow LokalBot's text size, which the test host shares
+        // with the app (Default is one point above the system size).
+        XCTAssertEqual(citationRun.font, AppFont.scaled(.callout).weight(.semibold).currentFont)
         XCTAssertEqual(citationRun.foregroundColor, Brand.teal)
     }
 

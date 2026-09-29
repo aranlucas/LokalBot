@@ -820,8 +820,22 @@ enum DayDigestOverviewGenerator {
         engine: TextEngine,
         customPrompt: String,
         calendar: Calendar = .current,
-        progress: DayDigestProgressHandler? = nil
+        progress: DayDigestProgressHandler? = nil,
+        sleep: @escaping @Sendable (TimeInterval) async throws -> Void = {
+            try await Task.sleep(for: .seconds($0))
+        }
     ) async throws -> DayDigestOverviewGeneration {
+        let dateContext = [
+            "Date: \(evidence.day.formatted(date: .complete, time: .omitted))",
+        ]
+        func request(
+            _ stage: String, system: String, prompt: String, schema: [String: Any],
+            options: TextGenerationOptions
+        ) async throws -> String {
+            try await generateReplayingTransientFailure(
+                engine: engine, stage: stage, system: system, prompt: prompt,
+                context: dateContext, schema: schema, options: options, sleep: sleep)
+        }
         let segments = evidence.summarySegments()
         guard !segments.isEmpty else {
             return DayDigestOverviewGeneration(
@@ -835,9 +849,6 @@ enum DayDigestOverviewGenerator {
             "day digest plan model=\(engine.displayName) segments=\(segments.count) "
                 + "events=\(segments.reduce(0) { $0 + $1.eventCount }) ranges=\(ranges)")
 
-        let dateContext = [
-            "Date: \(evidence.day.formatted(date: .complete, time: .omitted))",
-        ]
         var substantiveBlocks: [DayDigestGeneratedFocusBlock] = []
         var fallbackBlocks: [DayDigestGeneratedFocusBlock] = []
         var degraded = false
@@ -859,26 +870,26 @@ enum DayDigestOverviewGenerator {
             var output: String
             do {
                 do {
-                    output = try await engine.generate(
+                    output = try await request(
+                        "segment \(index + 1)",
                         system: PromptTemplates.dayDigestFocusSystem,
                         prompt: focusPrompt,
-                        context: dateContext,
                         schema: focusSchema,
                         options: TextGenerationOptions(
-                            maxTokens: 768,
+                            maxTokens: focusTokens,
                             reasoningBudgetTokens: 256,
                             temperature: 0.2))
                 } catch TextEngineError.outputTruncated {
                     attempts = 2
                     let retryStartedAt = Date()
                     do {
-                        output = try await engine.generate(
+                        output = try await request(
+                            "segment \(index + 1) retry",
                             system: PromptTemplates.dayDigestFocusSystem,
                             prompt: focusRetryPrompt + "\n\n" + focusPrompt,
-                            context: dateContext,
                             schema: focusSchema,
                             options: TextGenerationOptions(
-                                maxTokens: 1_600,
+                                maxTokens: focusRetryTokens,
                                 reasoningBudgetTokens: 0,
                                 temperature: 0))
                         lokalbotLog(
@@ -919,13 +930,13 @@ enum DayDigestOverviewGenerator {
                 attempts = 2
                 let retryStartedAt = Date()
                 do {
-                    output = try await engine.generate(
+                    output = try await request(
+                        "segment \(index + 1) retry",
                         system: PromptTemplates.dayDigestFocusSystem,
                         prompt: focusRetryPrompt + "\n\n" + focusPrompt,
-                        context: dateContext,
                         schema: focusSchema,
                         options: TextGenerationOptions(
-                            maxTokens: 1_600,
+                            maxTokens: focusRetryTokens,
                             reasoningBudgetTokens: 0,
                             temperature: 0))
                     parsed = parseFocus(output, segment: segment)
@@ -972,7 +983,10 @@ enum DayDigestOverviewGenerator {
         }
 
         let usesBestAvailableActivity = substantiveBlocks.isEmpty
-        let selectedBlocks = usesBestAvailableActivity ? fallbackBlocks : substantiveBlocks
+        // Substantive work leads; lighter but identifiable work follows it
+        // instead of disappearing whenever one segment clears the bar.
+        let selectedBlocks = substantiveBlocks + fallbackBlocks
+        let marksPriority = !substantiveBlocks.isEmpty && !fallbackBlocks.isEmpty
         guard !selectedBlocks.isEmpty else {
             return DayDigestOverviewGeneration(
                 summary: fallback(evidence),
@@ -984,15 +998,29 @@ enum DayDigestOverviewGenerator {
         await progress?(DayDigestProgress(
             completedSegments: segments.count, totalSegments: segments.count, isAggregating: true))
         do {
-            let aggregationInstruction = usesBestAvailableActivity
-                ? "Retain the best grounded activity even without a concrete outcome."
-                : "Rank by concrete outcome, useful progress, decision, or blocker. "
+            let aggregationInstruction: String
+            let candidatesHeading: String
+            if usesBestAvailableActivity {
+                aggregationInstruction = "Retain the best grounded activity even without a concrete outcome."
+                candidatesHeading = "BEST AVAILABLE WORK OR ACTIVITY CANDIDATES:"
+            } else if marksPriority {
+                aggregationInstruction = "Rank primary candidates by concrete outcome, useful progress, "
+                    + "decision, or blocker, then list secondary candidates after them. Merge a secondary "
+                    + "candidate into a primary task when both concern the same work; otherwise keep it as "
+                    + "its own lower-ranked task. Do not rank by duration or chronology."
+                candidatesHeading = "WORK CANDIDATES (primary first, then secondary):"
+            } else {
+                aggregationInstruction = "Rank by concrete outcome, useful progress, decision, or blocker. "
                     + "Do not rank by duration or chronology."
-            let candidatesHeading = usesBestAvailableActivity
-                ? "BEST AVAILABLE WORK OR ACTIVITY CANDIDATES:"
-                : "SUBSTANTIVE WORK CANDIDATES:"
+                candidatesHeading = "SUBSTANTIVE WORK CANDIDATES:"
+            }
             let material = selectedBlocks.enumerated()
-                .map { candidateMaterial($0.element, index: $0.offset) }
+                .map { offset, block in
+                    candidateMaterial(
+                        block, index: offset,
+                        priority: marksPriority
+                            ? (offset < substantiveBlocks.count ? "primary" : "secondary") : nil)
+                }
                 .joined(separator: "\n")
             let system = usesBestAvailableActivity
                 ? PromptTemplates.dayDigestFallbackSystem(custom: customPrompt)
@@ -1007,10 +1035,10 @@ enum DayDigestOverviewGenerator {
                 """
             let output: String
             do {
-                output = try await engine.generate(
+                output = try await request(
+                    "task aggregation",
                     system: system,
                     prompt: aggregationPrompt,
-                    context: dateContext,
                     schema: digestSchema,
                     options: TextGenerationOptions(
                         maxTokens: 1_600,
@@ -1018,10 +1046,10 @@ enum DayDigestOverviewGenerator {
                         temperature: 0.2))
             } catch TextEngineError.outputTruncated {
                 let retryStartedAt = Date()
-                output = try await engine.generate(
+                output = try await request(
+                    "task aggregation retry",
                     system: system,
                     prompt: digestRetryPrompt + "\n\n" + aggregationPrompt,
-                    context: dateContext,
                     schema: digestSchema,
                     options: TextGenerationOptions(
                         maxTokens: 3_200,
@@ -1043,13 +1071,56 @@ enum DayDigestOverviewGenerator {
         if digest == nil { degraded = true }
         lokalbotLog(
             "day digest task aggregation mode="
-                + "\(usesBestAvailableActivity ? "best-available" : "substantive") "
+                + "\(usesBestAvailableActivity ? "best-available" : marksPriority ? "substantive+secondary" : "substantive") "
                 + "parsed=\(digest != nil) elapsed="
                 + String(format: "%.2fs", Date().timeIntervalSince(digestStartedAt)))
 
         return DayDigestOverviewGeneration(
             summary: render(blocks: selectedBlocks, draft: digest),
             quality: degraded ? .partial : .complete)
+    }
+
+    /// Routed reasoning models can spend most of a small budget thinking even
+    /// when asked not to. The compact focus JSON needs far less than this; the
+    /// headroom only matters for those models, and llama-server keeps its own
+    /// thinking budget independent of the larger cap.
+    private static let focusTokens = 2_048
+    private static let focusRetryTokens = 4_096
+
+    /// Remote providers intermittently answer 429/5xx or drop the connection.
+    /// Replay that one request after the shared policy delay instead of
+    /// losing the rest of the day. Managed local engines already relaunch and
+    /// replay inside `LeasedTextEngine`, so they are never retried twice.
+    private static func generateReplayingTransientFailure(
+        engine: TextEngine,
+        stage: String,
+        system: String,
+        prompt: String,
+        context: [String],
+        schema: [String: Any],
+        options: TextGenerationOptions,
+        sleep: @Sendable (TimeInterval) async throws -> Void
+    ) async throws -> String {
+        do {
+            return try await engine.generate(
+                system: system, prompt: prompt, context: context,
+                schema: schema, options: options)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            guard !(engine is LeasedTextEngine),
+                  let delay = TextEngineRetryPolicy.delay(for: error, attempt: 0) else {
+                throw error
+            }
+            lokalbotLog(
+                "day digest \(stage) replay after transient error delay="
+                    + String(format: "%.1fs", delay)
+                    + " error=\(error.localizedDescription)")
+            try await sleep(delay)
+            return try await engine.generate(
+                system: system, prompt: prompt, context: context,
+                schema: schema, options: options)
+        }
     }
 
     private static let focusRetryPrompt = """
@@ -1379,10 +1450,11 @@ enum DayDigestOverviewGenerator {
 
     private static func candidateMaterial(
         _ block: DayDigestGeneratedFocusBlock,
-        index: Int
+        index: Int,
+        priority: String? = nil
     ) -> String {
         """
-        - [candidate_index \(index)]
+        - [candidate_index \(index)]\(priority.map { "\n  Priority: \($0)" } ?? "")
           Task: \(block.task)
           Work done: \(block.workDone)
           Status: \(block.status)

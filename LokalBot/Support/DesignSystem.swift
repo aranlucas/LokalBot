@@ -105,6 +105,17 @@ private struct WorkspaceTextRoleModifier: ViewModifier {
 
 /// Opaque supporting text stays legible on both window and inset surfaces.
 /// Unlike tertiary/opacity-based labels, it does not fade with nested styling.
+/// The supporting color without the role's type size, for captions and
+/// metadata. The system secondary label drops below 4.5:1 on grouped fills
+/// and unfocused list selections; this color stays above it.
+private struct WorkspaceSupportingForegroundModifier: ViewModifier {
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    func body(content: Content) -> some View {
+        content.foregroundStyle(contrast == .increased ? Color.primary : Color(nsColor: WorkspaceTextColor.supporting))
+    }
+}
+
 enum WorkspaceTextColor {
     static let supporting = NSColor(name: nil) { appearance in
         let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
@@ -219,6 +230,11 @@ extension View {
     /// Applies a semantic foreground and minimum readable type size.
     func workspaceTextRole(_ role: WorkspaceTextRole) -> some View {
         modifier(WorkspaceTextRoleModifier(role: role))
+    }
+
+    /// Readable supporting foreground that keeps the caller's font.
+    func workspaceSupportingForeground() -> some View {
+        modifier(WorkspaceSupportingForegroundModifier())
     }
 
     /// Caps narrative prose without constraining tables, evidence, or controls.

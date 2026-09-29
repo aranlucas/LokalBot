@@ -11,8 +11,10 @@ final class DayDigestEvidenceTests: XCTestCase {
         }
 
         private(set) var calls: [Call] = []
+        private(set) var aggregationPrompts: [String] = []
 
-        func record(isFocus: Bool, options: TextGenerationOptions) -> Int {
+        func record(isFocus: Bool, options: TextGenerationOptions, prompt: String = "") -> Int {
+            if !isFocus { aggregationPrompts.append(prompt) }
             calls.append(Call(
                 isFocus: isFocus,
                 maxTokens: options.maxTokens,
@@ -22,12 +24,19 @@ final class DayDigestEvidenceTests: XCTestCase {
         }
     }
 
+    private actor SleepRecorder {
+        private(set) var delays: [TimeInterval] = []
+        func record(_ delay: TimeInterval) { delays.append(delay) }
+    }
+
     private struct StructuredDigestEngine: TextEngine {
         let recorder: GenerationRecorder
         var invalidFirstFocus = false
         var alwaysInvalidFocus = false
         var failedFocusCalls: Set<Int> = []
         var failedFinalCalls: Set<Int> = []
+        var focusHTTPStatus: [Int: Int] = [:]
+        var finalHTTPStatus: [Int: Int] = [:]
         var truncatedFocusCalls: Set<Int> = []
         var truncatedFinalCalls: Set<Int> = []
         var invalidFinal = false
@@ -44,12 +53,16 @@ final class DayDigestEvidenceTests: XCTestCase {
                       schema: [String: Any],
                       options: TextGenerationOptions) async throws -> String {
             let isFocus = system == PromptTemplates.dayDigestFocusSystem
-            let index = await recorder.record(isFocus: isFocus, options: options)
+            let index = await recorder.record(isFocus: isFocus, options: options, prompt: prompt)
             if isFocus {
                 if failedFocusCalls.contains(index) {
                     throw TextEngineError.serverUnreachable(
                         "http://127.0.0.1:17872/v1",
                         transportCode: URLError.networkConnectionLost.rawValue)
+                }
+                if let code = focusHTTPStatus[index] {
+                    throw TextEngineError.httpStatus(
+                        code: code, detail: "Provider returned error", retryAfter: nil)
                 }
                 if truncatedFocusCalls.contains(index) {
                     throw TextEngineError.outputTruncated
@@ -75,6 +88,10 @@ final class DayDigestEvidenceTests: XCTestCase {
                 throw TextEngineError.serverUnreachable(
                     "http://127.0.0.1:17872/v1",
                     transportCode: URLError.networkConnectionLost.rawValue)
+            }
+            if let code = finalHTTPStatus[index] {
+                throw TextEngineError.httpStatus(
+                    code: code, detail: "Provider returned error", retryAfter: nil)
             }
             if truncatedFinalCalls.contains(index) {
                 throw TextEngineError.outputTruncated
@@ -452,7 +469,7 @@ final class DayDigestEvidenceTests: XCTestCase {
         let calls = await recorder.calls
         XCTAssertEqual(calls.count, 4)
         XCTAssertTrue(calls.prefix(3).allSatisfy {
-            $0.isFocus && $0.maxTokens == 768
+            $0.isFocus && $0.maxTokens == 2_048
                 && $0.reasoningBudgetTokens == 256 && $0.temperature == 0.2
         })
         XCTAssertEqual(calls.last, GenerationRecorder.Call(
@@ -486,7 +503,7 @@ final class DayDigestEvidenceTests: XCTestCase {
         XCTAssertEqual(calls.count, 3)
         XCTAssertEqual(calls[1], GenerationRecorder.Call(
             isFocus: true,
-            maxTokens: 1_600,
+            maxTokens: 4_096,
             reasoningBudgetTokens: 0,
             temperature: 0))
     }
@@ -514,7 +531,7 @@ final class DayDigestEvidenceTests: XCTestCase {
         XCTAssertEqual(calls.count, 3)
         XCTAssertEqual(calls[1], GenerationRecorder.Call(
             isFocus: true,
-            maxTokens: 1_600,
+            maxTokens: 4_096,
             reasoningBudgetTokens: 0,
             temperature: 0))
     }
@@ -562,15 +579,17 @@ final class DayDigestEvidenceTests: XCTestCase {
             evidence: evidence,
             engine: StructuredDigestEngine(
                 recorder: recorder,
-                failedFocusCalls: [2]),
+                failedFocusCalls: [2, 3]),
             customPrompt: "",
-            calendar: calendar)
+            calendar: calendar,
+            sleep: { _ in })
 
         XCTAssertEqual(result.quality, .partial)
         XCTAssertTrue(result.summary.contains("**Task 1**"))
         XCTAssertFalse(result.summary.contains("**Task 2**"))
+        XCTAssertFalse(result.summary.contains("**Task 3**"))
         let calls = await recorder.calls
-        XCTAssertEqual(calls.count, 3)
+        XCTAssertEqual(calls.count, 4)
     }
 
     func testOverviewResultFallsBackWhenFirstTransportRecoveryExhausts() async throws {
@@ -586,14 +605,15 @@ final class DayDigestEvidenceTests: XCTestCase {
             evidence: evidence,
             engine: StructuredDigestEngine(
                 recorder: recorder,
-                failedFocusCalls: [1]),
+                failedFocusCalls: [1, 2]),
             customPrompt: "",
-            calendar: calendar)
+            calendar: calendar,
+            sleep: { _ in })
 
         XCTAssertEqual(result.quality, .fallback)
         XCTAssertTrue(result.summary.contains("**Morning implementation**"))
         let calls = await recorder.calls
-        XCTAssertEqual(calls.count, 1)
+        XCTAssertEqual(calls.count, 2)
     }
 
     func testOverviewResultKeepsExtractedTasksWhenAggregationRecoveryExhausts() async throws {
@@ -609,14 +629,101 @@ final class DayDigestEvidenceTests: XCTestCase {
             evidence: evidence,
             engine: StructuredDigestEngine(
                 recorder: recorder,
-                failedFinalCalls: [1]),
+                failedFinalCalls: [1, 2]),
             customPrompt: "",
-            calendar: calendar)
+            calendar: calendar,
+            sleep: { _ in })
 
         XCTAssertEqual(result.quality, .partial)
         XCTAssertTrue(result.summary.contains("**Task 1**"))
         let calls = await recorder.calls
-        XCTAssertEqual(calls.count, 2)
+        XCTAssertEqual(calls.count, 3)
+    }
+
+    func testOverviewGeneratorReplaysSegmentOnceAfterProviderError() async throws {
+        let evidence = DayDigestEvidence.build(
+            day: day,
+            blocks: [
+                block(1, 8, "Morning implementation"),
+                block(2, 13, "Midday investigation"),
+            ],
+            screenContexts: [],
+            meetings: [],
+            calendar: calendar)
+        let recorder = GenerationRecorder()
+        let sleeps = SleepRecorder()
+
+        let result = try await DayDigestOverviewGenerator.generateResult(
+            evidence: evidence,
+            engine: StructuredDigestEngine(
+                recorder: recorder,
+                focusHTTPStatus: [2: 503],
+                finalResponse: """
+                    {"tasks":[{"title":"Task 1","status":"completed","summary":"Completed the first task.","next_step":"","block_indices":[0]},{"title":"Task 3","status":"completed","summary":"Completed the replayed task.","next_step":"","block_indices":[1]}],"decisions":[],"blockers":[]}
+                    """),
+            customPrompt: "",
+            calendar: calendar,
+            sleep: { await sleeps.record($0) })
+
+        XCTAssertEqual(result.quality, .complete)
+        XCTAssertTrue(result.summary.contains("**Task 3**"))
+        let calls = await recorder.calls
+        XCTAssertEqual(calls.count, 4)
+        XCTAssertEqual(calls[1], calls[2])
+        let delays = await sleeps.delays
+        XCTAssertEqual(delays.count, 1)
+        XCTAssertTrue((1...1.5).contains(delays[0]))
+    }
+
+    func testOverviewGeneratorReplaysAggregationOnceAfterProviderError() async throws {
+        let evidence = DayDigestEvidence.build(
+            day: day,
+            blocks: [block(1, 8, "Morning implementation")],
+            screenContexts: [],
+            meetings: [],
+            calendar: calendar)
+        let recorder = GenerationRecorder()
+
+        let result = try await DayDigestOverviewGenerator.generateResult(
+            evidence: evidence,
+            engine: StructuredDigestEngine(
+                recorder: recorder,
+                finalHTTPStatus: [1: 503]),
+            customPrompt: "",
+            calendar: calendar,
+            sleep: { _ in })
+
+        XCTAssertEqual(result.quality, .complete)
+        XCTAssertTrue(result.summary.contains("**Task 1**"))
+        let calls = await recorder.calls
+        XCTAssertEqual(calls.count, 3)
+        XCTAssertEqual(calls[1], calls[2])
+    }
+
+    func testOverviewGeneratorDoesNotReplayPermanentProviderError() async throws {
+        let evidence = DayDigestEvidence.build(
+            day: day,
+            blocks: [block(1, 8, "Morning implementation")],
+            screenContexts: [],
+            meetings: [],
+            calendar: calendar)
+        let recorder = GenerationRecorder()
+        let sleeps = SleepRecorder()
+
+        let result = try await DayDigestOverviewGenerator.generateResult(
+            evidence: evidence,
+            engine: StructuredDigestEngine(
+                recorder: recorder,
+                focusHTTPStatus: [1: 401]),
+            customPrompt: "",
+            calendar: calendar,
+            sleep: { await sleeps.record($0) })
+
+        XCTAssertEqual(result.quality, .fallback)
+        let calls = await recorder.calls
+        XCTAssertEqual(calls.count, 1)
+        let delays = await sleeps.delays
+        XCTAssertTrue(delays.isEmpty)
     }
 
     func testOverviewGeneratorRetriesTruncatedAggregationWithoutReasoning() async throws {
@@ -671,7 +778,7 @@ final class DayDigestEvidenceTests: XCTestCase {
         XCTAssertEqual(calls.count, 2)
     }
 
-    func testBestAvailableActivityDoesNotDiluteSubstantiveTasks() async throws {
+    func testLighterWorkFollowsSubstantiveTasksInsteadOfDisappearing() async throws {
         let evidence = DayDigestEvidence.build(
             day: day,
             blocks: [
@@ -692,10 +799,23 @@ final class DayDigestEvidenceTests: XCTestCase {
             customPrompt: "",
             calendar: calendar)
 
-        XCTAssertTrue(overview.contains("**Task 1**"))
-        XCTAssertFalse(overview.contains("Protocol research"))
+        let substantive = try XCTUnwrap(overview.range(of: "**Task 1**"))
+        let lighter = try XCTUnwrap(overview.range(of: "**Protocol research**"),
+                                    "Identifiable lighter work stays in the digest")
+        XCTAssertLessThan(substantive.lowerBound, lighter.lowerBound, "Substantive work leads")
         let calls = await recorder.calls
         XCTAssertEqual(calls.count, 3)
+        let aggregationPrompts = await recorder.aggregationPrompts
+        let aggregation = try XCTUnwrap(aggregationPrompts.last)
+        XCTAssertTrue(aggregation.contains("Priority: primary\n  Task: Task 1"))
+        XCTAssertTrue(aggregation.contains("Priority: secondary\n  Task: Protocol research"))
+    }
+
+    func testFocusPromptCountsAIAssistedWorkAsSubstantive() {
+        let prompt = PromptTemplates.dayDigestFocusSystem
+        XCTAssertTrue(prompt.contains("Work done with an AI assistant or coding agent is the person's own work"))
+        XCTAssertTrue(prompt.contains("describe that task and its result, not the assistant or the chat"))
+        XCTAssertTrue(PromptTemplates.dayDigestSystem.contains("Priority: secondary"))
     }
 
     func testMetadataOnlySegmentUsesGenericRecordedActivityFallback() async throws {

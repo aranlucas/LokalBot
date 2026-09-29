@@ -273,7 +273,11 @@ struct MeetingRowView: View {
                 }
                 Text(meeting.isMergedMeeting ? "\(time) · \(duration)"
                      : "\(meeting.appName) · \(time) · \(duration)")
-                    .font(.scaled(.callout)).foregroundStyle(prominence == .increased ? Color.white.opacity(0.85) : .secondary).lineLimit(1)
+                    .font(.scaled(.callout))
+                    .foregroundStyle(prominence == .increased
+                                     ? Color.white.opacity(0.85)
+                                     : Color(nsColor: WorkspaceTextColor.supporting))
+                    .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)

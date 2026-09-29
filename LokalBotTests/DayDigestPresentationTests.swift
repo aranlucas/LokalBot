@@ -97,16 +97,14 @@ final class DayDigestPresentationTests: XCTestCase {
 
         XCTAssertEqual(presentation.atAGlanceMarkdown, "A concise legacy overview.")
         XCTAssertEqual(presentation.focusBlocks.count, 10)
-        XCTAssertEqual(presentation.initialFocusBlocks.count, 3)
-        XCTAssertEqual(presentation.collapsibleFocusBlocks.count, 7)
         XCTAssertNil(presentation.decisionsMarkdown)
         XCTAssertNil(presentation.meetingsMarkdown)
         XCTAssertTrue(presentation.timeAllocations.isEmpty)
         XCTAssertEqual(presentation.activityGroups.first?.label, "17:00–17:59")
     }
 
-    func testDoesNotCollapseOneFinalFocusBlock() {
-        let bullets = (1...4).map { "- Focus session \($0)" }.joined(separator: "\n")
+    func testKeepsEveryFocusBlockForTheWorkSummary() {
+        let bullets = (1...9).map { "- Focus session \($0)" }.joined(separator: "\n")
         let markdown = """
             ## Day summary
 
@@ -116,8 +114,7 @@ final class DayDigestPresentationTests: XCTestCase {
 
         let presentation = DayDigestPresentation(markdown: markdown)
 
-        XCTAssertEqual(presentation.initialFocusBlocks.count, 4)
-        XCTAssertTrue(presentation.collapsibleFocusBlocks.isEmpty)
+        XCTAssertEqual(presentation.focusBlocks.count, 9)
     }
 
     func testTopLevelLegacyBriefHeadingsPopulateHighlightsAndTasks() {
@@ -291,7 +288,8 @@ final class DayDigestPresentationTests: XCTestCase {
         XCTAssertTrue(PromptTemplates.dayDigestSystem.contains("task-first"))
         XCTAssertTrue(PromptTemplates.dayDigestSystem.contains("block_indices"))
         XCTAssertTrue(PromptTemplates.dayDigestSystem.contains("Recorded time may only break ties"))
-        XCTAssertTrue(PromptTemplates.dayDigestSystem.contains("Omit low-signal activity"))
+        XCTAssertTrue(PromptTemplates.dayDigestSystem.contains("Omit activity that identifies no concrete item"))
+        XCTAssertTrue(PromptTemplates.dayDigestSystem.contains("instead of omitting them"))
         XCTAssertTrue(PromptTemplates.dayDigestSystem.contains("different apps"))
         XCTAssertTrue(PromptTemplates.dayDigestSystem.contains("exactly one owner"))
         XCTAssertTrue(PromptTemplates.dayDigestFallbackSystem.contains("low-signal"))
