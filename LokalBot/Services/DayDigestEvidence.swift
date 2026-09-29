@@ -972,7 +972,10 @@ enum DayDigestOverviewGenerator {
         }
 
         let usesBestAvailableActivity = substantiveBlocks.isEmpty
-        let selectedBlocks = usesBestAvailableActivity ? fallbackBlocks : substantiveBlocks
+        // Substantive work leads; lighter but identifiable work follows it
+        // instead of disappearing whenever one segment clears the bar.
+        let selectedBlocks = substantiveBlocks + fallbackBlocks
+        let marksPriority = !substantiveBlocks.isEmpty && !fallbackBlocks.isEmpty
         guard !selectedBlocks.isEmpty else {
             return DayDigestOverviewGeneration(
                 summary: fallback(evidence),
@@ -984,15 +987,29 @@ enum DayDigestOverviewGenerator {
         await progress?(DayDigestProgress(
             completedSegments: segments.count, totalSegments: segments.count, isAggregating: true))
         do {
-            let aggregationInstruction = usesBestAvailableActivity
-                ? "Retain the best grounded activity even without a concrete outcome."
-                : "Rank by concrete outcome, useful progress, decision, or blocker. "
+            let aggregationInstruction: String
+            let candidatesHeading: String
+            if usesBestAvailableActivity {
+                aggregationInstruction = "Retain the best grounded activity even without a concrete outcome."
+                candidatesHeading = "BEST AVAILABLE WORK OR ACTIVITY CANDIDATES:"
+            } else if marksPriority {
+                aggregationInstruction = "Rank primary candidates by concrete outcome, useful progress, "
+                    + "decision, or blocker, then list secondary candidates after them. Merge a secondary "
+                    + "candidate into a primary task when both concern the same work; otherwise keep it as "
+                    + "its own lower-ranked task. Do not rank by duration or chronology."
+                candidatesHeading = "WORK CANDIDATES (primary first, then secondary):"
+            } else {
+                aggregationInstruction = "Rank by concrete outcome, useful progress, decision, or blocker. "
                     + "Do not rank by duration or chronology."
-            let candidatesHeading = usesBestAvailableActivity
-                ? "BEST AVAILABLE WORK OR ACTIVITY CANDIDATES:"
-                : "SUBSTANTIVE WORK CANDIDATES:"
+                candidatesHeading = "SUBSTANTIVE WORK CANDIDATES:"
+            }
             let material = selectedBlocks.enumerated()
-                .map { candidateMaterial($0.element, index: $0.offset) }
+                .map { offset, block in
+                    candidateMaterial(
+                        block, index: offset,
+                        priority: marksPriority
+                            ? (offset < substantiveBlocks.count ? "primary" : "secondary") : nil)
+                }
                 .joined(separator: "\n")
             let system = usesBestAvailableActivity
                 ? PromptTemplates.dayDigestFallbackSystem(custom: customPrompt)
@@ -1043,7 +1060,7 @@ enum DayDigestOverviewGenerator {
         if digest == nil { degraded = true }
         lokalbotLog(
             "day digest task aggregation mode="
-                + "\(usesBestAvailableActivity ? "best-available" : "substantive") "
+                + "\(usesBestAvailableActivity ? "best-available" : marksPriority ? "substantive+secondary" : "substantive") "
                 + "parsed=\(digest != nil) elapsed="
                 + String(format: "%.2fs", Date().timeIntervalSince(digestStartedAt)))
 
@@ -1379,10 +1396,11 @@ enum DayDigestOverviewGenerator {
 
     private static func candidateMaterial(
         _ block: DayDigestGeneratedFocusBlock,
-        index: Int
+        index: Int,
+        priority: String? = nil
     ) -> String {
         """
-        - [candidate_index \(index)]
+        - [candidate_index \(index)]\(priority.map { "\n  Priority: \($0)" } ?? "")
           Task: \(block.task)
           Work done: \(block.workDone)
           Status: \(block.status)

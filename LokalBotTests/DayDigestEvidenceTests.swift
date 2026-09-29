@@ -11,8 +11,10 @@ final class DayDigestEvidenceTests: XCTestCase {
         }
 
         private(set) var calls: [Call] = []
+        private(set) var aggregationPrompts: [String] = []
 
-        func record(isFocus: Bool, options: TextGenerationOptions) -> Int {
+        func record(isFocus: Bool, options: TextGenerationOptions, prompt: String = "") -> Int {
+            if !isFocus { aggregationPrompts.append(prompt) }
             calls.append(Call(
                 isFocus: isFocus,
                 maxTokens: options.maxTokens,
@@ -44,7 +46,7 @@ final class DayDigestEvidenceTests: XCTestCase {
                       schema: [String: Any],
                       options: TextGenerationOptions) async throws -> String {
             let isFocus = system == PromptTemplates.dayDigestFocusSystem
-            let index = await recorder.record(isFocus: isFocus, options: options)
+            let index = await recorder.record(isFocus: isFocus, options: options, prompt: prompt)
             if isFocus {
                 if failedFocusCalls.contains(index) {
                     throw TextEngineError.serverUnreachable(
@@ -671,7 +673,7 @@ final class DayDigestEvidenceTests: XCTestCase {
         XCTAssertEqual(calls.count, 2)
     }
 
-    func testBestAvailableActivityDoesNotDiluteSubstantiveTasks() async throws {
+    func testLighterWorkFollowsSubstantiveTasksInsteadOfDisappearing() async throws {
         let evidence = DayDigestEvidence.build(
             day: day,
             blocks: [
@@ -692,10 +694,23 @@ final class DayDigestEvidenceTests: XCTestCase {
             customPrompt: "",
             calendar: calendar)
 
-        XCTAssertTrue(overview.contains("**Task 1**"))
-        XCTAssertFalse(overview.contains("Protocol research"))
+        let substantive = try XCTUnwrap(overview.range(of: "**Task 1**"))
+        let lighter = try XCTUnwrap(overview.range(of: "**Protocol research**"),
+                                    "Identifiable lighter work stays in the digest")
+        XCTAssertLessThan(substantive.lowerBound, lighter.lowerBound, "Substantive work leads")
         let calls = await recorder.calls
         XCTAssertEqual(calls.count, 3)
+        let aggregationPrompts = await recorder.aggregationPrompts
+        let aggregation = try XCTUnwrap(aggregationPrompts.last)
+        XCTAssertTrue(aggregation.contains("Priority: primary\n  Task: Task 1"))
+        XCTAssertTrue(aggregation.contains("Priority: secondary\n  Task: Protocol research"))
+    }
+
+    func testFocusPromptCountsAIAssistedWorkAsSubstantive() {
+        let prompt = PromptTemplates.dayDigestFocusSystem
+        XCTAssertTrue(prompt.contains("Work done with an AI assistant or coding agent is the person's own work"))
+        XCTAssertTrue(prompt.contains("describe that task and its result, not the assistant or the chat"))
+        XCTAssertTrue(PromptTemplates.dayDigestSystem.contains("Priority: secondary"))
     }
 
     func testMetadataOnlySegmentUsesGenericRecordedActivityFallback() async throws {
