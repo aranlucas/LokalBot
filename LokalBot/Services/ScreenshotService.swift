@@ -123,13 +123,15 @@ struct ScreenshotCaptureLayout {
     ) -> Selection? {
         guard let focusedWindowFrame, !focusedWindowFrame.isEmpty,
               !focusedWindowFrame.isNull else { return nil }
-        let matches = windows.filter {
-            $0.processID == frontmostProcessID
-                && $0.title == focusedWindowTitle
-                && $0.frame == focusedWindowFrame
+        // The Accessibility-checked frame identifies the window. The window
+        // title ScreenCaptureKit reports can lag the live one (Chrome), so a
+        // title only tells apart windows that share that exact frame.
+        let framed = windows.filter {
+            $0.processID == frontmostProcessID && $0.frame == focusedWindowFrame
         }
-        // A title alone can identify several windows. Never guess another
-        // window or fall back to the display when AX cannot bind the source.
+        let matches = framed.count == 1 ? framed : framed.filter { $0.title == focusedWindowTitle }
+        // Never guess another window or fall back to the display when AX
+        // cannot bind the source.
         guard matches.count == 1, let window = matches.first,
               !isExcluded(appName: window.appName, excludedApps: excludedApps)
         else { return nil }
@@ -138,6 +140,35 @@ struct ScreenshotCaptureLayout {
 
     static func isExcluded(appName: String, excludedApps: [String]) -> Bool {
         ScreenContextPrivacy.isExcluded(appName: appName, rules: excludedApps)
+    }
+
+    /// Why `selection` found no single window, as counts only: never titles.
+    static func mismatchSummary(
+        windows: [Window],
+        frontmostProcessID: pid_t,
+        focusedWindowTitle: String,
+        focusedWindowFrame: CGRect?
+    ) -> String {
+        let own = windows.filter { $0.processID == frontmostProcessID }
+        let titles = own.filter { $0.title == focusedWindowTitle }.count
+        let frames = own.filter { $0.frame == focusedWindowFrame }.count
+        let both = own.filter { $0.title == focusedWindowTitle && $0.frame == focusedWindowFrame }.count
+        let emptyTitles = own.filter { $0.title.isEmpty }.count
+        let related = own.filter {
+            !$0.title.isEmpty && $0.title != focusedWindowTitle
+                && ($0.title.contains(focusedWindowTitle) || focusedWindowTitle.contains($0.title))
+        }.count
+        let nearestFrameDelta = focusedWindowFrame.map { focused in
+            own.map { window in
+                [window.frame.minX - focused.minX, window.frame.minY - focused.minY,
+                 window.frame.width - focused.width, window.frame.height - focused.height]
+                    .map(abs).max() ?? 0
+            }.min()
+        } ?? nil
+        return "appWindows=\(own.count) titleMatches=\(titles) frameMatches=\(frames) bothMatch=\(both) "
+            + "emptyTitles=\(emptyTitles) containedTitles=\(related) "
+            + "nearestFrameDelta=\(nearestFrameDelta.map { String(format: "%.1f", $0) } ?? "none") "
+            + "axFrame=\(focusedWindowFrame == nil ? "none" : "known")"
     }
 }
 
@@ -214,9 +245,15 @@ struct ScreenshotCaptureConsent: Equatable {
 extension ScreenshotService {
     /// Names which capture precondition failed, without window contents, so
     /// a skipped app can be diagnosed from the debug log.
-    static func accessibilitySkipReason(_ result: ScreenAccessibilityCaptureResult, app: String) -> String {
+    static func accessibilitySkipReason(
+        _ result: ScreenAccessibilityCaptureResult, app: String, processID: pid_t
+    ) -> String {
         if result.timedOut { return "\(app): accessibility timed out" }
-        guard let snapshot = result.snapshot else { return "\(app): no accessibility snapshot" }
+        guard let snapshot = result.snapshot else {
+            let detail = ScreenAccessibilityReader.lastTextReadFailure(for: processID)
+                .map { " (\($0.reason))" } ?? ""
+            return "\(app): no accessibility snapshot\(detail)"
+        }
         if snapshot.windowTitle == nil { return "\(app): no window title" }
         let focus = snapshot.focusedSecureField.map { $0 ? "secure" : "plain" } ?? "unknown"
         return "\(app): focus=\(focus) secureVisible=\(snapshot.containsSecureField) "
@@ -241,8 +278,9 @@ enum ScreenshotWindowFocusValidation {
             && snapshot.windowFrame == expected.windowFrame
             && snapshot.sourceURL == expected.sourceURL
             && snapshot.hasWebContent == expected.hasWebContent
-            && snapshot.focusedSecureField == expected.focusedSecureField
             && snapshot.containsSecureField == expected.containsSecureField
+            && ScreenAccessibilityReader.settledFocus(
+                before: expected.focusedSecureField, after: snapshot.focusedSecureField).accepted
     }
 }
 
@@ -734,8 +772,19 @@ final class ScreenshotService: ObservableObject {
             isCapturing = false
         }
 
-        let accessibility = await accessibilityReader.capture(
+        var accessibility = await accessibilityReader.capture(
             processID: frontmostApp.processIdentifier)
+        if accessibility.snapshot == nil, !accessibility.timedOut,
+           ScreenAccessibilityReader.lastTextReadFailure(
+            for: frontmostApp.processIdentifier)?.isTransient == true {
+            // A tab switch or page load can change the window while it is
+            // read; the capture event often fires at exactly that moment.
+            // Let it settle once instead of losing the capture to the cooldown.
+            try? await Task.sleep(for: .milliseconds(750))
+            if NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmostApp.processIdentifier {
+                accessibility = await accessibilityReader.capture(processID: frontmostApp.processIdentifier)
+            }
+        }
         guard captureIsAuthorized(consent), !accessibility.timedOut, let snapshot = accessibility.snapshot,
               NSWorkspace.shared.frontmostApplication?.processIdentifier
                 == frontmostApp.processIdentifier,
@@ -748,7 +797,8 @@ final class ScreenshotService: ObservableObject {
               let windowTitle = snapshot.windowTitle else {
             policy.noteCheck(at: current)
             lokalbotLog("context skip: excluded or unavailable focused-window privacy metadata ("
-                + Self.accessibilitySkipReason(accessibility, app: frontmost) + ")")
+                + Self.accessibilitySkipReason(
+                    accessibility, app: frontmost, processID: frontmostApp.processIdentifier) + ")")
             return
         }
         lastAccessibilityCapture = current
@@ -866,30 +916,50 @@ final class ScreenshotService: ObservableObject {
                          sourceURL: String?,
                          documentName: String?,
                          meetingID: String?) async throws {
+        let clock = ContinuousClock()
+        let started = clock.now
+        var stages: [String] = []
+        func mark(_ stage: String) {
+            let elapsed = (clock.now - started).components
+            let seconds = Double(elapsed.seconds) + Double(elapsed.attoseconds) / 1e18
+            stages.append("\(stage)=\(String(format: "%.2f", seconds))s")
+        }
+        defer { lokalbotLog("shot timing app=\(frontApp) \(stages.joined(separator: " "))") }
         let content = try await SCShareableContent.excludingDesktopWindows(
             false, onScreenWindowsOnly: true)
+        mark("windows")
         guard captureIsAuthorized(consent),
               NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmostProcessID else {
             lokalbotLog("shot skip: focus changed while preparing capture")
             return
         }
+        let candidateWindows: [ScreenshotCaptureLayout.Window] = content.windows.compactMap { window in
+            guard let application = window.owningApplication else { return nil }
+            return .init(
+                id: window.windowID,
+                processID: application.processID,
+                appName: application.applicationName,
+                title: window.title ?? "",
+                frame: window.frame)
+        }
         let layout = ScreenshotCaptureLayout.selection(
-            windows: content.windows.compactMap { window in
-                guard let application = window.owningApplication else { return nil }
-                return .init(
-                    id: window.windowID,
-                    processID: application.processID,
-                    appName: application.applicationName,
-                    title: window.title ?? "",
-                    frame: window.frame)
-            },
+            windows: candidateWindows,
             frontmostProcessID: frontmostProcessID,
             focusedWindowTitle: windowTitle,
             focusedWindowFrame: accessibilitySnapshot.windowFrame,
             excludedApps: excludedApps)
         guard let layout,
               let window = content.windows.first(where: { $0.windowID == layout.windowID })
-        else { return }
+        else {
+            policy.noteCheck(at: Date())
+            let summary = ScreenshotCaptureLayout.mismatchSummary(
+                windows: candidateWindows,
+                frontmostProcessID: frontmostProcessID,
+                focusedWindowTitle: windowTitle,
+                focusedWindowFrame: accessibilitySnapshot.windowFrame)
+            lokalbotLog("shot skip: no on-screen window matched the focused window (\(frontApp): \(summary))")
+            return
+        }
 
         // Bound the source frame before ScreenCaptureKit allocates it. Vision
         // receives this same readable 1,500 px frame in the worker; requesting
@@ -908,8 +978,13 @@ final class ScreenshotService: ObservableObject {
         configuration.ignoreShadowsSingleWindow = true
         let image = try await SCScreenshotManager.captureImage(
             contentFilter: filter, configuration: configuration)
-        guard captureIsAuthorized(consent), CGPreflightScreenCaptureAccess() else { return }
+        mark("image")
+        guard captureIsAuthorized(consent), CGPreflightScreenCaptureAccess() else {
+            lokalbotLog("shot skip: consent or screen recording access changed during capture")
+            return
+        }
         let currentAccessibility = await accessibilityReader.capture(processID: frontmostProcessID)
+        mark("recheck")
         guard captureIsAuthorized(consent),
               NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmostProcessID,
               ScreenshotWindowFocusValidation.matches(
@@ -939,6 +1014,7 @@ final class ScreenshotService: ObservableObject {
             accessibleText: accessibleText,
             accessibilityRedactionCount: accessibilityRedactionCount,
             stageOnly: true))
+        mark("process")
 
         guard case .stored(let stored) = outcome else {
             policy.noteCheck(at: timestamp)
