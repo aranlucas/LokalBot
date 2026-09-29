@@ -363,14 +363,16 @@ final class MainWindowUITests: XCTestCase {
                       "persistent Timeline actions did not render")
         XCTAssertTrue(app.descendants(matching: .any)["timeline.workSessions"]
             .waitForExistence(timeout: 6), "work sessions should be visible immediately")
-        let usesContextDrawer = revealTimelineContext()
-        if usesContextDrawer { closeTimelineContext() }
-        if !usesContextDrawer {
-            XCTAssertLessThan(
-                identified("capture.dayOverview").frame.minY,
-                identified("timeline.workSessions").frame.minY,
-                "Day overview should appear above Work Sessions")
-        }
+        XCTAssertFalse(identified("timeline.contextPanel").exists,
+                       "the day digest shows until something is selected")
+        XCTAssertFalse(identified("timeline.context.toggle").exists,
+                       "there are no details to open before a selection")
+        let needsAttention = textWithContent("Needs Attention").firstMatch
+        XCTAssertTrue(needsAttention.waitForExistence(timeout: 6))
+        XCTAssertLessThan(
+            needsAttention.frame.minY,
+            identified("capture.dayOverview").frame.minY,
+            "Day overview belongs below the digest")
         XCTAssertTrue(identified("timeline.dayDigest.generate").waitForExistence(timeout: 5),
                       "day-digest action should remain directly visible")
         XCTAssertTrue(identified("timeline.dayDigest.actions").exists,
@@ -383,7 +385,12 @@ final class MainWindowUITests: XCTestCase {
                        "empty decisions section should not consume Timeline space")
         XCTAssertTrue(textWithContent("Day Overview").firstMatch.waitForExistence(timeout: 6),
                       "day overview missing — seeded activity did not load")
-        XCTAssertTrue(textWithContent("Xcode").firstMatch.exists,
+        // Day Overview closes the digest column; its lazy app legend is built
+        // only once scrolled into view.
+        let digestColumn = identified("timeline.evidencePane").scrollViews.firstMatch
+        UITestHarness.scrollTo(identified("capture.dayOverview"), in: app,
+                               within: digestColumn.exists ? digestColumn : nil)
+        XCTAssertTrue(textWithContent("Xcode").firstMatch.waitForExistence(timeout: 4),
                       "seeded activity app 'Xcode' missing from Timeline")
         XCTAssertTrue(digestTasksVisible(),
                       "digest task hierarchy is missing")
@@ -395,7 +402,6 @@ final class MainWindowUITests: XCTestCase {
                        "private evidence identifier leaked into the collapsed overview")
         XCTAssertFalse(textWithContent("No activity recorded").firstMatch.exists,
                        "empty state shown despite seeded activity blocks")
-        if usesContextDrawer { closeTimelineContext() }
         // The grounded block title becomes the human-scale session title.
         XCTAssertTrue(app.buttons.matching(
             NSPredicate(format: "label CONTAINS[c] %@", "TimelineView.swift"))
@@ -488,7 +494,6 @@ final class MainWindowUITests: XCTestCase {
                       "previous-day control is missing")
         previousDay.click()
 
-        if revealTimelineContext() { closeTimelineContext() }
         XCTAssertTrue(textWithContent(SyntheticFixture.previousDayDigestMarker).firstMatch
             .waitForExistence(timeout: 4), "previous day's digest did not replace today's")
         XCTAssertFalse(textWithContent(SyntheticFixture.todayDigestMarker).firstMatch.exists,
@@ -1239,8 +1244,6 @@ final class MainWindowUITests: XCTestCase {
 
     /// Prefer the stable identifier; fall back to visible copy if AX role differs.
     private func digestTasksVisible() -> Bool {
-        let fullDigest = app.disclosureTriangles["timeline.fullDigest"]
-        if fullDigest.exists { fullDigest.click() }
         let identifiedHeader = app.descendants(matching: .any)["dayDigest.tasks"]
         if identifiedHeader.waitForExistence(timeout: 5) { return true }
         return textWithContent("Work summary").firstMatch.exists
@@ -1249,20 +1252,6 @@ final class MainWindowUITests: XCTestCase {
     private func switchToKeywordSearch() {
         XCTAssertTrue(identified("search.field").waitForExistence(timeout: 5))
         XCTAssertFalse(identified("ask.retrieval").exists)
-    }
-
-    /// Timeline keeps the day context side by side when wide and behind an
-    /// explicit drawer when narrow. Return whether the responsive drawer was
-    /// needed so callers only make wide-layout frame assertions when valid.
-    @discardableResult
-    private func revealTimelineContext() -> Bool {
-        let toggle = identified("timeline.context.toggle")
-        let usesDrawer = toggle.exists
-        let panel = identified(usesDrawer ? "timeline.contextPanel" : "timeline.evidencePane")
-        if usesDrawer, !panel.exists { toggle.click() }
-        XCTAssertTrue(panel.waitForExistence(timeout: 6),
-                      "Timeline context panel did not render")
-        return usesDrawer
     }
 
     /// Work sessions and raw capture follow Day Overview, the digest and

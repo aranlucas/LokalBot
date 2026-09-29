@@ -5,21 +5,14 @@ import Combine
 
 /// The Timeline section groups low-level capture blocks into human-scale Work
 /// sessions and interleaves meetings as first-class events. The lossless raw
-/// activity and moment rail remain available behind a secondary disclosure.
+/// activity remains available behind Browse Raw Capture.
 @MainActor
 final class CaptureModel: ObservableObject {
     @Published private(set) var day = Date()
     @Published var blocks: [ActivityBlock] = [] {
         didSet { workSessions = DayActivityProjection(blocks: blocks, day: day).sessions }
     }
-    @Published var shots: [ActivityStore.Screenshot] = [] {
-        didSet {
-            shotsRevision &+= 1
-            momentApplications = Array(Set(shots.map(\.app))).sorted()
-        }
-    }
-    private(set) var shotsRevision = 0
-    private(set) var momentApplications: [String] = []
+    @Published var shots: [ActivityStore.Screenshot] = []
     @Published private(set) var rewindFrames: [ScreenRewindFrame] = []
     @Published var selection: ActivityBlock.ID?
     @Published var selectedSessionID: TimelineWorkSession.ID?
@@ -267,30 +260,32 @@ struct TimelineContentView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject var model: CaptureModel
     @State private var contextDrawerPresented = false
-    @State private var browseMode = TimelineBrowseMode.day
-    @State private var momentQuery = ""
-    @State private var momentApplication = ""
+
+    /// Details open only for something selected; the day page is full width
+    /// otherwise.
+    private var hasContextSelection: Bool {
+        model.selection != nil || model.selectedSessionID != nil || model.selectedSnapshotID != nil
+            || model.showsRawCapture || !app.selectedMeetingIDs.isEmpty
+    }
 
     var body: some View {
         GeometryReader { proxy in
             let usesDrawer = proxy.size.width < WorkspaceMetric.timelineDrawerBreakpoint
-                || (model.showsRawCapture && proxy.size.width < 1_100)
             VStack(spacing: 0) {
                 TimelineWorkspaceHeader(
                     model: model,
-                    showsContextToggle: usesDrawer,
+                    showsContextToggle: usesDrawer && hasContextSelection,
                     usesCompactHeader: proxy.size.width < 1_000,
-                    contextPresented: $contextDrawerPresented,
-                    browseMode: $browseMode, query: $momentQuery, application: $momentApplication)
+                    contextPresented: $contextDrawerPresented)
                 Divider()
 
                 if usesDrawer {
                     ZStack(alignment: .trailing) {
-                        CaptureDayView(model: model, browseMode: browseMode, query: momentQuery, application: momentApplication) {
+                        CaptureDayView(model: model) {
                             contextDrawerPresented = true
                         }
 
-                        if contextDrawerPresented {
+                        if contextDrawerPresented, hasContextSelection {
                             Color.black.opacity(0.16)
                                 .contentShape(Rectangle())
                                 .onTapGesture { contextDrawerPresented = false }
@@ -310,25 +305,35 @@ struct TimelineContentView: View {
                     }
                 } else {
                     HSplitView {
-                        CaptureDayView(model: model, browseMode: browseMode, query: momentQuery,
-                                       application: momentApplication, onOpenContext: {})
-                            .frame(minWidth: WorkspaceMetric.timelineDayMinWidth,
-                                   maxWidth: .infinity, maxHeight: .infinity)
-                            .accessibilityElement(children: .contain)
-                            .accessibilityIdentifier("timeline.sessionRail")
-                            .splitPaneAccessibilityLabel("Timeline day")
-                        TimelineContextPanel(model: model, onDismiss: nil)
-                            .frame(minWidth: model.showsRawCapture ? 500 : WorkspaceMetric.timelineContextMinWidth,
-                                   idealWidth: model.showsRawCapture ? 600 : LBTokens.Metric.detailsPaneWidth,
-                                   maxWidth: model.showsRawCapture ? 720 : 520,
-                                   maxHeight: .infinity)
-                            .background(.background.secondary)
-                            .accessibilityElement(children: .contain)
-                            .accessibilityIdentifier("timeline.evidencePane")
-                            .splitPaneAccessibilityLabel(
-                                "Timeline details",
-                                autosaveName: "LokalBot.timeline.details.v6",
-                                initialWidth: LBTokens.Metric.detailsPaneWidth)
+                        // Selection replaces the digest with its details until
+                        // Back returns to the day; the sessions rail stays put.
+                        Group {
+                            if hasContextSelection {
+                                TimelineContextPanel(model: model, onDismiss: nil)
+                            } else {
+                                CaptureDayView(model: model, includesSessions: false, onOpenContext: {})
+                            }
+                        }
+                        .frame(minWidth: WorkspaceMetric.timelineDayMinWidth,
+                               maxWidth: .infinity, maxHeight: .infinity)
+                        .accessibilityElement(children: .contain)
+                        .accessibilityIdentifier("timeline.evidencePane")
+                        .splitPaneAccessibilityLabel("Timeline day")
+                        ScrollView {
+                            TimelineSessionsSection(model: model, onOpenContext: {})
+                                .padding(16)
+                        }
+                        .frame(minWidth: WorkspaceMetric.timelineRailMinWidth,
+                               idealWidth: WorkspaceMetric.timelineRailIdealWidth,
+                               maxWidth: WorkspaceMetric.timelineRailMaxWidth(in: proxy.size.width),
+                               maxHeight: .infinity)
+                        .background(.background.secondary)
+                        .accessibilityElement(children: .contain)
+                        .accessibilityIdentifier("timeline.sessionRail")
+                        .splitPaneAccessibilityLabel(
+                            "Work sessions",
+                            autosaveName: "LokalBot.timeline.sessions.v7",
+                            initialWidth: WorkspaceMetric.timelineRailIdealWidth)
                     }
                     .id("workspace.timeline")
                 }
@@ -371,12 +376,6 @@ struct TimelineContentView: View {
         }
         .onAppear(perform: consumePendingScreenMoment)
         .onChange(of: app.navigationHandoff.revision) { consumePendingScreenMoment() }
-        .onChange(of: model.day) { momentApplication = "" }
-        .onChange(of: model.shotsRevision) {
-            if !momentApplication.isEmpty, !model.momentApplications.contains(momentApplication) {
-                momentApplication = ""
-            }
-        }
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 TrackingPauseButton(sampler: app.sampler, presentation: .toolbar)
@@ -423,9 +422,6 @@ private struct TimelineWorkspaceHeader: View {
     let showsContextToggle: Bool
     let usesCompactHeader: Bool
     @Binding var contextPresented: Bool
-    @Binding var browseMode: TimelineBrowseMode
-    @Binding var query: String
-    @Binding var application: String
     @State private var showingCalendar = false
 
     var body: some View {
@@ -445,22 +441,6 @@ private struct TimelineWorkspaceHeader: View {
                     Spacer(minLength: 12)
                     digestControls.fixedSize()
                 }
-            }
-            HStack(spacing: 12) {
-                Picker("Timeline view", selection: $browseMode) {
-                    ForEach(TimelineBrowseMode.allCases) { Text($0.rawValue).tag($0) }
-                }
-                .pickerStyle(.segmented).labelsHidden().frame(width: 150)
-                .accessibilityIdentifier("timeline.mode")
-                TextField("Search Screen Memory", text: $query)
-                    .textFieldStyle(.roundedBorder)
-                    .accessibilityIdentifier("timeline.search")
-                Picker("App", selection: $application) {
-                    Text("All Apps").tag("")
-                    ForEach(model.momentApplications, id: \.self) { Text($0).tag($0) }
-                }
-                .labelsHidden().frame(maxWidth: 160)
-                .accessibilityIdentifier("timeline.appFilter")
             }
         }
         .padding(.horizontal, 16)
@@ -552,82 +532,70 @@ private struct TimelineWorkspaceHeader: View {
 
 // MARK: - Day sessions
 
+/// The day's digest with its open actions, and Day Overview at the bottom.
+/// Narrow layouts also place the work sessions here; wide layouts keep them
+/// in the trailing rail.
 struct CaptureDayView: View {
     @EnvironmentObject var app: AppState
     @ObservedObject var model: CaptureModel
-    var browseMode = TimelineBrowseMode.day
-    var query = ""
-    var application = ""
+    var includesSessions = true
     let onOpenContext: () -> Void
-    @State private var digestExpanded = false
 
     var body: some View {
-        let meetings = model.meetings(in: app)
-        let sessions = model.workSessions
         ScrollView {
             VStack(alignment: .leading, spacing: LBTokens.Metric.sectionSpacing) {
-                if momentsFirst { momentsSection }
-                DayActivityOverview(model: model)
-                    .accessibilityIdentifier("capture.dayOverview")
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Day Digest").font(.scaled(.headline))
-                    if let digest = model.digest {
-                        let highlights = DayDigestPresentation(markdown: digest).atAGlanceMarkdown
-                        if !highlights.isEmpty, !digestExpanded {
-                            SelectableDigestText(highlights)
-                                .lineLimit(4)
-                        }
-                        DisclosureGroup(isExpanded: $digestExpanded) {
-                            DayDigestCard(model: model, identifier: "capture", showsControls: false)
-                                .padding(.top, 10)
-                        } label: {
-                            // macOS toggles a disclosure group only from its
-                            // chevron; the label reads as the action, so it
-                            // toggles too.
-                            Text("Show Full Digest")
-                                .contentShape(Rectangle())
-                                .onTapGesture { digestExpanded.toggle() }
-                        }
-                        .accessibilityIdentifier("timeline.fullDigest")
-                    } else {
-                        DayDigestCard(model: model, identifier: "capture", showsControls: false)
-                    }
+                    DayDigestCard(model: model, identifier: "capture", showsControls: false)
                 }.workspacePanel()
 
                 NeedsAttentionSection(threads: app.outcomeIndex.openUserActionThreads.filter { thread in
                     thread.references.contains { Calendar.current.isDate($0.meetingStartedAt, inSameDayAs: model.day) }
                 }, limit: 3)
 
-                if model.blocks.isEmpty && meetings.isEmpty && model.shots.isEmpty {
-                    ContentUnavailableView(
-                        "No activity recorded",
-                        systemImage: "clock",
-                        description: Text(app.settings.trackingEnabled
-                            ? "Blocks appear as you use your Mac (sampled every 5 s, idle-aware)."
-                            : "Day tracking is off — enable it in Settings."))
-                } else {
-                    Text("Work Sessions").font(.scaled(.headline))
-                        .accessibilityIdentifier("timeline.workSessions")
-                    if meetings.contains(where: { $0.endedAt == nil }) {
-                        TimelineView(.periodic(from: .now, by: 1)) { context in
-                            sessionList(sessions: sessions, meetings: meetings, now: context.date)
-                        }
-                    } else {
-                        sessionList(sessions: sessions, meetings: meetings, now: Date())
-                    }
+                if includesSessions {
+                    TimelineSessionsSection(model: model, onOpenContext: onOpenContext)
                 }
-                if !momentsFirst { momentsSection }
+
+                DayActivityOverview(model: model)
+                    .accessibilityIdentifier("capture.dayOverview")
             }
             .padding(LBTokens.Metric.detailPadding)
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
     }
+}
 
-    private var momentsFirst: Bool { browseMode == .rewind || !query.isEmpty || !application.isEmpty }
+/// Work sessions and meetings in order, followed by Browse Raw Capture.
+struct TimelineSessionsSection: View {
+    @EnvironmentObject var app: AppState
+    @ObservedObject var model: CaptureModel
+    let onOpenContext: () -> Void
 
-    private var momentsSection: some View {
-        TimelineMomentsSection(model: model, mode: browseMode, query: query,
-                               application: application, onOpenContext: onOpenContext)
+    var body: some View {
+        let meetings = model.meetings(in: app)
+        let sessions = model.workSessions
+        VStack(alignment: .leading, spacing: 10) {
+            if model.blocks.isEmpty && meetings.isEmpty && model.shots.isEmpty {
+                ContentUnavailableView(
+                    "No activity recorded",
+                    systemImage: "clock",
+                    description: Text(app.settings.trackingEnabled
+                        ? "Blocks appear as you use your Mac (sampled every 5 s, idle-aware)."
+                        : "Day tracking is off — enable it in Settings."))
+            } else {
+                Text("Work Sessions").font(.scaled(.headline))
+                    .accessibilityIdentifier("timeline.workSessions")
+                if meetings.contains(where: { $0.endedAt == nil }) {
+                    TimelineView(.periodic(from: .now, by: 1)) { context in
+                        sessionList(sessions: sessions, meetings: meetings, now: context.date)
+                    }
+                } else {
+                    sessionList(sessions: sessions, meetings: meetings, now: Date())
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     private func sessionList(
@@ -636,8 +604,8 @@ struct CaptureDayView: View {
         now: Date
     ) -> some View {
         let items = TimelineDayItem.items(sessions: sessions, meetings: meetings, now: now)
-        // One day's sessions and meetings start below Day Overview, the digest
-        // and Needs Attention. A lazy stack would leave those rows out of the
+        // In narrow layouts the sessions follow the digest and Needs
+        // Attention. A lazy stack would leave those rows out of the
         // accessibility tree until scrolled; the bounded list stays eager.
         return VStack(spacing: 8) {
                 if items.isEmpty {
@@ -671,8 +639,8 @@ struct CaptureDayView: View {
             .padding(.bottom, 8)
     }
 
-    /// Opens raw activity and screen moments full width in the main pane,
-    /// where the hour track and filmstrip have room to be read.
+    /// Opens raw activity and capture cleanup in the main column, where the
+    /// hour track has room to be read.
     private var rawCaptureRow: some View {
         let isSelected = model.showsRawCapture
         return Button {
@@ -742,9 +710,8 @@ struct CaptureDayView: View {
 
 // MARK: - Raw capture
 
-/// Individual activity blocks and retained screen moments for exact evidence
-/// or cleanup. Shown full width in the Timeline's main pane so the hour
-/// track and filmstrip are readable without nested scrolling in the rail.
+/// Individual activity blocks for exact evidence. Shown in the main column so
+/// the hour track is readable without nested scrolling in the rail.
 struct TimelineRawCaptureView: View {
     @EnvironmentObject var app: AppState
     @ObservedObject var model: CaptureModel
