@@ -145,7 +145,7 @@ final class CaptureModel: ObservableObject {
     }
 
     func generateDigest(app: AppState) async {
-        guard !generating else { return }
+        guard !generating, !app.dayDigest.isGenerating(on: day) else { return }
         digestGeneration &+= 1
         let generation = digestGeneration
         let requestedDay = day
@@ -392,6 +392,9 @@ struct TimelineContentView: View {
     }
 
     private func consumePendingScreenMoment() {
+        if let day = app.navigationHandoff.consumeTimelineDay() {
+            model.selectDay(day, app: app)
+        }
         guard let snapshotID = app.navigationHandoff.consumeScreenSnapshot() else { return }
         guard let screenshot = app.activityStore.screenshot(id: snapshotID) else {
             app.lastError = "That captured screen is no longer available."
