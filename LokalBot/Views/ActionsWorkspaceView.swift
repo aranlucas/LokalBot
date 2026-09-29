@@ -10,7 +10,15 @@ struct ActionsWorkspaceView: View {
     @SceneStorage("actions.sort") private var sort = "due"
     @SceneStorage("actions.reviewMode") private var reviewMode = "actions"
     @SceneStorage("actions.meetingID") private var storedMeetingID = ""
+    @SceneStorage("actions.personID") private var personID = ""
     private var meetingID: UUID? { UUID(uuidString: storedMeetingID) }
+    /// The user's open actions that name a person or came from a small
+    /// meeting with them, using the same rules as the People workspace.
+    private var personActionIDs: Set<String>? {
+        guard !personID.isEmpty,
+              let person = app.connections.people.first(where: { $0.id == personID }) else { return nil }
+        return Set(person.myActions.flatMap(\.references).map(\.id))
+    }
     private var selection: Set<String> {
         get { app.actionSelection }
         nonmutating set { app.actionSelection = newValue }
@@ -25,9 +33,11 @@ struct ActionsWorkspaceView: View {
     }
     private func visibleActions(in actions: [OutcomeActionReference]) -> [OutcomeActionReference] {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let personActionIDs = personActionIDs
         return actions.filter { action in
             (status.isEmpty || action.status.rawValue == status)
                 && (meetingID == nil || action.meetingID == meetingID)
+                && (personActionIDs?.contains(action.id) ?? true)
                 && (needle.isEmpty || [action.text, action.meetingTitle, action.due ?? ""].contains { $0.localizedCaseInsensitiveContains(needle) })
                 && matchesDue(action)
         }.sorted { lhs, rhs in
@@ -82,6 +92,10 @@ struct ActionsWorkspaceView: View {
             }
         }
         .navigationTitle("Actions")
+        .task {
+            app.refreshConnections()
+            app.refreshActionCompletionHints()
+        }
         .onChange(of: actions.map(\.id)) { _, ids in app.actionSelection.formIntersection(ids) }
         .sheet(item: $correction) { reference in
             ActionEditorSheet(reference: reference)
@@ -141,7 +155,7 @@ struct ActionsWorkspaceView: View {
                         .foregroundStyle(reference.owner == nil ? LBTokens.Palette.attentionText : .secondary)
                 }.width(90)
                 TableColumn("Due", sortUsing: ActionDueSort()) { reference in
-                    Text(reference.due.map { ActionDuePresentation.label($0, spokenAt: reference.meetingStartedAt) } ?? "—")
+                    Text(reference.due.map { ActionDuePresentation.label($0, spokenAt: reference.dueReferenceDate) } ?? "—")
                         .foregroundStyle(isOverdue(reference) ? LBTokens.Palette.recordingText : .secondary)
                 }.width(110)
                 TableColumn("Meeting") { reference in
@@ -201,7 +215,7 @@ struct ActionsWorkspaceView: View {
     private func header(total: Int, visible: Int, threads: Int, selected: [OutcomeActionReference]) -> some View {
         HStack(spacing: 12) {
             Button { app.showingActions = false } label: { Label("Today", systemImage: "chevron.left") }
-            Text("Actions").font(.title3.bold())
+            Text("Actions").font(.scaled(.title3).bold())
             Text(reviewMode == "threads" ? "\(threads) threads" : "\(visible) of \(total)")
                 .foregroundStyle(.secondary)
             Spacer()
@@ -209,7 +223,7 @@ struct ActionsWorkspaceView: View {
                 if selected.isEmpty {
                     if selecting {
                         Text("Choose actions to change together")
-                            .font(Font.callout)
+                            .font(AppFont.scaled(.callout))
                             .foregroundStyle(.secondary)
                             .accessibilityIdentifier("actions.batch.hint")
                     }
@@ -246,8 +260,11 @@ struct ActionsWorkspaceView: View {
                     .accessibilityIdentifier("actions.search")
             }
             ViewThatFits(in: .horizontal) {
-                HStack { statusPicker; duePicker; meetingPicker; sortPicker }
-                VStack { HStack { statusPicker; duePicker }; HStack { meetingPicker; sortPicker } }
+                HStack { statusPicker; duePicker; meetingPicker; personPicker; sortPicker }
+                VStack {
+                    HStack { statusPicker; duePicker; personPicker }
+                    HStack { meetingPicker; sortPicker }
+                }
             }
             if hiddenSelectionCount > 0 && reviewMode == "actions" {
                 HStack {
@@ -255,7 +272,7 @@ struct ActionsWorkspaceView: View {
                         .accessibilityIdentifier("actions.selection.hidden")
                     Button("Clear selection") { selection = [] }
                     Spacer()
-                }.font(Font.callout).foregroundStyle(.secondary)
+                }.font(AppFont.scaled(.callout)).foregroundStyle(.secondary)
             }
         }.padding(.horizontal, 20).padding(.bottom, 12)
     }
@@ -295,6 +312,16 @@ struct ActionsWorkspaceView: View {
             ForEach(app.outcomeIndex.all) { Text($0.meeting.displayTitle).tag(Optional($0.id)) }
         }
     }
+    private var personPicker: some View {
+        Picker("With", selection: $personID) {
+            Text("Anyone").tag("")
+            ForEach(app.connections.people.filter { !$0.myActions.isEmpty || $0.id == personID }) { person in
+                Text(person.name).tag(person.id)
+            }
+        }
+        .accessibilityIdentifier("actions.person")
+        .help("Your commitments that name this person or came from a small meeting with them")
+    }
     private var sortPicker: some View {
         Picker("Sort", selection: $sort) {
             Text("Due, then recent").tag("due")
@@ -305,7 +332,7 @@ struct ActionsWorkspaceView: View {
 
     private func matchesDue(_ action: OutcomeActionReference) -> Bool {
         guard dueFilter != "all" else { return true }
-        let date = ActionDuePresentation.date(action.due)
+        let date = action.resolvedDueDate
         switch dueFilter {
         case "overdue": return date.map { $0 < Calendar.current.startOfDay(for: Date()) } == true && action.status == .open
         case "dated": return date != nil
@@ -317,8 +344,8 @@ struct ActionsWorkspaceView: View {
     private func inspector(_ reference: OutcomeActionReference) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Action Details").font(.title3.bold())
-                Text(reference.text).font(.body.weight(.semibold)).textSelection(.enabled)
+                Text("Action Details").font(.scaled(.title3).bold())
+                Text(reference.text).font(.scaled(.body).weight(.semibold)).textSelection(.enabled)
                 Button(reference.meetingTitle) { app.openMeeting(reference.meetingID) }
                     .buttonStyle(.workspaceLink)
                 Picker("Status", selection: Binding(get: { reference.status }, set: { setStatus($0, for: reference) })) {
@@ -332,15 +359,15 @@ struct ActionsWorkspaceView: View {
                             $0,
                             identity: reference.isForUser ? .user : .unresolved)
                     } ?? "Not stated")
-                if let due = reference.due { Text(ActionDuePresentation.label(due, spokenAt: reference.meetingStartedAt)) }
+                if let due = reference.due { Text(ActionDuePresentation.label(due, spokenAt: reference.dueReferenceDate)) }
                 Button("Correct Action or Resolve Date…") { correction = reference }
                 Divider()
-                Text("Original Wording").font(Font.callout.weight(.semibold))
+                Text("Original Wording").font(AppFont.scaled(.callout).weight(.semibold))
                 Text(reference.action.displayText).textSelection(.enabled)
                 if let originalDue = reference.action.due { Text("Original due phrase: \(originalDue)") }
                 ActionEvidencePassages(reference: reference).id(reference.id)
                 Text("Saved corrections stay separate from the original action and its supporting passage.")
-                    .font(.callout).foregroundStyle(.secondary)
+                    .font(.scaled(.callout)).foregroundStyle(.secondary)
                 if reference.action.citations.isEmpty { Text("No supporting passage was stored.").foregroundStyle(.secondary) }
             }.padding(20)
         }
@@ -348,7 +375,7 @@ struct ActionsWorkspaceView: View {
     }
 
     private func isOverdue(_ reference: OutcomeActionReference) -> Bool {
-        reference.status == .open && ActionDuePresentation.date(reference.due).map {
+        reference.status == .open && reference.resolvedDueDate.map {
             $0 < Calendar.current.startOfDay(for: Date())
         } == true
     }
@@ -379,12 +406,12 @@ private struct ActionEditorSheet: View {
         _text = State(initialValue: reference.text)
         _owner = State(initialValue: reference.owner ?? "")
         _due = State(initialValue: reference.due ?? "")
-        _resolvedDate = State(initialValue: ActionDuePresentation.date(reference.due) ?? Date())
+        _resolvedDate = State(initialValue: reference.resolvedDueDate ?? Date())
     }
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Correct action").font(Font.largeTitle.bold())
-            Text("Action").font(Font.callout.weight(.semibold))
+            Text("Correct action").font(AppFont.scaled(.largeTitle).bold())
+            Text("Action").font(AppFont.scaled(.callout).weight(.semibold))
             TextEditor(text: $text).frame(height: 100).padding(8).workspaceControl()
             LabeledContent("Owner") {
                 TextField("Me or named participant", text: Binding(

@@ -84,13 +84,13 @@ struct ActionThreadRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(thread.text)
-                    .font(.body)
+                    .font(.scaled(.body))
                     .strikethrough(thread.status == .done)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 HStack(spacing: 6) {
                     if thread.hasMixedStatus {
                         Text("Mixed status")
-                            .font(Font.callout)
+                            .font(AppFont.scaled(.callout))
                             .foregroundStyle(.secondary)
                     }
                     if thread.hasMultipleMeetings {
@@ -102,7 +102,7 @@ struct ActionThreadRow: View {
                                 systemImage: "link")
                         }
                         .buttonStyle(.plain)
-                        .font(Font.callout)
+                        .font(AppFont.scaled(.callout))
                         .foregroundStyle(Brand.teal)
                         .accessibilityIdentifier("outcome.thread.sources.\(thread.id)")
                         .popover(isPresented: $showingSources) {
@@ -116,17 +116,20 @@ struct ActionThreadRow: View {
                             app.openMeeting(thread.latestReference.meetingID)
                         }
                         .buttonStyle(.plain)
-                        .font(Font.callout)
+                        .font(AppFont.scaled(.callout))
                         .foregroundStyle(Brand.teal)
                     }
-                    if let due = thread.due, let spokenAt = thread.dueSourceMeetingDate {
+                    if let due = thread.due, let spokenAt = thread.dueReferenceDate {
                         Text(ActionDuePresentation.label(due, spokenAt: spokenAt))
-                            .font(Font.callout)
-                            .foregroundStyle(.secondary)
+                            .font(AppFont.scaled(.callout))
+                            .foregroundStyle(thread.isOverdue() ? LBTokens.Palette.attentionText : .secondary)
+                            .accessibilityLabel(thread.isOverdue()
+                                ? "Overdue. " + ActionDuePresentation.label(due, spokenAt: spokenAt)
+                                : ActionDuePresentation.label(due, spokenAt: spokenAt))
                     }
                     if thread.dueHistory.count > 1 {
                         Text("Deadline updated")
-                            .font(Font.callout)
+                            .font(AppFont.scaled(.callout))
                             .foregroundStyle(.secondary)
                     }
                     if !thread.hasMultipleMeetings,
@@ -137,6 +140,13 @@ struct ActionThreadRow: View {
                                 seek: citation.start)
                         }
                     }
+                }
+                if let hint = app.actionCompletionHints[thread.id] {
+                    ActionCompletionHintLine(
+                        hint: hint,
+                        onDone: { set(.done) },
+                        onView: { app.openScreenSnapshot(hint.snapshotID) },
+                        onDismiss: { app.dismissActionCompletionHint(hint) })
                 }
             }
 
@@ -215,6 +225,42 @@ struct ActionThreadRow: View {
     }
 }
 
+/// "Looks done?" evidence from a later screen capture. It never changes
+/// status by itself; Mark Done goes through the normal status path.
+private struct ActionCompletionHintLine: View {
+    let hint: ActionCompletionHint
+    let onDone: () -> Void
+    let onView: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Label("Looks done?", systemImage: "checkmark.circle.badge.questionmark")
+                .font(AppFont.scaled(.callout).weight(.semibold))
+                .foregroundStyle(Brand.teal)
+            Text(evidence)
+                .font(AppFont.scaled(.callout))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer(minLength: 4)
+            Button("Mark Done", action: onDone).buttonStyle(.workspaceLink)
+            Button("View", action: onView).buttonStyle(.workspaceLink)
+            Button("Not Yet", action: onDismiss).buttonStyle(.workspaceLink)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Looks done? \(evidence)")
+        .accessibilityIdentifier("outcome.thread.completionHint")
+        .help("A later screen capture shows “\(hint.cue)” with this action's words. Nothing changes until you choose Mark Done.")
+    }
+
+    private var evidence: String {
+        let time = hint.capturedAt.formatted(.dateTime.weekday(.abbreviated).hour().minute())
+        let title = hint.title.isEmpty ? "" : " · \(hint.title)"
+        return "“\(hint.cue)” in \(hint.app) · \(time)\(title)"
+    }
+}
+
 private struct ActionThreadSourcesView: View {
     @EnvironmentObject var app: AppState
     let thread: ActionThread
@@ -224,9 +270,9 @@ private struct ActionThreadSourcesView: View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text("Action thread")
-                    .font(Font.headline)
+                    .font(AppFont.scaled(.headline))
                 Text("Every source remains attached to its original meeting.")
-                    .font(Font.callout)
+                    .font(AppFont.scaled(.callout))
                     .foregroundStyle(.secondary)
             }
             Divider()
@@ -239,22 +285,22 @@ private struct ActionThreadSourcesView: View {
                             } label: {
                                 HStack {
                                     Text(reference.meetingTitle)
-                                        .font(Font.body.weight(.semibold))
+                                        .font(AppFont.scaled(.body).weight(.semibold))
                                     Spacer()
                                     Text(reference.meetingStartedAt.formatted(
                                         date: .abbreviated,
                                         time: .shortened))
-                                        .font(Font.callout)
+                                        .font(AppFont.scaled(.callout))
                                         .foregroundStyle(.secondary)
                                 }
                             }
                             .buttonStyle(.plain)
                             Text(reference.action.displayText)
-                                .font(Font.body)
+                                .font(AppFont.scaled(.body))
                                 .foregroundStyle(.secondary)
                             if reference.textWasCorrected {
                                 Label("Corrected to: \(reference.text)", systemImage: "pencil")
-                                    .font(Font.callout)
+                                    .font(AppFont.scaled(.callout))
                                     .foregroundStyle(.secondary)
                             }
                             HStack(spacing: 6) {
@@ -269,7 +315,7 @@ private struct ActionThreadSourcesView: View {
                                 }
                                 Text(reference.status.label)
                             }
-                            .font(Font.callout)
+                            .font(AppFont.scaled(.callout))
                             .foregroundStyle(.tertiary)
                             Button("Keep as separate action") {
                                 if app.outcomeIndex.setThreadExcluded(
@@ -280,7 +326,7 @@ private struct ActionThreadSourcesView: View {
                                 }
                             }
                             .buttonStyle(.borderless)
-                            .font(Font.callout)
+                            .font(AppFont.scaled(.callout))
                             .accessibilityIdentifier("outcome.thread.separate.\(reference.id)")
                             ForEach(reference.action.citations) { citation in
                                 Button {
@@ -291,7 +337,7 @@ private struct ActionThreadSourcesView: View {
                                         Text(citation.excerpt)
                                             .lineLimit(2)
                                     }
-                                    .font(Font.callout)
+                                    .font(AppFont.scaled(.callout))
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 }
                                 .buttonStyle(.plain)
@@ -333,17 +379,17 @@ struct OutcomeOverviewActionRow: View {
             .accessibilityLabel(reference.status == .done ? "Reopen action" : "Complete action")
             VStack(alignment: .leading, spacing: 4) {
                 Text(reference.text)
-                    .font(Font.body.weight(.semibold))
+                    .font(AppFont.scaled(.body).weight(.semibold))
                     .strikethrough(reference.status == .done)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 HStack(spacing: 6) {
                     Button(reference.meetingTitle) { app.openMeeting(reference.meetingID) }
                         .buttonStyle(.plain)
-                        .font(Font.callout)
+                        .font(AppFont.scaled(.callout))
                         .foregroundStyle(Brand.teal)
                     if let due = reference.due {
-                        Text(ActionDuePresentation.label(due, spokenAt: reference.meetingStartedAt))
-                            .font(Font.callout)
+                        Text(ActionDuePresentation.label(due, spokenAt: reference.dueReferenceDate))
+                            .font(AppFont.scaled(.callout))
                             .foregroundStyle(.secondary)
                     }
                     if let citation = reference.action.citations.first {

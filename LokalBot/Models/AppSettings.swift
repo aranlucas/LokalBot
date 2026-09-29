@@ -121,6 +121,10 @@ struct AppSettings: Codable, Equatable {
     /// main window is never required to know a meeting is being captured.
     /// When off, LokalBot behaves like a normal windowed app with a Dock icon.
     var menuBarOnly: Bool = true
+    /// Light, dark, or the system appearance for LokalBot's windows.
+    var appTheme: AppTheme = .system
+    /// App-wide text size for LokalBot's windows.
+    var textSize: AppTextSize = .standard
 
     // MARK: Models (M2)
 
@@ -131,6 +135,19 @@ struct AppSettings: Codable, Equatable {
     var graniteSpeechModel = GraniteSpeechModelConfiguration.defaultModel
     var transcriptionLanguage: TranscriptionLanguage = .auto
     var transcriptionPrompt: String = ""
+    /// Adds names LokalBot already knows (calendar attendees, names applied
+    /// in related meetings, Dream projects) to prompt-capable speech models.
+    var autoTranscriptionVocabulary: Bool = true
+    /// Offers "Looks done?" on open actions when later retained screen text
+    /// shows a matching completion (sent, merged, submitted). Never auto-completes.
+    var suggestActionCompletion: Bool = true
+    /// Meeting notes may use the calendar title and invited names, and the
+    /// titles of documents on screen during the call, as secondary context.
+    var meetingNotesUseCalendarContext: Bool = true
+    var meetingNotesUseScreenTitles: Bool = true
+    /// Off by default: reads the invitation agenda (notes without joining
+    /// details) and saves it with calendar-matched recordings.
+    var useCalendarAgenda: Bool = false
     var autoTranscribe: Bool = true
     var autoSummarize: Bool = true
     var speechVoice: KokoroVoice = .heart
@@ -636,11 +653,18 @@ struct AppSettings: Codable, Equatable {
         case useCalendarTitles
         case requireCalendarForBrowser
         case menuBarOnly
+        case appTheme
+        case textSize
         case transcriptionModel
         case graniteSpeechModel
         case transcriptionLanguage
         case languageHint // legacy key used by builds before typed language selection
         case transcriptionPrompt
+        case autoTranscriptionVocabulary
+        case suggestActionCompletion
+        case meetingNotesUseCalendarContext
+        case meetingNotesUseScreenTitles
+        case useCalendarAgenda
         case autoTranscribe
         case autoSummarize
         case speechVoice
@@ -793,10 +817,17 @@ struct AppSettings: Codable, Equatable {
         try c.encode(useCalendarTitles, forKey: .useCalendarTitles)
         try c.encode(requireCalendarForBrowser, forKey: .requireCalendarForBrowser)
         try c.encode(menuBarOnly, forKey: .menuBarOnly)
+        try c.encode(appTheme, forKey: .appTheme)
+        try c.encode(textSize, forKey: .textSize)
         try c.encode(transcriptionModel, forKey: .transcriptionModel)
         try c.encode(graniteSpeechModel, forKey: .graniteSpeechModel)
         try c.encode(transcriptionLanguage, forKey: .transcriptionLanguage)
         try c.encode(transcriptionPrompt, forKey: .transcriptionPrompt)
+        try c.encode(autoTranscriptionVocabulary, forKey: .autoTranscriptionVocabulary)
+        try c.encode(suggestActionCompletion, forKey: .suggestActionCompletion)
+        try c.encode(meetingNotesUseCalendarContext, forKey: .meetingNotesUseCalendarContext)
+        try c.encode(meetingNotesUseScreenTitles, forKey: .meetingNotesUseScreenTitles)
+        try c.encode(useCalendarAgenda, forKey: .useCalendarAgenda)
         try c.encode(autoTranscribe, forKey: .autoTranscribe)
         try c.encode(autoSummarize, forKey: .autoSummarize)
         try c.encode(speechVoice, forKey: .speechVoice)
@@ -920,6 +951,8 @@ struct AppSettings: Codable, Equatable {
         useCalendarTitles = decode(.useCalendarTitles, defaults.useCalendarTitles)
         requireCalendarForBrowser = decode(.requireCalendarForBrowser, defaults.requireCalendarForBrowser)
         menuBarOnly = decode(.menuBarOnly, defaults.menuBarOnly)
+        appTheme = decode(.appTheme, defaults.appTheme)
+        textSize = decode(.textSize, defaults.textSize)
         transcriptionModel = decode(.transcriptionModel, defaults.transcriptionModel)
         graniteSpeechModel = decode(.graniteSpeechModel, defaults.graniteSpeechModel)
         if c.contains(.transcriptionLanguage) {
@@ -930,6 +963,11 @@ struct AppSettings: Codable, Equatable {
             transcriptionLanguage = defaults.transcriptionLanguage
         }
         transcriptionPrompt = decode(.transcriptionPrompt, defaults.transcriptionPrompt)
+        autoTranscriptionVocabulary = decode(.autoTranscriptionVocabulary, defaults.autoTranscriptionVocabulary)
+        suggestActionCompletion = decode(.suggestActionCompletion, defaults.suggestActionCompletion)
+        meetingNotesUseCalendarContext = decode(.meetingNotesUseCalendarContext, defaults.meetingNotesUseCalendarContext)
+        meetingNotesUseScreenTitles = decode(.meetingNotesUseScreenTitles, defaults.meetingNotesUseScreenTitles)
+        useCalendarAgenda = decode(.useCalendarAgenda, defaults.useCalendarAgenda)
         autoTranscribe = decode(.autoTranscribe, defaults.autoTranscribe)
         autoSummarize = decode(.autoSummarize, defaults.autoSummarize)
         speechVoice = decode(.speechVoice, defaults.speechVoice)

@@ -53,18 +53,18 @@ enum LBTokens {
     // MARK: - Typography (macOS default sizes in comments)
 
     enum Typography {
-        static let pageTitle = Font.largeTitle.bold()           // 26 bold
-        static let question = Font.title2.weight(.semibold)     // 17 semibold, Ask
-        static let digestLead = Font.title3                     // 15, Day Digest highlights
-        static let columnTitle = Font.title3.bold()             // 15 bold, toolbar column titles
-        static let section = Font.headline                      // 13 bold
-        static let body = Font.body                             // 13
-        static let reading = Font.system(size: 14)              // transcript lines
-        static let secondary = Font.callout                     // 12
-        static let caption = Font.subheadline                   // 11
-        static let sidebarSection = Font.subheadline.bold()     // 11 bold
-        static let timestamp = Font.callout.monospacedDigit()
-        static let path = Font.system(.callout, design: .monospaced)
+        static var pageTitle: AppFont { AppFont.scaled(.largeTitle).bold() }           // 26 bold
+        static var question: AppFont { AppFont.scaled(.title2).weight(.semibold) }     // 17 semibold, Ask
+        static var digestLead: AppFont { AppFont.scaled(.title3) }                     // 15, Day Digest highlights
+        static var columnTitle: AppFont { AppFont.scaled(.title3).bold() }             // 15 bold, toolbar column titles
+        static var section: AppFont { AppFont.scaled(.headline) }                      // 13 bold
+        static var body: AppFont { AppFont.scaled(.body) }                             // 13
+        static var reading: AppFont { AppFont.scaledSystem(size: 14) }              // transcript lines
+        static var secondary: AppFont { AppFont.scaled(.callout) }                     // 12
+        static var caption: AppFont { AppFont.scaled(.subheadline) }                   // 11
+        static var sidebarSection: AppFont { AppFont.scaled(.subheadline).bold() }     // 11 bold
+        static var timestamp: AppFont { AppFont.scaled(.callout).monospacedDigit() }
+        static var path: AppFont { AppFont.scaled(.callout, design: .monospaced) }
     }
 
     // MARK: - Metrics

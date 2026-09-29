@@ -12,7 +12,7 @@ import CoreGraphics
 final class AppState: ObservableObject {
 
     enum NavSection: Hashable {
-        case today, timeline, meetings, ask, agent, settings
+        case today, timeline, meetings, people, projects, ask, agent, settings
 
         /// Section names accepted from the UI-test capture environment and
         /// deep links. Legacy names keep working: "capture" (the pre-split
@@ -24,6 +24,8 @@ final class AppState: ObservableObject {
             case "today": self = .today
             case "timeline", "capture": self = .timeline
             case "meetings": self = .meetings
+            case "people": self = .people
+            case "projects": self = .projects
             case "write", "type", "dictation", "cotyping", "autocomplete": self = .settings
             case "ask", "search", "chat": self = .ask
             case "agent": self = .agent
@@ -122,6 +124,12 @@ final class AppState: ObservableObject {
         didSet {
             guard settings != oldValue else { return }
             settingsStore.current = settings
+            if settings.appTheme != oldValue.appTheme {
+                AppAppearance.apply(theme: settings.appTheme)
+            }
+            if settings.textSize != oldValue.textSize {
+                AppAppearance.apply(textSize: settings.textSize)
+            }
             modelRoles.settingsDidChange(from: oldValue, to: settings)
             if settings.stopDebounceSeconds != oldValue.stopDebounceSeconds {
                 detector.stopDebounce = settings.stopDebounceSeconds
@@ -261,6 +269,81 @@ final class AppState: ObservableObject {
     var meetingPlaybackPositions: [UUID: TimeInterval] = [:]
     var meetingPlaybackSpeeds: [UUID: Float] = [:]
     func openActions() { showingActions = true; navSection = .today }
+
+    /// People and Projects share one derived read model.
+    @Published var selectedPersonID: String?
+    @Published var selectedProjectID: String?
+    private(set) lazy var connections = WorkMemoryConnections()
+
+    /// The meeting whose follow-up draft sheet is open, from any entry point.
+    @Published var followUpDraftMeeting: Meeting?
+
+    func draftFollowUp(for meeting: Meeting) {
+        followUpDraftMeeting = meeting
+    }
+
+    /// The most recent finished meeting that has extracted outcomes.
+    var latestMeetingWithOutcomes: Meeting? {
+        outcomeIndex.all.first { !$0.isArchived && $0.meeting.endedAt != nil }?.meeting
+    }
+
+    func openPerson(_ id: String) {
+        selectedPersonID = id
+        navSection = .people
+    }
+
+    func openProject(_ id: String) {
+        selectedProjectID = id
+        navSection = .projects
+    }
+
+    @Published private(set) var actionCompletionHints: [String: ActionCompletionHint] = [:]
+    private var completionHintTask: Task<Void, Never>?
+    private static let dismissedCompletionHintsKey = "actions.dismissedCompletionHints"
+    private static let maximumDismissedCompletionHints = 500
+
+    /// "Looks done?" suggestions for open actions from later retained screen
+    /// text. Suggestions only; status changes stay the user's.
+    func refreshActionCompletionHints() {
+        guard settings.suggestActionCompletion,
+              settings.effectiveScreenContextCaptureMode.capturesText else {
+            completionHintTask?.cancel()
+            if !actionCompletionHints.isEmpty { actionCompletionHints = [:] }
+            return
+        }
+        let threads = outcomeIndex.openUserActionThreads
+        let databaseURL = activityStore.databaseURL
+        let dismissed = Set(UserDefaults.standard.stringArray(forKey: Self.dismissedCompletionHintsKey) ?? [])
+        completionHintTask?.cancel()
+        completionHintTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            let hints = await Task.detached(priority: .utility) {
+                ActionCompletionDetector.hints(
+                    for: threads, store: ActivityStore(databaseURL: databaseURL, readOnly: true),
+                    dismissed: dismissed)
+            }.value
+            guard !Task.isCancelled, let self else { return }
+            if self.actionCompletionHints != hints { self.actionCompletionHints = hints }
+        }
+    }
+
+    func dismissActionCompletionHint(_ hint: ActionCompletionHint) {
+        var dismissed = UserDefaults.standard.stringArray(forKey: Self.dismissedCompletionHintsKey) ?? []
+        dismissed.append(hint.dismissalKey)
+        UserDefaults.standard.set(Array(dismissed.suffix(Self.maximumDismissedCompletionHints)),
+                                  forKey: Self.dismissedCompletionHintsKey)
+        actionCompletionHints[hint.threadID] = nil
+    }
+
+    func refreshConnections() {
+        connections.refresh(.init(
+            meetings: meetings.filter { !$0.isMergedSource },
+            projections: outcomeIndex.all,
+            memory: dreamMemory,
+            root: storage.rootURL,
+            activityDatabaseURL: activityStore.databaseURL))
+    }
     private static let typeTabDefaultsKey = "lokalbotv3.type.selectedTab"
     private static var navigationDefaults: UserDefaults {
         if let suite = UITestRuntime.defaultsSuiteName,
@@ -396,6 +479,8 @@ final class AppState: ObservableObject {
         },
         onEvidenceChanged: { [weak self] meetings in
             self?.primaryEvidenceDidChange(for: meetings)
+            // Outcome corrections and status are searchable.
+            for meeting in meetings { self?.reindexSearchInBackground(meeting) }
         })
     private(set) lazy var cotypingLearning = CotypingLearningStore(storageRoot: storage.rootURL)
     let detector = MeetingDetector()
@@ -581,7 +666,9 @@ final class AppState: ObservableObject {
     /// delivery inserts it.
     private(set) lazy var dictation = DictationCoordinator(
         storageRoot: storage.rootURL,
-        settingsProvider: { [store = settingsStore] in store.current },
+        settingsProvider: { [weak self, store = settingsStore] in
+            self?.dictationTranscriptionSettings(store.current) ?? store.current
+        },
         makeTextEngine: { [weak self] sessionSettings in
             guard let self else {
                 throw TextEngineError.unavailable("LokalBot is shutting down.")
@@ -782,6 +869,8 @@ final class AppState: ObservableObject {
     init() {
         AppLog.bootstrap()
         settings = settingsStore.current
+        // AppKit-drawn text reads this before any window exists.
+        AppAppearance.apply(textSize: settings.textSize)
         if let raw = Self.navigationDefaults.string(forKey: Self.settingsTabDefaultsKey),
            let stored = SettingsTab(rawValue: raw) {
             settingsTab = stored
@@ -1051,6 +1140,22 @@ final class AppState: ObservableObject {
     private func reindexLibraryInBackground(_ meetings: [Meeting]) {
         let worker = searchIndexWorkQueue
         Task { await worker.enqueue(meetings) }
+    }
+
+    private var notesEmbeddingDebounce: [Meeting.ID: Task<Void, Never>] = [:]
+
+    /// The user's own notes are keyword- and meaning-searchable. Re-embedding
+    /// a whole meeting is expensive, so it waits for typing to settle.
+    func meetingNotesDidChange(_ meeting: Meeting) {
+        reindexSearchInBackground(meeting)
+        guard settings.semanticSearchEnabled else { return }
+        notesEmbeddingDebounce[meeting.id]?.cancel()
+        notesEmbeddingDebounce[meeting.id] = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(20))
+            guard !Task.isCancelled, let self else { return }
+            self.notesEmbeddingDebounce[meeting.id] = nil
+            self.reindexEmbeddingInBackground(meeting)
+        }
     }
 
     private func reindexSearchInBackground(_ meeting: Meeting) {
@@ -1539,6 +1644,30 @@ final class AppState: ObservableObject {
         return SpeakerNameHintExtractor.hints(
             calendarNames: meeting.resolvedCalendarParticipantIdentities.compactMap(\.name),
             ocrText: ocr)
+    }
+
+    private var dictationVocabularyCache: (key: String, terms: [String])?
+
+    /// Dictation has no meeting of its own, so prompt-capable speech models
+    /// receive recent attendee and project names beside the manual vocabulary.
+    func dictationTranscriptionSettings(_ base: AppSettings) -> AppSettings {
+        guard base.autoTranscriptionVocabulary,
+              base.transcriptionModel.acceptsVocabularyPrompt else { return base }
+        let dayKey = DreamDay.key(for: Date())
+        let key = "\(dayKey)|\(meetings.count)|\(meetings.map(\.startedAt).max()?.timeIntervalSince1970 ?? 0)"
+        let terms: [String]
+        if let cached = dictationVocabularyCache, cached.key == key {
+            terms = cached.terms
+        } else {
+            let memory = (try? dreamStore.loadMemory()) ?? nil
+            terms = TranscriptionVocabulary.terms(
+                TranscriptionVocabulary.recentSources(library: meetings, memory: memory))
+            dictationVocabularyCache = (key, terms)
+        }
+        var settings = base
+        settings.transcriptionPrompt = TranscriptionVocabulary.prompt(
+            manual: base.transcriptionPrompt, terms: terms)
+        return settings
     }
 
     /// One invalidation route for every meeting-evidence write. Processing and

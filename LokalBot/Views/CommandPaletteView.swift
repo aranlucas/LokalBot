@@ -16,7 +16,7 @@ struct CommandPaletteView: View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Image(systemName: "command")
-                    .foregroundStyle(.tint).font(.title3)
+                    .foregroundStyle(.tint).font(.scaled(.title3))
                 CommandPaletteTextField(
                     text: $query,
                     focusRequest: focusRequest,
@@ -26,14 +26,14 @@ struct CommandPaletteView: View {
                     onCancel: { dismiss() })
                     .frame(maxWidth: .infinity)
                     .frame(height: 24)
-                Text("⌘K").font(.caption.monospaced()).foregroundStyle(.tertiary)
+                Text("⌘K").font(.scaled(.caption).monospaced()).foregroundStyle(.tertiary)
             }
             .padding(.horizontal, 16).padding(.vertical, 14)
             Divider()
 
             if results.isEmpty {
                 Text("No matches")
-                    .font(.callout).foregroundStyle(.secondary)
+                    .font(.scaled(.callout)).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
@@ -94,6 +94,14 @@ struct CommandPaletteView: View {
                   subtitle: "Library", action: { app.navSection = .timeline }),
             .init(id: "nav.meetings", icon: "waveform.circle", title: "Go to Meetings",
                   subtitle: "Library", action: { app.navSection = .meetings }),
+            .init(id: "followUp", icon: "arrowshape.turn.up.right", title: "Draft follow-up for latest meeting",
+                  subtitle: "Meetings", action: {
+                if let meeting = app.latestMeetingWithOutcomes { app.draftFollowUp(for: meeting) }
+            }),
+            .init(id: "nav.people", icon: "person.2", title: "Go to People",
+                  subtitle: "Library", action: { app.navSection = .people }),
+            .init(id: "nav.projects", icon: "folder", title: "Go to Projects",
+                  subtitle: "Library", action: { app.navSection = .projects }),
             .init(id: "nav.ask", icon: "sparkle.magnifyingglass", title: "Go to Ask",
                   subtitle: "Library", action: { app.openAsk() }),
             .init(id: "dictation", icon: dictationIcon,
@@ -181,16 +189,16 @@ private struct PaletteRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: item.icon)
-                .font(.title3).foregroundStyle(.tint)
+                .font(.scaled(.title3)).foregroundStyle(.tint)
                 .frame(width: 26)
             VStack(alignment: .leading, spacing: 1) {
-                Text(item.title).font(.callout).lineLimit(1)
-                Text(item.subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                Text(item.title).font(.scaled(.callout)).lineLimit(1)
+                Text(item.subtitle).font(.scaled(.caption)).foregroundStyle(.secondary).lineLimit(1)
             }
             Spacer()
             if selected {
                 Image(systemName: "return")
-                    .font(.caption).foregroundStyle(.tertiary)
+                    .font(.scaled(.caption)).foregroundStyle(.tertiary)
             }
         }
         .padding(.horizontal, 10).padding(.vertical, 8)

@@ -165,6 +165,7 @@ private struct MeetingWorkspaceDetail: View {
     @State private var speechTask: Task<Void, Never>?
     @State private var speechSessionID: UUID?
     @State private var searchQuery = ""
+    @State private var screenContext = MeetingScreenContext()
     private var tab: MeetingWorkspaceTab {
         get { app.meetingWorkspaceTabs[meeting.id] ?? .summary }
         nonmutating set {
@@ -191,6 +192,7 @@ private struct MeetingWorkspaceDetail: View {
         _attributionNeedsRefresh = State(initialValue: document.attributionNeedsRefresh)
         _captureNeedsAttention = State(initialValue: document.captureNeedsAttention)
         _recoveryNeedsAttention = State(initialValue: document.recoveryNeedsAttention)
+        _screenContext = State(initialValue: document.screenContext)
     }
 
     private var folder: URL { meeting.folderURL(in: app.storage) }
@@ -475,6 +477,9 @@ private struct MeetingWorkspaceDetail: View {
 
     private var meetingActionMenuItems: [WorkspaceMenu.Item] {
         var items: [WorkspaceMenu.Item] = [
+            .init(title: "Draft follow-up…", identifier: "toolbar.followUp",
+                  enabled: projection != nil && partialNotes == nil, action: { app.draftFollowUp(for: meeting) }),
+            .separator,
             .init(title: isReadingSummary ? "Stop spoken summary" : "Read summary aloud",
                   enabled: summary?.isEmpty == false, action: { isReadingSummary ? stopSpeech() : readSummary() }),
             .init(title: isExportingSpeech ? "Exporting spoken summary..." : "Export spoken summary",
@@ -511,7 +516,7 @@ private struct MeetingWorkspaceDetail: View {
             HStack(spacing: 12) {
                 Image(systemName: "play.circle.fill").font(.system(size: 28))
                 Text(documentLoading ? "Loading recording…" : "No recording available")
-                    .font(Font.callout)
+                    .font(AppFont.scaled(.callout))
                 Spacer(minLength: 0)
             }
             .foregroundStyle(.secondary)
@@ -553,15 +558,15 @@ private struct MeetingWorkspaceDetail: View {
         }
         if let partialNotes {
             VStack(alignment: .leading, spacing: 3) {
-                Text(partialNotes.progressLabel).font(.caption.weight(.medium))
+                Text(partialNotes.progressLabel).font(.scaled(.caption).weight(.medium))
                     .accessibilityIdentifier("meeting.notes.partial")
                 Text("Source-linked notes and actions are saved below. Actions become editable when the notes finish.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.scaled(.caption)).foregroundStyle(.secondary)
             }
         } else if notesNeedRefresh && tab == .summary {
             VStack(alignment: .leading, spacing: 8) {
                 Label("Transcript or speaker details changed", systemImage: "exclamationmark.triangle")
-                    .font(Font.body.weight(.semibold))
+                    .font(AppFont.scaled(.body).weight(.semibold))
                 Text("Review speakers and action owners, then refresh the derived notes.")
                     .workspaceTextRole(.trust)
                 Button("Review speakers and follow-ups") { tab = .review }
@@ -573,13 +578,13 @@ private struct MeetingWorkspaceDetail: View {
         if let unmatched = projection?.state.unmatchedActions, !unmatched.isEmpty {
             DisclosureGroup("Review \(unmatched.count) unmatched action edits") {
                 Text("These saved edits did not match a single regenerated action. Apply them to the correct action after reviewing its source.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.scaled(.caption)).foregroundStyle(.secondary)
                 ForEach(unmatched.keys.sorted(), id: \.self) { id in
                     if let saved = unmatched[id] {
                         Text(saved.textCorrection ?? projection?.state.unmatchedActionText?[id] ?? "Previous action")
                             .textSelection(.enabled)
                         Text([saved.status.label, saved.ownerOverride, saved.dueOverride].compactMap { $0 }.joined(separator: " · "))
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(.scaled(.caption)).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -633,7 +638,7 @@ private struct MeetingWorkspaceDetail: View {
                 onReview: beginRenameSpeaker)
             VStack(alignment: .leading, spacing: 8) {
                 Label("2. Review action owners", systemImage: "person.crop.circle.badge.checkmark")
-                    .font(Font.headline)
+                    .font(AppFont.scaled(.headline))
                 Text("All actions from this meeting. Only yours appear in My actions. Choose an owner to correct it, or a timestamp to check the source.")
                     .workspaceTextRole(.supporting)
                 if projection == nil, previousReviewProjection != nil {
@@ -668,7 +673,7 @@ private struct MeetingWorkspaceDetail: View {
             } icon: {
                 Image(systemName: stageIcon(stage))
             }
-            .font(.callout)
+            .font(.scaled(.callout))
             .foregroundStyle(stage.isFailure ? Brand.error : .secondary)
             if stage.isFailure {
                 Button("Retry") { app.retryProcessing(meeting) }
@@ -698,7 +703,7 @@ private struct MeetingWorkspaceDetail: View {
         } icon: {
             Image(systemName: icon)
         }
-        .font(.callout)
+        .font(.scaled(.callout))
         .foregroundStyle(Brand.error)
     }
 
@@ -721,6 +726,15 @@ private struct MeetingWorkspaceDetail: View {
                     }
                 }
             }
+        }
+        if !screenContext.materials.isEmpty {
+            MeetingScreenMaterialsSection(
+                context: screenContext,
+                onPlay: { material in
+                    player.seek(to: material.firstOffset)
+                    player.play(at: material.firstOffset)
+                },
+                onOpen: { app.openScreenSnapshot($0.firstSnapshotID) })
         }
     }
 
@@ -817,6 +831,17 @@ private struct MeetingWorkspaceDetail: View {
     }
 
     private var transcriptSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if !screenContext.isEmpty {
+                MeetingOnScreenNowBar(context: screenContext, player: player) {
+                    app.openScreenSnapshot($0.snapshotID)
+                }
+            }
+            transcriptEvidenceList
+        }
+    }
+
+    private var transcriptEvidenceList: some View {
         TranscriptEvidenceList(
             transcript: transcript, display: transcriptDisplay, player: player,
             speakerPresentation: speakerPresentation,
@@ -1080,6 +1105,7 @@ private struct MeetingWorkspaceDetail: View {
         attributionNeedsRefresh = document.attributionNeedsRefresh
         captureNeedsAttention = document.captureNeedsAttention
         recoveryNeedsAttention = document.recoveryNeedsAttention
+        screenContext = document.screenContext
         summary = document.summary
         speakerNameHints = document.speakerNameHints
         calendarSpeakerCandidates = meeting.resolvedCalendarParticipantIdentities
@@ -1380,7 +1406,7 @@ private struct MeetingSummaryWorkspaceContent: View {
             } icon: {
                 Image(systemName: "square.and.pencil")
             }
-            .font(Font.callout.weight(.semibold))
+            .font(AppFont.scaled(.callout).weight(.semibold))
             .foregroundStyle(.secondary)
             SelectableDigestText(
                 notes,
@@ -1459,7 +1485,7 @@ private struct MeetingPageSearchBar: View {
 
             if let statusText {
                 Text(statusText)
-                    .font(Font.callout)
+                    .font(AppFont.scaled(.callout))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                     .fixedSize()
@@ -1497,7 +1523,7 @@ private struct MeetingPageSearchBar: View {
         .onAppear {
             uiTestDiagnosticLog("meeting.search bar appear")
         }
-        .font(Font.body)
+        .font(AppFont.scaled(.body))
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .workspaceControl()
@@ -1552,7 +1578,7 @@ private struct MeetingWorkspaceHeader: View {
                 query: searchQuery,
                 activeMatchIndex: activeOccurrence(at: .title))
                 .id(MeetingPageSearchMatch.Location.title)
-                .font(Font.largeTitle.bold())
+                .font(AppFont.scaled(.largeTitle).bold())
                 .accessibilityIdentifier("detail.title")
             let items = meetingWorkspaceMetadataItems(for: meeting)
             ViewThatFits(in: .horizontal) {
@@ -1656,7 +1682,7 @@ private struct MeetingAudioBar: View {
                 onSeek: { player.seek(to: $0) })
                 .id(folder)
             Text("\(Transcript.stamp(clock.currentTime)) / \(Transcript.stamp(player.duration))")
-                .font(Font.callout.monospacedDigit())
+                .font(AppFont.scaled(.callout).monospacedDigit())
                 .foregroundStyle(Color(nsColor: WorkspaceTextColor.supporting))
                 .fixedSize()
             WorkspaceMenu(title: "\(player.speed.formatted())x", label: "Playback speed",
@@ -1705,7 +1731,7 @@ private struct OutcomeActionRow: View {
                     .id(MeetingPageSearchMatch.Location.action(
                         id: reference.action.id,
                         field: .text))
-                    .font(Font.body)
+                    .font(AppFont.scaled(.body))
                     .strikethrough(reference.status == .done)
                     .textSelection(.enabled)
                     .accessibilityIdentifier("meeting.action.text.\(reference.action.id)")
@@ -1720,7 +1746,7 @@ private struct OutcomeActionRow: View {
                                 field: .owner))
                     }
                         .buttonStyle(.plain)
-                        .font(.callout)
+                        .font(.scaled(.callout))
                         .foregroundStyle(displayOwner == nil ? LBTokens.Palette.attentionText : .secondary)
                         .accessibilityLabel("Correct owner: \(displayOwner ?? "Owner unclear")")
                         .accessibilityIdentifier("meeting.action.owner.\(reference.action.id)")
@@ -1735,6 +1761,7 @@ private struct OutcomeActionRow: View {
                             location: .action(
                                 id: reference.action.id,
                                 field: .due))
+                        .help(ActionDuePresentation.label(due, spokenAt: reference.dueReferenceDate))
                     }
                     if let citation = reference.action.citations.first {
                         EvidencePill(
@@ -1800,7 +1827,7 @@ private struct OutcomeDecisionRow: View {
                 .id(MeetingPageSearchMatch.Location.decision(
                     id: decision.id,
                     field: .text))
-                .font(Font.body)
+                .font(AppFont.scaled(.body))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .textSelection(.enabled)
             if let citation = decision.citations.first {
@@ -1875,7 +1902,7 @@ private struct ActionCorrectionSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Correct action details").font(Font.largeTitle.bold())
+            Text("Correct action details").font(AppFont.scaled(.largeTitle).bold())
             TextField("Corrected wording", text: $draft.text)
             HStack {
                 Text("Owner")
@@ -1902,7 +1929,7 @@ private struct ActionCorrectionSheet: View {
                 get: { draft.due },
                 set: { draft.due = $0; draft.dueWasEdited = true }))
             Text("This correction is stored separately from the extracted source.")
-                .font(Font.callout).foregroundStyle(.secondary)
+                .font(AppFont.scaled(.callout)).foregroundStyle(.secondary)
             if let error { Text(error).workspaceTextRole(.warning) }
             HStack {
                 Spacer()
@@ -1942,7 +1969,7 @@ private struct TranscriptEvidenceList: View {
                             activeMatchIndex: activeOccurrence(at: .transcriptEngine))
                             .id(MeetingPageSearchMatch.Location.transcriptEngine)
                     }
-                    .font(Font.callout)
+                    .font(AppFont.scaled(.callout))
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
                     .padding(.horizontal, 10)
@@ -1974,7 +2001,7 @@ private struct TranscriptEvidenceList: View {
                                         .id(MeetingPageSearchMatch.Location.transcript(
                                             segmentIndex: index,
                                             field: .timestamp))
-                                        .font(.callout.monospacedDigit())
+                                        .font(.scaled(.callout).monospacedDigit())
                                 }
                                 .foregroundStyle(LBTokens.Palette.accentText)
                                 .frame(width: 80, alignment: .trailing)
@@ -2147,7 +2174,7 @@ private struct WorkspaceSpeakerRenameSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Name Speaker").font(.title3.bold())
+            Text("Name Speaker").font(.scaled(.title3).bold())
             if let sample = draft.sample {
                 HStack(alignment: .top, spacing: 12) {
                     Button { onPlay(sample) } label: {
@@ -2159,7 +2186,7 @@ private struct WorkspaceSpeakerRenameSheet: View {
                     .accessibilityLabel("Play Voice")
                     .accessibilityIdentifier("speaker.rename.playVoice")
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("“\(sample.text)”").font(.body)
+                        Text("“\(sample.text)”").font(.scaled(.body))
                             .fixedSize(horizontal: false, vertical: true)
                             .lineLimit(5)
                         Text(Transcript.stamp(sample.start))
@@ -2173,7 +2200,7 @@ private struct WorkspaceSpeakerRenameSheet: View {
                     .workspaceTextRole(.supporting)
             }
             VStack(alignment: .leading, spacing: 6) {
-                Text("Name").font(.callout).foregroundStyle(.secondary)
+                Text("Name").font(.scaled(.callout)).foregroundStyle(.secondary)
                 TextField("Speaker name", text: $name, prompt: Text("Name this speaker"))
                     .textFieldStyle(.roundedBorder)
                     .focused($nameFocused)
@@ -2183,7 +2210,7 @@ private struct WorkspaceSpeakerRenameSheet: View {
                 VStack(alignment: .leading, spacing: 14) {
                     if !suggestions.isEmpty {
                         Text("Suggested Names")
-                            .font(.headline)
+                            .font(.scaled(.headline))
                         Text("Listen, choose a name, then save. These sources suggest names; attendance does not identify a voice.")
                             .workspaceTextRole(.supporting)
                             .fixedSize(horizontal: false, vertical: true)
@@ -2202,14 +2229,14 @@ private struct WorkspaceSpeakerRenameSheet: View {
                         name: $name, remember: $remember, profileID: $profileID,
                         onPlay: onPlayEvidence, onAction: onAction, onDeleteEvidence: onDeleteEvidence,
                         canConfirmIdentity: draft.canConfirmIdentity, microphoneIsUser: draft.microphoneIsUser)
-                    if let notice { Text(notice).font(.caption).foregroundStyle(.secondary) }
+                    if let notice { Text(notice).font(.scaled(.caption)).foregroundStyle(.secondary) }
                 }
             }
             .frame(maxHeight: 280)
 
             Label("Names are saved with this meeting. Only confirmed microphone voices can be remembered on this Mac.",
                   systemImage: "lock.shield")
-                .font(.callout).foregroundStyle(.secondary)
+                .font(.scaled(.callout)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack {
@@ -2260,17 +2287,17 @@ private struct WorkspaceSpeakerRenameSheet: View {
         } label: {
             VStack(alignment: .leading, spacing: 5) {
                 Label(title, systemImage: selected ? "checkmark.circle.fill" : "person.crop.circle")
-                    .font(Font.body)
+                    .font(AppFont.scaled(.body))
                 ViewThatFits(in: .horizontal) {
                     HStack(spacing: 6) { sourceBadges(suggestion) }
                     VStack(alignment: .leading, spacing: 4) { sourceBadges(suggestion) }
                 }
                 if let email = suggestion.calendar?.emailAddress {
-                    Text(email).font(Font.callout).foregroundStyle(.secondary)
+                    Text(email).font(AppFont.scaled(.callout)).foregroundStyle(.secondary)
                 }
                 if assignedElsewhere {
                     Text("Also assigned to another voice")
-                        .font(Font.callout).foregroundStyle(.secondary)
+                        .font(AppFont.scaled(.callout)).foregroundStyle(.secondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -2289,7 +2316,7 @@ private struct WorkspaceSpeakerRenameSheet: View {
     private func sourceBadges(_ suggestion: MeetingSpeakerSuggestion) -> some View {
         ForEach(suggestion.sources, id: \.self) { source in
             Text(source)
-                .font(Font.callout)
+                .font(AppFont.scaled(.callout))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
@@ -2353,7 +2380,7 @@ struct EvidencePill: View {
                 Image(systemName: "quote.bubble")
                     .foregroundStyle(.tint)
             }
-                .font(Font.callout.monospacedDigit())
+                .font(AppFont.scaled(.callout).monospacedDigit())
                 .foregroundStyle(Brand.teal)
                 // A comfortable click target around the small timestamp.
                 .padding(.horizontal, 4)
@@ -2389,7 +2416,7 @@ struct WorkspaceSection<Content: View>: View {
             } icon: {
                 Image(systemName: icon)
             }
-            .font(.headline)
+            .font(.scaled(.headline))
             .labelStyle(.titleOnly)
             VStack(alignment: .leading, spacing: 8) {
                 content
@@ -2413,7 +2440,7 @@ struct EmptyWorkspaceRow: View {
             text,
             query: searchQuery,
             activeMatchIndex: activeMatchIndex)
-            .font(Font.body).foregroundStyle(.secondary)
+            .font(AppFont.scaled(.body)).foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 10)
     }

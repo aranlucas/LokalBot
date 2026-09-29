@@ -35,6 +35,10 @@ struct MainWindowView: View {
                 }
             }
         }
+        .sheet(item: $app.followUpDraftMeeting) { meeting in
+            FollowUpDraftSheet(meeting: meeting)
+                .environmentObject(app)
+        }
         .task {
             // Let non-View code (menu bar, AppDelegate reopen) open windows.
             // First-run permission onboarding is now triggered from AppState.
@@ -71,7 +75,7 @@ struct MainWindowView: View {
                                 Spacer()
                                 Button("Dismiss") { app.outcomeIndex.dismissUndo() }
                             }
-                            .font(Font.body)
+                            .font(AppFont.scaled(.body))
                             .padding(12).background(.bar)
                         }
                     }
@@ -114,6 +118,12 @@ struct MainWindowView: View {
                     .splitPaneAccessibilityLabel("Meeting details")
             }
             .id("workspace.meetings")
+        case .people:
+            PeopleWorkspaceView(connections: app.connections)
+                .id("workspace.people")
+        case .projects:
+            ProjectsWorkspaceView(connections: app.connections)
+                .id("workspace.projects")
         case .ask:
             HSplitView {
                 ChatConversationList()
@@ -145,6 +155,12 @@ struct MainWindowView: View {
                 systemImage: "calendar.day.timeline.left",
                 section: .timeline,
                 identifier: "sidebar.timeline")
+            sidebarDestination(
+                "People", systemImage: "person.2", section: .people,
+                identifier: "sidebar.people")
+            sidebarDestination(
+                "Projects", systemImage: "folder", section: .projects,
+                identifier: "sidebar.projects")
             sidebarDestination(
                 "Ask", systemImage: "sparkle.magnifyingglass", section: .ask,
                 identifier: "sidebar.ask")
@@ -221,7 +237,7 @@ struct MainWindowView: View {
     @ViewBuilder
     private func sidebarSectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(.subheadline.bold())
+            .font(.scaled(.subheadline).bold())
             .foregroundStyle(isScriptedCapture ? scriptedSidebarHeaderColor : Color.secondary)
             .padding(.leading, 11)
             .padding(.top, title == "Remember" ? 3 : 8)
@@ -266,7 +282,7 @@ private struct SidebarDestinationLabel: View {
                 .frame(width: 18)
                 .accessibilityHidden(true)
             Text(title)
-                .font(.body)
+                .font(.scaled(.body))
                 .foregroundStyle(scriptedLabelColor.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.primary))
             Spacer(minLength: 0)
         }
@@ -291,14 +307,14 @@ private struct SidebarPrivacyFooter: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 6) {
                         StatusDot(color: Brand.recording)
-                        Text("Recording").font(.callout.weight(.semibold))
+                        Text("Recording").font(.scaled(.callout).weight(.semibold))
                         Spacer(minLength: 0)
                         MeetingRecordingTimerText(recording: app.recording)
-                            .font(.callout.monospacedDigit())
+                            .font(.scaled(.callout).monospacedDigit())
                     }
                     Button("Live Transcript & Notes", action: app.showLiveMeeting)
                         .buttonStyle(.plain)
-                        .font(.callout)
+                        .font(.scaled(.callout))
                         .help("Open the current recording")
                 }
                 .foregroundStyle(LBTokens.Palette.recordingText)
@@ -309,14 +325,14 @@ private struct SidebarPrivacyFooter: View {
                 Image(systemName: "lock.shield").foregroundStyle(Brand.teal)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Storage: this Mac").font(.callout.weight(.semibold))
+                    Text("Storage: this Mac").font(.scaled(.callout).weight(.semibold))
                     HStack(spacing: 4) {
                         Text(processingLabel)
                         if case .remote = destination { StatusDot(color: .orange, size: 5) }
                     }
-                    .font(.subheadline).foregroundStyle(.secondary)
+                    .font(.scaled(.subheadline)).foregroundStyle(.secondary)
                     if case .remote(let host) = destination {
-                        Text(host).font(.subheadline).foregroundStyle(.secondary)
+                        Text(host).font(.scaled(.subheadline)).foregroundStyle(.secondary)
                     }
                 }
             }

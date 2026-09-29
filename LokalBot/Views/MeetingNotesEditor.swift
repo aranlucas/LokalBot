@@ -15,17 +15,17 @@ struct MeetingNotesEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Your notes").font(Font.headline)
+                Text("Your notes").font(AppFont.scaled(.headline))
                 Spacer()
-                Text(status).font(Font.callout).foregroundStyle(.secondary)
+                Text(status).font(AppFont.scaled(.callout)).foregroundStyle(.secondary)
             }
             SearchableNotesEditor(text: $text, query: searchQuery, occurrence: activeMatchIndex)
-                .font(Font.body)
+                .font(AppFont.scaled(.body))
                 .frame(minHeight: 460)
                 .overlay(alignment: .topLeading) {
                     if text.isEmpty {
                         Text("Add context, reminders, or your own wording. Notes save automatically.")
-                            .font(Font.body)
+                            .font(AppFont.scaled(.body))
                             .foregroundStyle(.tertiary)
                             .padding(.leading, 5)
                             .allowsHitTesting(false)
@@ -63,6 +63,7 @@ struct MeetingNotesEditor: View {
         do {
             try MeetingNotes.writeChecked(text, to: meeting.folderURL(in: app.storage))
             savedText = text
+            app.meetingNotesDidChange(meeting)
             app.meetingNoteDrafts.removeValue(forKey: meeting.id)
             status = "Saved on this Mac"
             error = nil
