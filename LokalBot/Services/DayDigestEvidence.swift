@@ -820,8 +820,22 @@ enum DayDigestOverviewGenerator {
         engine: TextEngine,
         customPrompt: String,
         calendar: Calendar = .current,
-        progress: DayDigestProgressHandler? = nil
+        progress: DayDigestProgressHandler? = nil,
+        sleep: @escaping @Sendable (TimeInterval) async throws -> Void = {
+            try await Task.sleep(for: .seconds($0))
+        }
     ) async throws -> DayDigestOverviewGeneration {
+        let dateContext = [
+            "Date: \(evidence.day.formatted(date: .complete, time: .omitted))",
+        ]
+        func request(
+            _ stage: String, system: String, prompt: String, schema: [String: Any],
+            options: TextGenerationOptions
+        ) async throws -> String {
+            try await generateReplayingTransientFailure(
+                engine: engine, stage: stage, system: system, prompt: prompt,
+                context: dateContext, schema: schema, options: options, sleep: sleep)
+        }
         let segments = evidence.summarySegments()
         guard !segments.isEmpty else {
             return DayDigestOverviewGeneration(
@@ -835,9 +849,6 @@ enum DayDigestOverviewGenerator {
             "day digest plan model=\(engine.displayName) segments=\(segments.count) "
                 + "events=\(segments.reduce(0) { $0 + $1.eventCount }) ranges=\(ranges)")
 
-        let dateContext = [
-            "Date: \(evidence.day.formatted(date: .complete, time: .omitted))",
-        ]
         var substantiveBlocks: [DayDigestGeneratedFocusBlock] = []
         var fallbackBlocks: [DayDigestGeneratedFocusBlock] = []
         var degraded = false
@@ -859,26 +870,26 @@ enum DayDigestOverviewGenerator {
             var output: String
             do {
                 do {
-                    output = try await engine.generate(
+                    output = try await request(
+                        "segment \(index + 1)",
                         system: PromptTemplates.dayDigestFocusSystem,
                         prompt: focusPrompt,
-                        context: dateContext,
                         schema: focusSchema,
                         options: TextGenerationOptions(
-                            maxTokens: 768,
+                            maxTokens: focusTokens,
                             reasoningBudgetTokens: 256,
                             temperature: 0.2))
                 } catch TextEngineError.outputTruncated {
                     attempts = 2
                     let retryStartedAt = Date()
                     do {
-                        output = try await engine.generate(
+                        output = try await request(
+                            "segment \(index + 1) retry",
                             system: PromptTemplates.dayDigestFocusSystem,
                             prompt: focusRetryPrompt + "\n\n" + focusPrompt,
-                            context: dateContext,
                             schema: focusSchema,
                             options: TextGenerationOptions(
-                                maxTokens: 1_600,
+                                maxTokens: focusRetryTokens,
                                 reasoningBudgetTokens: 0,
                                 temperature: 0))
                         lokalbotLog(
@@ -919,13 +930,13 @@ enum DayDigestOverviewGenerator {
                 attempts = 2
                 let retryStartedAt = Date()
                 do {
-                    output = try await engine.generate(
+                    output = try await request(
+                        "segment \(index + 1) retry",
                         system: PromptTemplates.dayDigestFocusSystem,
                         prompt: focusRetryPrompt + "\n\n" + focusPrompt,
-                        context: dateContext,
                         schema: focusSchema,
                         options: TextGenerationOptions(
-                            maxTokens: 1_600,
+                            maxTokens: focusRetryTokens,
                             reasoningBudgetTokens: 0,
                             temperature: 0))
                     parsed = parseFocus(output, segment: segment)
@@ -1024,10 +1035,10 @@ enum DayDigestOverviewGenerator {
                 """
             let output: String
             do {
-                output = try await engine.generate(
+                output = try await request(
+                    "task aggregation",
                     system: system,
                     prompt: aggregationPrompt,
-                    context: dateContext,
                     schema: digestSchema,
                     options: TextGenerationOptions(
                         maxTokens: 1_600,
@@ -1035,10 +1046,10 @@ enum DayDigestOverviewGenerator {
                         temperature: 0.2))
             } catch TextEngineError.outputTruncated {
                 let retryStartedAt = Date()
-                output = try await engine.generate(
+                output = try await request(
+                    "task aggregation retry",
                     system: system,
                     prompt: digestRetryPrompt + "\n\n" + aggregationPrompt,
-                    context: dateContext,
                     schema: digestSchema,
                     options: TextGenerationOptions(
                         maxTokens: 3_200,
@@ -1067,6 +1078,49 @@ enum DayDigestOverviewGenerator {
         return DayDigestOverviewGeneration(
             summary: render(blocks: selectedBlocks, draft: digest),
             quality: degraded ? .partial : .complete)
+    }
+
+    /// Routed reasoning models can spend most of a small budget thinking even
+    /// when asked not to. The compact focus JSON needs far less than this; the
+    /// headroom only matters for those models, and llama-server keeps its own
+    /// thinking budget independent of the larger cap.
+    private static let focusTokens = 2_048
+    private static let focusRetryTokens = 4_096
+
+    /// Remote providers intermittently answer 429/5xx or drop the connection.
+    /// Replay that one request after the shared policy delay instead of
+    /// losing the rest of the day. Managed local engines already relaunch and
+    /// replay inside `LeasedTextEngine`, so they are never retried twice.
+    private static func generateReplayingTransientFailure(
+        engine: TextEngine,
+        stage: String,
+        system: String,
+        prompt: String,
+        context: [String],
+        schema: [String: Any],
+        options: TextGenerationOptions,
+        sleep: @Sendable (TimeInterval) async throws -> Void
+    ) async throws -> String {
+        do {
+            return try await engine.generate(
+                system: system, prompt: prompt, context: context,
+                schema: schema, options: options)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            guard !(engine is LeasedTextEngine),
+                  let delay = TextEngineRetryPolicy.delay(for: error, attempt: 0) else {
+                throw error
+            }
+            lokalbotLog(
+                "day digest \(stage) replay after transient error delay="
+                    + String(format: "%.1fs", delay)
+                    + " error=\(error.localizedDescription)")
+            try await sleep(delay)
+            return try await engine.generate(
+                system: system, prompt: prompt, context: context,
+                schema: schema, options: options)
+        }
     }
 
     private static let focusRetryPrompt = """
