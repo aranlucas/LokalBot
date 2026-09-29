@@ -928,7 +928,7 @@ private struct ConversationListContent: View {
             HStack(spacing: 8) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Conversations").font(.scaled(.title3).bold())
-                    Text("\(model.conversations.count) conversations").font(.scaled(.callout)).foregroundStyle(.secondary)
+                    Text("\(model.conversations.count) conversations").font(.scaled(.callout)).workspaceSupportingForeground()
                 }
                 Spacer(minLength: 4)
             Button {

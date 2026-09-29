@@ -385,19 +385,20 @@ final class MainWindowUITests: XCTestCase {
                        "empty decisions section should not consume Timeline space")
         XCTAssertTrue(textWithContent("Day Overview").firstMatch.waitForExistence(timeout: 6),
                       "day overview missing — seeded activity did not load")
-        // Day Overview closes the digest column; its lazy app legend is built
-        // only once scrolled into view.
-        let digestColumn = identified("timeline.evidencePane").scrollViews.firstMatch
-        UITestHarness.scrollTo(identified("capture.dayOverview"), in: app,
-                               within: digestColumn.exists ? digestColumn : nil)
-        XCTAssertTrue(textWithContent("Xcode").firstMatch.waitForExistence(timeout: 4),
-                      "seeded activity app 'Xcode' missing from Timeline")
         XCTAssertTrue(digestTasksVisible(),
                       "digest task hierarchy is missing")
         XCTAssertTrue(textWithContent("Updated the Timeline UI").firstMatch.exists,
                       "human-facing focus summary is missing")
         XCTAssertFalse(textWithContent("User updated the Timeline UI").firstMatch.exists,
                        "model bookkeeping subject leaked into the focus summary")
+        // Day Overview closes the digest column. Its heading can be visible
+        // while the lazy app legend below it is not built yet, so scroll the
+        // column until the legend itself is on screen.
+        let appLegendEntry = textWithContent("Xcode").firstMatch
+        UITestHarness.scrollTo(appLegendEntry, in: app,
+                               within: identified("timeline.evidencePane"))
+        XCTAssertTrue(appLegendEntry.waitForExistence(timeout: 4),
+                      "seeded activity app 'Xcode' missing from Timeline")
         XCTAssertFalse(textWithContent("screen:4242").firstMatch.exists,
                        "private evidence identifier leaked into the collapsed overview")
         XCTAssertFalse(textWithContent("No activity recorded").firstMatch.exists,
