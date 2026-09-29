@@ -705,7 +705,7 @@ final class ActivityStoreTests: XCTestCase {
         XCTAssertNil(selection)
     }
 
-    func testCaptureLayoutRejectsAmbiguousAndPrivateFocusedWindows() {
+    func testCaptureLayoutRejectsAmbiguousAndExcludedFocusedWindows() {
         let frame = CGRect(x: 0, y: 0, width: 800, height: 600)
         let windows = [
             ScreenshotCaptureLayout.Window(id: 1, processID: 42, appName: "Safari", title: "Report", frame: frame),
@@ -717,10 +717,11 @@ final class ActivityStoreTests: XCTestCase {
         XCTAssertNil(ScreenshotCaptureLayout.selection(
             windows: Array(windows.prefix(1)), frontmostProcessID: 42, focusedWindowTitle: "Report",
             focusedWindowFrame: frame, excludedApps: ["Safari"]))
-        XCTAssertNil(ScreenshotCaptureLayout.selection(
+        // Private windows are captured like any other focused window.
+        XCTAssertEqual(ScreenshotCaptureLayout.selection(
             windows: [.init(id: 3, processID: 42, appName: "Safari", title: "Private Window", frame: frame)],
             frontmostProcessID: 42, focusedWindowTitle: "Private Window",
-            focusedWindowFrame: frame, excludedApps: []))
+            focusedWindowFrame: frame, excludedApps: [])?.windowID, 3)
     }
 
     func testCaptureFileNamesAndInFlightGateCannotCollide() {
@@ -846,7 +847,7 @@ final class ActivityStoreTests: XCTestCase {
         XCTAssertFalse(sampler.hasTerminationObserver)
     }
 
-    func testActivityOnlySamplerNeverPersistsExcludedOrUnknownTitles() throws {
+    func testActivitySamplerKeepsAppNamesAndDropsOnlyExcludedOrUnsafeTitles() throws {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("ActivityPrivacyTests-\(UUID().uuidString).sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -885,10 +886,45 @@ final class ActivityStoreTests: XCTestCase {
         sampler.stop()
 
         let blocks = store.blocks(in: DateInterval(start: base, end: Date().addingTimeInterval(1)))
-        XCTAssertEqual(blocks.count, 3)
-        XCTAssertEqual(blocks.map(\.title), ["Public report", "", "Public report"])
-        XCTAssertEqual(blocks.map(\.app), ["Notes", "Private", "Notes"])
-        XCTAssertEqual(blocks[1].duration, 50)
+        // Only the excluded site is anonymous. An unreadable address under
+        // site rules and a timed-out read keep the app without a title; an
+        // unknown secure-field state keeps the window title.
+        XCTAssertEqual(blocks.count, 6)
+        XCTAssertEqual(blocks.map(\.title), [
+            "Public report", "Sensitive account — Private Window", "", "", "Unknown secure title",
+            "Public report",
+        ])
+        XCTAssertEqual(blocks.map(\.app), ["Notes", "Notes", "Private", "Notes", "Notes", "Notes"])
+        XCTAssertEqual(blocks[2].duration, 10)
+        XCTAssertEqual(blocks[3].duration, 20)
+    }
+
+    /// Regression: browsers and web-based apps were recorded as "Private"
+    /// whenever their browsing mode could not be verified.
+    func testSamplerTracksBrowserAndWebAppWindowsByName() throws {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ActivityBrowserTests-\(UUID().uuidString).sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let store = ActivityStore(databaseURL: url)
+        let sampler = ActivitySampler(store: store)
+        let base = Date().addingTimeInterval(-60)
+        let browser = ScreenAccessibilitySnapshot(
+            text: "", sourceURL: "https://docs.example/plan", documentName: nil,
+            focusedSecureField: false, windowTitle: "Plan - Google Docs", windowFrame: nil,
+            hasWebContent: true)
+        var webApp = browser
+        webApp.sourceURL = nil
+        webApp.windowTitle = "Claude"
+        sampler.recordSample(appName: "Google Chrome", bundleIdentifier: "com.google.Chrome",
+                             accessibility: .init(snapshot: browser, timedOut: false), at: base)
+        sampler.recordSample(appName: "Claude", bundleIdentifier: "com.anthropic.claudefordesktop",
+                             accessibility: .init(snapshot: webApp, timedOut: false),
+                             at: base.addingTimeInterval(20))
+        sampler.stop()
+
+        let blocks = store.blocks(in: DateInterval(start: base, end: Date().addingTimeInterval(1)))
+        XCTAssertEqual(blocks.map(\.app), ["Google Chrome", "Claude"])
+        XCTAssertEqual(blocks.map(\.title), ["Plan - Google Docs", "Claude"])
     }
 
     func testClearOCRTextRemovesOnlyRowsOlderThanCutoff() throws {
