@@ -52,4 +52,40 @@ final class CaptureEnvironmentTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(BrowserMeetingSession.Snapshot.self,
                                                 from: JSONEncoder().encode(snapshot)), snapshot)
     }
+
+    @MainActor
+    func testSamplerReadsFrontmostAppAndIdleTimeFromTheEnvironment() async throws {
+        struct Workspace: WorkspaceSource {
+            func frontmostApplication() -> RunningApp? {
+                RunningApp(processIdentifier: 77, bundleIdentifier: "com.example.editor", localizedName: "Editor")
+            }
+            func runningApplications() -> [RunningApp] { [frontmostApplication()!] }
+            func isRunning(processID: pid_t) -> Bool { processID == 77 }
+            func secondsSinceLastInput() -> TimeInterval { 1 }
+        }
+        struct Accessibility: AccessibilitySource {
+            func isTrusted() -> Bool { true }
+            func read(processID: pid_t, includeText: Bool) -> AccessibilityRead {
+                AccessibilityRead(snapshot: ScreenAccessibilitySnapshot(
+                    text: "", sourceURL: nil, documentName: nil, focusedSecureField: false,
+                    windowTitle: "Plan", windowFrame: nil), failure: nil)
+            }
+            func focusedWindowTitle(processID: pid_t) -> String? { "Plan" }
+            func browserMeetingSnapshot(processID: pid_t, expectedURL: URL?) -> BrowserMeetingSession.Snapshot? { nil }
+            func browserReadIssue(processID: pid_t) -> BrowserMeetingSession.ReadIssue? { nil }
+        }
+        var environment = CaptureEnvironment.live
+        environment.workspace = Workspace()
+        environment.accessibility = Accessibility()
+        CaptureEnvironment.install(environment)
+
+        let database = FileManager.default.temporaryDirectory.appendingPathComponent("sampler-\(UUID()).sqlite")
+        let sampler = ActivitySampler(store: ActivityStore(databaseURL: database),
+                                      accessibilityReader: ScreenAccessibilityReader(resolver: { pid in
+                                          CaptureEnvironment.current.accessibility
+                                              .read(processID: pid, includeText: false).snapshot
+                                      }))
+        await sampler.sample()
+        XCTAssertEqual(sampler.currentApp, "Editor")
+    }
 }
