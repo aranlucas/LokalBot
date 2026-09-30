@@ -65,10 +65,12 @@ final class CodingAgentDigestModelTests: XCTestCase {
     func testASessionsBurstsInOneSegmentAppearOnceWithAllTheirActions() throws {
         // Seven separate later stretches keep the session to one segment; a
         // quiet day would otherwise be spread across several.
-        let later: [ActivityBlock] = (11...17).map { hour in
+        var later: [ActivityBlock] = []
+        for hour in 11...17 {
             let start: Date = day.addingTimeInterval(TimeInterval(hour) * 3_600)
-            return ActivityBlock(id: Int64(hour), app: "Notes", title: "Note \(hour)",
-                                 start: start, end: start.addingTimeInterval(60))
+            later.append(ActivityBlock(
+                id: Int64(hour), app: "Notes", title: "Note \(hour)",
+                start: start, end: start.addingTimeInterval(60)))
         }
         let evidence = build(blocks: later, bursts: [
             try burst("A", start: "2026-09-29T09:00:00Z", end: "2026-09-29T09:10:00Z",
@@ -94,14 +96,22 @@ final class CodingAgentDigestModelTests: XCTestCase {
             ActivityBlock(id: 3, app: "Claude", title: "Claude",
                           start: try date("2026-09-29T13:00:00Z"), end: try date("2026-09-29T14:00:00Z")),
         ]
+        // Plain loops and typed locals: inline arithmetic inside a mapped
+        // initializer is too slow to type-check on CI's compiler.
         var contexts: [DayScreenContext] = []
-        for (prefix, start, block) in [("CLAUDE-DURING", "09:00", 1), ("XCODE", "10:30", 2), ("CLAUDE-AFTER", "13:00", 3)] {
-            let base = try date("2026-09-29T\(start):00Z")
-            contexts += (0..<5).map { index in
-                DayScreenContext(
-                    snapshotID: Int64(block * 10 + index), capturedAt: base.addingTimeInterval(TimeInterval(index * 300 + 60)),
-                    app: blocks[block - 1].app, windowTitle: blocks[block - 1].title,
-                    text: "\(prefix)-\(index) distinct captured text for sample \(index)")
+        let samples: [(prefix: String, start: String, block: Int)] = [
+            ("CLAUDE-DURING", "09:00", 1), ("XCODE", "10:30", 2), ("CLAUDE-AFTER", "13:00", 3),
+        ]
+        for sample in samples {
+            let base: Date = try date("2026-09-29T\(sample.start):00Z")
+            let block: ActivityBlock = blocks[sample.block - 1]
+            for index in 0..<5 {
+                let capturedAt: Date = base.addingTimeInterval(TimeInterval(index) * 300 + 60)
+                let snapshotID = Int64(sample.block * 10 + index)
+                contexts.append(DayScreenContext(
+                    snapshotID: snapshotID, capturedAt: capturedAt, app: block.app,
+                    windowTitle: block.title,
+                    text: "\(sample.prefix)-\(index) distinct captured text for sample \(index)"))
             }
         }
         contexts.append(DayScreenContext(
