@@ -131,6 +131,12 @@ enum ModelStackPreset: String, CaseIterable, Identifiable {
         self == .recommended ? ModelCatalog.defaultSummarizationID : ModelCatalog.compactFallbackID
     }
     var autocompleteModelID: String { ModelCatalog.recommendedCotypingID }
+    /// Names come from the same IDs the patch applies, so the list cannot drift.
+    var modelSummary: String {
+        func name(_ id: String) -> String { ModelCatalog.entry(id: id)?.displayName ?? id }
+        return "Transcribe: \(transcription.displayName), Think: \(name(mainModelID)), "
+            + "Autocomplete: \(name(autocompleteModelID))"
+    }
     var patch: ModelSelectionPatch {
         ModelSelectionPatch(
             transcription: transcription,
