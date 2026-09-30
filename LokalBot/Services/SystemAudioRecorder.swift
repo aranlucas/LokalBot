@@ -31,9 +31,10 @@ final class SystemAudioRecorder {
         }
     }
 
-    private var tapID = AudioObjectID(kAudioObjectUnknown)
-    private var aggregateID = AudioObjectID(kAudioObjectUnknown)
-    private var ioProcID: AudioDeviceIOProcID?
+    /// Tests and the UI background host may replace this before any recorder exists.
+    static var defaultTapFactory: () -> SystemAudioTap = { CoreAudioProcessTap() }
+    private let makeTap: () -> SystemAudioTap
+    private var tap: SystemAudioTap?
     private var file: AVAudioFile?
     private var previewTee: AudioPreviewTee?
     private var writeFailure: String?
@@ -63,8 +64,10 @@ final class SystemAudioRecorder {
     /// blocks on AAC encoding or filesystem I/O. Serial → ordered writes.
     private let ioQueue: DispatchQueue
 
-    init(writerQueue: DispatchQueue = DispatchQueue(label: "lokalbot.systemaudio.write", qos: .userInitiated)) {
+    init(writerQueue: DispatchQueue = DispatchQueue(label: "lokalbot.systemaudio.write", qos: .userInitiated),
+         makeTap: @escaping () -> SystemAudioTap = SystemAudioRecorder.defaultTapFactory) {
         ioQueue = writerQueue
+        self.makeTap = makeTap
     }
     /// The tap callback borrows from this fixed pool with a non-blocking lock.
     /// It never allocates an AVAudioPCMBuffer or waits for the writer queue.
@@ -98,8 +101,9 @@ final class SystemAudioRecorder {
     /// the live meeting transcript — best-effort, never fails the recording.
     func start(capturingPID pid: pid_t, writingTo url: URL, previewTee previewURL: URL? = nil,
                timeline: RecordingAudioTimeline? = nil) throws {
-        // 1. Translate the PID to its Core Audio process object.
-        guard let processObject = CoreAudioUtils.translatePIDToProcessObject(pid: pid) else {
+        // 1. The tap must find the process before any state changes.
+        let nextTap = makeTap()
+        guard nextTap.resolves(processID: pid) else {
             throw RecorderError.processNotFound
         }
 
@@ -122,7 +126,7 @@ final class SystemAudioRecorder {
             dropLock.lock()
             droppedBufferCount = 0
             dropLock.unlock()
-            try attachTap(processObject: processObject, writingTo: url)
+            try attachTap(nextTap, processID: pid, writingTo: url)
         } catch {
             cleanup(closeFile: true)
             throw error
@@ -139,7 +143,8 @@ final class SystemAudioRecorder {
     /// audio already captured before that handoff.
     func reattach(capturingPID pid: pid_t) throws {
         guard let outputURL else { throw RecorderError.processNotFound }
-        guard let processObject = CoreAudioUtils.translatePIDToProcessObject(pid: pid) else {
+        let nextTap = makeTap()
+        guard nextTap.resolves(processID: pid) else {
             throw RecorderError.processNotFound
         }
         teardownTap()
@@ -148,7 +153,7 @@ final class SystemAudioRecorder {
             framesSinceAttach = 0
         }
         do {
-            try attachTap(processObject: processObject, writingTo: outputURL)
+            try attachTap(nextTap, processID: pid, writingTo: outputURL)
             installTerminationObserver(for: pid)
         } catch {
             teardownTap()
@@ -190,45 +195,15 @@ final class SystemAudioRecorder {
                              writeError: writeFailure ?? previewTee?.failureDescription)
     }
 
-    private func attachTap(processObject: AudioObjectID, writingTo url: URL) throws {
-        // 2. Create a stereo-mixdown tap on that process only.
-        let tapDescription = CATapDescription(stereoMixdownOfProcesses: [processObject])
-        tapDescription.uuid = UUID()
-        tapDescription.isPrivate = true
-        tapDescription.muteBehavior = .unmuted   // user still hears the meeting
-        var err = AudioHardwareCreateProcessTap(tapDescription, &tapID)
-        guard err == noErr else { throw RecorderError.coreAudio("CreateProcessTap", err) }
-
-        // 3. Read the tap's stream format.
-        var asbd = AudioStreamBasicDescription()
-        var size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
-        var addr = AudioObjectPropertyAddress(
-            mSelector: kAudioTapPropertyFormat,
-            mScope: kAudioObjectPropertyScopeGlobal,
-            mElement: kAudioObjectPropertyElementMain)
-        err = AudioObjectGetPropertyData(tapID, &addr, 0, nil, &size, &asbd)
-        guard err == noErr, let format = AVAudioFormat(streamDescription: &asbd) else {
-            throw RecorderError.badTapFormat
-        }
+    private func attachTap(_ nextTap: SystemAudioTap, processID: pid_t, writingTo url: URL) throws {
+        // 2–4. Tap, stream format, and aggregate device (see `SystemAudioTap`).
+        tap = nextTap
+        let format = try nextTap.attach(processID: processID)
 
         if let existingFormat = tapFormat, !Self.formatsCompatible(existingFormat, format) {
             throw RecorderError.badTapFormat
         }
         tapFormat = format
-
-        // 4. Private aggregate device that contains (auto-starts) the tap.
-        let aggDescription: [String: Any] = [
-            kAudioAggregateDeviceNameKey: "LokalBot Tap",
-            kAudioAggregateDeviceUIDKey: UUID().uuidString,
-            kAudioAggregateDeviceIsPrivateKey: true,
-            kAudioAggregateDeviceTapAutoStartKey: true,
-            kAudioAggregateDeviceTapListKey: [[
-                kAudioSubTapUIDKey: tapDescription.uuid.uuidString,
-                kAudioSubTapDriftCompensationKey: true,
-            ]],
-        ]
-        err = AudioHardwareCreateAggregateDevice(aggDescription as CFDictionary, &aggregateID)
-        guard err == noErr else { throw RecorderError.coreAudio("CreateAggregateDevice", err) }
 
         // 5. Output file (PCM → AAC handled by AVAudioFile). Reattaches keep
         // this writer open so samples already captured remain in the same M4A.
@@ -252,11 +227,11 @@ final class SystemAudioRecorder {
             }
         }
 
-        // 6. IOProc: tap buffers arrive as the aggregate device's input.
-        //    The Core Audio buffer list is only valid for the duration of
-        //    this callback, and the AAC encoder must not run on the real-time
-        //    audio thread — copy the samples, then hop to a serial queue.
-        err = AudioDeviceCreateIOProcIDWithBlock(&ioProcID, aggregateID, nil) { [weak self] _, inInputData, inputTime, _, _ in
+        // 6. Tap buffers arrive on the real-time thread. The buffer list is
+        //    only valid for the duration of this callback, and the AAC encoder
+        //    must not run on the real-time audio thread — copy the samples,
+        //    then hop to a serial queue.
+        try nextTap.start { [weak self] inInputData, inputTime in
             guard let self, let fmt = self.tapFormat,
                   fmt.commonFormat == .pcmFormatFloat32 else { return }
             let streamDescription = fmt.streamDescription
@@ -312,10 +287,6 @@ final class SystemAudioRecorder {
                 }
             }
         }
-        guard err == noErr else { throw RecorderError.coreAudio("CreateIOProc", err) }
-
-        err = AudioDeviceStart(aggregateID, ioProcID)
-        guard err == noErr else { throw RecorderError.coreAudio("DeviceStart", err) }
     }
 
     func stop() {
@@ -348,24 +319,14 @@ final class SystemAudioRecorder {
     /// Stop the tap/aggregate without closing the file. Used for browser
     /// helper handoffs where the M4A should keep accumulating samples.
     private func teardownTap() {
-        if let ioProcID, aggregateID != kAudioObjectUnknown {
-            AudioDeviceStop(aggregateID, ioProcID)
-            AudioDeviceDestroyIOProcID(aggregateID, ioProcID)
-        }
-        ioProcID = nil
+        tap?.stopDelivery()
 
         // Drain any IOProc writes that were already dispatched before we
         // stopped, preserving sample order before a reattach or file close.
         ioQueue.sync {}
 
-        if aggregateID != kAudioObjectUnknown {
-            AudioHardwareDestroyAggregateDevice(aggregateID)
-            aggregateID = AudioObjectID(kAudioObjectUnknown)
-        }
-        if tapID != kAudioObjectUnknown {
-            AudioHardwareDestroyProcessTap(tapID)
-            tapID = AudioObjectID(kAudioObjectUnknown)
-        }
+        tap?.destroy()
+        tap = nil
     }
 
     /// One canonical close path, used by both `stop()` and startup failures.
