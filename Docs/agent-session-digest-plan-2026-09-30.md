@@ -297,8 +297,29 @@ Agent sessions should enter the same way.
    - A first attempt with a four-slot reservation and no merging repeated one
      session up to three times per segment and still dropped PR #175. That
      led to per-session merging and the six-slot reservation.
-   - Still to do: compare the generated journal itself by running the model
-     on this day.
+   - **Model run (on-device Qwen3.5-4B, both variants, journal untouched).**
+     - Before: six tasks from screen text, several wrong. They included
+       "Claude Workspace Review" (sidebar noise) and "LokalBot CI Performance
+       Improvements … PR #157 and #175" (#175 belongs to Mojo).
+     - The first after-run showed two gaps:
+       - Segment extraction keeps one task per segment, so parallel sessions
+         were lost. Mojo #186, PR #175, and alpha #377 reached the model but
+         not the task list.
+       - A scheduled "previous day work update" report was read as work done
+         that day.
+     - Passing every session to aggregation made the 4B model blend
+       unrelated sessions into four tasks. So session tasks are now stated
+       from recorded actions and added after aggregation, merging only by
+       title. Scheduled runs' reports are withheld.
+     - The same run exposed a reader bug: Codex records commands as argv
+       arrays, all 14,070 of them over ten days, and the reader expected a
+       string. Every Codex action was being dropped.
+     - Final after-run: 11 grounded tasks. They cover every session behind
+       the missed work, including Mojo branding #186 with its commits, PR
+       #175 with its fixes, alpha #377, LokalBot #108–#117, and README
+       #105–#111. The scheduled run is described as a request, not as work.
+       The remaining errors are the small model's wording, such as naming
+       a PR from another repository.
 4. **Follow-ons.**
    - Index bursts in Recall, e.g. "what did Codex change for branding?".
    - Expose bursts through CLI/MCP under the screen-memory toggle.

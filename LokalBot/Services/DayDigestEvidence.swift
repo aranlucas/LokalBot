@@ -469,7 +469,7 @@ struct DayDigestEvidence: Equatable, Sendable {
             events.append(SummaryEvent(
                 start: burst.start,
                 end: burst.end,
-                source: .agentSession(recordedOutcome: !burst.actions.isEmpty || !burst.pullRequests.isEmpty),
+                source: .agentSession(recordedOutcome: burst.recordedOutcome),
                 text: burst.evidenceText(maxPrompts: 3),
                 sourceIDs: [],
                 app: burst.agent.displayName,
@@ -558,8 +558,7 @@ struct DayDigestEvidence: Equatable, Sendable {
                   let session = CodingAgentBurstBuilder.merging(event.agentBursts) else { return event }
             var combined = event
             combined.end = session.end
-            combined.source = .agentSession(
-                recordedOutcome: !session.actions.isEmpty || !session.pullRequests.isEmpty)
+            combined.source = .agentSession(recordedOutcome: session.recordedOutcome)
             combined.text = session.evidenceText(maxPrompts: 3)
             return combined
         }
@@ -762,10 +761,15 @@ struct DayDigestEvidence: Equatable, Sendable {
     }
 
     /// `owner/repo#N` for a GitHub pull request URL.
-    static func pullRequestLink(_ url: String) -> String {
+    static func pullRequestLabel(_ url: String) -> String? {
         let parts = url.split(separator: "/")
-        guard parts.count >= 6, parts[parts.count - 2] == "pull" else { return "<\(url)>" }
-        return "[\(parts[parts.count - 4])/\(parts[parts.count - 3])#\(parts[parts.count - 1])](\(url))"
+        guard parts.count >= 6, parts[parts.count - 2] == "pull" else { return nil }
+        return "\(parts[parts.count - 4])/\(parts[parts.count - 3])#\(parts[parts.count - 1])"
+    }
+
+    /// A Markdown link labelled `owner/repo#N`.
+    static func pullRequestLink(_ url: String) -> String {
+        pullRequestLabel(url).map { "[\($0)](\(url))" } ?? "<\(url)>"
     }
 
     private func timeAllocationSection() -> String {
@@ -1188,6 +1192,12 @@ enum DayDigestOverviewGenerator {
                     + String(format: "%.2fs", Date().timeIntervalSince(startedAt)))
         }
 
+        // Segment extraction yields one task per segment, so of several
+        // parallel sessions all but one would vanish. Those that recorded an
+        // outcome are stated from their actions and added after aggregation:
+        // a small model asked to merge them blends unrelated sessions.
+        let sessionCandidates = agentSessionCandidates(evidence)
+
         let usesBestAvailableActivity = substantiveBlocks.isEmpty
         // Substantive work leads; lighter but identifiable work follows it
         // instead of disappearing whenever one segment clears the bar.
@@ -1282,7 +1292,7 @@ enum DayDigestOverviewGenerator {
                 + String(format: "%.2fs", Date().timeIntervalSince(digestStartedAt)))
 
         return DayDigestOverviewGeneration(
-            summary: render(blocks: selectedBlocks, draft: digest),
+            summary: render(blocks: selectedBlocks, draft: digest, sessionCandidates: sessionCandidates),
             quality: degraded ? .partial : .complete)
     }
 
@@ -1345,6 +1355,38 @@ enum DayDigestOverviewGenerator {
         Keep each next_step, decision, or blocker under 32 words.
         Do not quote or restate candidate metadata.
         """
+
+    /// One candidate per agent session that recorded an outcome, from
+    /// recorded facts only. Scheduled runs are left to segment extraction:
+    /// their reports often describe other days.
+    static func agentSessionCandidates(_ evidence: DayDigestEvidence) -> [DayDigestGeneratedFocusBlock] {
+        evidence.codingAgentSessions.compactMap { bursts -> DayDigestGeneratedFocusBlock? in
+            guard let session = CodingAgentBurstBuilder.merging(bursts), session.recordedOutcome,
+                  !session.isScheduledRun else { return nil }
+            let title = session.title.localizedCaseInsensitiveContains(session.project)
+                ? session.title : "\(session.title) (\(session.project))"
+            var workDone = "Worked with \(session.agent.displayName) in \(session.project)."
+            if !session.actions.isEmpty {
+                workDone += " Recorded actions: "
+                    + session.actions.prefix(6).map(\.summary).joined(separator: "; ") + "."
+            }
+            let pullRequests = session.pullRequests.compactMap(DayDigestEvidence.pullRequestLabel)
+            let finished = session.actions.contains { action in
+                switch action {
+                case .mergedPullRequest, .release: true
+                default: false
+                }
+            }
+            return DayDigestGeneratedFocusBlock(
+                task: cleanInline(title, maxCharacters: FieldLimit.titleCharacters),
+                workDone: cleanSummary(workDone, maxWords: FieldLimit.workDoneWords),
+                status: finished ? "completed" : "in_progress",
+                outcome: pullRequests.isEmpty
+                    ? "" : cleanSummary("Pull requests: " + pullRequests.joined(separator: ", "), maxWords: 32),
+                nextStep: "",
+                sourceIDs: [])
+        }
+    }
 
     static func fallback(_ evidence: DayDigestEvidence) -> String {
         if evidence.isEmpty {
@@ -1617,9 +1659,13 @@ enum DayDigestOverviewGenerator {
 
     private static func render(
         blocks: [DayDigestGeneratedFocusBlock],
-        draft: DigestDraft?
+        draft: DigestDraft?,
+        sessionCandidates: [DayDigestGeneratedFocusBlock] = []
     ) -> String {
-        let normalized = normalizedDigest(draft, blocks: blocks)
+        var normalized = normalizedDigest(draft, blocks: blocks)
+        for (offset, candidate) in sessionCandidates.enumerated() {
+            mergeSessionCandidate(candidate, index: blocks.count + offset, into: &normalized.tasks)
+        }
         guard !normalized.tasks.isEmpty else {
             return "### Tasks\n- **Recorded activity** — Activity was captured, but the available context did not identify a more specific item."
         }
@@ -1714,6 +1760,55 @@ enum DayDigestOverviewGenerator {
             summary: candidateSummary(block),
             nextStep: block.nextStep,
             blockIndices: [index]))
+    }
+
+    /// A session already described by a task adds its recorded facts to that
+    /// task; otherwise it becomes its own task after the model's.
+    private static func mergeSessionCandidate(
+        _ block: DayDigestGeneratedFocusBlock,
+        index: Int,
+        into tasks: inout [NormalizedTask]
+    ) {
+        let key = normalizedTaskKey(block.task)
+        guard let taskIndex = tasks.firstIndex(where: {
+            normalizedTaskKey($0.title) == key || DayDigestTextSimilarity.isSimilar($0.title, block.task)
+        }) else {
+            tasks.append(NormalizedTask(
+                title: block.task,
+                status: block.status,
+                summary: candidateSummary(block),
+                nextStep: "",
+                blockIndices: [index]))
+            return
+        }
+        let addition = unmentionedOutcome(block.outcome, in: tasks[taskIndex].summary)
+        if !addition.isEmpty {
+            tasks[taskIndex].summary = cleanSummary(
+                tasks[taskIndex].summary + " " + addition, maxWords: FieldLimit.summaryWords)
+        }
+        // A recorded merge or release settles the status; nothing weaker
+        // overrides what the model concluded.
+        if block.status == "completed" { tasks[taskIndex].status = "completed" }
+        tasks[taskIndex].blockIndices.append(index)
+    }
+
+    /// The part of a session's outcome a task does not state yet. Several
+    /// sessions can merge into one task, so each adds only pull requests it
+    /// has not already named; `#10` is not mentioned by `#105`.
+    private static func unmentionedOutcome(_ outcome: String, in summary: String) -> String {
+        let prefix = "Pull requests: "
+        guard outcome.hasPrefix(prefix) else {
+            return summary.localizedCaseInsensitiveContains(outcome) ? "" : outcome
+        }
+        let missing = outcome.dropFirst(prefix.count)
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { label in
+                summary.range(
+                    of: NSRegularExpression.escapedPattern(for: label) + #"(?!\d)"#,
+                    options: .regularExpression) == nil
+            }
+        return missing.isEmpty ? "" : prefix + missing.joined(separator: ", ")
     }
 
     private static func candidateSummary(_ block: DayDigestGeneratedFocusBlock) -> String {

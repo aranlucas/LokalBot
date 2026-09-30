@@ -148,6 +148,82 @@ final class CodingAgentDigestModelTests: XCTestCase {
         XCTAssertEqual(result.quality, .complete)
     }
 
+    func testParallelSessionsEachReachTheTaskListWithoutDuplicatingTheModelsTask() async throws {
+        let evidence = build(bursts: [
+            try burst("A", start: "2026-09-29T09:00:00Z", end: "2026-09-29T09:20:00Z",
+                      actions: [.commit(message: "Fix the badge"), .mergedPullRequest(number: 118)]),
+            try burst("B", start: "2026-09-29T09:05:00Z", end: "2026-09-29T09:25:00Z",
+                      title: "Update app branding", project: "Mojo",
+                      actions: [.openedPullRequest(title: "feat: apply Mojo branding")]),
+            // Describes the same work as the model's task, so it merges.
+            try burst("C", start: "2026-09-29T09:10:00Z", end: "2026-09-29T09:15:00Z",
+                      title: "Keep the digest badge fresh", actions: [.pushed]),
+        ])
+
+        let result = try await DayDigestOverviewGenerator.generateResult(
+            evidence: evidence, engine: RecordingEngine(recorder: PromptRecorder()),
+            customPrompt: "", calendar: calendar, sleep: { _ in })
+
+        let summary = result.summary
+        XCTAssertTrue(summary.contains("**Fix digest freshness (LokalBot)** — Completed."), summary)
+        XCTAssertTrue(summary.contains("**Update app branding (Mojo)** — In progress."), summary)
+        XCTAssertTrue(summary.contains("Recorded actions: opened PR: feat: apply Mojo branding"), summary)
+        XCTAssertEqual(summary.components(separatedBy: "- **Keep the digest badge fresh").count - 1, 1,
+                       "a session matching the model's task merges into it: \(summary)")
+    }
+
+    func testSessionsMergingIntoOneTaskNameEachPullRequestOnce() async throws {
+        let evidence = build(bursts: [
+            try burst("C", start: "2026-09-29T09:10:00Z", end: "2026-09-29T09:15:00Z",
+                      title: "Keep the digest badge fresh", actions: [.pushed],
+                      pullRequests: ["https://github.com/o/r/pull/105", "https://github.com/o/r/pull/10"]),
+            try burst("D", start: "2026-09-29T09:12:00Z", end: "2026-09-29T09:18:00Z",
+                      title: "Keep the digest badge fresh", actions: [.pushed],
+                      pullRequests: ["https://github.com/o/r/pull/105", "https://github.com/o/r/pull/11"]),
+        ])
+
+        let summary = try await DayDigestOverviewGenerator.generateResult(
+            evidence: evidence, engine: RecordingEngine(recorder: PromptRecorder()),
+            customPrompt: "", calendar: calendar, sleep: { _ in }).summary
+
+        XCTAssertEqual(summary.components(separatedBy: "o/r#105").count - 1, 1, summary)
+        let ten = try NSRegularExpression(pattern: #"o/r#10(?!\d)"#)
+        XCTAssertEqual(ten.numberOfMatches(in: summary, range: NSRange(summary.startIndex..., in: summary)), 1,
+                       "#10 is its own pull request, not part of #105: \(summary)")
+        XCTAssertTrue(summary.contains("o/r#11"), summary)
+    }
+
+    func testSessionCandidatesComeFromRecordedFactsAndSkipScheduledRuns() throws {
+        let evidence = build(bursts: [
+            try burst("A", start: "2026-09-29T09:00:00Z", end: "2026-09-29T09:10:00Z",
+                      actions: [.release(tag: "v1.0")]),
+            try burst("B", start: "2026-09-29T09:00:00Z", end: "2026-09-29T09:10:00Z",
+                      title: "Discuss the roadmap"),
+            try burst("C", start: "2026-09-29T09:00:00Z", end: "2026-09-29T09:10:00Z",
+                      title: "Write previous day work update",
+                      prompts: ["Scheduled automation: daily-update"], actions: [.pushed]),
+        ])
+
+        let candidates = DayDigestOverviewGenerator.agentSessionCandidates(evidence)
+
+        XCTAssertEqual(candidates.map(\.task), ["Fix digest freshness (LokalBot)"],
+                       "sessions without an outcome, and scheduled runs, are left to the model")
+        XCTAssertEqual(candidates.first?.status, "completed", "a recorded release settles the status")
+    }
+
+    func testAScheduledRunsReportNeverReachesTheModel() throws {
+        var scheduled = try burst(
+            "S", start: "2026-09-29T09:00:00Z", end: "2026-09-29T09:05:00Z",
+            prompts: ["Scheduled automation: daily-update"])
+        scheduled.finalReply = "Sep 28th: integrated fee-share and merged PR #357."
+
+        let text = scheduled.evidenceText(calendar: calendar)
+
+        XCTAssertTrue(scheduled.isScheduledRun)
+        XCTAssertFalse(text.contains("Sep 28th"), text)
+        XCTAssertTrue(text.contains("Scheduled run: its report is omitted"), text)
+    }
+
     // MARK: - Fixtures
 
     private actor PromptRecorder {
@@ -188,18 +264,20 @@ final class CodingAgentDigestModelTests: XCTestCase {
         start: String,
         end: String,
         title: String = "Fix digest freshness",
+        project: String = "LokalBot",
         prompts: [String] = ["Fix the stale digest badge"],
-        actions: [CodingAgentAction] = []
+        actions: [CodingAgentAction] = [],
+        pullRequests: [String] = []
     ) throws -> CodingAgentBurst {
         let startDate = try date(start)
         let endDate = try date(end)
         return CodingAgentBurst(
-            agent: .claudeCode, sessionID: session, title: title, project: "LokalBot",
+            agent: .claudeCode, sessionID: session, title: title, project: project,
             branch: "claude/fix-badge", start: startDate, end: endDate,
             activeDuration: endDate.timeIntervalSince(startDate),
             prompts: prompts, promptCount: prompts.count, finalReply: "Done.",
             changedFiles: ["LokalBot/Views/DayDigestCard.swift"], changedFileCount: 1,
-            actions: actions, pullRequests: [], toolCallCount: 3)
+            actions: actions, pullRequests: pullRequests, toolCallCount: 3)
     }
 
     private func date(_ value: String) throws -> Date {

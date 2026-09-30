@@ -113,6 +113,18 @@ struct CodingAgentBurst: Equatable, Codable, Sendable {
         now.timeIntervalSince(end) >= CodingAgentBurstBuilder.inactivityGap
     }
 
+    /// Every request came from a schedule, not from the person at the time.
+    /// Such runs often report on earlier days.
+    var isScheduledRun: Bool {
+        !prompts.isEmpty && prompts.allSatisfy {
+            $0.hasPrefix("Scheduled automation:") || $0.hasPrefix("Scheduled task:")
+        }
+    }
+
+    /// The burst committed, opened or merged a pull request, released,
+    /// pushed, ran tests, or linked a pull request.
+    var recordedOutcome: Bool { !actions.isEmpty || !pullRequests.isEmpty }
+
     /// Every field the digest can read, in a fixed order, for evidence
     /// signatures that change exactly when the burst's content does.
     var signatureFields: [String] {
@@ -135,6 +147,11 @@ struct CodingAgentBurst: Equatable, Codable, Sendable {
             "Session: \(title)",
             "Project: \(project)" + (branch.map { " (branch \($0))" } ?? ""),
         ]
+        if isScheduledRun {
+            lines.append(
+                "Scheduled run: its report is omitted because it may describe other days; "
+                    + "only recorded actions show what happened in this session.")
+        }
         if prompts.isEmpty {
             lines.append("Requests: continued work from an earlier request")
         } else {
@@ -155,7 +172,7 @@ struct CodingAgentBurst: Equatable, Codable, Sendable {
         if !pullRequests.isEmpty {
             lines.append("Pull requests: " + pullRequests.joined(separator: ", "))
         }
-        if let finalReply {
+        if let finalReply, !isScheduledRun {
             lines.append("Agent's final report (a claim; corroborate with actions): \(finalReply)")
         }
         lines.append(
