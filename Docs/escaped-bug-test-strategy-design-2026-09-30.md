@@ -448,3 +448,42 @@ After merge, separately and only with explicit go-ahead: branch protection.
   assertions are fixed rather than retried.
 - Recorded model responses go stale as prompts change; replay keys on
   schema name and call order, and the nightly run refreshes them.
+
+## Implementation refinements
+
+Found while planning:
+
+1. Every request's `response_format.json_schema.name` is `"response"`, so
+   replay keys on a system-prompt marker plus call order, not on schema name.
+2. Focus blocks carry no time ranges. Digest coverage is the active seconds of
+   evidence segments whose extraction produced a usable block, divided by the
+   active seconds of all segments.
+3. `CaptureEnvironment` is a struct of five small protocols (workspace,
+   accessibility, windows, audio, clock), installed process-wide as
+   `CaptureEnvironment.current`. Services read `.current` on every call rather
+   than caching it, so a replay or recorder installed after a service exists
+   still applies.
+4. Nightly jobs get compiled products by calling `build.yml` as a reusable
+   workflow, so same-run product verification keeps working.
+5. Headless commands skip the library lock by design, so the two-instance check
+   launches two normal app processes against one `LOKALBOT_STORAGE_ROOT`.
+6. The daily health run evaluates yesterday (a complete day); `--health --day`
+   evaluates any day, including today.
+7. Golden transcripts are the exact synthetic lines, and the boundary-review
+   check is the test-only headless command `--set-boundaries`.
+
+Found while implementing:
+
+- `MeetingDetector` is `@MainActor` (it already ran only on the main thread);
+  its static helpers stay `nonisolated` for their off-main callers.
+- A system-audio tap is checked with `resolves(processID:)` before the running
+  tap is torn down, so a reattach to a vanished process keeps capturing, as
+  `RecordingController` assumes.
+- Boundary reviews re-transcribe sliced regions; golden transcripts answer a
+  slice through a test-only task-local naming the source track and region.
+- A boundary review revokes the day's digest, so the workday run writes the
+  digest last.
+- `--search` searches meetings only; the workday run checks screen text with
+  the test-only `--search-screen`.
+- The file system-audio tap delivers a process tap's format (Float32 stereo,
+  48 kHz), because the recorder's AAC writer cannot open a 16 kHz mono file.

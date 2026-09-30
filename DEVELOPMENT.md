@@ -218,6 +218,16 @@ The app binary doubles as a test harness; flows that need ungranted permissions 
 | `--chat "<question>"` | Ask the meeting chat assistant once and print the answer |
 | `--agent "<prompt>"` | Run one Agent Mode turn headlessly (tool calls auto-approved) and exit by result |
 | `--cotyping-bench` | Run the cotyping quality benchmark and print a JSON report (exit 0 when every scenario passes) |
+| `--health [--day yyyy-MM-dd] [--json]` | Evaluate one day's library health (default: yesterday), write the report to `diagnostics/health/`, and print it; exit 0 pass/warn, 1 fail, 2 invalid day |
+| `--export-diagnostics <zip>` | Write the Export Diagnostics archive, as Settings does |
+
+Debug builds add test-only flags (`LOKALBOT_TEST_HOOKS`; Release never compiles them):
+
+| Flag | Effect |
+| --- | --- |
+| `--record-capture <seconds> [--scenario <name>]` | Run tracking, capture, and meeting detection on the live Mac, then write a scrubbed capture trace to `diagnostics/capture-traces/` |
+| `--set-boundaries <meeting-folder> <start> <end>` | Apply a meeting boundary the way the review sheet does, then wait for re-transcription and notes |
+| `--search-screen "<query>"` | Print screen-text hits from the Recall search; exit 1 when there are none |
 
 ## Testing
 
@@ -232,6 +242,14 @@ The app binary doubles as a test harness; flows that need ungranted permissions 
 - **UI** (`LokalBotUITests`, XCUITest): run the hosted **UI Tests** workflow or another remote Mac runner. `Scripts/ui-tests.sh --remote` dispatches the suite; append a test name to select one test. Never use `--foreground` or run UI tests locally on this MacBook. The script checks that the relevant changes are committed and pushed so the remote runner tests the intended revision. It drives a dedicated UI Test Host against a synthetic library under a temporary `LOKALBOT_STORAGE_ROOT`; `LOKALBOT_UI_TEST=1` skips side-effectful subsystems, so the suite never touches the installed production app.
 - **Documentation captures:** `Scripts/capture-screenshots.sh --stills-only` builds the same isolated host, seeds synthetic data, and renders fixed-density PNGs in-process. This is a capture pass, not the XCUITest suite; see [Docs/screenshot-kit.md](Docs/screenshot-kit.md).
 - **End-to-end** (`Scripts/e2e.sh`): exercises real audio, CoreML transcription, the bundled llama-server, and SQLite via the headless flags; skips flows needing ungranted permissions.
+- **Scripts and lint:** `python3 -m unittest discover -s Scripts/tests` covers the CI helpers, seed profiles, trace checker, and drift report; `swiftlint lint --strict --quiet` must exit 0.
+- **Model scenarios:** `LokalBotTests/Fixtures/stub-openai.ts` is an OpenAI-compatible stub (Bun, pinned by `Scripts/ci/fetch-bun.sh`; point `LOKALBOT_TEST_BUN` at it locally) that answers each request by its system-prompt marker (`LokalBotTests/Support/ModelRequestPurpose.swift`) and can truncate, stall, drop, or send malformed or reasoning-heavy replies. `ModelServerScenarioTests` drives the real engine and generators through it. `LokalBotTests/Fixtures/model-recordings/` holds real GLM 5.3 Flash and Qwen3.8 Flash answers to synthetic prompts; `ModelReplayTests` replays them and `ModelBudgetGuardTests` fails when a recorded answer no longer fits our token budgets. The nightly `Model drift` job records fresh answers (OpenRouter, the only two models, at most 40 requests) and uploads them as the `model-recordings` artifact; refresh the committed recordings from that artifact in a normal PR after reading every answer.
+- **Capture replay:** capture, activity tracking, and meeting detection read every OS boundary through `CaptureEnvironment` (`LokalBot/Services/Capture/`). `ReplayCaptureEnvironment` answers from a trace in virtual time; traces live in `LokalBotTests/Fixtures/capture-traces/` and `CaptureReplayTests` runs the real services on them. Record a trace with a Debug build's `--record-capture`, the Debug menu's **Record Capture Trace**, or `Scripts/record-capture/run.sh chrome|safari` (launches a browser and the app — ask first). Traces are scrubbed before they are written, and CI's `check-capture-recordings.py` rejects any unscrubbed trace. **Every escaped capture bug gets a trace (scripted, or reconstructed by hand in scrubbed form) and a replay test that fails with the fix undone.**
+- **Day in the life:** `LOKALBOT_APP=<Debug build> LOKALBOT_TEST_BUN=<bun> bash Scripts/day-in-the-life.sh` seeds one untranscribed workday (`Scripts/seed_demo_library.py --profile full-day`), transcribes it from golden transcripts, writes notes and the digest through the model stub, reviews a meeting boundary, searches meetings and screen text, and runs the health checks (digest coverage at least 60%). It launches the app headless; on failure it keeps the library for inspection. The `Day in the life (macOS)` job runs it on every PR; the nightly run repeats it with real Parakeet (`--real-asr`).
+- **UI background shard:** `BackgroundFlowUITests` runs the UI Test Host with its background work on (`LOKALBOT_UI_TEST_BACKGROUND=1`, a replayed trace, file audio, golden transcripts, and the model stub). `Scripts/ci/ui-shards.py` gives it its own `background` shard, and the aggregate XCUITest gate requires it. Hosted CI only, like every UI test.
+- **Upgrade fixtures:** the `Upgrade fixtures` workflow seeds a library with each release's own seed script, opens it with that release's signed build on a clean hosted Mac, and uploads the library, defaults, and synthetic test keys. After a release, add the new version to `Scripts/upgrade-fixtures/settings.py` and the workflow matrix, run the workflow, and commit the new fixture.
+- **Nightly:** `.github/workflows/nightly.yml` runs model drift, the real-Parakeet workday, and scale checks (a 180-day library, a digest while activity is written, two copies on one library). It never blocks a PR; failures open or update an issue.
+- **Health checks:** Debug builds evaluate yesterday at 09:00 (and on the next launch if that was missed) and post a notification that opens the report on failure. `LokalBot --health` runs the same checks on demand. Reports are written to `diagnostics/health/YYYY-MM-DD.{json,md}` in the library. Settings → Advanced → System has **Run Health Check Now** and **Export Diagnostics…**.
 
 ## On-disk layout
 
