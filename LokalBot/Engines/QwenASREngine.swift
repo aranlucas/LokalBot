@@ -31,6 +31,11 @@ actor QwenASREngine: TranscriptionEngine {
 
     nonisolated var displayName: String { variant.displayName }
     nonisolated let supportsStreaming = false
+    /// Only the measured 1.7B tier transcribes whole tracks before attribution;
+    /// the aligner is larger than the compact model it would accompany.
+    nonisolated var speakerAttribution: SpeakerAttributionStrategy {
+        variant == .accuracy ? .alignedWords : .regions
+    }
 
     private static let sampleRate = 16_000
     private static let maxSegmentSeconds = 15.0

@@ -137,7 +137,8 @@ The app may make these outbound connections:
   publisher's download host. Selected first-use models can download
   automatically; other downloads start when you request them.
   Nemotron speaker diarization, the default on fresh installs, downloads its
-  pinned CoreML model on first use;
+  pinned CoreML model on first use. With Qwen3-ASR 1.7B, speaker separation
+  also downloads a pinned Qwen3 forced aligner (about 1 GB) that times each word;
   audio and speaker processing remain on this Mac. Remembering voices remains
   a separate opt-in and also uses the local Pyannote models.
 - **Updates:** the public GitHub Releases appcast and a signed update. Automatic

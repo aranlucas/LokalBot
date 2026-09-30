@@ -144,9 +144,25 @@ enum TranscriptionModelChoice: String, Codable, CaseIterable, Identifiable {
 protocol TranscriptionEngine {
     var displayName: String { get }
     var supportsStreaming: Bool { get }
+    /// How `AttributedTrackTranscriber` combines this engine with speaker turns.
+    var speakerAttribution: SpeakerAttributionStrategy { get }
     func prepare(progress: ModelPreparationProgressHandler?) async throws
     func transcribe(audio: URL, language: String?) async throws -> Transcript
     func transcribe(audio: URL, language: String?, prompt: String?) async throws -> Transcript
+}
+
+/// How a diarized (or content-trimmed) track is attributed to speakers.
+enum SpeakerAttributionStrategy: Sendable {
+    /// Cut the audio at speaker turns and transcribe each region on its own.
+    case regions
+    /// Transcribe the whole track, then assign each forced-aligned word to the
+    /// speaker active at that moment. Measured on Qwen3-ASR 1.7B in
+    /// Benchmarks/QwenSpanLength: regions cost 3.0 points of meeting WER.
+    case alignedWords
+}
+
+extension TranscriptionEngine {
+    var speakerAttribution: SpeakerAttributionStrategy { .regions }
 }
 
 extension TranscriptionEngine {
