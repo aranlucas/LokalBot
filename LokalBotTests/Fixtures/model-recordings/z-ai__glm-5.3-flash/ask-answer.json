@@ -1,0 +1,26 @@
+{
+  "calls" : [
+    {
+      "completionTokens" : 129,
+      "content" : "{\"tool\": \"search_meetings\", \"arguments\": {\"query\": \"caching layer decision\"}}",
+      "finishReason" : "stop",
+      "latencyMilliseconds" : 994,
+      "maxTokens" : 2048,
+      "purpose" : "ask",
+      "reasoningTokens" : 106
+    },
+    {
+      "completionTokens" : 8,
+      "content" : "{\"call\": \t}",
+      "finishReason" : "stop",
+      "latencyMilliseconds" : 1404,
+      "maxTokens" : 512,
+      "purpose" : "ask",
+      "reasoningBudgetTokens" : 128,
+      "reasoningTokens" : 0
+    }
+  ],
+  "caseName" : "ask-answer",
+  "model" : "z-ai\/glm-5.3-flash",
+  "recordedAt" : "2026-09-30T05:58:06Z"
+}

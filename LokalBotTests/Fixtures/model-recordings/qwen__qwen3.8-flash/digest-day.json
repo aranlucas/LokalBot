@@ -1,0 +1,47 @@
+{
+  "calls" : [
+    {
+      "completionTokens" : 234,
+      "content" : "{\"status\":\"completed\",\"next_step\":\"\",\"substantive\":true,\"work_done\":\"Implemented the `evict(olderThan cutoff: Date)` function to provide LRU eviction for the Redis cache, and validated it with a test suite.\",\"task\":\"Implement LRU eviction policy for the Redis cache\",\"outcome\":\"All 12 eviction tests passed.\",\"source_ids\":[11]}",
+      "finishReason" : "stop",
+      "latencyMilliseconds" : 7096,
+      "maxTokens" : 2048,
+      "purpose" : "digestFocus",
+      "reasoningBudgetTokens" : 256,
+      "reasoningTokens" : 155
+    },
+    {
+      "completionTokens" : 342,
+      "content" : "{\"status\":\"in_progress\",\"next_step\":\"Resolve the cluster mode decision blocking the merge.\",\"substantive\":true,\"work_done\":\"Reviewed pull request #42 for the caching layer; noted approval contingent on benchmarking failover latency.\",\"task\":\"Review PR #42 — caching layer\",\"outcome\":\"Approval conditioned on failover-latency benchmark; merge blocked pending cluster mode decision.\",\"source_ids\":[12]}",
+      "finishReason" : "stop",
+      "latencyMilliseconds" : 9142,
+      "maxTokens" : 2048,
+      "purpose" : "digestFocus",
+      "reasoningBudgetTokens" : 256,
+      "reasoningTokens" : 256
+    },
+    {
+      "completionTokens" : 261,
+      "content" : "{\n  \"status\": \"completed\",\n  \"next_step\": \"\",\n  \"substantive\": true,\n  \"work_done\": \"Ran a load-test benchmark measuring failover p95 latency after a connection pool configuration change.\",\n  \"task\": \"Reduce failover p95 latency through connection pool tuning\",\n  \"outcome\": \"Failover p95 improved from 1.8s to 0.9s; benchmark run complete.\",\n  \"source_ids\": [\n    13\n  ]\n}",
+      "finishReason" : "stop",
+      "latencyMilliseconds" : 7098,
+      "maxTokens" : 2048,
+      "purpose" : "digestFocus",
+      "reasoningBudgetTokens" : 256,
+      "reasoningTokens" : 141
+    },
+    {
+      "completionTokens" : 729,
+      "content" : "{\n  \"blockers\": [\n    \"Cluster mode decision blocks merge of PR #42.\"\n  ],\n  \"tasks\": [\n    {\n      \"status\": \"completed\",\n      \"next_step\": \"\",\n      \"title\": \"Reduce failover p95 latency through connection pool tuning\",\n      \"block_indices\": [2],\n      \"summary\": \"Ran a load-test benchmark after a connection pool configuration change; failover p95 latency improved from 1.8 s to 0.9 s.\"\n    },\n    {\n      \"status\": \"completed\",\n      \"next_step\": \"\",\n      \"title\": \"Implement LRU eviction policy for the Redis cache\",\n      \"block_indices\": [0],\n      \"summary\": \"Implemented `evict(olderThan cutoff: Date)` with a supporting test suite; all 12 eviction tests passed.\"\n    },\n    {\n      \"status\": \"in_progress\",\n      \"next_step\": \"Resolve the cluster mode decision to unblock the PR #42 merge.\",\n      \"title\": \"Review PR #42 — caching layer\",\n      \"block_indices\": [1],\n      \"summary\": \"Reviewed the caching-layer pull request; approval was conditioned on a failover-latency benchmark (the p95 result from connection pool tuning now satisfies that condition), but the merge is blocked pending a cluster mode decision.\"\n    }\n  ],\n  \"decisions\": []\n}",
+      "finishReason" : "stop",
+      "latencyMilliseconds" : 12701,
+      "maxTokens" : 1600,
+      "purpose" : "digestAggregate",
+      "reasoningBudgetTokens" : 512,
+      "reasoningTokens" : 409
+    }
+  ],
+  "caseName" : "digest-day",
+  "model" : "qwen\/qwen3.8-flash",
+  "recordedAt" : "2026-09-30T05:56:56Z"
+}
