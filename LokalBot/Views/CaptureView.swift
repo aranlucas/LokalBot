@@ -98,6 +98,7 @@ final class CaptureModel: ObservableObject {
     func refreshOverview(app: AppState) {
         if retentionObserver == nil {
             retentionObserver = NotificationCenter.default.publisher(for: .retainedScreenTextChanged)
+                .merge(with: NotificationCenter.default.publisher(for: .codingAgentEvidenceChanged))
                 .sink { [weak self, weak app] _ in
                     guard let self, let app else { return }
                     self.refreshOverview(app: app)

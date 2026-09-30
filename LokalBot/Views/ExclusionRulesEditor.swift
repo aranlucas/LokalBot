@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 struct ExclusionRulesEditor: View {
-    enum Kind { case applications, domains, writingDomains }
+    enum Kind { case applications, domains, writingDomains, folders }
     let title: String
     @Binding var value: String
     let kind: Kind
@@ -25,9 +25,9 @@ struct ExclusionRulesEditor: View {
                         HStack {
                             Label { Text(rule) } icon: { ruleIcon(rule).accessibilityHidden(true) }
                             Spacer()
-                            Text(kind == .applications ? "App" : "Domain / URL")
+                            Text(ruleKindLabel)
                                 .font(.scaled(.caption)).foregroundStyle(.secondary)
-                            if kind != .applications, !validDomain(rule) {
+                            if !isValid(rule) {
                                 Text("Legacy rule · review").font(.scaled(.callout)).foregroundStyle(Brand.amber)
                             }
                         }
@@ -47,6 +47,7 @@ struct ExclusionRulesEditor: View {
                         .disabled(selectedRule == nil)
                     Spacer()
                     if kind == .applications { Button("Choose App…", action: chooseApplication) }
+                    if kind == .folders { Button("Choose Folder…", action: chooseFolder) }
                 }
                 .buttonStyle(.borderless)
                 .padding(.horizontal, 10).padding(.vertical, 7)
@@ -90,7 +91,27 @@ struct ExclusionRulesEditor: View {
     }
 
     private var placeholder: String {
-        kind == .applications ? "Application name" : "example.com or https://example.com/private"
+        switch kind {
+        case .applications: "Application name"
+        case .folders: "~/Code/client-project"
+        case .domains, .writingDomains: "example.com or https://example.com/private"
+        }
+    }
+
+    private var ruleKindLabel: String {
+        switch kind {
+        case .applications: "App"
+        case .folders: "Folder"
+        case .domains, .writingDomains: "Domain / URL"
+        }
+    }
+
+    private func isValid(_ rule: String) -> Bool {
+        switch kind {
+        case .applications: true
+        case .folders: rule.hasPrefix("/") || rule.hasPrefix("~")
+        case .domains, .writingDomains: validDomain(rule)
+        }
     }
 
     /// The real app icon when LokalBot can resolve it; a plain symbol otherwise.
@@ -99,7 +120,7 @@ struct ExclusionRulesEditor: View {
         if kind == .applications, let icon = QuickRecallApplicationIconResolver.icon(for: rule) {
             Image(nsImage: icon).resizable().frame(width: 16, height: 16)
         } else {
-            Image(systemName: kind == .applications ? "square.grid.2x2" : "globe")
+            Image(systemName: kind == .applications ? "square.grid.2x2" : kind == .folders ? "folder" : "globe")
                 .foregroundStyle(.secondary)
         }
     }
@@ -107,11 +128,11 @@ struct ExclusionRulesEditor: View {
     private func add() {
         let candidate = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !candidate.isEmpty, !candidate.contains(",") else { error = "Add one rule at a time."; return }
-        if kind != .applications {
-            guard validDomain(candidate) else {
-                error = "Enter a domain or an HTTP(S) URL prefix. Existing rules remain unchanged."
-                return
-            }
+        guard isValid(candidate) else {
+            error = kind == .folders
+                ? "Enter a folder path starting with / or ~. Existing rules remain unchanged."
+                : "Enter a domain or an HTTP(S) URL prefix. Existing rules remain unchanged."
+            return
         }
         guard !rules.contains(where: { $0.caseInsensitiveCompare(candidate) == .orderedSame }) else {
             error = "This rule is already excluded."
@@ -138,6 +159,18 @@ struct ExclusionRulesEditor: View {
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
         draft = url.deletingPathExtension().lastPathComponent
+        add()
+    }
+
+    private func chooseFolder() {
+        error = nil
+        let panel = NSOpenPanel()
+        panel.title = "Choose a folder to exclude"
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        draft = (url.path as NSString).abbreviatingWithTildeInPath
         add()
     }
 }

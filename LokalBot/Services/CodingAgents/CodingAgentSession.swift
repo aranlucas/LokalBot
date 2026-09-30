@@ -17,7 +17,7 @@ enum CodingAgentKind: String, CaseIterable, Codable, Sendable {
 
 /// An outcome parsed from a command the agent ran. These are recorded
 /// actions, unlike the agent's own report, which is only a claim.
-enum CodingAgentAction: Hashable, Sendable {
+enum CodingAgentAction: Hashable, Codable, Sendable {
     case commit(message: String)
     case openedPullRequest(title: String)
     /// `nil` when the command merged the current branch's PR.
@@ -58,6 +58,9 @@ struct CodingAgentEvent: Equatable, Sendable {
 
     var at: Date
     var kind: Kind
+    /// The source record's hashed id, for dropping copies a fork or resumed
+    /// session carries. Hashes are per process and never persisted.
+    var recordKey: Int?
 
     var isAnnotation: Bool {
         if case .pullRequest = kind { return true }
@@ -82,7 +85,7 @@ struct CodingAgentTranscript: Equatable, Sendable {
 /// A contiguous run of agent work inside one session. A new burst starts
 /// after the same idle gap the day digest uses to split segments, so a
 /// session left open all day never merges the whole day into one item.
-struct CodingAgentBurst: Equatable, Sendable {
+struct CodingAgentBurst: Equatable, Codable, Sendable {
     var agent: CodingAgentKind
     var sessionID: String
     var title: String
@@ -102,6 +105,26 @@ struct CodingAgentBurst: Equatable, Sendable {
 
     /// Stable within a day: bursts are keyed by session and first event.
     var id: String { "\(agent.rawValue):\(sessionID):\(Int(start.timeIntervalSince1970))" }
+
+    /// A burst idle for the full inactivity gap can never grow again: any
+    /// later event starts a new burst. Only settled bursts become evidence,
+    /// so a saved digest's inputs cannot change underneath it.
+    func isSettled(at now: Date) -> Bool {
+        now.timeIntervalSince(end) >= CodingAgentBurstBuilder.inactivityGap
+    }
+
+    /// Every field the digest can read, in a fixed order, for evidence
+    /// signatures that change exactly when the burst's content does.
+    var signatureFields: [String] {
+        [
+            id, agent.rawValue, sessionID, title, project, branch ?? "",
+            String(start.timeIntervalSince1970), String(end.timeIntervalSince1970),
+            String(activeDuration), prompts.joined(separator: "\u{1e}"), String(promptCount),
+            finalReply ?? "", changedFiles.joined(separator: "\u{1e}"), String(changedFileCount),
+            actions.map(\.summary).joined(separator: "\u{1e}"),
+            pullRequests.joined(separator: "\u{1e}"), String(toolCallCount),
+        ]
+    }
 
     /// Model-facing evidence in the same shape as the digest's other work
     /// sources: substantive content first, trace metadata last and labeled.
@@ -249,6 +272,33 @@ enum CodingAgentBurstBuilder {
             actions: actions,
             pullRequests: pullRequests,
             toolCallCount: toolCalls)
+    }
+
+    /// Drops timestamp-only events that change neither a burst boundary nor
+    /// its active time. A ping is redundant when the events either side of it
+    /// are within `activeGapCap` of each other: the gaps it splits count in
+    /// full either way. Busy sessions log thousands of tool results, so this
+    /// keeps cached transcripts small without changing any burst.
+    static func compactingActivity(_ events: [CodingAgentEvent]) -> [CodingAgentEvent] {
+        let annotations = events.filter(\.isAnnotation)
+        let ordered = events.enumerated()
+            .filter { !$0.element.isAnnotation }
+            .sorted { lhs, rhs in
+                lhs.element.at == rhs.element.at ? lhs.offset < rhs.offset : lhs.element.at < rhs.element.at
+            }
+            .map(\.element)
+        guard ordered.count > 2 else { return ordered + annotations }
+        var kept = [ordered[0]]
+        for index in 1..<(ordered.count - 1) {
+            let event = ordered[index]
+            if case .activity = event.kind, let previous = kept.last,
+               ordered[index + 1].at.timeIntervalSince(previous.at) <= activeGapCap {
+                continue
+            }
+            kept.append(event)
+        }
+        kept.append(ordered[ordered.count - 1])
+        return kept + annotations
     }
 
     /// The repository name, not the checkout folder: agent worktrees live

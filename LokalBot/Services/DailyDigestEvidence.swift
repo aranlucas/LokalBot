@@ -15,7 +15,7 @@ extension DailyEvidenceSnapshot {
                     sourceSummary: evidence.summary,
                     outcomes: Self.renderDigestOutcomes(evidence),
                     artifactModifiedAt: evidence.artifactModifiedAt)
-            }, calendar: calendar)
+            }, codingAgentBursts: codingAgentBursts, calendar: calendar)
     }
 
     private static func renderDigestOutcomes(_ evidence: DailyEvidenceMeeting) -> String {
@@ -61,6 +61,11 @@ extension DayDigestEvidence {
         }
         standaloneContexts.forEach(appendContext)
         fields += meetingFields
+        // Appended only when present: journals of days without agent work
+        // keep matching the signature they were generated with.
+        for burst in codingAgentBursts {
+            fields += ["agent"] + burst.signatureFields
+        }
         return ContentFingerprint.fields(fields)
     }
 
