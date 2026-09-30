@@ -1016,7 +1016,7 @@ struct SettingsView: View {
     @ViewBuilder private var systemSection: some View {
             if shows("System", ["system", "hardware", "ram", "memory", "chip", "cpu", "battery",
                                 "power", "low power", "diagnostics", "performance", "generations",
-                                "export", "logs", "support"]) {
+                                "export", "logs", "support", "health"]) {
                 Section("System") {
                     LabeledContent("This Mac") {
                         Text(DeviceInfo.snapshot().summaryLine)
@@ -1046,6 +1046,10 @@ struct SettingsView: View {
                     Button("Export Diagnostics…") { exportDiagnostics() }
                         .accessibilityIdentifier("settings.exportDiagnostics")
                     SettingsHelp("Logs, health reports, settings without secrets, and library counts. Never meeting audio, transcripts, notes, or screenshots.")
+                    Button("Run Health Check Now") {
+                        if let url = app.runHealthCheckNow(notify: false) { NSWorkspace.shared.open(url) }
+                    }
+                    .accessibilityIdentifier("settings.runHealthCheck")
                 }
             }
 

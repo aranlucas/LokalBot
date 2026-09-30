@@ -1070,6 +1070,7 @@ final class AppState: ObservableObject {
         applyDayDigestSetting()
         applyMemoryRoutineSetting()
         applyDreamingSetting()
+        applyHealthCheckSetting()
         bindBackgroundActivity()
         // First-run check. A genuinely-new user with missing permissions gets
         // onboarding (windowed — see AppDelegate); the flag persists only when
@@ -1895,6 +1896,36 @@ final class AppState: ObservableObject {
             hasDreamReport: { [dreamStore] in dreamStore.hasReport(forDayKey: $0) })
         return LibraryHealthEvaluator.evaluate(
             loader.input(for: day, now: now), dayKey: DreamDay.key(for: day))
+    }
+
+    private(set) lazy var healthScheduler = LibraryHealthScheduler()
+
+    /// Evaluates yesterday, writes the report, and notifies on failure.
+    @discardableResult
+    func runHealthCheckNow(notify: Bool = true) -> URL? {
+        let calendar = Calendar.current
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: Date())) ?? Date()
+        let report = libraryHealthReport(for: yesterday)
+        do {
+            let url = try LibraryHealthReportStore.write(report, root: storage.rootURL)
+            if notify, report.status == .fail {
+                let failed = report.findings.filter { $0.status == .fail }.map(\.check.title)
+                RecordingNotifier.shared.healthCheckFailed(
+                    summary: failed.joined(separator: ", "), reportURL: url)
+            }
+            return url
+        } catch {
+            lokalbotLog("health report write failed: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    func applyHealthCheckSetting() {
+        guard LibraryHealthScheduler.isEnabledForThisBuild else { return }
+        let root = storage.rootURL
+        healthScheduler.start(
+            lastRun: { LibraryHealthReportStore.latestRunDate(root: root) },
+            run: { [weak self] in self?.runHealthCheckNow() })
     }
 
     func diagnosticsSources() -> DiagnosticsExporter.Sources {

@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import UserNotifications
 
 @MainActor
@@ -86,6 +87,14 @@ final class RecordingNotifier: NSObject, UNUserNotificationCenterDelegate {
         center.setNotificationCategories([category])
     }
 
+    private static let healthReportPathKey = "lokalbot.health-report-path"
+
+    /// Posted only when a health check fails; clicking opens the report.
+    func healthCheckFailed(summary: String, reportURL: URL) {
+        post(title: "LokalBot health check failed", body: summary,
+             userInfo: [Self.healthReportPathKey: reportURL.path])
+    }
+
     func recordingStarted(title: String) {
         post(title: "Recording started", body: title)
     }
@@ -128,10 +137,12 @@ final class RecordingNotifier: NSObject, UNUserNotificationCenterDelegate {
     private func post(title: String,
                       body: String,
                       identifier: String = UUID().uuidString,
-                      categoryIdentifier: String? = nil) {
+                      categoryIdentifier: String? = nil,
+                      userInfo: [String: String] = [:]) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
+        if !userInfo.isEmpty { content.userInfo = userInfo }
         if let categoryIdentifier {
             content.categoryIdentifier = categoryIdentifier
         }
@@ -205,6 +216,10 @@ final class RecordingNotifier: NSObject, UNUserNotificationCenterDelegate {
     }
 
     private func handle(_ response: UNNotificationResponse) {
+        if let path = response.notification.request.content.userInfo[Self.healthReportPathKey] as? String {
+            NSWorkspace.shared.open(URL(fileURLWithPath: path))
+            return
+        }
         let identifier = response.notification.request.identifier
         guard let pending = pendingDetections.remove(identifier) else { return }
         guard response.actionIdentifier == Self.recordAction,
