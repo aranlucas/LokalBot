@@ -98,6 +98,15 @@ final class AppState: ObservableObject {
     /// Sparkle, periodic screenshots) so the UI renders against synthetic
     /// data without touching real audio, TCC, or the network.
     nonisolated static var isUITesting: Bool { UITestRuntime.isEnabled }
+    /// The UI Test Host's background mode runs the interactive start against
+    /// a replayed capture trace and file audio (Debug test hooks only).
+    nonisolated static var runsBackgroundWorkInUITests: Bool {
+#if LOKALBOT_TEST_HOOKS
+        TestHooks.backgroundHostEnabled
+#else
+        false
+#endif
+    }
     /// Hosted XCTest executes the real app entry point. It needs neither UI
     /// fixtures nor any interactive service, so return before touching the
     /// meeting library, indexes, permissions, audio, Sparkle, or the network.
@@ -985,7 +994,7 @@ final class AppState: ObservableObject {
         // UI tests render against pre-seeded fixtures, not a real audio/Sparkle
         // session — bail out before any subsystem reaches for the mic, the
         // process list, or the network.
-        if Self.isUITesting { return }
+        if Self.isUITesting && !Self.runsBackgroundWorkInUITests { return }
         interactive = true
         RecordingNotifier.shared.bootstrap()
         applyTrackingSetting()

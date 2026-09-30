@@ -62,4 +62,13 @@ final class ReplayCaptureEnvironmentTests: XCTestCase {
         try original.write(to: url)
         XCTAssertEqual(try CaptureTrace.load(from: url), original)
     }
+
+    func testRealTimeReplayFollowsTheWallClock() async throws {
+        let replay = ReplayCaptureEnvironment(
+            trace: trace([.init(t: 0.2, query: .idleSeconds, seconds: 9)]),
+            start: Date(), realTimeSpeed: 1)
+        XCTAssertEqual(replay.environment.workspace.secondsSinceLastInput(), 0)
+        try await Task.sleep(for: .milliseconds(400))
+        XCTAssertEqual(replay.environment.workspace.secondsSinceLastInput(), 9)
+    }
 }

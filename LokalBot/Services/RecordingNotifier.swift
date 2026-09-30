@@ -139,6 +139,8 @@ final class RecordingNotifier: NSObject, UNUserNotificationCenterDelegate {
                       identifier: String = UUID().uuidString,
                       categoryIdentifier: String? = nil,
                       userInfo: [String: String] = [:]) {
+        // System notifications stay off in every UI test, background mode included.
+        guard !UITestRuntime.isEnabled else { return }
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body

@@ -97,6 +97,34 @@ final class VirtualCaptureClock: CaptureClock, @unchecked Sendable {
     }
 }
 
+/// Wall-clock replay for the UI background host: trace time advances with
+/// real time × speed; timers and sleeps use the live clock, scaled.
+final class RealTimeReplayClock: CaptureClock, @unchecked Sendable {
+    private let start: Date
+    private let speed: Double
+    private let live = LiveCaptureClock()
+
+    init(start: Date, speed: Double) {
+        self.start = start
+        self.speed = max(0.1, speed)
+    }
+
+    var elapsed: TimeInterval { Date().timeIntervalSince(start) * speed }
+    func now() -> Date { start.addingTimeInterval(elapsed) }
+    func uptime() -> TimeInterval { 10_000 + elapsed }
+    func sleep(seconds: TimeInterval) async throws { try await live.sleep(seconds: seconds / speed) }
+
+    @MainActor
+    func schedule(after seconds: TimeInterval, _ work: @escaping @MainActor () -> Void) -> CaptureTimer {
+        live.schedule(after: seconds / speed, work)
+    }
+
+    @MainActor
+    func repeating(every seconds: TimeInterval, _ work: @escaping @MainActor () -> Void) -> CaptureTimer {
+        live.repeating(every: seconds / speed, work)
+    }
+}
+
 /// Answers every capture-environment query from a trace in virtual time.
 final class ReplayCaptureEnvironment: @unchecked Sendable {
     let trace: CaptureTrace
@@ -105,22 +133,26 @@ final class ReplayCaptureEnvironment: @unchecked Sendable {
     private let timelines: [String: [CaptureTrace.Event]]
     private var cursors: [String: Int] = [:]
 
-    init(trace: CaptureTrace, start: Date) {
+    let realTimeClock: RealTimeReplayClock?
+
+    init(trace: CaptureTrace, start: Date, realTimeSpeed: Double? = nil) {
         self.trace = trace
         self.clock = VirtualCaptureClock(start: start)
-        self.timelines = Dictionary(grouping: trace.events, by: \.key)
-            .mapValues { $0.sorted { $0.t < $1.t } }
+        self.realTimeClock = realTimeSpeed.map { RealTimeReplayClock(start: start, speed: $0) }
+        self.timelines = Dictionary(grouping: trace.events, by: \.key).mapValues { $0.sorted { $0.t < $1.t } }
     }
+
+    private var elapsed: TimeInterval { realTimeClock?.elapsed ?? clock.elapsed }
 
     var environment: CaptureEnvironment {
         CaptureEnvironment(workspace: Workspace(replay: self), accessibility: Accessibility(replay: self),
-                           windows: Windows(replay: self), audio: Audio(replay: self), clock: clock)
+                           windows: Windows(replay: self), audio: Audio(replay: self), clock: realTimeClock ?? clock)
     }
 
     func answer(_ query: CaptureTrace.Query, processID: pid_t? = nil, includeText: Bool? = nil) -> CaptureTrace.Event? {
         let key = CaptureTrace.Event(t: 0, query: query, processID: processID, includeText: includeText).key
         guard let timeline = timelines[key], !timeline.isEmpty else { return nil }
-        let now = clock.elapsed
+        let now = elapsed
         guard let newest = timeline.lastIndex(where: { $0.t <= now }) else { return nil }
         lock.lock()
         defer { lock.unlock() }

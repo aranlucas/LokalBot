@@ -28,6 +28,26 @@ enum LokalBotMain {
                     CaptureEnvironment.install(recorder.environment)
                 }
 #endif
+#if LOKALBOT_TEST_HOOKS
+                if UITestRuntime.isEnabled, TestHooks.backgroundHostEnabled {
+                    if let path = TestHooks.backgroundTracePath,
+                       let trace = try? CaptureTrace.load(from: URL(fileURLWithPath: path)) {
+                        CaptureEnvironment.install(
+                            ReplayCaptureEnvironment(trace: trace, start: Date(), realTimeSpeed: 1).environment)
+                    }
+                    if let audio = TestHooks.backgroundAudioDirectory {
+                        MicRecorder.defaultInputFactory = {
+                            try FileMicrophoneInput(url: audio.appendingPathComponent("mic.wav"))
+                        }
+                        SystemAudioRecorder.defaultTapFactory = {
+                            if let tap = try? FileSystemAudioTap(url: audio.appendingPathComponent("system.wav")) {
+                                return tap
+                            }
+                            return CoreAudioProcessTap()
+                        }
+                    }
+                }
+#endif
                 if HeadlessCommand.requested == nil, !UITestRuntime.isEnabled, !UITestRuntime.isUnitTesting {
                     let root = AppDirectories.libraryRoot
                     guard let lock = LibraryInstanceLock.acquire(root: root) else {
