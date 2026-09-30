@@ -147,6 +147,18 @@ xcrun notarytool store-credentials "LokalBot-notary" \
 
 Run from the repo root. Replace `1.0.0` / `100` with the version you are shipping.
 
+### 0. Add the previous release's upgrade fixture
+
+Run the **Upgrade fixtures** workflow (or let it run on a PR that touches
+`Scripts/upgrade-fixtures/`). Download the previous stable version's
+`upgrade-fixture-<version>` artifact and extract its tarball into
+`LokalBotTests/Fixtures/upgrade/<version>/`. Fold the database's write-ahead log
+into it (`sqlite3 library/lokalbotv3.sqlite 'PRAGMA wal_checkpoint(TRUNCATE)'`,
+then delete any `-wal`/`-shm` files), check that it holds only the synthetic
+library, run `UpgradeMigrationTests`, and commit it.
+`release-preflight.py --candidate` refuses a release whose changelog base has
+no fixture.
+
 ### 1. Bump the version
 
 Edit both `project.yml` and `LokalBot/Info.plist`:
