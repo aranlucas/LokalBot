@@ -1204,7 +1204,8 @@ final class ProcessingPipeline: ObservableObject {
         let text = evidence.renderDocument(summary: overview.summary)
         try validateEvidence()
         try DayDigestJournalWriter.write(text, to: url, replacing: revision,
-                                        evidence: evidence, quality: overview.quality)
+                                        evidence: evidence, quality: overview.quality,
+                                        coverage: overview.coverage)
         return DayDigestGenerationResult(
             text: text,
             url: url,

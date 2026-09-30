@@ -23,6 +23,7 @@ enum DayDigestJournalWriter {
         var evidenceLatestAt: Date?
         var evidenceSignature: String?
         var meetingEvidenceSignature: String?
+        var coverage: DayDigestCoverage?
     }
 
     private final class ActiveWriteRegistry: @unchecked Sendable {
@@ -73,7 +74,8 @@ enum DayDigestJournalWriter {
 
     static func write(
         _ text: String, to url: URL, replacing expected: Revision,
-        evidence: DayDigestEvidence, quality: DayDigestGenerationQuality
+        evidence: DayDigestEvidence, quality: DayDigestGenerationQuality,
+        coverage: DayDigestCoverage? = nil
     ) throws {
         try Task.checkCancellation()
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -91,7 +93,8 @@ enum DayDigestJournalWriter {
             generatedAt: Date(),
             evidenceLatestAt: evidence.latestEvidenceAt,
             evidenceSignature: evidence.contentSignature,
-            meetingEvidenceSignature: evidence.meetingSignature)
+            meetingEvidenceSignature: evidence.meetingSignature,
+            coverage: coverage)
         try JSONEncoder().encode(pending).write(
             to: transactionURL(for: url),
             options: .atomic)
@@ -100,7 +103,7 @@ enum DayDigestJournalWriter {
         let metadata = try DayDigestGenerationMetadataStore.record(
             quality: quality, evidenceLatestAt: evidence.latestEvidenceAt,
             evidenceSignature: evidence.contentSignature,
-            meetingEvidenceSignature: evidence.meetingSignature, for: url,
+            meetingEvidenceSignature: evidence.meetingSignature, coverage: coverage, for: url,
             generatedAt: pending.generatedAt)
         guard metadata.journalDigest == pending.journalDigest,
               DayDigestGenerationMetadataStore.journalMatches(metadata, at: url) else {
@@ -154,6 +157,7 @@ enum DayDigestJournalWriter {
             evidenceLatestAt: pending.evidenceLatestAt,
             evidenceSignature: pending.evidenceSignature,
             meetingEvidenceSignature: pending.meetingEvidenceSignature,
+            coverage: pending.coverage,
             for: journalURL,
             generatedAt: pending.generatedAt,
             previous: previous)
@@ -209,5 +213,6 @@ enum DayDigestJournalWriter {
             && metadata.evidenceSignature == pending.evidenceSignature
             && metadata.meetingEvidenceSignature == pending.meetingEvidenceSignature
             && metadata.journalDigest == pending.journalDigest
+            && metadata.coverage == pending.coverage
     }
 }
