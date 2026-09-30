@@ -12,4 +12,12 @@ final class HeadlessCommandParseTests: XCTestCase {
         XCTAssertEqual(HeadlessCommand.parse(["LokalBot", "--health", "--day", "2026-09-29", "--json"]),
                        .health(dayKey: "2026-09-29", json: true))
     }
+
+    func testParsesRecordCaptureWithAnOptionalScenario() {
+        XCTAssertEqual(HeadlessCommand.parse(["LokalBot", "--record-capture", "30"]),
+                       .recordCapture(seconds: 30, scenario: "real"))
+        XCTAssertEqual(HeadlessCommand.parse(["LokalBot", "--record-capture", "45", "--scenario", "meet-join"]),
+                       .recordCapture(seconds: 45, scenario: "meet-join"))
+        XCTAssertNil(HeadlessCommand.parse(["LokalBot", "--record-capture", "soon"]))
+    }
 }

@@ -21,6 +21,7 @@ enum HeadlessCommand: Equatable {
     case cotypingBench
     case exportDiagnostics(destination: URL)
     case health(dayKey: String?, json: Bool)
+    case recordCapture(seconds: Int, scenario: String)
 
     /// Set by `LokalBotMain.main()`; consumed by `AppState.init`.
     @MainActor static var requested: HeadlessCommand?
@@ -57,6 +58,12 @@ enum HeadlessCommand: Equatable {
         if let flag = args.firstIndex(of: "--export-diagnostics"), args.count > flag + 1 {
             return .exportDiagnostics(destination: URL(fileURLWithPath: args[flag + 1]))
         }
+#if DEBUG
+        if let flag = args.firstIndex(of: "--record-capture"), args.count > flag + 1, let seconds = Int(args[flag + 1]) {
+            let scenario = args.firstIndex(of: "--scenario").flatMap { args.count > $0 + 1 ? args[$0 + 1] : nil }
+            return .recordCapture(seconds: seconds, scenario: scenario ?? "real")
+        }
+#endif
         if let flag = args.firstIndex(of: "--chat"), args.count > flag + 1 {
             return .chat(question: args[flag + 1])
         }
@@ -144,6 +151,7 @@ struct HeadlessCommandRunner {
         case .cotypingBench: runCotypingBench()
         case .exportDiagnostics(let destination): runExportDiagnostics(to: destination)
         case .health(let dayKey, let json): runHealth(dayKey: dayKey, json: json)
+        case .recordCapture(let seconds, let scenario): runRecordCapture(seconds: seconds, scenario: scenario)
         }
     }
 
@@ -210,6 +218,36 @@ struct HeadlessCommandRunner {
             print(LibraryHealthReportStore.markdown(report))
         }
         exit(report.status == .fail ? 1 : 0)
+    }
+
+    /// `LokalBot --record-capture <seconds> [--scenario name]` (Debug only):
+    /// runs tracking, screen capture, and meeting detection with the
+    /// recording environment, then writes a scrubbed trace. Use a throwaway
+    /// `LOKALBOT_STORAGE_ROOT`: captures land in that library.
+    private func runRecordCapture(seconds: Int, scenario: String) {
+#if DEBUG
+        guard let recorder = CaptureTraceRecorder.active else {
+            print("LokalBot --record-capture: FAILED — recorder was not installed at launch")
+            exit(1)
+        }
+        app.sampler.start()
+        app.screenshots.start()
+        app.detector.start()
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(seconds))
+            app.detector.stop()
+            app.screenshots.stop()
+            app.sampler.stop()
+            do {
+                let url = try recorder.finish(to: DiagnosticsPaths.captureTraces(root: app.storage.rootURL))
+                print("LokalBot --record-capture: \(url.path)")
+                exit(0)
+            } catch {
+                print("LokalBot --record-capture: FAILED — \(error.localizedDescription)")
+                exit(1)
+            }
+        }
+#endif
     }
 
     /// `LokalBot --export-diagnostics <zip>`: the Settings export, headless.

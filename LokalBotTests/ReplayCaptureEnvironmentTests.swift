@@ -5,7 +5,7 @@ import XCTest
 final class ReplayCaptureEnvironmentTests: XCTestCase {
     private func trace(_ events: [CaptureTrace.Event]) -> CaptureTrace {
         CaptureTrace(header: .init(schemaVersion: 1, macOSVersion: "26.0", origin: .reconstructed,
-                                   scenario: "test", scrubberVersion: 1,
+                                   scenario: "test", scrubberVersion: CaptureTraceScrubber.version,
                                    recordedAt: Date(timeIntervalSince1970: 0)),
                      events: events)
     }

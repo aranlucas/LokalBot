@@ -1944,6 +1944,34 @@ final class AppState: ObservableObject {
         try DiagnosticsExporter.export(diagnosticsSources(), to: destination)
     }
 
+#if DEBUG
+    /// Debug menu: records the live capture environment for `seconds`, then
+    /// writes a scrubbed trace to diagnostics/capture-traces and reveals it.
+    func startCaptureTraceRecording(seconds: Int = 60, scenario: String = "real") {
+        guard CaptureTraceRecorder.active == nil else {
+            lokalbotLog("capture trace: a recording is already running")
+            return
+        }
+        let recorder = CaptureTraceRecorder(scenario: scenario, origin: scenario == "real" ? .real : .scripted)
+        CaptureTraceRecorder.active = recorder
+        CaptureEnvironment.install(recorder.environment)
+        lokalbotLog("capture trace: recording \(seconds)s")
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(seconds))
+            CaptureEnvironment.reset()
+            CaptureTraceRecorder.active = nil
+            guard let self else { return }
+            do {
+                let url = try recorder.finish(to: DiagnosticsPaths.captureTraces(root: self.storage.rootURL))
+                lokalbotLog("capture trace: wrote \(url.lastPathComponent)")
+                NSWorkspace.shared.activateFileViewerSelecting([url])
+            } catch {
+                lokalbotLog("capture trace: FAILED — \(error.localizedDescription)")
+            }
+        }
+    }
+#endif
+
     /// Open Timeline on a local day, e.g. to read that day's digest.
     func openTimelineDay(_ day: Date) {
         navigationHandoff.stageTimelineDay(day)

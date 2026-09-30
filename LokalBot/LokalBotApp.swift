@@ -21,6 +21,13 @@ enum LokalBotMain {
             migrate: { DataMigration.runIfNeeded() },
             launchApplication: {
                 HeadlessCommand.requested = HeadlessCommand.parse(CommandLine.arguments)
+#if DEBUG
+                if case .recordCapture(_, let scenario) = HeadlessCommand.requested {
+                    let recorder = CaptureTraceRecorder(scenario: scenario, origin: scenario == "real" ? .real : .scripted)
+                    CaptureTraceRecorder.active = recorder
+                    CaptureEnvironment.install(recorder.environment)
+                }
+#endif
                 if HeadlessCommand.requested == nil, !UITestRuntime.isEnabled, !UITestRuntime.isUnitTesting {
                     let root = AppDirectories.libraryRoot
                     guard let lock = LibraryInstanceLock.acquire(root: root) else {
@@ -210,6 +217,13 @@ struct LokalBotApp: App {
                 ) {
                     app.dictation.toggle(source: "command")
                 }
+#if DEBUG
+                Divider()
+
+                Button("Record Capture Trace (60 s)") {
+                    app.startCaptureTraceRecording()
+                }
+#endif
             }
             // ⌘K opens the command palette. Registered at the app level so it
             // works from anywhere; the palette window is opened via openWindow.
