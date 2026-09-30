@@ -1,6 +1,39 @@
 import AppKit
 import SwiftUI
 
+/// The width a split pane keeps once it has settled. SwiftUI can re-divide an
+/// HSplitView when the sibling pane's content changes — the Timeline swapping
+/// its day column for a selection's details did, widening the sessions rail to
+/// its maximum. Only a divider drag chooses a new width; any other resize is
+/// put back.
+struct HeldPaneWidth {
+    private(set) var width: CGFloat?
+    /// A width the split clamped a restore to (the window is too narrow).
+    /// Retrying at that same width would loop.
+    private var unreachableWidth: CGFloat?
+    private static let tolerance: CGFloat = 1
+
+    mutating func settle(at width: CGFloat) {
+        self.width = width
+        unreachableWidth = nil
+    }
+
+    /// The width to restore after the pane was resized, or nil to leave it.
+    mutating func resized(to paneWidth: CGFloat, byUser: Bool) -> CGFloat? {
+        if byUser {
+            settle(at: paneWidth)
+            return nil
+        }
+        guard let width, abs(paneWidth - width) > Self.tolerance else { return nil }
+        if let unreachableWidth, abs(paneWidth - unreachableWidth) <= Self.tolerance { return nil }
+        return width
+    }
+
+    mutating func restoreFailed(at paneWidth: CGFloat) {
+        unreachableWidth = paneWidth
+    }
+}
+
 /// SwiftUI labels a column's content, but macOS also exposes the native split
 /// item's hosting view as a separate group. Name that boundary without
 /// replacing the native split view, its children, or its keyboard behavior.
@@ -38,6 +71,14 @@ private struct SplitPaneAccessibility: NSViewRepresentable {
         /// of times so it never fights a divider the user is dragging.
         private var initialWidthAttempts = 0
         private static let maximumInitialWidthAttempts = 12
+        private var held = HeldPaneWidth()
+        private weak var observedSplit: NSSplitView?
+        private var resizeObserver: NSObjectProtocol?
+        private var restoringHeldWidth = false
+
+        deinit {
+            if let resizeObserver { NotificationCenter.default.removeObserver(resizeObserver) }
+        }
 
         override func hitTest(_ point: NSPoint) -> NSView? { nil }
 
@@ -103,6 +144,7 @@ private struct SplitPaneAccessibility: NSViewRepresentable {
         private func applyInitialWidth(of pane: NSView, in split: NSSplitView) {
             guard let width = initialWidth, split.isVertical, split.arrangedSubviews.count == 2,
                   let index = split.arrangedSubviews.firstIndex(where: { $0 === pane }) else { return }
+            observeResizes(of: split, pane: pane)
             // HSplitView's split view belongs to a split view controller, which
             // owns holding priorities through its items.
             let holding = NSLayoutConstraint.Priority.defaultLow + 10
@@ -114,14 +156,45 @@ private struct SplitPaneAccessibility: NSViewRepresentable {
             } else if split.holdingPriorityForSubview(at: index) != holding {
                 split.setHoldingPriority(holding, forSubviewAt: index)
             }
-            guard initialWidthPending, split.bounds.width > width + split.dividerThickness else { return }
+            guard initialWidthPending else {
+                // A restored divider position counts as settled too.
+                if held.width == nil { held.settle(at: pane.frame.width) }
+                return
+            }
+            guard split.bounds.width > width + split.dividerThickness else { return }
             if abs(pane.frame.width - width) <= 1 || initialWidthAttempts >= Self.maximumInitialWidthAttempts {
                 initialWidthPending = false
+                held.settle(at: pane.frame.width)
                 return
             }
             initialWidthAttempts += 1
             let position = index == 0 ? width : split.bounds.width - width - split.dividerThickness
             split.setPosition(position, ofDividerAt: 0)
+        }
+
+        /// NSSplitView names the divider in the notification only when the
+        /// user dragged it; every other resize is a re-division to undo.
+        private func observeResizes(of split: NSSplitView, pane: NSView) {
+            guard observedSplit !== split else { return }
+            if let resizeObserver { NotificationCenter.default.removeObserver(resizeObserver) }
+            observedSplit = split
+            resizeObserver = NotificationCenter.default.addObserver(
+                forName: NSSplitView.didResizeSubviewsNotification, object: split, queue: .main
+            ) { [weak self, weak pane] note in
+                let byUser = note.userInfo?["NSSplitViewDividerIndex"] != nil
+                MainActor.assumeIsolated { self?.splitDidResize(pane: pane, byUser: byUser) }
+            }
+        }
+
+        private func splitDidResize(pane: NSView?, byUser: Bool) {
+            guard let pane, let split = observedSplit, !initialWidthPending, !restoringHeldWidth,
+                  let index = split.arrangedSubviews.firstIndex(where: { $0 === pane }),
+                  let target = held.resized(to: pane.frame.width, byUser: byUser) else { return }
+            restoringHeldWidth = true
+            defer { restoringHeldWidth = false }
+            let position = index == 0 ? target : split.bounds.width - target - split.dividerThickness
+            split.setPosition(position, ofDividerAt: 0)
+            if abs(pane.frame.width - target) > 1 { held.restoreFailed(at: pane.frame.width) }
         }
 
         private static func hasSavedFrames(_ autosaveName: String) -> Bool {
