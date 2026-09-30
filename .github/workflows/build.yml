@@ -206,7 +206,11 @@ jobs:
         env:
           CODE_SIGNING_ALLOWED: "NO"
         run: python3 Scripts/ci/test-products.py unpack unit
+      - name: Fetch pinned Bun for the model stub
+        run: echo "TEST_RUNNER_LOKALBOT_TEST_BUN=$(bash Scripts/ci/fetch-bun.sh | tail -1)" >> "$GITHUB_ENV"
       - name: Run unit tests without rebuilding
+        env:
+          TEST_RUNNER_CI: "true"
         run: |
           runs=(.build/dd/Build/Products/*.xctestrun)
           test "${#runs[@]}" -eq 1
