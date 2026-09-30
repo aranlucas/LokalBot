@@ -59,4 +59,16 @@ final class TestHooksTests: XCTestCase {
         XCTAssertEqual(result.segments.first?.start, 6)
         XCTAssertEqual(result.segments.first?.end, 10)
     }
+
+    func testGoldenEngineFallsBackToDefault() async throws {
+        let golden = FileManager.default.temporaryDirectory.appendingPathComponent("golden-\(UUID())", isDirectory: true)
+        let fallback = golden.appendingPathComponent("default", isDirectory: true)
+        try FileManager.default.createDirectory(at: fallback, withIntermediateDirectories: true)
+        try JSONEncoder().encode(Transcript(segments: [
+            .init(start: 0, end: 4, speaker: "me", text: "Fallback line."),
+        ], engine: "golden")).write(to: fallback.appendingPathComponent("mic.json"))
+        let result = try await GoldenTranscriptionEngine(directory: golden)
+            .transcribe(audio: URL(fileURLWithPath: "/x/01-unknown/mic.m4a"), language: nil)
+        XCTAssertEqual(result.segments.first?.text, "Fallback line.")
+    }
 }

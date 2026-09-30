@@ -196,6 +196,17 @@ class ParallelGateTests(unittest.TestCase):
                     shards.gate(*values)
 
 
+    def test_background_flows_run_only_in_their_own_shard(self):
+        with patch.object(shards, 'inventory', return_value=[
+                'BackgroundFlowUITests/testA', 'MainWindowUITests/testB', *shards.SMOKE,
+                shards.REDUCED, shards.VISUAL]):
+            with patch.object(shards, 'SMOKE', []):
+                plan = shards.plan()
+        self.assertEqual(plan['background'], ['BackgroundFlowUITests/testA'])
+        self.assertNotIn('BackgroundFlowUITests/testA', plan['functional-1'] + plan['functional-2'])
+        workflow = (ROOT / '.github/workflows/ui-tests.yml').read_text()
+        self.assertIn('background', workflow.split('phase: [', 1)[1].split(']', 1)[0])
+
 class CompilerCacheTests(unittest.TestCase):
     def setUp(self):
         self.original = Path.cwd()

@@ -306,7 +306,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        phase: [functional-1, functional-2, visual-1000x700, visual-1180x740, visual-1440x900]
+        phase: [functional-1, functional-2, background, visual-1000x700, visual-1180x740, visual-1440x900]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Select Xcode
@@ -323,6 +323,9 @@ jobs:
         run: python3 Scripts/ci/test-products.py unpack ui
       - name: Enable standard UI motion
         run: defaults write com.apple.universalaccess reduceMotion -bool false
+      - name: Fetch pinned Bun for the background shard's model stub
+        if: matrix.phase == 'background'
+        run: echo "LOKALBOT_TEST_BUN=$(bash Scripts/ci/fetch-bun.sh | tail -1)" >> "$GITHUB_ENV"
       - name: Run shard
         env:
           CODE_SIGNING_ALLOWED: "NO"

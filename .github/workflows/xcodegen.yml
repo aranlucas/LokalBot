@@ -35,7 +35,7 @@ jobs:
           python3 -m unittest discover -s Scripts/tests -v
           python3 Scripts/release-preflight.py --metadata-only
           bash -n Scripts/ui-tests.sh Scripts/prepare-release.sh Scripts/ci/fetch-bun.sh
-          python3 Scripts/ci/check-capture-recordings.py LokalBotTests/Fixtures/capture-traces
+          python3 Scripts/ci/check-capture-recordings.py LokalBotTests/Fixtures/capture-traces LokalBotUITests/Fixtures/background/capture-traces
 
       - name: Install / verify XcodeGen
         run: |

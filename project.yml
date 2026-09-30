@@ -304,7 +304,12 @@ targets:
     type: bundle.ui-testing
     platform: macOS
     sources:
-      - LokalBotUITests
+      - path: LokalBotUITests
+        excludes:
+          - Fixtures
+      - path: LokalBotUITests/Fixtures
+        type: folder
+        buildPhase: resources
     dependencies:
       - target: "LokalBot UI Test Host"
     settings:

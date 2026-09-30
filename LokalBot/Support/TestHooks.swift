@@ -46,7 +46,11 @@ struct GoldenTranscriptionEngine: TranscriptionEngine {
         let folderName = source.deletingLastPathComponent().lastPathComponent
         let slug = folderName.replacingOccurrences(of: #"^\d{2}-"#, with: "", options: .regularExpression)
         let track = source.deletingPathExtension().lastPathComponent
-        let url = directory.appendingPathComponent(slug).appendingPathComponent("\(track).json")
+        var url = directory.appendingPathComponent(slug).appendingPathComponent("\(track).json")
+        // A manual recording's folder name is generated; it reads `default/`.
+        if !FileManager.default.fileExists(atPath: url.path) {
+            url = directory.appendingPathComponent("default").appendingPathComponent("\(track).json")
+        }
         var transcript = try JSONDecoder().decode(Transcript.self, from: Data(contentsOf: url))
         guard let region else { return transcript }
         // A slice's timestamps start at the region's start.

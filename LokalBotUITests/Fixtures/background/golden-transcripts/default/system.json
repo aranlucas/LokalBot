@@ -1,0 +1,11 @@
+{
+  "engine": "golden",
+  "segments": [
+    {
+      "start": 1.5,
+      "end": 5.5,
+      "speaker": "them",
+      "text": "Please benchmark failover latency before we commit to a cluster."
+    }
+  ]
+}

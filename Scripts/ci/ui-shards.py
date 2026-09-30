@@ -13,6 +13,9 @@ import time
 
 VISUAL = 'RedesignUITests/testWorkspaceVisualMatrix'
 REDUCED = 'RedesignUITests/testReducedMotionWorkspaceRemainsOperable'
+# Flows with the host's background work running (replayed trace, file audio,
+# model stub) run only in their own shard.
+BACKGROUND = 'BackgroundFlowUITests'
 SMOKE = [
     'RedesignUITests/testHighContrastKeepsActionsAccessible',
     'MainWindowUITests/testMeetingWaveformExposesSliderAndSupportsKeyboardSeeking',
@@ -54,7 +57,8 @@ def plan():
     smoke = [test for test in tests if any(test == item or test.startswith(item + '/') for item in SMOKE)]
     if not all(any(test == item or test.startswith(item + '/') for test in smoke) for item in SMOKE):
         raise ValueError('A required smoke selector no longer exists')
-    remainder = set(tests) - set(smoke) - {REDUCED, VISUAL}
+    background = [test for test in tests if test.startswith(BACKGROUND + '/')]
+    remainder = set(tests) - set(smoke) - set(background) - {REDUCED, VISUAL}
     timings = json.loads(Path('Scripts/ci/ui-durations.json').read_text())
     shards = [[], []]
     totals = [0, 0]
@@ -62,7 +66,7 @@ def plan():
         index = totals.index(min(totals))
         shards[index].append(test)
         totals[index] += timings.get(test, 30)
-    return dict(smoke=smoke, **{'reduced-motion': [REDUCED],
+    return dict(smoke=smoke, background=background, **{'reduced-motion': [REDUCED],
                                'functional-1': shards[0], 'functional-2': shards[1]},
                 **{f'visual-{size}': [VISUAL] for size in SIZES})
 
@@ -110,6 +114,15 @@ def execute(phase, selected=None):
                     env['LOKALBOT_VISUAL_SIZE'] = phase.removeprefix('visual-') if phase.startswith('visual-') else ''
                     env['LOKALBOT_CAPTURE_MODE'] = os.environ.get('CAPTURE_MODE', 'ready')
                     env['LOKALBOT_VISUAL_EVIDENCE'] = str((folder / 'captures').resolve())
+            run.write_bytes(plistlib.dumps(value))
+    if phase == 'background':
+        for run in Path('.build/dd/Build/Products').glob('*.xctestrun'):
+            value = plistlib.loads(run.read_bytes())
+            for config in value['TestConfigurations']:
+                for target in config['TestTargets']:
+                    env = target.setdefault('EnvironmentVariables', {})
+                    env['LOKALBOT_TEST_BUN'] = os.environ.get('LOKALBOT_TEST_BUN', '')
+                    env['LOKALBOT_STUB_SCRIPT'] = str(Path('LokalBotTests/Fixtures/stub-openai.ts').resolve())
             run.write_bytes(plistlib.dumps(value))
     result_path = folder / f'{phase}.xcresult'
     command = ['bash', 'Scripts/ui-tests.sh', '--test-only', '--result', str(result_path)]
