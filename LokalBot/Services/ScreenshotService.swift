@@ -102,7 +102,7 @@ struct ScreenshotRetentionSchedule {
 /// in unit tests, so production metadata is reduced to these value types before
 /// binding pixels to the one focused window whose privacy metadata was read.
 struct ScreenshotCaptureLayout {
-    struct Window {
+    struct Window: Codable, Equatable, Sendable {
         let id: CGWindowID
         let processID: pid_t
         let appName: String

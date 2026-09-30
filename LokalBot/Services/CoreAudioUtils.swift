@@ -25,6 +25,28 @@ struct AudioProcess: Identifiable, Equatable, Hashable {
     }
 }
 
+extension AudioProcess: Codable {
+    private enum CodingKeys: String, CodingKey { case id, name, bundleID, objectID, isRunningOutput }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(id: try container.decode(pid_t.self, forKey: .id),
+                  name: try container.decode(String.self, forKey: .name),
+                  bundleID: try container.decodeIfPresent(String.self, forKey: .bundleID),
+                  objectID: try container.decode(AudioObjectID.self, forKey: .objectID),
+                  isRunningOutput: try container.decode(Bool.self, forKey: .isRunningOutput))
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encodeIfPresent(bundleID, forKey: .bundleID)
+        try container.encode(objectID, forKey: .objectID)
+        try container.encode(isRunningOutput, forKey: .isRunningOutput)
+    }
+}
+
 enum CoreAudioError: LocalizedError {
     case osStatus(OSStatus, String)
 

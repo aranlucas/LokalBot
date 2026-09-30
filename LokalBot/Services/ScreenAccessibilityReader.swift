@@ -2,7 +2,7 @@ import AppKit
 import ApplicationServices
 import Foundation
 
-struct ScreenAccessibilitySnapshot: Equatable, Sendable {
+struct ScreenAccessibilitySnapshot: Codable, Equatable, Sendable {
     var text: String
     var sourceURL: String?
     var documentName: String?
@@ -159,7 +159,7 @@ final class ScreenAccessibilityReader: @unchecked Sendable {
 
     /// Why a text read produced no snapshot. Names the failed check, never
     /// window contents.
-    struct TextReadFailure: Equatable, Sendable {
+    struct TextReadFailure: Codable, Equatable, Sendable {
         let reason: String
         /// The window was readable but changed while it was read, as during
         /// a tab switch or page load; a read moments later can succeed.

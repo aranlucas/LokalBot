@@ -7,8 +7,8 @@ enum BrowserMeetingSession {
     /// `present`: the verified window still holds the call's tab, but its call
     /// controls cannot be read (a large page, a slow tree, another tab in front).
     /// `gone`: that window was closed or no longer holds the call's tab.
-    enum State: Equatable, Sendable { case inCall, minimized, present, ended, gone, unavailable }
-    struct Snapshot: Equatable, Sendable {
+    enum State: String, Codable, Equatable, Sendable { case inCall, minimized, present, ended, gone, unavailable }
+    struct Snapshot: Codable, Equatable, Sendable {
         var url: URL
         var state: State
     }
@@ -48,7 +48,7 @@ enum BrowserMeetingSession {
     }
 
     /// Why the last lifecycle read of a browser found no call document.
-    enum ReadIssue: String, Sendable {
+    enum ReadIssue: String, Codable, Sendable {
         case accessibilityUntrusted, windowListUnavailable, tooManyWindows, deadline
         case pageTooLarge, accessibilityTimeout, noMeetingDocument, ambiguousWindows
     }
@@ -266,6 +266,10 @@ enum BrowserMeetingSession {
     }
 
     static func snapshot(processID: pid_t, expectedURL: URL? = nil) -> Snapshot? {
+        liveSnapshot(processID: processID, expectedURL: expectedURL)
+    }
+
+    static func liveSnapshot(processID: pid_t, expectedURL: URL? = nil) -> Snapshot? {
         let observed = window(processID: processID, expectedURL: expectedURL)
         if observed?.snapshot.state == .inCall {
             bindings.set(observed, for: processID)
