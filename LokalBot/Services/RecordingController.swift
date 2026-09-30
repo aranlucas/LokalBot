@@ -486,7 +486,8 @@ final class RecordingController: ObservableObject {
                 try Task.checkCancellation()
                 if ["detector", "audio-monitor", "notification"].contains(source),
                    let detectedApp, MeetingDetector.browsers.contains(detectedApp.bundleID) {
-                    let host = NSRunningApplication.runningApplications(withBundleIdentifier: detectedApp.bundleID).first
+                    let host = CaptureEnvironment.current.workspace.runningApplications()
+                        .first { $0.bundleIdentifier == detectedApp.bundleID }
                     let session = host.flatMap { BrowserMeetingSession.snapshot(processID: $0.processIdentifier,
                         expectedURL: detectedApp.meetingURL) }
                     guard session?.state == .inCall, session?.url == detectedApp.meetingURL else {
@@ -1309,7 +1310,7 @@ final class RecordingController: ObservableObject {
     }
 
     private static func hostPID(for bundleID: String) -> pid_t? {
-        NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first?.processIdentifier
+        CaptureEnvironment.current.workspace.runningApplications().first { $0.bundleIdentifier == bundleID }?.processIdentifier
     }
 
     /// Helpers within a live authorized host may move. A new browser host must

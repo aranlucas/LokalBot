@@ -44,6 +44,7 @@ struct MeetingContinuationLease: Equatable {
 /// Reacts instantly via Core Audio property listeners (mic in use, default
 /// device change) and NSWorkspace launch/quit notifications; a slow safety
 /// poll covers what has no notification — browser call state.
+@MainActor
 final class MeetingDetector {
 
     struct DetectedApp: Equatable {
@@ -54,7 +55,7 @@ final class MeetingDetector {
     }
 
     /// Known native meeting apps.
-    static let knownApps: [String: String] = [
+    nonisolated static let knownApps: [String: String] = [
         "us.zoom.xos": "Zoom",
         "com.microsoft.teams2": "Teams",
         "com.microsoft.teams": "Teams",
@@ -71,13 +72,13 @@ final class MeetingDetector {
     /// up on its own, but only once their audio has lasted
     /// `nativeAudioMinimumConfirmationDuration` (see
     /// `requiresSustainedAudioForStart`).
-    private static let highConfidenceNativeAudioBundles: Set<String> = [
+    nonisolated private static let highConfidenceNativeAudioBundles: Set<String> = [
         "us.zoom.xos",
         "com.webex.meetingmanager",
         "Cisco-Systems.Spark",
     ]
 
-    static func shouldAutoRecordNativeAudioMonitor(bundleID: String, calendarBacked: Bool) -> Bool {
+    nonisolated static func shouldAutoRecordNativeAudioMonitor(bundleID: String, calendarBacked: Bool) -> Bool {
         highConfidenceNativeAudioBundles.contains(bundleID) || calendarBacked
     }
 
@@ -97,7 +98,7 @@ final class MeetingDetector {
     /// from a real call without also refusing to record one. That case is a
     /// detection-side defect rather than a timing one; see the note on
     /// `alwaysOpenAudioBundles`.
-    static let nativeAudioMinimumConfirmationDuration: TimeInterval = 12
+    nonisolated static let nativeAudioMinimumConfirmationDuration: TimeInterval = 12
 
     /// How long the confirmation window survives a candidate producing no
     /// output audio at all, before `nativeAudioMinimumConfirmationDuration`
@@ -119,7 +120,7 @@ final class MeetingDetector {
     /// audio recurring at least this often lets a real conversation complete
     /// the window. It only ever bridges a gap in evidence; it never invents
     /// evidence on its own, so this cannot make an idle-but-open app confirm.
-    static let nativeAudioConfirmationGapTolerance: TimeInterval = 6
+    nonisolated static let nativeAudioConfirmationGapTolerance: TimeInterval = 6
 
     /// Bundles inside a meeting app's namespace that hold their Core Audio
     /// streams open for the app's whole lifetime, so their state carries no
@@ -134,12 +135,12 @@ final class MeetingDetector {
     /// can tell the two apart. Capture must still be free to tap these — a tap
     /// on a silent process simply records nothing until audio starts — so this
     /// belongs to the detection question alone.
-    static let alwaysOpenAudioBundles: Set<String> = [
+    nonisolated static let alwaysOpenAudioBundles: Set<String> = [
         "com.microsoft.teams2.modulehost",
     ]
 
     /// Whether an audio process says anything about a call being under way.
-    static func carriesMeetingSignal(bundleID: String?) -> Bool {
+    nonisolated static func carriesMeetingSignal(bundleID: String?) -> Bool {
         guard let bundleID else { return true }
         return !alwaysOpenAudioBundles.contains(bundleID.lowercased())
     }
@@ -149,14 +150,14 @@ final class MeetingDetector {
     /// Dedicated conferencing bundles and
     /// calendar-backed starts stay instant, and browsers are gated by their own
     /// title/calendar rules, so they never wait here.
-    static func requiresSustainedAudioForStart(bundleID: String, calendarBacked: Bool) -> Bool {
+    nonisolated static func requiresSustainedAudioForStart(bundleID: String, calendarBacked: Bool) -> Bool {
         guard knownApps[bundleID] != nil else { return false }
         return !shouldAutoRecordNativeAudioMonitor(bundleID: bundleID, calendarBacked: calendarBacked)
     }
 
     /// Browsers whose supported meeting documents can be verified through
     /// Accessibility. Unsupported or unreadable call controls abstain.
-    static let browsers: Set<String> = [
+    nonisolated static let browsers: Set<String> = [
         "com.google.Chrome", "com.apple.Safari", "company.thebrowser.Browser",
         "com.microsoft.edgemac", "com.brave.Browser", "org.mozilla.firefox",
     ]
@@ -169,22 +170,22 @@ final class MeetingDetector {
     var stopDebounce: TimeInterval = AppSettings.defaultStopDebounceSeconds
     /// Extra grace before stopping while a calendar-backed meeting is still in
     /// its scheduled window — brief audio drops mid-meeting shouldn't end it.
-    static let calendarBackedGrace: TimeInterval = 180
+    nonisolated static let calendarBackedGrace: TimeInterval = 180
     /// Accessibility can briefly fail while Chrome rebuilds its WebArea or
     /// another bounded reader is using the same tree. Keep the recording alive
     /// through that uncertainty. This is separate from the user's short audio
     /// debounce because it protects the lifecycle signal itself.
-    static let browserObservationGrace: TimeInterval = 120
+    nonisolated static let browserObservationGrace: TimeInterval = 120
     /// A browser host can disappear for a few seconds while Chrome replaces
     /// the application process even though the Meet tab and helper audio stay
     /// alive. This shorter window avoids splitting one call while bounding the
     /// raw tail when the browser really did quit.
-    static let browserHostReconnectGrace: TimeInterval = 15
+    nonisolated static let browserHostReconnectGrace: TimeInterval = 15
     /// Teams keeps `modulehost` open while idle, so it can bridge a pause only
     /// while backed by recent audio from a process whose signal can disappear.
     /// With the default 15-second stop debounce, the detector remains tolerant
     /// for about one minute after the last reliable sample, then ends normally.
-    static let alwaysOpenAudioContinuationGrace: TimeInterval = 45
+    nonisolated static let alwaysOpenAudioContinuationGrace: TimeInterval = 45
 
     // Calendar-assisted detection, synced from `AppSettings` by `AppState`.
     var calendar: CalendarEventProviding?
@@ -197,8 +198,9 @@ final class MeetingDetector {
     /// extended stop grace and is carried into the recording's metadata.
     private var activeCalendarEvent: CalendarMeetingCandidate?
     private var continuationLease = MeetingContinuationLease()
-    private var timer: Timer?
-    private var pendingStop: DispatchWorkItem?
+    private var environment: CaptureEnvironment { .current }
+    private var timer: CaptureTimer?
+    private var pendingStop: CaptureTimer?
     private var browserStart = BrowserMeetingSession.StartGate()
     private(set) var detectedContentEnd: Date?
     private(set) var endedMeetingURL: URL?
@@ -212,7 +214,7 @@ final class MeetingDetector {
     /// Last logged start-decision state, so the safety poll does not
     /// repeat the same line forever. Diagnostics only.
     private var lastLoggedStartState: String?
-    private var pendingStartRecheck: DispatchWorkItem?
+    private var pendingStartRecheck: CaptureTimer?
     private var workspaceObservers: [NSObjectProtocol] = []
     private var browserPollGeneration = 0
     private var browserPollTask: Task<Void, Never>?
@@ -228,14 +230,14 @@ final class MeetingDetector {
     /// meeting subsystems ask for the same answer in one detector/poller turn.
     /// Keep a very short-lived snapshot so detection, helper handoff, and media
     /// pausing share one system query without making process state feel stale.
-    private static let processSnapshotLock = NSLock()
-    private static var processSnapshot: (capturedAt: Date, processes: [AudioProcess])?
-    private static let processSnapshotLifetime: TimeInterval = 0.35
+    nonisolated private static let processSnapshotLock = NSLock()
+    nonisolated(unsafe) private static var processSnapshot: (capturedAt: Date, processes: [AudioProcess])?
+    nonisolated private static let processSnapshotLifetime: TimeInterval = 0.35
 
     func start() {
         guard timer == nil else { return }
         // Safety-net poll (browser call state has no change notification).
-        timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+        timer = environment.clock.repeating(every: 2) { [weak self] in
             self?.tick()
         }
         // Instant signals: mic state, default-device change, app launch/quit.
@@ -245,7 +247,7 @@ final class MeetingDetector {
                      NSWorkspace.didTerminateApplicationNotification] {
             let observer = center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 Self.invalidateAudioProcessSnapshot()
-                self?.tick()
+                MainActor.assumeIsolated { self?.tick() }
             }
             workspaceObservers.append(observer)
         }
@@ -257,7 +259,7 @@ final class MeetingDetector {
         browserPollTask?.cancel()
         browserPollTask = nil
         browserSnapshots = [:]
-        timer?.invalidate()
+        timer?.cancel()
         timer = nil
         pendingStop?.cancel()
         pendingStop = nil
@@ -344,9 +346,9 @@ final class MeetingDetector {
         guard browserPollTask == nil else { return }
         let generation = browserPollGeneration
         let boundApp = activeApp
-        let eventURL = calendarEnabled ? calendar?.activeCandidate(now: Date())?.meetingURL : nil
+        let eventURL = calendarEnabled ? calendar?.activeCandidate(now: environment.clock.now())?.meetingURL : nil
         let expectedURL = boundApp?.meetingURL ?? eventURL
-        let pids = NSWorkspace.shared.runningApplications.filter {
+        let pids = environment.workspace.runningApplications().filter {
             guard let bundleID = $0.bundleIdentifier, Self.browsers.contains(bundleID) else { return false }
             // Once bound, unrelated browsers cannot delay the call's evidence
             // or make a valid observation expire before it reaches the detector.
@@ -357,24 +359,24 @@ final class MeetingDetector {
         }.map(\.processIdentifier)
         guard !pids.isEmpty else { browserSnapshots = [:]; applyTick(); return }
         browserPollTask = Task { @MainActor [weak self] in
-            let started = Date()
+            let started = CaptureEnvironment.current.clock.now()
             let observations = await BrowserMeetingSession.observe(processIDs: pids, expectedURL: expectedURL)
             guard let self, !Task.isCancelled, generation == self.browserPollGeneration else { return }
             self.browserPollTask = nil
             guard self.activeApp == boundApp,
-                  eventURL == (self.calendarEnabled ? self.calendar?.activeCandidate(now: Date())?.meetingURL : nil) else {
+                  eventURL == (self.calendarEnabled ? self.calendar?.activeCandidate(now: self.environment.clock.now())?.meetingURL : nil) else {
                 self.tick()
                 return
             }
             // A slow/unresponsive browser is uncertainty, never fresh call evidence.
-            self.browserSnapshots = Date().timeIntervalSince(started) < 2 ? observations : [:]
+            self.browserSnapshots = self.environment.clock.now().timeIntervalSince(started) < 2 ? observations : [:]
             self.applyTick()
         }
     }
 
     private func applyTick() {
-        let now = Date()
-        let running = NSWorkspace.shared.runningApplications
+        let now = environment.clock.now()
+        let running = environment.workspace.runningApplications()
         let calendarEvent = calendarEnabled ? calendar?.activeCandidate(now: now) : nil
 
         if let currentApp = activeApp {
@@ -551,7 +553,7 @@ final class MeetingDetector {
         guard activeApp == nil, Self.knownApps[app.bundleID] != nil,
               Self.shouldAutoRecordNativeAudioMonitor(
                 bundleID: app.bundleID, calendarBacked: calendarEvent != nil) else { return }
-        beginMeeting(app: app, calendarEvent: calendarEvent, now: Date())
+        beginMeeting(app: app, calendarEvent: calendarEvent, now: environment.clock.now())
     }
 
     /// Tracks how long the start candidate's audio has been continuously
@@ -599,7 +601,7 @@ final class MeetingDetector {
     /// candidate that supplied fresh meeting-app audio and only through its
     /// bounded conversational gap; unrelated system audio cannot extend it.
     private func keepsActiveSessionForPendingHandoff(
-        in running: [NSRunningApplication],
+        in running: [RunningApp],
         freshCandidateBundleID: String?,
         calendarBacked: Bool,
         now: Date
@@ -654,14 +656,12 @@ final class MeetingDetector {
                                                   generation: UInt64) {
         guard startConfirmation.acceptsRecheck(for: generation),
               pendingStartRecheck == nil else { return }
-        let work = DispatchWorkItem { [weak self] in
+        pendingStartRecheck = environment.clock.schedule(after: max(delay, 0.25)) { [weak self] in
             guard let self,
                   self.startConfirmation.acceptsRecheck(for: generation) else { return }
             self.pendingStartRecheck = nil
             self.tick()
         }
-        pendingStartRecheck = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + max(delay, 0.25), execute: work)
     }
 
     /// `loggingLoss` is false when the candidate is being cleared because it
@@ -672,7 +672,7 @@ final class MeetingDetector {
         if loggingLoss, let pendingStart = startConfirmation.window {
             lokalbotLog(
                 "detector lost the audio it was waiting on app=\(pendingStart.bundleID) "
-                    + "after=\(String(format: "%.1fs", Date().timeIntervalSince(pendingStart.firstSeenAt)))")
+                    + "after=\(String(format: "%.1fs", environment.clock.now().timeIntervalSince(pendingStart.firstSeenAt)))")
         }
         startConfirmation.clear()
         cancelPendingStartRecheck()
@@ -683,8 +683,8 @@ final class MeetingDetector {
         pendingStartRecheck = nil
     }
 
-    private static func detectRunningMeetingApp(
-        in running: [NSRunningApplication],
+    nonisolated private static func detectRunningMeetingApp(
+        in running: [RunningApp],
         calendarEvent: CalendarMeetingCandidate?,
         calendarEnabled: Bool,
         requireCalendarForBrowser: Bool,
@@ -710,13 +710,11 @@ final class MeetingDetector {
         let isBrowser = activeApp.map { Self.browsers.contains($0.bundleID) } ?? false
         let calendarStillActive = !isBrowser && (activeCalendarEvent?.isActive(at: now) ?? false)
         let debounce = immediately ? 0 : calendarStillActive ? max(stopDebounce, Self.calendarBackedGrace) : stopDebounce
-        let work = DispatchWorkItem { [weak self] in
+        pendingStop = environment.clock.schedule(after: debounce) { [weak self] in
             guard let self else { return }
             if let reason { lokalbotLog("detector ending meeting reason=\(reason) confident=\(confident)") }
             self.completeMeetingEnd(sessionID: sessionID, confident: confident)
         }
-        pendingStop = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + debounce, execute: work)
     }
 
     func completeMeetingEnd(sessionID: UUID, confident: Bool = true) {
@@ -739,7 +737,7 @@ final class MeetingDetector {
     /// snapshot remains uncertainty until positive end evidence or user Stop.
     /// The last verified observation is diagnostic, never a content cutoff.
     private func tickBrowser(_ app: DetectedApp, now: Date) {
-        let host = NSRunningApplication.runningApplications(withBundleIdentifier: app.bundleID).first
+        let host = environment.workspace.runningApplications().first { $0.bundleIdentifier == app.bundleID }
         let snapshot = host.flatMap { browserSnapshots[$0.processIdentifier] }
         let observedState: BrowserMeetingSession.State? = snapshot.map {
             $0.url == app.meetingURL ? $0.state : .unavailable
@@ -781,7 +779,7 @@ final class MeetingDetector {
             pendingStop = nil
             detectedContentEnd = nil
         case .lost(let state):
-            let issue = host.flatMap { BrowserMeetingSession.lastReadIssue(processID: $0.processIdentifier) }
+            let issue = host.flatMap { environment.accessibility.browserReadIssue(processID: $0.processIdentifier) }
             lokalbotLog("browser lifecycle observation lost state="
                 + (state.map(String.init(describing:)) ?? "missing")
                 + (issue.map { " issue=\($0.rawValue)" } ?? ""))
@@ -801,9 +799,17 @@ final class MeetingDetector {
     /// Audio-monitor events must pass the same sustained call-state gate.
     func checkNow() { tick() }
 
+#if DEBUG
+    /// One detection tick, awaiting any browser observation it starts.
+    func tickForTesting() async {
+        tick()
+        await browserPollTask?.value
+    }
+#endif
+
     /// Which running bundles count as native meeting apps, in priority order.
     /// Split out from `NSRunningApplication` so the choice is testable.
-    static func meetingAppCandidates(bundleIDs: [(bundleID: String, pid: pid_t)]) -> [DetectedApp] {
+    nonisolated static func meetingAppCandidates(bundleIDs: [(bundleID: String, pid: pid_t)]) -> [DetectedApp] {
         bundleIDs.compactMap { entry in
             guard let name = knownApps[entry.bundleID] else { return nil }
             return DetectedApp(name: name, bundleID: entry.bundleID, pid: entry.pid)
@@ -813,16 +819,16 @@ final class MeetingDetector {
     /// A specific native app by bundle id, with no audio requirement at all —
     /// used to check whether a confirmation candidate is still open during a
     /// bridged gap, where the point is exactly that it may be silent right now.
-    private static func nativeApp(bundleID: String,
-                                  in running: [NSRunningApplication]) -> DetectedApp? {
+    nonisolated private static func nativeApp(bundleID: String,
+                                              in running: [RunningApp]) -> DetectedApp? {
         meetingAppCandidates(bundleIDs: running.compactMap { app in
             guard app.bundleIdentifier == bundleID else { return nil }
             return (bundleID: bundleID, pid: app.processIdentifier)
         }).first
     }
 
-    private static func nativeMeetingApp(in running: [NSRunningApplication],
-                                         requireAudio: Bool = false) -> DetectedApp? {
+    nonisolated private static func nativeMeetingApp(in running: [RunningApp],
+                                                     requireAudio: Bool = false) -> DetectedApp? {
         let candidates = meetingAppCandidates(bundleIDs: running.compactMap { app in
             guard let bid = app.bundleIdentifier else { return nil }
             return (bundleID: bid, pid: app.processIdentifier)
@@ -830,7 +836,7 @@ final class MeetingDetector {
         guard requireAudio else { return candidates.first }
         let active = candidates.filter { hasAudio(for: $0) }
         guard !active.isEmpty else { return nil }
-        if let frontmostPID = NSWorkspace.shared.frontmostApplication?.processIdentifier,
+        if let frontmostPID = CaptureEnvironment.current.workspace.frontmostApplication()?.processIdentifier,
            let frontmost = active.first(where: { $0.pid == frontmostPID }) {
             return frontmost
         }
@@ -839,17 +845,17 @@ final class MeetingDetector {
 
     /// A verified supported browser call without calendar requirements.
     /// Audio capture remains a process tap; call evidence supplies lifecycle.
-    static func visibleBrowserMeeting(in running: [NSRunningApplication] = NSWorkspace.shared.runningApplications) -> DetectedApp? {
+    nonisolated static func visibleBrowserMeeting(in running: [RunningApp] = CaptureEnvironment.current.workspace.runningApplications()) -> DetectedApp? {
         browserMeeting(in: running, calendarEvent: nil, calendarEnabled: false, requireCalendarForBrowser: false)
     }
 
     /// A browser with a verified in-call document, optionally restricted to
     /// the calendar event URL. Unrelated browser output never starts a call.
-    private static func browserMeeting(in running: [NSRunningApplication],
-                                       calendarEvent: CalendarMeetingCandidate?,
-                                       calendarEnabled: Bool,
-                                       requireCalendarForBrowser: Bool,
-                                       snapshots: [pid_t: BrowserMeetingSession.Snapshot]? = nil) -> DetectedApp? {
+    nonisolated private static func browserMeeting(in running: [RunningApp],
+                                                   calendarEvent: CalendarMeetingCandidate?,
+                                                   calendarEnabled: Bool,
+                                                   requireCalendarForBrowser: Bool,
+                                                   snapshots: [pid_t: BrowserMeetingSession.Snapshot]? = nil) -> DetectedApp? {
         let calendarBacked = calendarEnabled && calendarEvent?.meetingURL != nil
         guard !requireCalendarForBrowser || calendarBacked else { return nil }
         for app in running {
@@ -869,12 +875,12 @@ final class MeetingDetector {
         return nil
     }
 
-    static func hostBrowserBundleID(forAudioBundleID bundleID: String) -> String? {
+    nonisolated static func hostBrowserBundleID(forAudioBundleID bundleID: String) -> String? {
         if browsers.contains(bundleID) { return bundleID }
         return browsers.first { browserAudioBundleID(bundleID, belongsTo: $0) }
     }
 
-    static func browserAudioBundleID(_ bundleID: String, belongsTo browserBundleID: String) -> Bool {
+    nonisolated static func browserAudioBundleID(_ bundleID: String, belongsTo browserBundleID: String) -> Bool {
         let bundle = bundleID.lowercased()
         let browser = browserBundleID.lowercased()
         return bundle == browser || bundle.hasPrefix("\(browser).helper")
@@ -883,7 +889,7 @@ final class MeetingDetector {
     /// Whether an audio process belongs to the detected meeting application's
     /// process family. Zoom routes call audio through `us.zoom.CptHost`, while
     /// Chromium-family browsers use `.helper` bundle identifiers.
-    static func audioBundleID(_ bundleID: String, belongsTo appBundleID: String) -> Bool {
+    nonisolated static func audioBundleID(_ bundleID: String, belongsTo appBundleID: String) -> Bool {
         if browsers.contains(appBundleID) {
             return browserAudioBundleID(bundleID, belongsTo: appBundleID)
         }
@@ -905,8 +911,8 @@ final class MeetingDetector {
     /// Ranks an already-vetted set of output processes inside an app family.
     /// Detection supplies only processes that carry meeting signal; capture
     /// adds its broader open-stream and silent-process fallbacks separately.
-    private static func rankedOutputAudioProcess(for app: DetectedApp,
-                                                 in processes: [AudioProcess]) -> AudioProcess? {
+    nonisolated private static func rankedOutputAudioProcess(for app: DetectedApp,
+                                                             in processes: [AudioProcess]) -> AudioProcess? {
         if browsers.contains(app.bundleID) || app.bundleID == "us.zoom.xos" {
             let matches = processes.filter { process in
                 guard process.isRunningOutput, let bundleID = process.bundleID else { return false }
@@ -940,9 +946,9 @@ final class MeetingDetector {
     /// Best output process that is evidence of a live meeting. Detection-only:
     /// capture must use ``bestCaptureAudioProcess(for:in:)`` so bundles with
     /// always-open streams remain tappable.
-    static func bestOutputAudioProcess(for app: DetectedApp,
-                                       in processes: [AudioProcess],
-                                       excluding excludedPIDs: Set<pid_t> = []) -> AudioProcess? {
+    nonisolated static func bestOutputAudioProcess(for app: DetectedApp,
+                                                   in processes: [AudioProcess],
+                                                   excluding excludedPIDs: Set<pid_t> = []) -> AudioProcess? {
         rankedOutputAudioProcess(
             for: app,
             in: processes.filter {
@@ -954,8 +960,8 @@ final class MeetingDetector {
     /// remembered and stable silent-process fallbacks. Keeping this entry point
     /// aligned with ``captureTargetProcess`` prevents detection-only ranking
     /// from leaking back into capture callers.
-    static func bestCaptureAudioProcess(for app: DetectedApp,
-                                        in processes: [AudioProcess]) -> AudioProcess? {
+    nonisolated static func bestCaptureAudioProcess(for app: DetectedApp,
+                                                    in processes: [AudioProcess]) -> AudioProcess? {
         captureTargetProcess(for: app, in: processes)
     }
 
@@ -963,8 +969,8 @@ final class MeetingDetector {
     /// ambiguous context, never standalone meeting evidence: the active
     /// detector may use it only while ``MeetingContinuationLease`` is backed by
     /// recent reliable audio.
-    static func bestAlwaysOpenAudioProcess(for app: DetectedApp,
-                                           in processes: [AudioProcess]) -> AudioProcess? {
+    nonisolated static func bestAlwaysOpenAudioProcess(for app: DetectedApp,
+                                                       in processes: [AudioProcess]) -> AudioProcess? {
         rankedOutputAudioProcess(
             for: app,
             in: processes.filter { process in
@@ -975,7 +981,7 @@ final class MeetingDetector {
             })
     }
 
-    static func currentOutputAudioProcess(
+    nonisolated static func currentOutputAudioProcess(
         for app: DetectedApp,
         excluding excludedPIDs: Set<pid_t> = []
     ) -> AudioProcess? {
@@ -997,9 +1003,9 @@ final class MeetingDetector {
     /// more than one process: a tap that delivered nothing stays ruled out for
     /// the rest of the session, and with several siblings alive the watchdog
     /// otherwise hands back a process it already found empty.
-    static func captureTargetProcess(for app: DetectedApp,
-                                     in processes: [AudioProcess],
-                                     excluding excludedPIDs: Set<pid_t> = []) -> AudioProcess? {
+    nonisolated static func captureTargetProcess(for app: DetectedApp,
+                                                 in processes: [AudioProcess],
+                                                 excluding excludedPIDs: Set<pid_t> = []) -> AudioProcess? {
         let available = processes.filter { !excludedPIDs.contains($0.id) }
         let namespace = available.filter { process in
             guard let bundleID = process.bundleID else { return false }
@@ -1039,15 +1045,15 @@ final class MeetingDetector {
 
     /// The PID each app was last seen emitting from. Small and per-bundle: it
     /// only has to survive between a quiet start and the watchdog's next look.
-    private static var lastEmittingCaptureTargets: [String: pid_t] = [:]
+    nonisolated(unsafe) private static var lastEmittingCaptureTargets: [String: pid_t] = [:]
 
-    private static func rememberCaptureTarget(_ pid: pid_t, for bundleID: String) {
+    nonisolated private static func rememberCaptureTarget(_ pid: pid_t, for bundleID: String) {
         processSnapshotLock.lock()
         lastEmittingCaptureTargets[bundleID] = pid
         processSnapshotLock.unlock()
     }
 
-    private static func rememberedCaptureTarget(for bundleID: String) -> pid_t? {
+    nonisolated private static func rememberedCaptureTarget(for bundleID: String) -> pid_t? {
         processSnapshotLock.lock()
         defer { processSnapshotLock.unlock() }
         return lastEmittingCaptureTargets[bundleID]
@@ -1055,7 +1061,7 @@ final class MeetingDetector {
 
     /// Clears what capture learned about which sibling carries audio. For
     /// tests, so one case cannot leak its choice into the next.
-    static func resetCaptureTargetMemory() {
+    nonisolated static func resetCaptureTargetMemory() {
         processSnapshotLock.lock()
         lastEmittingCaptureTargets.removeAll()
         processSnapshotLock.unlock()
@@ -1068,8 +1074,8 @@ final class MeetingDetector {
     /// failing. A browser is eligible only when its Accessibility tree proves
     /// one unambiguous in-call Meet document, so a manual recording does not
     /// silently widen its capture scope to arbitrary browser media.
-    static func captureCandidateApp(
-        in running: [NSRunningApplication] = NSWorkspace.shared.runningApplications,
+    nonisolated static func captureCandidateApp(
+        in running: [RunningApp] = CaptureEnvironment.current.workspace.runningApplications(),
         expectedMeetingURL: URL? = nil,
         expectedBundleID: String? = nil
     ) -> DetectedApp? {
@@ -1105,18 +1111,18 @@ final class MeetingDetector {
             return (bundleID: bundleID, pid: app.processIdentifier)
         })
         return idleCaptureCandidate(in: nativeCandidates, expectedBundleID: expectedBundleID,
-                                    frontmostPID: NSWorkspace.shared.frontmostApplication?.processIdentifier)
+                                    frontmostPID: CaptureEnvironment.current.workspace.frontmostApplication()?.processIdentifier)
     }
 
-    static func idleCaptureCandidate(in candidates: [DetectedApp], expectedBundleID: String?,
-                                     frontmostPID: pid_t?) -> DetectedApp? {
+    nonisolated static func idleCaptureCandidate(in candidates: [DetectedApp], expectedBundleID: String?,
+                                                 frontmostPID: pid_t?) -> DetectedApp? {
         guard let expectedBundleID else { return nil }
         let bound = candidates.filter { $0.bundleID == expectedBundleID }
         if bound.count == 1 { return bound[0] }
         return bound.first { $0.pid == frontmostPID }
     }
 
-    static func currentCaptureTargetProcess(
+    nonisolated static func currentCaptureTargetProcess(
         for app: DetectedApp,
         excluding excludedPIDs: Set<pid_t> = []
     ) -> AudioProcess? {
@@ -1129,11 +1135,12 @@ final class MeetingDetector {
     /// Compatibility entry point for callers that only need the default
     /// capture target. Recovery uses ``currentCaptureTargetProcess`` directly
     /// so it can exclude a dead attachment.
-    static func currentCaptureAudioProcess(for app: DetectedApp) -> AudioProcess? {
+    nonisolated static func currentCaptureAudioProcess(for app: DetectedApp) -> AudioProcess? {
         currentCaptureTargetProcess(for: app)
     }
 
-    static func currentAudioProcesses(now: Date = Date()) -> [AudioProcess] {
+    nonisolated static func currentAudioProcesses(now: Date? = nil) -> [AudioProcess] {
+        let now = now ?? CaptureEnvironment.current.clock.now()
         processSnapshotLock.lock()
         if let processSnapshot,
            now.timeIntervalSince(processSnapshot.capturedAt) <= processSnapshotLifetime {
@@ -1142,30 +1149,30 @@ final class MeetingDetector {
         }
         processSnapshotLock.unlock()
 
-        let processes = (try? CoreAudioUtils.listAudioProcesses()) ?? []
+        let processes = (try? CaptureEnvironment.current.audio.processes()) ?? []
         processSnapshotLock.lock()
         processSnapshot = (now, processes)
         processSnapshotLock.unlock()
         return processes
     }
 
-    static func invalidateAudioProcessSnapshot() {
+    nonisolated static func invalidateAudioProcessSnapshot() {
         processSnapshotLock.lock()
         processSnapshot = nil
         processSnapshotLock.unlock()
     }
 
-    private static func continuingApp(_ app: DetectedApp, in running: [NSRunningApplication]) -> DetectedApp? {
+    nonisolated private static func continuingApp(_ app: DetectedApp, in running: [RunningApp]) -> DetectedApp? {
         if knownApps[app.bundleID] != nil {
             return running.contains { $0.bundleIdentifier == app.bundleID } ? app : nil
         }
         if browsers.contains(app.bundleID) {
             return running.contains { $0.bundleIdentifier == app.bundleID } ? app : nil
         }
-        return NSRunningApplication(processIdentifier: app.pid) == nil ? nil : app
+        return CaptureEnvironment.current.workspace.isRunning(processID: app.pid) ? app : nil
     }
 
-    private static func hasOutputAudio(for app: DetectedApp) -> Bool {
+    nonisolated private static func hasOutputAudio(for app: DetectedApp) -> Bool {
         currentOutputAudioProcess(for: app) != nil
     }
 
@@ -1176,7 +1183,7 @@ final class MeetingDetector {
     /// This is the *start* question, so it reads only streams that are evidence
     /// of a call. Deciding whether one is still running is
     /// ``hasContinuingAudio(for:now:)``.
-    private static func hasAudio(for app: DetectedApp) -> Bool {
+    nonisolated private static func hasAudio(for app: DetectedApp) -> Bool {
         hasOutputAudio(for: app) || hasInputAudio(for: app)
     }
 
@@ -1199,11 +1206,11 @@ final class MeetingDetector {
             grace: Self.alwaysOpenAudioContinuationGrace)
     }
 
-    private static func hasInputAudio(for app: DetectedApp) -> Bool {
+    nonisolated private static func hasInputAudio(for app: DetectedApp) -> Bool {
         // Browser mic capture lives in helper processes we don't track here, so
         // browsers rely on output audio. For native apps the per-process input
         // flag is the app's own mic use — never our recorder's.
         guard !browsers.contains(app.bundleID) else { return false }
-        return CoreAudioUtils.isProcessRunningInput(pid: app.pid)
+        return CaptureEnvironment.current.audio.isProcessRunningInput(processID: app.pid)
     }
 }

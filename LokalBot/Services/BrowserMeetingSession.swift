@@ -266,7 +266,7 @@ enum BrowserMeetingSession {
     }
 
     static func snapshot(processID: pid_t, expectedURL: URL? = nil) -> Snapshot? {
-        liveSnapshot(processID: processID, expectedURL: expectedURL)
+        CaptureEnvironment.current.accessibility.browserMeetingSnapshot(processID: processID, expectedURL: expectedURL)
     }
 
     static func liveSnapshot(processID: pid_t, expectedURL: URL? = nil) -> Snapshot? {
