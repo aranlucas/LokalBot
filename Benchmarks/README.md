@@ -11,4 +11,4 @@ These are the measurements behind LokalBot's default models. Each report records
 | Screen text | Apple Vision | PP-OCRv5/v6, TrOCR, GOT-OCR 2.0, GLM-OCR, PaddleOCR-VL, DeepSeek-OCR | On synthetic screenshots, Vision scored 0.971 token F1 at 120 ms per image; PP-OCRv6 scored 0.974 at 6.78 s. On real screenshots, Vision averaged 243 ms and the alternatives took 1.3–22 s. | [Synthetic](OCR/SYNTHETIC-RESULTS-2026-06-24.md) · [Real screenshots](OCR/RESULTS-2026-06-24.md) |
 | Transcription | Qwen3-ASR 1.7B | None yet | No word-error-rate run for Qwen3-ASR has been published. The 2026-09-07 report compares Granite Speech 4.1 with Granite Speech 5 only. | [2026-09-07](ModelAlternatives/2026-09-07/REPORT.md) |
 
-The older [Hugging Face Space](https://huggingface.co/spaces/stevyhacker/lokalbot-benchmarks) predates these defaults.
+The [Hugging Face Space](https://huggingface.co/spaces/stevyhacker/lokalbot-benchmarks) presents the same numbers with their sources. It is generated from [`Distribution/huggingface/benchmark-summary.md`](../Distribution/huggingface/benchmark-summary.md).

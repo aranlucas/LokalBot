@@ -119,6 +119,11 @@ code {
   font-size: 0.9em;
 }
 
+p code,
+li code {
+  overflow-wrap: anywhere;
+}
+
 table {
   display: block;
   width: 100%;

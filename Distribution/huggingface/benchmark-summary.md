@@ -1,20 +1,78 @@
 # LokalBot local-stack benchmarks — extracted numbers
 
-Every number below is copied verbatim from a file in this repository; the **Source** column is the path to check. Nothing here is estimated or invented. All measurements to date were taken on a single machine: an **Apple M4 Max MacBook Pro, 48 GB**, running LokalBot's bundled llama.cpp runtime with full Metal offload (per `README.md`, "Example model stack and performance").
+Every number below is copied verbatim from a file in this repository; the **Source** column or line is the path to check. Nothing here is estimated or invented. All measurements to date were taken on a single machine: an **Apple M4 Max, 48 GB** of unified memory. These are engine-level benchmarks, not end-to-end UI timings. The repository index of every report is `Benchmarks/README.md`.
 
-## Recommended-stack leaderboard (generation throughput)
+## Current default stack
 
-| Role | Model | Quant / format | Model files size | Measured | Hardware | Source |
-| --- | --- | --- | ---: | --- | --- | --- |
-| Summaries and chat | Qwen3.5 4B | `Q4_K_M` | 2.74 GB | ~100 tokens/s generation | 48 GB M4 Max, bundled llama.cpp, full Metal offload | `README.md` (model stack table) |
-| Autocomplete (higher-capacity option) | Gemma 4 E4B | `UD-Q5_K_XL` | 6.66 GB | ~78 tokens/s generation | 48 GB M4 Max, bundled llama.cpp, full Metal offload | `README.md` (model stack table) |
-| Transcription (default) | IBM Granite Speech 4.1 2B | `Q4_K_M` + F16 projector | 2.30 GB | ASR — no generation-speed figure published | 48 GB M4 Max | `README.md` (model stack table) |
-| Semantic search | Qwen3-Embedding 0.6B | `Q8_0` | 0.64 GB | Embeddings; not generative | 48 GB M4 Max | `README.md` (model stack table) |
-| Speaker diarization | pyannote-community-1 via FluidAudio | Core ML | ~0.10 GB | Diarization; not generative | 48 GB M4 Max | `README.md` (model stack table) |
+The defaults on a fresh install total about **6.8 GB** of model files if every role is used (`README.md`, "Local AI, your choice").
 
-The full measured example stack occupies about **12.4 GB** after download (`README.md`). The current *Recommended* preset uses the smaller LFM2.5 1.2B for Autocomplete instead of Gemma (see next table).
+| Role | Default model | Format | Model files | Headline result | Source |
+| --- | --- | --- | ---: | --- | --- |
+| Transcription | Qwen3-ASR 1.7B | MLX 8-bit | 2.47 GB | Not yet measured (see gaps) | `README.md` |
+| Speaker diarization | Nemotron 3 (preview) via FluidAudio | Core ML | ~0.20 GB | 14.56% DER vs 43.44% for the previous default; 500× real time | `Benchmarks/NemotronDiarization/results/2026-09-23/REPORT.md` |
+| Summaries and chat | Qwen3.5 4B | `Q4_K_M` | 2.74 GB | 26-minute meeting summarized in 33.4 s warm / 59.8 s cold | `Benchmarks/SummaryEfficiency/results-2026-09-09.json` |
+| Semantic search | Harrier OSS v1 0.6B | `Q8_0` | 0.64 GB | Correct passage first for 40/48 queries vs 35/48 for Qwen3 Embedding 0.6B | `Benchmarks/ModelAlternatives/2026-09-07/REPORT.md` |
+| Autocomplete | LFM2.5 1.2B Instruct | `Q4_K_M` | 0.73 GB | 28/28 safety, 12/13 completions, 484–494 ms p95 | `Benchmarks/Cotyping/results/2026-07-21-model-debounce-benchmark.md` |
+| Screen text (opt-in) | Apple Vision | Built into macOS | — | 0.971 token F1 at 119.6 ms per synthetic screenshot | `Benchmarks/OCR/SYNTHETIC-RESULTS-2026-06-24.md` |
 
-Transcription speed headline: **Parakeet runs up to ~190× realtime in local benchmarks** (`README.md`, features section; repeated in `Docs/show-hn-kit.md`, `Docs/reddit-launch-posts.md`). No realtime factor has been published for Granite Speech 4.1, Whisper large-v3 turbo, or Qwen3-ASR.
+Alternatives remain selectable in the app: Parakeet, Granite Speech, Whisper large-v3 turbo, SenseVoice, and GigaAM for transcription, and Pyannote Community-1 for diarization (`README.md`).
+
+## Speaker diarization — Nemotron 3 vs Pyannote Community-1
+
+Four independent English AMI test meetings, each evaluated as headset mix and distant-microphone audio: **8 conditions, 184.55 minutes of audio**, four speakers in every reference. DER adds missed speech, false alarms, and speaker confusion, divided by reference speaker time; overlap is scored and no speaker-count hints were used. Speed is the warm median over three runs on the 17.49-minute ES2004a headset recording. Source: `Benchmarks/NemotronDiarization/results/2026-09-23/REPORT.md` (scores in `Benchmarks/NemotronDiarization/results/2026-09-23/scores.json`).
+
+| System | DER, zero collar | DER, 250 ms collar | Correct speaker count | Audio / processing time | Peak process RSS |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Pyannote Community-1 via FluidAudio (previous LokalBot default) | 43.44% | 30.45% | 5/8 | 243× | 0.68 GiB |
+| FluidAudio community defaults + overlap | 43.61% | 30.44% | 5/8 | — | 0.66 GiB |
+| **Nemotron 3 offline, full-precision Core ML (current default)** | **14.56%** | **8.34%** | **8/8** | **500×** | 0.67 GiB |
+| Nemotron 3 fast128 | 14.51% | 8.19% | 8/8 | 365× | 0.64 GiB |
+| Nemotron 3 c128 W8A8 (CPU/ANE) | 15.73% | 9.34% | 7/8 | 480× | 0.63 GiB |
+
+The offline model reduced speaker confusion from **8.87% to 1.77%**, missed speech from **15.34% to 8.40%**, and false alarms from **19.23% to 4.38%** (percentage points of reference speaker time), and beat the baseline on all eight conditions. The report's caveat applies: this is a comparison against the pinned FluidAudio implementation and its configurations, not a claim about every implementation of Pyannote Community-1. It does not cover more than four speakers, other languages, or end-to-end name attribution.
+
+## Summaries and action items — Qwen3.5 4B
+
+Replay of LokalBot's production summary and action extractor with `Qwen3.5-4B-Q4_K_M.gguf` on llama.cpp **b10173**. Cold includes runtime startup; warm reuses the loaded runtime. ASR time is excluded. Source: `Benchmarks/SummaryEfficiency/results-2026-09-09.json`.
+
+| Meeting | Transcript | Cold | Warm | Outcome |
+| --- | ---: | ---: | ---: | --- |
+| 26-minute meeting | 4,477 words | 59.8 s | 33.4 s | Complete |
+| 91-minute meeting | 11,229 words | 71.5 s | 74.2 s | Complete |
+
+Decode speed across these runs was about 85 tokens/s (`Benchmarks/README.md`). These are timings, not a summary-quality score.
+
+In the 2026-09-07 pilot, MiniCPM5-2B `Q4_K_M` was smaller (1.561 GB vs 2.741 GB) and faster on long context (18.68 s vs 32.41 s), but it looped on one summary and misattributed action items, so Qwen3.5 4B remains the default (`Benchmarks/ModelAlternatives/2026-09-07/REPORT.md`).
+
+## Semantic search — Harrier vs Qwen3 Embedding
+
+48 authored queries (24 English, 24 Serbian/Montenegrin in Latin and Cyrillic) against a 110-document corpus; relevant passage IDs fixed before inference. Both models used Q8 weights, 1,024 dimensions, and the app's query/document prefixes. Source: `Benchmarks/ModelAlternatives/2026-09-07/REPORT.md`.
+
+| Measure | Qwen3 Embedding 0.6B Q8 (previous default) | Harrier 0.6B Q8 (current default) |
+| --- | ---: | ---: |
+| Correct passage ranked first | 35/48 (72.9%) | **40/48 (83.3%)** |
+| Correct passage in top five | 45/48 (93.8%) | **47/48 (97.9%)** |
+| English top one | 22/24 | 22/24 |
+| Serbian/Montenegrin top one | 13/24 | **18/24** |
+| Mean reciprocal rank | 0.814 | **0.903** |
+| Repeated query latency, median | 11.85 ms | 11.97 ms |
+
+The gain came from the Serbian/Montenegrin queries; English tied. 48 correlated, authored queries make this a pilot, not a general retrieval benchmark.
+
+## Speech recognition — Granite Speech 4.1 vs Granite Speech 5
+
+44 public clips / 271.3 seconds (24 conversational AMI clips, 20 clean LibriSpeech clips), scored with the standard Whisper English normalizer. Source: `Benchmarks/ModelAlternatives/2026-09-07/REPORT.md`. **Qwen3-ASR 1.7B, the current default, was not part of this run.**
+
+| Measure | Granite 4.1 Q4 | Granite 4.1 Q8 | Granite 5 TurboCTC BF16 |
+| --- | ---: | ---: | ---: |
+| Normalized word-error rate | 4.42% (35/791) | 4.93% (39/791) | 5.18% (41/791) |
+| AMI normalized WER | 8.83% | 9.09% | 10.13% |
+| LibriSpeech normalized WER | 0.25% | 0.99% | 0.49% |
+| Audio seconds processed per second | 33.2× | 29.3× | **280.2×** |
+| Median clip latency | 161 ms | 187 ms | **17.5 ms** |
+| Sampled peak process RSS | 2.87 GiB | 3.62 GiB | 1.05 GiB |
+
+Granite 5 is English-only, emits unpunctuated lowercase text, and is not integrated into LokalBot. This small set does not establish a reliable accuracy ordering.
 
 ## Cotyping (inline autocomplete) latency matrix
 
@@ -70,11 +128,10 @@ Notes from the same file: PP-OCRv6 was the only open-source option slightly abov
 
 | Gap | One-line plan |
 | --- | --- |
-| Single-chip coverage: every number above is one M4 Max (48 GB) | Re-run `--cotyping-bench` and the OCR harness on M1, M2, and M3 machines before claiming per-chip guidance. |
-| No ASR accuracy (WER/CER) for any transcription engine | Run Granite Speech 4.1, Parakeet v3, Whisper large-v3 turbo, and Qwen3-ASR against a standard eval set (e.g. Common Voice / ESB subsets) and publish WER alongside the realtime factors. |
-| No realtime factor for Granite Speech 4.1, Whisper, or Qwen3-ASR | Time each engine over a fixed reference audio file and record ×realtime like the existing Parakeet figure. |
-| No diarization error rate (DER) for pyannote-community-1 via FluidAudio | Score against a labeled multi-speaker fixture using pyannote.metrics or dscore. |
-| No embedding-retrieval quality metric for Qwen3-Embedding 0.6B | Build a small recall@k fixture from real meeting queries and measure hit rate against hand-labeled relevant meetings. |
+| Single-chip coverage: every number above is one M4 Max (48 GB); no 16 GB, M1, M2, or M3 results | Re-run the summary replay, `--cotyping-bench`, and the OCR harness on M1, M2, and M3 machines before claiming per-chip guidance. |
+| No word-error rate or realtime factor for Qwen3-ASR 1.7B, the default transcription model | Run it through the 44-clip set from `Benchmarks/ModelAlternatives/2026-09-07/REPORT.md` alongside Parakeet and Whisper large-v3 turbo. |
+| Diarization tested only on four-speaker English AMI meetings | Add five-to-eight-speaker and non-English recordings, plus LokalBot's own mic/system-track captures. |
+| Search pilot is 48 authored queries | Validate Harrier with annotated queries over a larger real library. |
 | No summarization-quality evaluation for Qwen3.5 4B | Human-rate recaps on a fixed meeting corpus (faithfulness, action-item completeness); publish rubric + raw ratings. |
 | OCR sets are small (15 real + 5 synthetic screenshots) | Grow the synthetic manifest to ≥50 fixtures across app categories and re-run `score_text_outputs.py`. |
 | Cotyping keyword-hit count is self-declared a weak signal | Replace with a curated expected-completion suite reviewed by humans before quoting relevance numbers. |
