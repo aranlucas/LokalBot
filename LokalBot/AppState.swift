@@ -1885,6 +1885,18 @@ final class AppState: ObservableObject {
         }
     }
 
+    func libraryHealthReport(for day: Date, now: Date = Date()) -> LibraryHealthReport {
+        let loader = LibraryHealthLoader(
+            activityStore: activityStore,
+            storageRoot: storage.rootURL,
+            meetings: meetings,
+            queuedMeetingIDs: pipeline.queuedMeetingIDs(),
+            settings: settings,
+            hasDreamReport: { [dreamStore] in dreamStore.hasReport(forDayKey: $0) })
+        return LibraryHealthEvaluator.evaluate(
+            loader.input(for: day, now: now), dayKey: DreamDay.key(for: day))
+    }
+
     func diagnosticsSources() -> DiagnosticsExporter.Sources {
         let log = AppLog.debugLogURL()
         let root = storage.rootURL

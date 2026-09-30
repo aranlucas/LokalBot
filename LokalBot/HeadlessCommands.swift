@@ -20,6 +20,7 @@ enum HeadlessCommand: Equatable {
     case agent(prompt: String)
     case cotypingBench
     case exportDiagnostics(destination: URL)
+    case health(dayKey: String?, json: Bool)
 
     /// Set by `LokalBotMain.main()`; consumed by `AppState.init`.
     @MainActor static var requested: HeadlessCommand?
@@ -48,6 +49,11 @@ enum HeadlessCommand: Equatable {
             return .dream(dayKey: next.flatMap { $0.hasPrefix("--") ? nil : $0 })
         }
         if args.contains("--cotyping-bench") { return .cotypingBench }
+        if args.contains("--health") {
+            let dayFlag = args.firstIndex(of: "--day")
+            let dayKey = dayFlag.flatMap { args.count > $0 + 1 ? args[$0 + 1] : nil }
+            return .health(dayKey: dayKey, json: args.contains("--json"))
+        }
         if let flag = args.firstIndex(of: "--export-diagnostics"), args.count > flag + 1 {
             return .exportDiagnostics(destination: URL(fileURLWithPath: args[flag + 1]))
         }
@@ -137,6 +143,7 @@ struct HeadlessCommandRunner {
         case .agent(let prompt): runAgent(prompt: prompt)
         case .cotypingBench: runCotypingBench()
         case .exportDiagnostics(let destination): runExportDiagnostics(to: destination)
+        case .health(let dayKey, let json): runHealth(dayKey: dayKey, json: json)
         }
     }
 
@@ -171,6 +178,38 @@ struct HeadlessCommandRunner {
                 }
             }
         }
+    }
+
+    /// `LokalBot --health [--day yyyy-MM-dd] [--json]`: evaluate one day
+    /// (default: yesterday), write the report, print it. Exit 0 pass/warn,
+    /// 1 fail, 2 invalid day.
+    private func runHealth(dayKey: String?, json: Bool) {
+        let day: Date
+        if let dayKey {
+            guard let parsed = DreamDay.date(fromKey: dayKey), DreamDay.key(for: parsed) == dayKey else {
+                print("LokalBot --health: invalid day \(dayKey) (expected yyyy-MM-dd)")
+                exit(2)
+            }
+            day = parsed
+        } else {
+            day = Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: Date()))
+                ?? Date()
+        }
+        let report = app.libraryHealthReport(for: day)
+        do {
+            try LibraryHealthReportStore.write(report, root: app.storage.rootURL)
+        } catch {
+            print("LokalBot --health: could not write report — \(error.localizedDescription)")
+        }
+        if json {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            encoder.dateEncodingStrategy = .iso8601
+            print(String(data: (try? encoder.encode(report)) ?? Data(), encoding: .utf8) ?? "{}")
+        } else {
+            print(LibraryHealthReportStore.markdown(report))
+        }
+        exit(report.status == .fail ? 1 : 0)
     }
 
     /// `LokalBot --export-diagnostics <zip>`: the Settings export, headless.

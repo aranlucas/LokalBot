@@ -485,13 +485,20 @@ final class ProcessingPipeline: ObservableObject {
     /// `MissingTranscription`). A merged gap is marked before queueing so it
     /// is repaired at most once. Returns the queued meeting IDs.
     @discardableResult
-    func enqueueMissingTranscriptions(in meetings: [Meeting], summarize: Bool) -> [Meeting.ID] {
+    /// Meetings already queued, parked, or running, so repairs and health
+    /// checks never double-count them.
+    func queuedMeetingIDs() -> Set<Meeting.ID> {
         var known = Set(queue.map(\.meeting.id)).union(waitingForModelsJobs.map(\.meeting.id))
         if let activeMeetingID { known.insert(activeMeetingID) }
         if let jobStore {
             known.formUnion(jobStore.pendingJobs().map(\.meetingID))
             known.formUnion(jobStore.parkedJobs().map(\.meetingID))
         }
+        return known
+    }
+
+    func enqueueMissingTranscriptions(in meetings: [Meeting], summarize: Bool) -> [Meeting.ID] {
+        let known = queuedMeetingIDs()
         var queued: [Meeting.ID] = []
         for meeting in meetings where !known.contains(meeting.id) && stages[meeting.id] == nil {
             let folder = meeting.folderURL(in: storage)
