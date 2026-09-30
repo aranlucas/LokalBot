@@ -1,0 +1,142 @@
+# Qwen3-ASR span length and the app's transcription gap — 30 September 2026
+
+`QwenASREngine.maxSegmentSeconds = 15.0` does not hurt accuracy, because it never takes effect: FluidAudio's voice-activity detection already ends every speech region at about 13.5 s, and production decode windows are much shorter still (median 1.3 s, longest 11 s). The app's saved transcripts disagree with the multi-vendor consensus more than the benchmark's mlx-audio run (7.9% versus 4.2%). About 2.8 points of that gap come from how the app cuts each track into speaker regions before transcription, and about 1 point from the engine's short (≤14 s) windows. The runtime and the weights repository contribute nothing measurable. Longer windows help only when speech-swift's automatic repetition blocking is switched off. The token-cap formula never truncated anything. A follow-up with the app's own diarizer confirmed the speaker-region cost: 3.0 points on meetings and 8.1 on AMI. Most of it traces to pauses inside one person's speech, each of which starts a new region. Transcribing the whole track first and then assigning forced-aligned words to speakers removes that cost without hurting attribution. AMI WER fell from 26.49% to 18.38% and AMI cpWER from 36.52% to 34.54%, and more diarizer turns stay usable for speaker memory. LokalBot now uses this path for Qwen3-ASR 1.7B.
+
+**Setup.** Every condition used the app's runtime and weights: speech-swift 0.0.26, FluidAudio 0.17.1, mlx-swift 0.31.4 and `aufklarer/Qwen3-ASR-1.7B-MLX-8bit`, run headless by `../../harness` on an Apple M4 Max. The audio was the CloudSTT benchmark's own chunks from 30 September:
+
+- **AMI:** 16 Mix-Headset windows (27.4 minutes, 4,201 normalized reference words), scored against the human reference.
+- **Meetings:** the owner's three meetings, 99 chunks and 69.9 minutes, scored against the same leave-family-out consensus (OpenAI, Google and NVIDIA voters) that the CloudSTT report used for the local Qwen run and the app transcript. This measures agreement, not accuracy.
+
+The scorer reproduces the CloudSTT report exactly: 17.64% AMI WER for mlx-audio, 4.20% meeting disagreement for mlx-audio and 7.91% for the saved app transcript. Intervals are 95% paired chunk-bootstrap intervals of the difference from today's engine path (`engine-15`).
+
+## The 15 s constant is inert
+
+`QwenASREngine` asks `SpeechActivity` for spans and splits any span longer than 15 s. `SpeechActivity` gets its regions from `VadManager.segmentSpeech` with FluidAudio's default `VadSegmentationConfig`, whose `maxSpeechDuration` is 14 s. After subtracting one 256 ms VAD frame and padding, regions end at about 13.5 s, so the 15 s split never runs. When a region reaches that limit without a pause, FluidAudio cuts at the current frame, which can fall mid-word.
+
+Production windows are shorter again. All three meetings used the speaker-region path. Their 1,827 saved segments have per-meeting medians of 0.9–1.4 s and a maximum of 11 s, and 41–58% last under a second. The app's log records `language=en` for all five tracks, and echo cancellation was disabled, so the app transcribed the same raw microphone audio the benchmark used.
+
+## Where the gap comes from
+
+| Decode windows (same runtime and weights unless noted) | Meetings disagreement | Meetings substitutions | AMI WER |
+|---|---:|---:|---:|
+| Saved app transcript (full pipeline) | 7.91% | 3.56% | — |
+| Production's own windows, re-decoded (median 1.3 s) | 8.09% | 3.74% | — |
+| AMI reference speaker turns → app region path | — | — | 23.92% |
+| Engine path on the whole chunk, no speaker regions (≤14 s windows) | 5.30% | 2.40% | 18.38% |
+| VAD regions merged across ≤5 s pauses into ≤60 s, repetition blocking off | 4.33% | 1.90% | 17.64% |
+| Whole chunk, `English`, repetition blocking off, 8,192 tokens | 4.27% | 1.77% | 17.47% |
+| mlx-audio with `mlx-community/Qwen3-ASR-1.7B-8bit` (CloudSTT run) | 4.20% | 1.82% | 17.64% |
+
+- **Runtime and weights: about zero.** On identical chunks, speech-swift with the aufklarer weights scored 4.27% on meetings and 17.47% on AMI, against mlx-audio's 4.20% and 17.64%. Both repositories quantize the same 197 decoder matrices to 8-bit affine with group size 64 and keep the audio encoder in floating point.
+- **Post-processing, vocabulary prompt and midpoint mapping: about 0.2 points.** Re-decoding production's own windows gave 8.09%, against 7.91% for the saved transcript.
+- **Speaker regions: about 2.8 points** (8.09% versus 5.30%, interval +2.06 to +3.66). Substitutions rose from 2.40% to 3.74% and insertions from 1.56% to 2.89%. On AMI, building regions from the reference speaker turns raised WER by 5.55 points (+4.27 to +6.68), mostly through deletions (17.7% versus 13.8%). `AttributedTrackTranscriber` cuts each track at every speaker turn, unlabeled gap and overlap, plus a fixed cut every 30 s. It then writes each region to its own file, and the engine runs VAD on it again from a cold state. [Speaker regions with the app's diarizer](#speaker-regions-with-the-apps-diarizer) repeats this with real diarizer turns and tests fixes.
+- **Short engine windows: about 1 point** (5.30% versus 4.23–4.33% for long windows with repetition blocking off).
+
+## Longer windows need repetition blocking off
+
+speech-swift 0.0.26 automatically sets `noRepeatNgramSize = 3` for any input longer than 15 s (`Qwen3DecodingOptions.longInputThresholdSeconds`). The block is token-level and covers the whole generated sequence, so ordinary repeated phrases in a long window are forced into substitutions. The app's legacy `transcribe(audio:sampleRate:language:maxTokens:context:)` call gets this behaviour by default.
+
+| Windows | Meetings | Δ (95% CI) | AMI | Δ (95% CI) |
+|---|---:|---:|---:|---:|
+| Today: VAD ≤14 s, split 15 s (`engine-15`) | 5.30% | — | 18.38% | — |
+| VAD cap and split raised to 30 s | 5.29% | −0.01 (−0.35…+0.32) | 19.09% | +0.71 (−0.27…+1.92) |
+| … to 60 s | 5.27% | −0.03 (−0.44…+0.37) | 19.07% | +0.69 (−0.41…+1.90) |
+| … to 120 s | 5.32% | +0.02 (−0.37…+0.41) | 19.02% | +0.64 (−0.44…+1.85) |
+| Merged across ≤5 s pauses, ≤15 s | 4.94% | −0.36 (−0.60…−0.11) | 18.07% | −0.31 (−0.79…+0.14) |
+| Merged, ≤30 s, runtime default | 5.00% | −0.30 (−0.77…+0.12) | 19.83% | +1.45 (+0.32…+2.64) |
+| Merged, ≤60 s, runtime default | 5.05% | −0.25 (−0.67…+0.15) | 18.90% | +0.52 (−0.55…+1.82) |
+| Merged, ≤120 s, runtime default | 5.34% | +0.04 (−0.40…+0.53) | 18.88% | +0.50 (−0.57…+1.59) |
+| Merged, ≤30 s, blocking off | 4.59% | −0.71 (−1.10…−0.35) | 17.83% | −0.55 (−1.38…+0.12) |
+| Merged, ≤60 s, blocking off | **4.33%** | −0.97 (−1.35…−0.59) | **17.64%** | −0.74 (−1.47…−0.05) |
+| Merged, ≤120 s, blocking off | 4.36% | −0.94 (−1.37…−0.53) | 17.78% | −0.60 (−1.47…+0.44) |
+| Whole chunk, runtime default | 5.32% | +0.02 (−0.51…+0.56) | 18.47% | +0.10 (−0.96…+1.15) |
+| Whole chunk, blocking off | 4.23% | −1.07 (−1.49…−0.68) | 17.73% | −0.64 (−1.33…+0.03) |
+
+Raising the VAD cap and the split together, which is the literal "raise `maxSegmentSeconds`" change, did nothing on meetings. It trended worse on AMI because VAD still ends regions at 0.75 s pauses (median windows 6–8 s), and the few windows over 15 s get repetition blocking. Merging regions across pauses gives the model real context, but only helps once blocking is off. With blocking off, 60 s and 120 s windows performed about the same as a whole chunk. Merging to ≤15 s stays under the blocking threshold and gave a small gain without any decoder change. It was clear of zero on meetings but not on AMI.
+
+Longer windows did not slow decoding: merged ≤60 s windows ran at 47–51× real time, today's path at 44–48×, and production's short windows at 31×.
+
+## Token cap
+
+No window reached `min(768, max(128, seconds × 18))` in any of the 20 conditions. The highest use was 56% of the cap, on ≤120 s windows. Rerunning merged ≤120 s windows with a 4,096-token cap produced identical WER on both sets. mlx-audio's uncapped CloudSTT outputs peak at 4.1 tokens per second of chunk. At that rate the 768 ceiling binds only beyond about 188 s, and the 18 tokens/s slope leaves about 4× headroom. The formula needs no change for windows up to 120 s.
+
+## Language hint
+
+The app passes the language code verbatim, so Qwen is prompted with `language en` rather than the model's `language English`. On today's path, `English` made no measurable difference: 5.38% versus 5.30% on meetings (−0.07 to +0.25) and 18.35% versus 18.38% on AMI. Auto-detect was worse on meetings: 5.93%, with 73 words in inserted runs against 22, and one window ran to the token cap. On AMI it was slightly better (18.11%), within the interval. Merged ≤120 s windows with `English` scored 4.48% on meetings against 4.36% with `en`. That run was stopped before its AMI half finished.
+
+## Speaker regions with the app's diarizer
+
+This follow-up reran the owner's current settings without the app: Nemotron 3 diarization, multi-speaker diarization on and echo cancellation off. The harness's `diarize` mode applied `NeuralDiarizationEngine`'s Nemotron 3 path (offline preset, activity threshold 0.5, minimum 0.2 s) to the full recordings, which were the four AMI Mix-Headset files and the meeting tracks. The `AttributedTrackTranscriber` regions and each variant were built on every recording's full timeline, clipped to the benchmark chunks, and then transcribed by the engine path with `language en`.
+
+AMI also gets cpWER (concatenated minimum-permutation WER). Each speaker's words are joined in time order, and each hypothesis stream is matched one-to-one to a reference speaker so that total errors are minimal. Words that land in an unlabeled or overlap region form their own stream, so cpWER counts attribution errors as well as recognition errors. Speakers are matched separately in each AMI window.
+
+| Layout | Meetings | Δ vs production (95% CI) | AMI WER | Δ vs production (95% CI) | AMI cpWER | Δ cpWER (95% CI) | Windows (meetings) |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Production regions (`diar-prod`) | 8.30% | — | 26.49% | — | 36.52% | — | 1,684, median 1.3 s |
+| Production regions, VAD once per recording (`diar-trackvad`) | 25.43% | +17.13 (+16.17…+18.25) | 35.99% | +9.50 (+7.31…+12.64) | 48.58% | +12.07 (+10.23…+14.66) | 3,552, median 0.5 s |
+| No speaker regions (`engine-15`) | 5.30% | −3.01 (−3.85…−2.29) | 18.38% | −8.12 (−10.25…−6.40) | — | — | 553, median 7.1 s |
+| AMI reference-turn regions | — | — | 23.92% | −2.57 (−4.28…−1.18) | 39.44% | +2.93 (+0.36…+5.29) | — |
+
+- **The replica matches production.** Regions rebuilt from fresh Nemotron turns scored 8.30% on meetings. Production's own saved windows scored 8.09% and the saved transcript 7.91%, and the window counts and lengths match (1,684 versus 1,653, median 1.3 s, longest 11 s).
+- **With the real diarizer, regions cost 3.0 points on meetings and 8.1 on AMI.** That is more than the 5.5-point AMI estimate from reference turns. In the AMI windows, substitutions rose from 4.02% to 7.09% and deletions from 13.76% to 17.50%.
+- **Unlabeled gaps split one person's speech.** Nemotron reports a pause inside one speaker's speech as a gap between two turns. `regions()` makes that gap its own unlabeled region, so the same speaker's speech on either side lands in separate regions. The meeting chunks have 3,263 regions, and 1,644 of them are unlabeled gaps covering 26% of the time. The AMI windows have 1,493 regions, 553 of them gaps covering 37% of the time. Folding gaps of 2 s or less into their neighbours reduces the chunks' 4,756 regions to 1,317.
+- **Running VAD once per recording is much worse.** In theory it avoids restarting VAD at every region edge. In practice, clipping whole-recording VAD windows to every region cut the speech into slivers with a median of 0.5 s. On meetings it put 2,063 windows and 2,069 words into unlabeled gaps. Production's per-region VAD found speech in only 201 of those gaps (210 words). Most of the extra words were invented, and insertions rose to 20% on meetings. The per-region VAD protects production from this.
+- **The fixed 30 s region cut is irrelevant here.** Removing it changes only 2 of the 4,756 regions in the chunks.
+- **Reference-turn regions look worse on cpWER despite lower WER.** AMI's reference utterances overlap for long stretches, so more speech lands in "unclear" regions, which cpWER counts as unattributed.
+
+Four region variants were built but not scored, because the run was stopped after the first two:
+- no 30 s cut (64 of 122 chunks finished);
+- short unlabeled gaps folded into neighbouring regions;
+- that fold together with no 30 s cut and one VAD pass per recording;
+- the same combination with ≤60 s windows and repetition blocking off.
+
+## Transcribe first, attribute after
+
+This approach keeps the engine path's text, which is transcribed with no speaker regions (`engine-15`), and assigns speakers afterwards. speech-swift's Qwen3 forced aligner (`aufklarer/Qwen3-ForcedAligner-0.6B-4bit`, pinned at `f0e9f12a`) times the words of each engine window. Each word then takes the Nemotron speaker active at its midpoint. Overlapping turns make the word unclear, and a word outside every turn takes the nearest turn within a tolerance, or the track label beyond it.
+
+| Attribution | AMI cpWER | Δ vs production regions (95% CI) |
+|---|---:|---:|
+| Production regions (`diar-prod`) | 36.52% | — |
+| Engine windows, each given to its majority speaker (no aligner) | 40.73% | +4.21 (+0.66…+7.51) |
+| Aligned words, strict midpoint (no tolerance) | 51.11% | +14.59 (+11.83…+18.47) |
+| Aligned words, 0.5 s tolerance | 34.90% | −1.62 (−3.45…−0.06) |
+| **Aligned words, 1 s tolerance** | **34.54%** | −1.98 (−3.96…−0.36) |
+| Aligned words, 2 s tolerance | 34.56% | −1.95 (−3.90…−0.33) |
+
+- **Text is unchanged by alignment.** The aligned words score exactly the engine path's 18.38% AMI WER, against 26.49% for production regions. On meetings the text is the engine path's 5.30%, against 8.30% for production regions.
+- **Attribution improves slightly, with a tolerance.** Nemotron leaves short gaps between turns and the aligner's word edges don't line up with them, so a strict midpoint rule leaves many words unattributed. Any tolerance from 0.5 s up recovers them. The app uses 1 s.
+- **The aligner is needed.** Giving each whole engine window to its majority speaker loses 4.2 points of cpWER, because speaker changes fall inside windows.
+- **Speaker memory keeps more turns if pieces snap to turns.** `AttributedTrackTranscriber.turns()` and `samples()` accept a diarizer turn only when a single diarized label covers at least 95% of it. Word pieces are narrower than regions, so on their own they support fewer turns. Widening each speaker's piece to the edges of that speaker's turns, never across a neighbouring piece, fixes that:
+
+| Turns accepted for speaker memory | AMI | Meetings |
+|---|---:|---:|
+| Production regions | 286 of 417 | 1,319 of 1,501 |
+| Aligned words | 244 of 417 | 1,067 of 1,501 |
+| Aligned words, snapped to turns (as shipped) | 375 of 417 | 1,443 of 1,501 |
+
+- **The aligner is cheap.** It timed all 101 minutes of chunks in 34 s, 179× real time. The model is a 983 MB download, and the app keeps it loaded only while aligning, like the ASR models.
+
+## Recommendations
+
+1. **Leave `maxSegmentSeconds` as it is.** It is inert. Raising it together with the VAD cap gave no gain and moves windows into speech-swift's repetition-blocking range.
+2. **Transcribe first, then attribute (implemented for Qwen3-ASR 1.7B).** Speaker regions were the largest measured cost: 3.0 points on meetings and 8.1 on AMI with the app's diarizer. Assigning aligned words afterwards removes that cost and improves cpWER (see the section above). Running VAD once per recording is not a fix, and removing the 30 s cut does nothing. Two routes were considered:
+   - **Fold short unlabeled gaps (not taken).** In `AttributedTrackTranscriber.regions`, each unlabeled gap of about 2 s or less would go to its neighbours. That keeps audio partitioned by speaker before ASR and cuts the chunks' regions from 4,756 to 1,317, but it was never scored. It remains the fallback idea for engines that keep the region path.
+   - **Transcribe first, then attribute (taken).** Transcribe each track with the engine path alone, as `engine-15` does, then assign aligned words to speakers as described above. Text accuracy matches the engine path by construction, and longer windows (recommendation 3) become an independent gain.
+
+     It needs an extra aligner model of about 1 GB, and for Qwen3-ASR 1.7B it replaces the rule of partitioning audio by speaker before ASR. The alignment is acoustic rather than proportional, so the rule that text is never divided proportionally still holds. Other engines, Qwen3-ASR 0.6B, and languages the aligner does not support (anything outside zh, en, yue, fr, de, it, ja, ko, pt, ru and es) keep the region path. The app also falls back to regions if the aligner cannot be downloaded.
+3. **If the engine path is changed:** merge VAD regions across ≤5 s pauses into ≤60 s windows, and call `transcribe(audio:sampleRate:options:)` with `Qwen3DecodingOptions(longInputThresholdSeconds: .infinity)`. That gained 1.0 point on meetings and 0.7 on AMI when the engine sees whole-track audio. Before shipping it:
+   - key `SpeechActivity`'s one-entry segment cache by VAD configuration as well as file;
+   - rerun on Qwen3-ASR 0.6B 4-bit, the model speech-swift's blocking was written for;
+   - accept that segments get up to 60 s long, which coarsens timestamps.
+
+   With attribution after transcription, this now applies to diarized Qwen3-ASR 1.7B tracks as well. Merging to ≤15 s is the step that needs no decoder change.
+4. **Keep the token formula.**
+5. **Keep passing an explicit language.** Switching `en` to `English` showed no gain, and auto-detect was worse on meetings.
+
+## Limits
+
+Meeting scores measure agreement with other vendors, not accuracy: a system that alone gets a hard word right is penalized. AMI covers only 27 minutes, so its intervals are about ±1 point. The AMI speaker-region condition uses reference turns, which are not what the app's diarizer produces. Each condition was run once with greedy decoding. Only Qwen3-ASR 1.7B was tested, on three English meetings from one owner. Diarization ran on the Mix-Headset mix, which is harder than the app's separate microphone and system tracks. cpWER is scored only on AMI, because the meetings have no speaker reference. Four speaker-region variants were built but not scored. Word attribution used Qwen3-ASR 1.7B text in English only; the aligner's other ten languages and the 0.6B model were not measured.
+
+## Reproduction and privacy
+
+`../../README.md` describes the harness and commands. `summary.json` (span sweep), `regions-summary.json` (speaker regions) and `align-summary.json` (word attribution) hold aggregates only. Transcripts stay in the private `SPAN_BENCH_OUT` folder. This run sent no audio or text over the network. The meeting consensus reuses the CloudSTT outputs saved on 30 September. Meeting transcripts were read through `lokalbot-cli path`, which is read-only. The source baseline is `13e01c0`.

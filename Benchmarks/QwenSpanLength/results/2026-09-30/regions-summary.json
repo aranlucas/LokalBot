@@ -1,0 +1,78 @@
+{
+ "ami": {
+  "engine-15": {
+   "wer": 0.18377,
+   "sub_rate": 0.04023,
+   "del_rate": 0.13759,
+   "ins_rate": 0.00595,
+   "cpwer": null,
+   "windows": "188 / med 6.3s / max 14s"
+  },
+  "oracle-regions": {
+   "wer": 0.23923,
+   "sub_rate": 0.05142,
+   "del_rate": 0.17686,
+   "ins_rate": 0.01095,
+   "cpwer": 0.39443,
+   "windows": "460 / med 1.6s / max 14s"
+  },
+  "diar-prod": {
+   "wer": 0.26494,
+   "sub_rate": 0.07094,
+   "del_rate": 0.17496,
+   "ins_rate": 0.01904,
+   "cpwer": 0.36515,
+   "windows": "781 / med 0.8s / max 7s"
+  },
+  "diar-trackvad": {
+   "wer": 0.35991,
+   "sub_rate": 0.12806,
+   "del_rate": 0.08712,
+   "ins_rate": 0.14473,
+   "cpwer": 0.48584,
+   "windows": "1628 / med 0.4s / max 7s"
+  }
+ },
+ "meetings": {
+  "saved app transcript": {
+   "wer": 0.07914,
+   "sub_rate": 0.03564,
+   "del_rate": 0.01513,
+   "ins_rate": 0.02837,
+   "ins_run_words": 52,
+   "windows": "\u2014"
+  },
+  "app-spans": {
+   "wer": 0.08093,
+   "sub_rate": 0.03743,
+   "del_rate": 0.01463,
+   "ins_rate": 0.02887,
+   "ins_run_words": 56,
+   "windows": "1653 / med 1.3s / max 11s"
+  },
+  "engine-15": {
+   "wer": 0.05296,
+   "sub_rate": 0.02399,
+   "del_rate": 0.01334,
+   "ins_rate": 0.01563,
+   "ins_run_words": 22,
+   "windows": "553 / med 7.1s / max 14s"
+  },
+  "diar-prod": {
+   "wer": 0.08302,
+   "sub_rate": 0.03763,
+   "del_rate": 0.01433,
+   "ins_rate": 0.03106,
+   "ins_run_words": 56,
+   "windows": "1684 / med 1.3s / max 11s"
+  },
+  "diar-trackvad": {
+   "wer": 0.25433,
+   "sub_rate": 0.04559,
+   "del_rate": 0.00796,
+   "ins_rate": 0.20078,
+   "ins_run_words": 209,
+   "windows": "3552 / med 0.5s / max 11s"
+  }
+ }
+}
