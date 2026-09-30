@@ -192,6 +192,43 @@ All six tracks decoded merged windows and assigned aligned words; the aligner ne
 - **Segments are fewer and longer.** The longest was 23.5 s, where snapping widened a 15 s piece to its speaker's turn.
 - **Timings come from a Debug build**: 90 s for the 16-minute meeting and 329 s for the 57-minute one, including diarization and alignment. They are not production timings.
 
+## Language auto-detection
+
+New installs default to automatic language detection; the owner's settings use `en`. With auto, Qwen detects the language again in every decode window. Two data sets were used:
+- **English:** the benchmark's meetings and AMI chunks. The app decides per track, so track-level strategies are emulated from the auto and pinned-English runs. A window re-decoded pinned to English is exactly the pinned run's window, because decoding is greedy.
+- **FLEURS:** 5–7 minute tracks built from FLEURS dev utterances in German, Japanese, Russian and Serbian, plus a code-switched English/German track. These are real runs.
+
+| English meetings, word-attribution path | Meetings | Δ vs auto (95% CI) | AMI WER | Invented-run words | Windows re-decoded |
+|---|---:|---:|---:|---:|---:|
+| 1.7B auto | 5.01% | — | 17.69% | 79 | 0 |
+| 1.7B auto, wrong-script windows re-decoded | 4.91% | −0.10 (−0.19…−0.04) | 17.69% | 79 | 23 |
+| **1.7B vote and pin (shipped)** | **4.41%** | −0.60 (−2.01…+0.08) | 17.69% | 27 | 187 |
+| 1.7B pinned `en` | 4.41% | −0.60 (−2.01…+0.08) | 17.69% | 27 | — |
+| 0.6B auto | 7.58% | — | 21.35% | 104 | 0 |
+| 0.6B vote and pin (shipped) | 7.51% | −0.07 (−0.26…+0.09) | 21.40% | 108 | 558 |
+| 0.6B pinned `en` | 6.77% | −0.81 (−2.59…+0.07) | 21.40% | 33 | — |
+
+| FLEURS, 1.7B, merged ≤60 s | German | Japanese (CER) | Russian | Serbian | English + German |
+|---|---:|---:|---:|---:|---:|
+| Pinned to the true language | 4.4% | 7.1% | 10.2% | 14.1% | — |
+| Auto | 4.4% | 6.8% | 10.2% | 17.1% | 14.9% |
+| Detect once (longest windows) | 4.4% | 7.1% | 10.2% | 17.1% | **19.3%** (pinned German) |
+| **Vote and pin (shipped)** | 4.4% (de) | 7.1% (ja) | 10.2% (ru) | 17.1% (auto) | 14.9% (auto) |
+
+- **Auto misfires on real meetings.** On English meetings, auto put 23 windows on the shipped path, and 62 on the plain ≤14 s path, in the wrong script. Examples from the two layouts include Chinese for a laugh, Hindi for "Um, society", and a 2-second English clip that became a German "Ja, ja, ja…" loop. Accented English sometimes came out as Polish or Portuguese.
+- **Fixing only the misfired windows is not enough.** Re-decoding wrong-script or minority-language windows recovers at most 0.15 points. Pinning the whole track recovers 0.6, because pinning also improves windows that auto already put in English.
+- **Detecting once from the longest windows is unsafe.** On the code-switched track those windows happened to be German, so the whole track was pinned to German (19.3% against 14.9%). On short benchmark chunks the probe itself misfired.
+- **Apple's recognizer judges long text by its opening.** One Polish-looking first window made a whole English track read as Polish at 0.9995. This had also broken the word-attribution path in auto mode: an unsupported "detected" language sent the track back to speaker regions. Both uses now vote per segment by text length.
+- **The shipped rule is vote and pin.** Decode with auto and vote the language over segments of three or more words. When one Qwen-supported language holds at least 80% of the text, decode the track again pinned to it.
+  - On English, 1.7B then matches pinned `en` exactly.
+  - Single-language FLEURS tracks match the true language within noise.
+  - The code-switched track (German 59–66% by text length) stays on auto, as does Serbian, which the recognizer reads as Croatian, a language Qwen does not support.
+  - Tracks on auto decode twice.
+- **0.6B gains little from vote and pin.** Its accented-English meeting track votes 78% English and 22% Portuguese, so it stays on auto. Setting the language explicitly remains best: 6.77% against 7.58%.
+- **An explicit `sr` helps Serbian** even though Qwen does not list it: 14.1% against 17.1% on 1.7B, and 44.3% against 54.2% on 0.6B.
+
+The English meeting gains have intervals that include zero, because a handful of misfired chunks drive them. The invented-run and wrong-script counts show the same effect more directly. FLEURS is read speech, and the code-switched track is synthetic.
+
 ## Recommendations
 
 1. **Leave `maxSegmentSeconds` as it is.** It is inert. Raising it together with the VAD cap gave no gain and moves windows into speech-swift's repetition-blocking range.
@@ -208,6 +245,7 @@ All six tracks decoded merged windows and assigned aligned words; the aligner ne
    The plain path would also need its own segment re-split, because it has no word timings. Merging to ≤15 s is the step there that needs no decoder change.
 4. **Keep the token formula.**
 5. **Keep passing an explicit language.** Switching `en` to `English` showed no gain, and auto-detect was worse on meetings.
+6. **Ask for the meeting language rather than defaulting to auto.** Vote and pin now closes the auto gap for 1.7B on single-language tracks, at the cost of a second decode. It cannot help 0.6B tracks where misfires exceed 20%, or mixed-language meetings. An explicit language in onboarding would give most users the pinned result without the extra pass.
 
 ## Limits
 
@@ -215,4 +253,4 @@ Meeting scores measure agreement with other vendors, not accuracy: a system that
 
 ## Reproduction and privacy
 
-`../../README.md` describes the harness and commands. `summary.json` (span sweep), `regions-summary.json` (speaker regions), `align-summary.json` (word attribution), `hill-summary.json` (1.7B hill-climb) and `compact-summary.json` (0.6B) hold aggregates only. Transcripts stay in the private `SPAN_BENCH_OUT` folder. This run sent no audio or text over the network. The meeting consensus reuses the CloudSTT outputs saved on 30 September. Meeting transcripts were read through `lokalbot-cli path`, which is read-only. The source baseline is `13e01c0`.
+`../../README.md` describes the harness and commands. `summary.json` (span sweep), `regions-summary.json` (speaker regions), `align-summary.json` (word attribution), `hill-summary.json` (1.7B hill-climb), `compact-summary.json` (0.6B) and `language-summary.json` (language handling) hold aggregates only. Transcripts stay in the private `SPAN_BENCH_OUT` folder. This run sent no audio or text over the network. The meeting consensus reuses the CloudSTT outputs saved on 30 September. Meeting transcripts were read through `lokalbot-cli path`, which is read-only. The source baseline is `13e01c0`.

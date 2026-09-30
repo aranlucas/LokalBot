@@ -136,8 +136,8 @@ final class WordAttributionTests: XCTestCase {
     func testAlignerLanguagesAndPinnedSnapshot() throws {
         for code in ["en", "zh-Hant", "pt-PT", "yue", "ja"] { XCTAssertTrue(QwenWordAligner.supports(code), code) }
         for code in ["sr", "nl", "ar", ""] { XCTAssertFalse(QwenWordAligner.supports(code), code) }
-        XCTAssertEqual(QwenWordAligner.detectedLanguage(of: "This is an English sentence about the quarterly plan."), "en")
-        XCTAssertNil(QwenWordAligner.detectedLanguage(of: "Dit is een Nederlandse zin over het kwartaalplan van het team."))
+        XCTAssertEqual(QwenWordAligner.detectedLanguage(of: ["This is an English sentence about the quarterly plan."]), "en")
+        XCTAssertNil(QwenWordAligner.detectedLanguage(of: ["Dit is een Nederlandse zin over het kwartaalplan van het team."]))
 
         let snapshot = QwenWordAligner.snapshot
         XCTAssertEqual(snapshot.repository, "aufklarer/Qwen3-ForcedAligner-0.6B-4bit")

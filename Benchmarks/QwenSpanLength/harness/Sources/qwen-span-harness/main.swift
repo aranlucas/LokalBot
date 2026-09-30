@@ -8,6 +8,7 @@
 import CoreML
 import FluidAudio
 import Foundation
+import NaturalLanguage
 import Qwen3ASR
 
 let sampleRate = 16_000
@@ -24,6 +25,8 @@ struct Jobs: Decodable {
 struct Item: Decodable {
     var id: String
     var wav: String
+    /// True language code for `oracle` conditions (nil or "a+b" = no single oracle).
+    var language: String?
     /// Named explicit layouts on the item's own timeline (seconds).
     var layouts: [String: [[Double]]]?
 }
@@ -67,6 +70,9 @@ struct Window: Encodable {
 struct Record: Encodable {
     var condition: String
     var id: String
+    /// Language actually passed to Qwen ("auto" when none), and detection details.
+    var languageUsed: String?
+    var detected: String?
     var text: String
     var windows: [Window]
     var audioSeconds: Double
@@ -188,6 +194,49 @@ func windows(for layout: Layout, item: Item, audio: [Float], vad: VadManager) as
     default:
         fatalError("unknown layout \(layout.kind)")
     }
+}
+
+// MARK: - Language modes
+
+/// Qwen3-ASR's 30 supported languages (model card), as ISO codes.
+let qwenLanguages: Set<String> = ["zh", "en", "yue", "ar", "de", "fr", "es", "pt", "id", "it", "ko", "ru", "th", "vi",
+                                  "ja", "tr", "hi", "ms", "nl", "sv", "da", "fi", "pl", "cs", "fil", "fa", "el", "hu",
+                                  "mk", "ro"]
+let englishNames = ["de": "German", "ja": "Japanese", "ru": "Russian", "sr": "Serbian", "en": "English",
+                    "fr": "French", "es": "Spanish", "zh": "Chinese"]
+
+func baseCode(_ code: String) -> String {
+    String(code.lowercased().split(whereSeparator: { $0 == "-" || $0 == "_" }).first ?? "")
+}
+
+/// Detect-once decision: the dominant language of probe text, pinned only when
+/// confident and supported by Qwen; nil keeps per-window auto-detection.
+func pinnedLanguage(for text: String, minimumConfidence: Double = 0.8) -> (String?, String) {
+    let recognizer = NLLanguageRecognizer()
+    recognizer.processString(text)
+    let hypotheses = recognizer.languageHypotheses(withMaximum: 3).sorted { $0.value > $1.value }
+    guard let top = hypotheses.first else { return (nil, "none") }
+    let code = baseCode(top.key.rawValue)
+    let summary = hypotheses.map { "\($0.key.rawValue)=\(String(format: "%.2f", $0.value))" }.joined(separator: ",")
+    guard top.value >= minimumConfidence, qwenLanguages.contains(code) else { return (nil, summary) }
+    return (code, summary)
+}
+
+/// Length-weighted language vote over window texts (3+ words, confidence >= 0.5).
+/// A whole-track string would be judged mostly by its opening words.
+func languageVote(_ texts: [String]) -> (code: String, share: Double)? {
+    var weights: [String: Double] = [:]
+    var total = 0.0
+    for text in texts where text.split(whereSeparator: { $0.isWhitespace }).count >= 3 {
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(text)
+        guard let top = recognizer.languageHypotheses(withMaximum: 1).max(by: { $0.value < $1.value }),
+              top.value >= 0.5 else { continue }
+        weights[baseCode(top.key.rawValue), default: 0] += Double(text.count)
+        total += Double(text.count)
+    }
+    guard total > 0, let best = weights.max(by: { $0.value < $1.value }) else { return nil }
+    return (best.key, best.value / total)
 }
 
 // MARK: - Main
@@ -338,21 +387,63 @@ for condition in jobs.conditions {
         var parts: [String] = []
         var records: [Window] = []
         let started = Date()
+        func decode(_ window: [Float], language: String?) -> String {
+            let cap = condition.maxTokens ?? appMaxTokens(for: window.count)
+            if condition.ngram == "off" {
+                return model.transcribe(
+                    audio: samplesForInference(window), sampleRate: sampleRate,
+                    options: Qwen3DecodingOptions(maxTokens: cap, language: language,
+                                                  context: nil, longInputThresholdSeconds: .infinity))
+            }
+            return model.transcribe(
+                audio: samplesForInference(window), sampleRate: sampleRate,
+                language: language, maxTokens: cap, context: nil)
+        }
+        var language = condition.language
+        var detected: String?
+        switch condition.language {
+        case "oracle":
+            language = item.language.flatMap { $0.contains("+") ? nil : $0 }
+        case "oracle-name":
+            language = item.language.flatMap { $0.contains("+") ? nil : englishNames[$0] ?? $0 }
+        case "detect":
+            // Probe the longest windows (at least 30 s of audio) with auto-detection.
+            var probe: [String] = []
+            var probed = 0.0
+            for (start, end) in spans.sorted(by: { ($0.1 - $0.0) > ($1.1 - $1.0) }) where probed < 30 {
+                let window = slice(samples, start, end)
+                guard !window.isEmpty else { continue }
+                probe.append(normalized(decode(window, language: nil)))
+                probed += end - start
+            }
+            let (pinned, summary) = pinnedLanguage(for: probe.joined(separator: " "))
+            language = pinned
+            detected = summary
+        case "vote":
+            // Decode with auto, vote the language over windows, and re-decode
+            // pinned when one supported language holds >= 80% of the text.
+            var texts: [String] = []
+            for (start, end) in spans {
+                let window = slice(samples, start, end)
+                guard !window.isEmpty else { continue }
+                let text = normalized(decode(window, language: nil))
+                if !text.isEmpty { texts.append(text) }
+            }
+            let vote = languageVote(texts)
+            detected = vote.map { "\($0.code)=\(String(format: "%.2f", $0.share))" } ?? "none"
+            if let vote, vote.share >= 0.8, qwenLanguages.contains(vote.code) {
+                language = vote.code
+            } else {
+                language = nil
+            }
+        default:
+            break
+        }
         for (start, end) in spans {
             let window = slice(samples, start, end)
             guard !window.isEmpty else { continue }
             let cap = condition.maxTokens ?? appMaxTokens(for: window.count)
-            let raw: String
-            if condition.ngram == "off" {
-                raw = model.transcribe(
-                    audio: samplesForInference(window), sampleRate: sampleRate,
-                    options: Qwen3DecodingOptions(maxTokens: cap, language: condition.language,
-                                                  context: nil, longInputThresholdSeconds: .infinity))
-            } else {
-                raw = model.transcribe(
-                    audio: samplesForInference(window), sampleRate: sampleRate,
-                    language: condition.language, maxTokens: cap, context: nil)
-            }
+            let raw = decode(window, language: language)
             let text = normalized(raw)
             records.append(Window(start: start, end: end, cap: cap, text: text))
             if !text.isEmpty { parts.append(text) }
@@ -361,7 +452,8 @@ for condition in jobs.conditions {
         let seconds = Double(samples.count) / Double(sampleRate)
         conditionAudio += seconds
         conditionDecode += decode
-        let record = Record(condition: condition.name, id: item.id, text: parts.joined(separator: " "),
+        let record = Record(condition: condition.name, id: item.id, languageUsed: language ?? "auto",
+                            detected: detected, text: parts.joined(separator: " "),
                             windows: records, audioSeconds: seconds, decodeSeconds: decode)
         handle.write(try JSONEncoder().encode(record))
         handle.write("\n".data(using: .utf8)!)

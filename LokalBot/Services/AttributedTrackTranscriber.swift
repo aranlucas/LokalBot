@@ -148,7 +148,7 @@ enum AttributedTrackTranscriber {
         let transcript = try await engine.transcribeForWordAttribution(audio: url, language: language, prompt: prompt)
         guard !transcript.segments.isEmpty else { return transcript }
         guard let alignLanguage = language
-                ?? QwenWordAligner.detectedLanguage(of: transcript.segments.map(\.text).joined(separator: " ")) else {
+                ?? QwenWordAligner.detectedLanguage(of: transcript.segments.map(\.text)) else {
             lokalbotLog("word attribution skipped: detected language unsupported, using speaker regions")
             return nil
         }

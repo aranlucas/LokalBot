@@ -1,5 +1,4 @@
 import Foundation
-import NaturalLanguage
 import Qwen3ASR
 
 /// A transcript word located in the audio, on the caller's timeline.
@@ -38,19 +37,16 @@ actor QwenWordAligner {
 
     /// True for a transcription language code the aligner supports ("zh-Hant" → "zh").
     nonisolated static func supports(_ language: String) -> Bool {
-        supportedLanguages.contains(baseCode(language))
+        supportedLanguages.contains(TranscriptLanguageVote.baseCode(language))
     }
 
-    /// The aligner language for `text` when the transcription language was
-    /// auto-detected, or nil when the text is not in a supported language.
-    nonisolated static func detectedLanguage(of text: String) -> String? {
-        guard let language = NLLanguageRecognizer.dominantLanguage(for: text)?.rawValue else { return nil }
-        let code = baseCode(language)
-        return supportedLanguages.contains(code) ? code : nil
-    }
-
-    private nonisolated static func baseCode(_ language: String) -> String {
-        String(language.lowercased().split(whereSeparator: { $0 == "-" || $0 == "_" }).first ?? "")
+    /// The aligner language for segment `texts` when the transcription
+    /// language was auto-detected, or nil when their dominant language is not
+    /// supported. Voted per segment, so a misdetected opening cannot decide it.
+    nonisolated static func detectedLanguage(of texts: [String]) -> String? {
+        guard let vote = TranscriptLanguageVote.dominant(in: texts),
+              supportedLanguages.contains(vote.code) else { return nil }
+        return vote.code
     }
 
     /// Download and verify the pinned files without loading them, so the

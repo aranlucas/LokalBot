@@ -92,4 +92,18 @@ for f in $SPAN_BENCH_OUT/align-aligned06-*.json; do $SPAN_BENCH_OUT/dd/Build/Pro
 .venv/bin/python score_compact.py --results results/2026-09-30
 ```
 
+### Language auto-detection
+
+`fetch_fleurs.py` streams about 30 FLEURS dev utterances per language (CC-BY-4.0) and joins them into 5–7 minute tracks. The tracks are German, Japanese, Russian and Serbian, plus a code-switched English/German track. `nlid.swift` wraps Apple's `NLLanguageRecognizer`, so the scorer identifies languages exactly as the app does.
+
+```sh
+.venv/bin/python fetch_fleurs.py
+.venv/bin/python make_language_jobs.py          # needs jobs.json and compact_jobs.json
+for j in language_english language_fleurs language_english_06b language_fleurs_06b; do
+  $SPAN_BENCH_OUT/dd/Build/Products/Release/qwen-span-harness $SPAN_BENCH_OUT/$j.json
+done
+swiftc -O nlid.swift -o $SPAN_BENCH_OUT/nlid
+.venv/bin/python score_language.py --results results/2026-09-30
+```
+
 `make_jobs.py` and `make_region_jobs.py` read meeting transcripts and audio through `lokalbot-cli path`, which is read-only. Nothing is sent over the network. Transcripts stay in `SPAN_BENCH_OUT`; `results/` holds only aggregates.
