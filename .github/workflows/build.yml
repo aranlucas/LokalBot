@@ -23,6 +23,11 @@ on:
         type: choice
         options: ["warm", "cold", "off"]
         default: warm
+  workflow_call:
+    inputs:
+      cache_mode:
+        type: string
+        default: warm
   pull_request:
     branches: [master, dev]
   push:
@@ -31,7 +36,9 @@ on:
 # Cancel superseded runs for the same ref so rapid pushes/force-pushes don't
 # leave a backlog of stale builds burning runner minutes.
 concurrency:
-  group: build-${{ github.ref }}
+  # A called build runs under the caller's workflow name; never cancel the
+  # regular Build of the same ref.
+  group: build-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -53,7 +60,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Bind manual dispatch to the requested candidate
-        if: github.event_name == 'workflow_dispatch'
+        # In a called workflow github.event_name/github.workflow are the
+        # caller's; the exact-SHA binding keeps applying to Build dispatches.
+        if: github.event_name == 'workflow_dispatch' && github.workflow == 'Build'
         env:
           REQUESTED_SHA: ${{ inputs.candidate_sha }}
         run: |
