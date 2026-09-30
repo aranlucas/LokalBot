@@ -214,6 +214,11 @@ targets:
         PRODUCT_NAME: LokalBot
         PRODUCT_MODULE_NAME: LokalBot
         PRODUCT_BUNDLE_IDENTIFIER: me.dotenv.LokalBot
+      # Test hooks (golden transcripts, the UI background host) exist only in
+      # Debug; Release never compiles them.
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: LOKALBOT_TEST_HOOKS $(inherited)
 
   # Local development build. Distinct bundle id + product name means a separate,
   # stable TCC identity (Mic, Screen Recording, Accessibility survive rebuilds),
@@ -230,6 +235,9 @@ targets:
         PRODUCT_MODULE_NAME: LokalBotDev
         PRODUCT_BUNDLE_IDENTIFIER: me.dotenv.LokalBot.dev
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: LOKALBOT_DEV $(inherited)
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: LOKALBOT_DEV LOKALBOT_TEST_HOOKS $(inherited)
 
   # UI-test host. Same app sources and dev-only Sparkle behavior, but compiled
   # without the menu-bar extra so XCUITest can launch and snapshot a normal
@@ -243,6 +251,9 @@ targets:
         PRODUCT_MODULE_NAME: LokalBotUITestHost
         PRODUCT_BUNDLE_IDENTIFIER: me.dotenv.LokalBot.uitesthost
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: LOKALBOT_DEV LOKALBOT_UI_TEST_HOST $(inherited)
+      configs:
+        Debug:
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: LOKALBOT_DEV LOKALBOT_UI_TEST_HOST LOKALBOT_TEST_HOOKS $(inherited)
 
   LokalBotTests:
     type: bundle.unit-test
@@ -293,7 +304,12 @@ targets:
     type: bundle.ui-testing
     platform: macOS
     sources:
-      - LokalBotUITests
+      - path: LokalBotUITests
+        excludes:
+          - Fixtures
+      - path: LokalBotUITests/Fixtures
+        type: folder
+        buildPhase: resources
     dependencies:
       - target: "LokalBot UI Test Host"
     settings:

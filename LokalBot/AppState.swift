@@ -98,6 +98,15 @@ final class AppState: ObservableObject {
     /// Sparkle, periodic screenshots) so the UI renders against synthetic
     /// data without touching real audio, TCC, or the network.
     nonisolated static var isUITesting: Bool { UITestRuntime.isEnabled }
+    /// The UI Test Host's background mode runs the interactive start against
+    /// a replayed capture trace and file audio (Debug test hooks only).
+    nonisolated static var runsBackgroundWorkInUITests: Bool {
+#if LOKALBOT_TEST_HOOKS
+        TestHooks.backgroundHostEnabled
+#else
+        false
+#endif
+    }
     /// Hosted XCTest executes the real app entry point. It needs neither UI
     /// fixtures nor any interactive service, so return before touching the
     /// meeting library, indexes, permissions, audio, Sparkle, or the network.
@@ -596,7 +605,8 @@ final class AppState: ObservableObject {
         jobStore: pipelineJobStore,
         settings: { [store = settingsStore] in store.current },
         thinkExecution: thinkExecution,
-        speakerIdentity: speakerIdentity)
+        speakerIdentity: speakerIdentity,
+        automationReadiness: ProcessingPipeline.defaultAutomationReadiness)
     /// Canonical state machine for Transcribe, Think, and Autocomplete.
     private(set) lazy var modelRoles = ModelRoles(
         settings: { [store = settingsStore] in store.current },
@@ -1004,7 +1014,7 @@ final class AppState: ObservableObject {
         // UI tests render against pre-seeded fixtures, not a real audio/Sparkle
         // session — bail out before any subsystem reaches for the mic, the
         // process list, or the network.
-        if Self.isUITesting { return }
+        if Self.isUITesting && !Self.runsBackgroundWorkInUITests { return }
         interactive = true
         RecordingNotifier.shared.bootstrap()
         applyTrackingSetting()
@@ -1091,6 +1101,7 @@ final class AppState: ObservableObject {
         applyCodingAgentEvidenceSetting()
         applyMemoryRoutineSetting()
         applyDreamingSetting()
+        applyHealthCheckSetting()
         bindBackgroundActivity()
         // First-run check. A genuinely-new user with missing permissions gets
         // onboarding (windowed — see AppDelegate); the flag persists only when
@@ -1934,6 +1945,92 @@ final class AppState: ObservableObject {
             openSettings(tab: .models)
         }
     }
+
+    func libraryHealthReport(for day: Date, now: Date = Date()) -> LibraryHealthReport {
+        let loader = LibraryHealthLoader(
+            activityStore: activityStore,
+            storageRoot: storage.rootURL,
+            meetings: meetings,
+            queuedMeetingIDs: pipeline.queuedMeetingIDs(),
+            settings: settings,
+            hasDreamReport: { [dreamStore] in dreamStore.hasReport(forDayKey: $0) })
+        return LibraryHealthEvaluator.evaluate(
+            loader.input(for: day, now: now), dayKey: DreamDay.key(for: day))
+    }
+
+    private(set) lazy var healthScheduler = LibraryHealthScheduler()
+
+    /// Evaluates yesterday, writes the report, and notifies on failure.
+    @discardableResult
+    func runHealthCheckNow(notify: Bool = true) -> URL? {
+        let calendar = Calendar.current
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: Date())) ?? Date()
+        let report = libraryHealthReport(for: yesterday)
+        do {
+            let url = try LibraryHealthReportStore.write(report, root: storage.rootURL)
+            if notify, report.status == .fail {
+                let failed = report.findings.filter { $0.status == .fail }.map(\.check.title)
+                RecordingNotifier.shared.healthCheckFailed(
+                    summary: failed.joined(separator: ", "), reportURL: url)
+            }
+            return url
+        } catch {
+            lokalbotLog("health report write failed: \(error.localizedDescription)")
+            return nil
+        }
+    }
+
+    func applyHealthCheckSetting() {
+        guard LibraryHealthScheduler.isEnabledForThisBuild else { return }
+        let root = storage.rootURL
+        healthScheduler.start(
+            lastRun: { LibraryHealthReportStore.latestRunDate(root: root) },
+            run: { [weak self] in self?.runHealthCheckNow() })
+    }
+
+    func diagnosticsSources() -> DiagnosticsExporter.Sources {
+        let log = AppLog.debugLogURL()
+        let root = storage.rootURL
+        return DiagnosticsExporter.Sources(
+            logURLs: [log] + FileLogSink.rotatedURLs(for: log, maxRotations: 5),
+            healthReportsDirectory: DiagnosticsPaths.healthReports(root: root),
+            captureTracesDirectory: DiagnosticsPaths.captureTraces(root: root),
+            databaseURL: DiagnosticsPaths.database(root: root),
+            settingsJSON: try? JSONEncoder().encode(settings))
+    }
+
+    @discardableResult
+    func exportDiagnostics(to destination: URL) throws -> DiagnosticsExporter.Manifest {
+        try DiagnosticsExporter.export(diagnosticsSources(), to: destination)
+    }
+
+#if DEBUG
+    /// Debug menu: records the live capture environment for `seconds`, then
+    /// writes a scrubbed trace to diagnostics/capture-traces and reveals it.
+    func startCaptureTraceRecording(seconds: Int = 60, scenario: String = "real") {
+        guard CaptureTraceRecorder.active == nil else {
+            lokalbotLog("capture trace: a recording is already running")
+            return
+        }
+        let recorder = CaptureTraceRecorder(scenario: scenario, origin: scenario == "real" ? .real : .scripted)
+        CaptureTraceRecorder.active = recorder
+        CaptureEnvironment.install(recorder.environment)
+        lokalbotLog("capture trace: recording \(seconds)s")
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(seconds))
+            CaptureEnvironment.reset()
+            CaptureTraceRecorder.active = nil
+            guard let self else { return }
+            do {
+                let url = try recorder.finish(to: DiagnosticsPaths.captureTraces(root: self.storage.rootURL))
+                lokalbotLog("capture trace: wrote \(url.lastPathComponent)")
+                NSWorkspace.shared.activateFileViewerSelecting([url])
+            } catch {
+                lokalbotLog("capture trace: FAILED — \(error.localizedDescription)")
+            }
+        }
+    }
+#endif
 
     /// Open Timeline on a local day, e.g. to read that day's digest.
     func openTimelineDay(_ day: Date) {

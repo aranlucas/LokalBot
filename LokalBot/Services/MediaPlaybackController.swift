@@ -34,7 +34,7 @@ enum MediaPlaybackController {
         guard !targets.isEmpty else { return PauseSession(targets: []) }
 
         let runningBundleIDs = await MainActor.run {
-            Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier))
+            Set(CaptureEnvironment.current.workspace.runningApplications().compactMap(\.bundleIdentifier))
         }
         let token = UUID().uuidString
         let paused = await withTaskGroup(of: PausedTarget?.self) { group in

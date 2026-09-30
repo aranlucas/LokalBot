@@ -1,0 +1,15 @@
+{
+  "header": {"schemaVersion": 1, "macOSVersion": "26.0", "origin": "reconstructed",
+             "scenario": "browser-web-content-without-url", "scrubberVersion": 1, "recordedAt": "2026-09-30T00:00:00Z"},
+  "events": [
+    {"t": 0, "query": "frontmost", "app": {"processIdentifier": 501, "bundleIdentifier": "com.google.Chrome", "localizedName": "Google Chrome"}},
+    {"t": 0, "query": "idleSeconds", "seconds": 1},
+    {"t": 0, "query": "trusted", "flag": true},
+    {"t": 0, "query": "axRead", "processID": 501, "includeText": false,
+     "read": {"snapshot": {"text": "", "windowTitle": "Nw tb", "hasWebContent": true, "containsSecureField": false}}},
+    {"t": 12, "query": "frontmost", "app": {"processIdentifier": 600, "bundleIdentifier": "com.apple.dt.Xcode", "localizedName": "Xcode"}},
+    {"t": 12, "query": "axRead", "processID": 600, "includeText": false,
+     "read": {"snapshot": {"text": "", "windowTitle": "PpDlgt.swft", "focusedSecureField": false,
+                           "hasWebContent": false, "containsSecureField": false}}}
+  ]
+}

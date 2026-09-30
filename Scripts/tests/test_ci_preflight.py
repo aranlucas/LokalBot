@@ -113,6 +113,19 @@ class ReleaseMetadataTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "increase"):
                     preflight.validate(self.root, candidate=True)
 
+    def test_candidate_requires_the_previous_release_upgrade_fixture(self):
+        previous = plistlib.dumps({"CFBundleVersion": "30"})
+        with patch.object(preflight, "git", side_effect=["", "", "v0.8.0", ""]):
+            with patch.object(preflight.subprocess, "check_output", return_value=previous):
+                with self.assertRaisesRegex(ValueError, "upgrade fixture for v0.8.0"):
+                    preflight.validate(self.root, candidate=True)
+        fixture = self.root / "LokalBotTests/Fixtures/upgrade/0.8.0"
+        fixture.mkdir(parents=True)
+        (fixture / "manifest.json").write_text("{}")
+        with patch.object(preflight, "git", side_effect=["", "", "v0.8.0", ""]):
+            with patch.object(preflight.subprocess, "check_output", return_value=previous):
+                self.assertEqual(preflight.validate(self.root, candidate=True), ("0.8.1", "31", "v0.8.0"))
+
     def test_staged_snapshot_must_match_validated_working_files(self):
         staged = "project.yml\nLokalBot/Info.plist\nScripts/release-notes/v0.8.1.md"
         with patch.object(preflight, "git", return_value=staged):

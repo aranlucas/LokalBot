@@ -15,7 +15,9 @@ struct MeetingBoundaryEditor: View {
                 .foregroundStyle(.secondary)
             Form {
                 TextField("Start (seconds)", value: $start, format: .number.precision(.fractionLength(0...2)))
+                    .accessibilityIdentifier("boundaries.start")
                 TextField("End (seconds)", value: $end, format: .number.precision(.fractionLength(0...2)))
+                    .accessibilityIdentifier("boundaries.end")
             }
             Text("Use the original playback timeline; for example, 2:30 is 150 seconds.")
                 .font(.scaled(.caption)).foregroundStyle(.secondary)
@@ -29,6 +31,7 @@ struct MeetingBoundaryEditor: View {
                 }
                 .keyboardShortcut(.defaultAction)
                 .disabled(!Meeting.ContentRange(start: start, end: end).isValid)
+                .accessibilityIdentifier("boundaries.save")
             }
         }
         .padding(24).frame(width: 480)

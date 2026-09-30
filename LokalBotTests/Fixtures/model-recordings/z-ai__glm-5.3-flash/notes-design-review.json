@@ -1,0 +1,17 @@
+{
+  "calls" : [
+    {
+      "completionTokens" : 339,
+      "content" : "{\n  \"notes\": [\n    {\"section\": \"TL;DR\", \"text\": \"Agreed to use Redis for the caching layer, relying on its pub-sub support.\", \"source\": \"s2\"},\n    {\"section\": \"TL;DR\", \"text\": \"Whether cluster mode is needed from day one remains unresolved pending failover benchmarks.\", \"source\": \"s2\"},\n    {\"section\": \"Key points\", \"text\": \"Proposed Redis for the caching layer because of its pub-sub support.\", \"source\": \"s1\"},\n    {\"section\": \"Open questions\", \"text\": \"Do we need Redis cluster mode from day one?\", \"source\": \"s2\"},\n    {\"section\": \"Open questions\", \"text\": \"Failover latency must be benchmarked before committing to a cluster; result unknown.\", \"source\": \"s4\"}\n  ],\n  \"actions\": [\n    {\"owner\": \"p1\", \"importance\": 3, \"source\": \"s3\", \"basis\": \"commitment\", \"quote\": \"I'll draft the eviction-policy doc by Thursday.\", \"context\": [], \"text\": \"Draft the eviction-policy doc by Thursday.\", \"due\": \"Thursday\"},\n    {\"owner\": \"p1\", \"importance\": 2, \"source\": \"s5\", \"basis\": \"commitment\", \"quote\": \"I'll borrow the load harness from the search team for that.\", \"context\": [\"s4\"], \"text\": \"Borrow the load harness from the search team to benchmark failover latency before a cluster decision.\", \"due\": \"\"}\n  ],\n  \"has_more\": false\n}",
+      "finishReason" : "stop",
+      "latencyMilliseconds" : 1843,
+      "maxTokens" : 4096,
+      "purpose" : "notes",
+      "reasoningBudgetTokens" : 0,
+      "reasoningTokens" : 0
+    }
+  ],
+  "caseName" : "notes-design-review",
+  "model" : "z-ai\/glm-5.3-flash",
+  "recordedAt" : "2026-09-30T05:58:04Z"
+}

@@ -1,0 +1,11 @@
+{
+  "engine": "golden",
+  "segments": [
+    {
+      "start": 0,
+      "end": 3,
+      "speaker": "them",
+      "text": "Sprint goal is the search index rebuild."
+    }
+  ]
+}

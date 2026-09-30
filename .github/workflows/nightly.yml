@@ -1,0 +1,210 @@
+# Nightly, non-blocking checks: model drift against the preset remote models,
+# the real-Parakeet day-in-the-life run, and scale/concurrency. Never a
+# required check. Failures open or update an issue.
+name: Nightly
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      jobs:
+        description: "Which nightly jobs to run"
+        type: choice
+        options: [all, model-drift, day-in-the-life, scale]
+        default: all
+  pull_request:
+    paths:
+      - "Scripts/ci/model-drift-models.json"
+      - "LokalBotTests/Support/SyntheticModelPrompts.swift"
+      - "LokalBotTests/ModelRecordingTests.swift"
+      - ".github/workflows/nightly.yml"
+
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    with:
+      cache_mode: warm
+      products_only: true
+
+  # Every nightly job needs the build; when it fails they are skipped, so
+  # report the failure here instead of letting the night pass silently.
+  build-failed:
+    name: Report a failed nightly build
+    needs: build
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open or update the nightly build issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Nightly build failed"
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
+          if [[ -n "$number" ]]; then
+            gh issue comment "$number" --body "Run: $RUN_URL"
+          else
+            gh issue create --title "$title" --body "The nightly build failed, so model drift, the real-Parakeet workday, and scale checks did not run. Run: $RUN_URL"
+          fi
+
+  model-drift:
+    name: Model drift
+    needs: build
+    if: github.event_name != 'workflow_dispatch' || inputs.jobs == 'all' || inputs.jobs == 'model-drift'
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90
+        with:
+          xcode-version: "26.3"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: unit-products
+          path: .build/transfer
+      - name: Verify and restore compiled tests
+        env:
+          CODE_SIGNING_ALLOWED: "NO"
+        run: python3 Scripts/ci/test-products.py unpack unit
+      - name: Record fresh responses
+        env:
+          TEST_RUNNER_LOKALBOT_RECORD_MODELS: "1"
+          TEST_RUNNER_OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          TEST_RUNNER_LOKALBOT_RECORDINGS_OUT: ${{ github.workspace }}/.build/model-recordings
+        run: |
+          export TEST_RUNNER_LOKALBOT_RECORD_MODEL_IDS="$(python3 -c 'import json; print(",".join(json.load(open("Scripts/ci/model-drift-models.json"))["models"]))')"
+          runs=(.build/dd/Build/Products/*.xctestrun)
+          xcodebuild test-without-building -xctestrun "${runs[0]}" \
+            -destination 'platform=macOS' -derivedDataPath .build/dd \
+            -only-testing:LokalBotTests/ModelRecordingTests
+      - name: Compare with committed recordings
+        id: compare
+        run: python3 Scripts/ci/model-drift.py LokalBotTests/Fixtures/model-recordings .build/model-recordings --report .build/model-recordings/drift.md
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: model-recordings
+          path: .build/model-recordings
+          retention-days: 30
+      - name: Open or update the drift issue
+        if: steps.compare.outputs.drift == 'true' && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Model drift detected by the nightly run"
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
+          if [[ -n "$number" ]]; then
+            gh issue comment "$number" --body-file .build/model-recordings/drift.md
+          else
+            gh issue create --title "$title" --body-file .build/model-recordings/drift.md
+          fi
+
+  day-in-the-life-real:
+    name: Day in the life with real Parakeet
+    needs: build
+    if: github.event_name == 'schedule' || inputs.jobs == 'all' || inputs.jobs == 'day-in-the-life'
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90
+        with:
+          xcode-version: "26.3"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: unit-products
+          path: .build/transfer
+      - name: Verify and restore compiled products
+        env:
+          CODE_SIGNING_ALLOWED: "NO"
+        run: python3 Scripts/ci/test-products.py unpack unit
+      - name: Cache Parakeet
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ~/Library/Application Support/FluidAudio
+          key: parakeet-${{ runner.os }}-v1
+      - name: Real-ASR workday
+        run: |
+          export LOKALBOT_TEST_BUN="$(bash Scripts/ci/fetch-bun.sh | tail -1)"
+          export LOKALBOT_APP="$PWD/.build/dd/Build/Products/Debug/LokalBot.app"
+          bash Scripts/day-in-the-life.sh --real-asr 2>&1 | tee .build/day-in-the-life-real.log
+      # Real Parakeet text that drifts far enough from the golden transcripts
+      # breaks the notes quotes or search assertions, so a failure here is the
+      # word-error-rate drift signal.
+      - name: Open or update the real-ASR issue
+        if: failure() && github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Day in the life with real Parakeet failed in the nightly run"
+          body=.build/day-in-the-life-real.md
+          { echo "Run: $RUN_URL"; echo; echo '```'; tail -40 .build/day-in-the-life-real.log 2>/dev/null; echo '```'; } > "$body"
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
+          if [[ -n "$number" ]]; then
+            gh issue comment "$number" --body-file "$body"
+          else
+            gh issue create --title "$title" --body-file "$body"
+          fi
+
+  scale:
+    name: Scale and concurrency
+    needs: build
+    if: github.event_name == 'schedule' || inputs.jobs == 'all' || inputs.jobs == 'scale'
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90
+        with:
+          xcode-version: "26.3"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: unit-products
+          path: .build/transfer
+      - name: Verify and restore compiled products
+        env:
+          CODE_SIGNING_ALLOWED: "NO"
+        run: python3 Scripts/ci/test-products.py unpack unit
+      - name: Large library
+        run: |
+          python3 Scripts/seed_demo_library.py --profile large "$RUNNER_TEMP/large"
+          runs=(.build/dd/Build/Products/*.xctestrun)
+          TEST_RUNNER_LOKALBOT_SCALE_LIBRARY="$RUNNER_TEMP/large" xcodebuild test-without-building \
+            -xctestrun "${runs[0]}" -destination 'platform=macOS' -derivedDataPath .build/dd \
+            -only-testing:LokalBotTests/ScaleTests
+      - name: Digest while activity is written
+        run: |
+          export LOKALBOT_TEST_BUN="$(bash Scripts/ci/fetch-bun.sh | tail -1)"
+          export LOKALBOT_APP="$PWD/.build/dd/Build/Products/Debug/LokalBot.app"
+          bash Scripts/scale/digest-while-writing.sh
+      - name: Two copies on one library
+        run: |
+          export LOKALBOT_APP="$PWD/.build/dd/Build/Products/Debug/LokalBot.app"
+          bash Scripts/scale/two-instances.sh
+      - name: Open or update the nightly issue
+        if: failure() && github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Nightly scale or concurrency check failed"
+          body="Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
+          if [[ -n "$number" ]]; then gh issue comment "$number" --body "$body"; else gh issue create --title "$title" --body "$body"; fi

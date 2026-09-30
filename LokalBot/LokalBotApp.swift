@@ -24,6 +24,33 @@ enum LokalBotMain {
                 if case .agentSessions(let dayKey)? = HeadlessCommand.requested {
                     exit(CodingAgentSessionsCLI.run(dayKey: dayKey))
                 }
+#if DEBUG
+                if case .recordCapture(_, let scenario) = HeadlessCommand.requested {
+                    let recorder = CaptureTraceRecorder(scenario: scenario, origin: scenario == "real" ? .real : .scripted)
+                    CaptureTraceRecorder.active = recorder
+                    CaptureEnvironment.install(recorder.environment)
+                }
+#endif
+#if LOKALBOT_TEST_HOOKS
+                if UITestRuntime.isEnabled, TestHooks.backgroundHostEnabled {
+                    if let path = TestHooks.backgroundTracePath,
+                       let trace = try? CaptureTrace.load(from: URL(fileURLWithPath: path)) {
+                        CaptureEnvironment.install(
+                            ReplayCaptureEnvironment(trace: trace, start: Date(), realTimeSpeed: 1).environment)
+                    }
+                    if let audio = TestHooks.backgroundAudioDirectory {
+                        MicRecorder.defaultInputFactory = {
+                            try FileMicrophoneInput(url: audio.appendingPathComponent("mic.wav"))
+                        }
+                        SystemAudioRecorder.defaultTapFactory = {
+                            if let tap = try? FileSystemAudioTap(url: audio.appendingPathComponent("system.wav")) {
+                                return tap
+                            }
+                            return CoreAudioProcessTap()
+                        }
+                    }
+                }
+#endif
                 if HeadlessCommand.requested == nil, !UITestRuntime.isEnabled, !UITestRuntime.isUnitTesting {
                     let root = AppDirectories.libraryRoot
                     guard let lock = LibraryInstanceLock.acquire(root: root) else {
@@ -213,6 +240,13 @@ struct LokalBotApp: App {
                 ) {
                     app.dictation.toggle(source: "command")
                 }
+#if DEBUG
+                Divider()
+
+                Button("Record Capture Trace (60 s)") {
+                    app.startCaptureTraceRecording()
+                }
+#endif
             }
             // ⌘K opens the command palette. Registered at the app level so it
             // works from anywhere; the palette window is opened via openWindow.

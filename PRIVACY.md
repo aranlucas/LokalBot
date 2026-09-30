@@ -1,6 +1,6 @@
 # LokalBot Privacy Policy
 
-Effective: September 29, 2026
+Effective: September 30, 2026
 
 LokalBot is a local-first macOS application. It has no LokalBot account,
 analytics service, advertising SDK, or telemetry backend. The project does not
@@ -55,6 +55,17 @@ text. Work is saved after ten quiet minutes, joins the day digest, and follows
 the screen-text retention above. Turning the setting off stops reading and
 keeps saved records; **Delete saved agent sessions** removes them and
 withdraws unedited journals that used them.
+
+Library health reports stay in the library's `diagnostics/health` folder on
+this Mac. Development builds check the previous day each morning; released
+builds check only when you choose **Run Health Check Now**. **Export
+Diagnostics…** writes a zip to a location you choose and sends nothing. It
+contains recent diagnostic logs (which can name apps and calendar meetings),
+health reports, scrubbed capture-test traces, library row counts, and your
+settings with keys, tokens, passwords, and URL credentials removed (settings
+can include exclusion lists and custom prompts). It never includes meeting
+audio, transcripts, notes, screenshots, or screen text. Review the file before
+you share it.
 
 Development and UI-test builds use separate default libraries and Keychain
 namespaces from the release app. Their retention settings do not apply to the
@@ -181,6 +192,9 @@ The app may make these outbound connections:
 Those services receive normal connection metadata such as your IP address and
 request headers. LokalBot does not add an advertising identifier and does not
 use those requests to track you.
+
+LokalBot's own automated tests send only synthetic fixture text to remote
+model providers, from the project's CI; they never use a user's library.
 
 ## Permissions
 

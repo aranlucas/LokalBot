@@ -726,6 +726,48 @@ final class DayDigestEvidenceTests: XCTestCase {
         XCTAssertTrue(delays.isEmpty)
     }
 
+    func testCoverageCountsOnlySegmentsThatReachedTheSummary() async throws {
+        let evidence = DayDigestEvidence.build(
+            day: day,
+            blocks: [block(1, 8, "Morning implementation"), block(2, 13, "Midday investigation")],
+            screenContexts: [],
+            meetings: [],
+            calendar: calendar)
+        let recorder = GenerationRecorder()
+
+        let result = try await DayDigestOverviewGenerator.generateResult(
+            evidence: evidence,
+            engine: StructuredDigestEngine(recorder: recorder, truncatedFocusCalls: [2, 3]),
+            customPrompt: "",
+            calendar: calendar,
+            sleep: { _ in })
+
+        let coverage = try XCTUnwrap(result.coverage)
+        let segments = evidence.summarySegments()
+        XCTAssertEqual(coverage.trackedSeconds, segments.reduce(0) { $0 + $1.activeDuration }, accuracy: 0.5)
+        XCTAssertEqual(coverage.coveredSeconds, segments[0].activeDuration, accuracy: 0.5)
+        XCTAssertEqual(try XCTUnwrap(coverage.ratio), 0.5, accuracy: 0.01)
+    }
+
+    func testMetadataPersistsCoverageAndOldFilesDecodeWithoutIt() throws {
+        let folder = FileManager.default.temporaryDirectory
+            .appendingPathComponent("coverage-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let journal = folder.appendingPathComponent("2026-08-04.md")
+        try Data("digest".utf8).write(to: journal)
+        let coverage = DayDigestCoverage(coveredSeconds: 3_600, trackedSeconds: 7_200)
+
+        try DayDigestGenerationMetadataStore.record(
+            quality: .complete, evidenceLatestAt: nil, coverage: coverage, for: journal)
+        XCTAssertEqual(DayDigestGenerationMetadataStore.loadWithoutRecovery(for: journal)?.coverage, coverage)
+
+        let legacy = #"{"version":2,"quality":"complete","generatedAt":0,"journalModifiedAt":0,"degradedAttemptCount":0}"#
+        try Data(legacy.utf8).write(to: DayDigestGenerationMetadataStore.metadataURL(for: journal))
+        XCTAssertNil(DayDigestGenerationMetadataStore.loadWithoutRecovery(for: journal)?.coverage)
+        XCTAssertNotNil(DayDigestGenerationMetadataStore.loadWithoutRecovery(for: journal))
+    }
+
     func testOverviewGeneratorRetriesTruncatedAggregationWithoutReasoning() async throws {
         let evidence = DayDigestEvidence.build(
             day: day,

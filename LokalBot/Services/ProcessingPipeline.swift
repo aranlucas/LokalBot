@@ -148,6 +148,24 @@ final class ProcessingPipeline: ObservableObject {
             think: ModelReadinessSnapshot.thinkReady)
     }
 
+    static func transcriptionEngine(for config: AppSettings) -> TranscriptionEngine {
+#if LOKALBOT_TEST_HOOKS
+        if let directory = TestHooks.goldenTranscriptsDirectory {
+            return GoldenTranscriptionEngine(directory: directory)
+        }
+#endif
+        return config.transcriptionEngine()
+    }
+
+    static var defaultAutomationReadiness: AutomationReadiness {
+#if LOKALBOT_TEST_HOOKS
+        if TestHooks.goldenTranscriptsDirectory != nil {
+            return AutomationReadiness(transcription: { _ in true }, think: ModelReadinessSnapshot.thinkReady)
+        }
+#endif
+        return .live
+    }
+
     /// Stage per meeting. `.failed` sticks around until the next attempt;
     /// successful meetings are removed (the files on disk are the result).
     @Published private(set) var stages: [Meeting.ID: Stage] = [:]
@@ -485,13 +503,20 @@ final class ProcessingPipeline: ObservableObject {
     /// `MissingTranscription`). A merged gap is marked before queueing so it
     /// is repaired at most once. Returns the queued meeting IDs.
     @discardableResult
-    func enqueueMissingTranscriptions(in meetings: [Meeting], summarize: Bool) -> [Meeting.ID] {
+    /// Meetings already queued, parked, or running, so repairs and health
+    /// checks never double-count them.
+    func queuedMeetingIDs() -> Set<Meeting.ID> {
         var known = Set(queue.map(\.meeting.id)).union(waitingForModelsJobs.map(\.meeting.id))
         if let activeMeetingID { known.insert(activeMeetingID) }
         if let jobStore {
             known.formUnion(jobStore.pendingJobs().map(\.meetingID))
             known.formUnion(jobStore.parkedJobs().map(\.meetingID))
         }
+        return known
+    }
+
+    func enqueueMissingTranscriptions(in meetings: [Meeting], summarize: Bool) -> [Meeting.ID] {
+        let known = queuedMeetingIDs()
         var queued: [Meeting.ID] = []
         for meeting in meetings where !known.contains(meeting.id) && stages[meeting.id] == nil {
             let folder = meeting.folderURL(in: storage)
@@ -605,7 +630,7 @@ final class ProcessingPipeline: ObservableObject {
                 // trusts them.
                 if !job.resumed { clearCheckpoints(in: folder) }
                 stages[meeting.id] = .preparingTranscriptionModel
-                let engine = config.transcriptionEngine()   // engines prepare lazily inside transcribe
+                let engine = Self.transcriptionEngine(for: config)   // engines prepare lazily inside transcribe
 
                 let root = storage.rootURL
                 let resumed = job.resumed
@@ -1204,7 +1229,8 @@ final class ProcessingPipeline: ObservableObject {
         let text = evidence.renderDocument(summary: overview.summary)
         try validateEvidence()
         try DayDigestJournalWriter.write(text, to: url, replacing: revision,
-                                        evidence: evidence, quality: overview.quality)
+                                        evidence: evidence, quality: overview.quality,
+                                        coverage: overview.coverage)
         return DayDigestGenerationResult(
             text: text,
             url: url,

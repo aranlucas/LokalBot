@@ -2,7 +2,7 @@ import AppKit
 import ApplicationServices
 import Foundation
 
-struct ScreenAccessibilitySnapshot: Equatable, Sendable {
+struct ScreenAccessibilitySnapshot: Codable, Equatable, Sendable {
     var text: String
     var sourceURL: String?
     var documentName: String?
@@ -55,7 +55,7 @@ final class ScreenAccessibilityReader: @unchecked Sendable {
     static let shared = ScreenAccessibilityReader()
     /// Activity-only sampling inspects privacy metadata, never document text.
     static let metadataOnly = ScreenAccessibilityReader {
-        resolve(processID: $0, includeText: false)
+        CaptureEnvironment.current.accessibility.read(processID: $0, includeText: false).snapshot
     }
     static let defaultDeadlineMilliseconds = 180
     static let perElementMessagingTimeout: Float = 0.025
@@ -83,7 +83,7 @@ final class ScreenAccessibilityReader: @unchecked Sendable {
     init(
         deadlineMilliseconds: Int = defaultDeadlineMilliseconds,
         resolver: @escaping Resolver = { processID in
-            ScreenAccessibilityReader.resolve(processID: processID)
+            CaptureEnvironment.current.accessibility.read(processID: processID, includeText: true).snapshot
         }
     ) {
         self.deadlineMilliseconds = max(1, deadlineMilliseconds)
@@ -159,7 +159,7 @@ final class ScreenAccessibilityReader: @unchecked Sendable {
 
     /// Why a text read produced no snapshot. Names the failed check, never
     /// window contents.
-    struct TextReadFailure: Equatable, Sendable {
+    struct TextReadFailure: Codable, Equatable, Sendable {
         let reason: String
         /// The window was readable but changed while it was read, as during
         /// a tab switch or page load; a read moments later can succeed.
@@ -174,6 +174,12 @@ final class ScreenAccessibilityReader: @unchecked Sendable {
         failureLock.lock()
         defer { failureLock.unlock() }
         return textReadFailures[processID]
+    }
+
+    /// Replay and recording environments report a read's failure reason the
+    /// same way a live read does, so capture retry logic sees it.
+    static func recordTextReadFailure(_ failure: TextReadFailure?, processID: pid_t) {
+        noteTextReadFailure(failure, processID: processID, includeText: true)
     }
 
     private static func noteTextReadFailure(_ reason: TextReadFailure?, processID: pid_t, includeText: Bool) {

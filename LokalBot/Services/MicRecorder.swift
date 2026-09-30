@@ -211,9 +211,11 @@ final class MicRealtimeDropCounter: @unchecked Sendable {
 /// so M2 gets speaker attribution for free (design doc §2.2).
 final class MicRecorder {
 
+    static var defaultInputFactory: () throws -> MicrophoneInput = { EngineMicrophoneInput() }
+    private let makeInput: () throws -> MicrophoneInput
     // Recreated per session — a reused engine can hold a stale graph after
     // device changes and then fails with kAudioDeviceUnsupportedFormat ('!dev').
-    private var engine = AVAudioEngine()
+    private var input: MicrophoneInput
     private var file: AVAudioFile?
     private var converter: AVAudioConverter?
     private var converterInputFormat: AVAudioFormat?
@@ -246,8 +248,11 @@ final class MicRecorder {
     var speakerAudioClock: RecordingAudioClock?
     private let ioQueue: DispatchQueue
 
-    init(writerQueue: DispatchQueue = DispatchQueue(label: "lokalbot.microphone.write", qos: .userInitiated)) {
+    init(writerQueue: DispatchQueue = DispatchQueue(label: "lokalbot.microphone.write", qos: .userInitiated),
+         makeInput: @escaping () throws -> MicrophoneInput = MicRecorder.defaultInputFactory) {
         ioQueue = writerQueue
+        self.makeInput = makeInput
+        self.input = (try? makeInput()) ?? EngineMicrophoneInput()
     }
     private static let bufferPoolSize = 16
     private static let pooledBufferFrameCapacity: AVAudioFrameCount = 32_768
@@ -303,6 +308,9 @@ final class MicRecorder {
     }
 
     static func requestPermission() async -> Bool {
+#if LOKALBOT_TEST_HOOKS
+        if TestHooks.backgroundAudioDirectory != nil { return true } // file input needs no microphone
+#endif
         switch AVCaptureDevice.authorizationStatus(for: .audio) {
         case .authorized: return true
         case .notDetermined: return await AVCaptureDevice.requestAccess(for: .audio)
@@ -318,13 +326,13 @@ final class MicRecorder {
         reconfigurationTask = nil
         isRecording = false
         removeConfigurationChangeObserver()
-        engine.inputNode.removeTap(onBus: 0)
-        engine.stop()
+        input.removeTap()
+        input.stop()
         ioQueue.sync { activeCaptureGraphID = nil }
         bufferPoolBroker?.clear()
         bufferPoolBroker = nil
-        engine = AVAudioEngine()
-        let inputFormat = engine.inputNode.outputFormat(forBus: 0)
+        input = try makeInput()
+        let inputFormat = input.inputFormat
         guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
             throw RecorderError.inputUnavailable
         }
@@ -363,7 +371,7 @@ final class MicRecorder {
 
         isRecording = true
         observeDeviceReconnections()
-        observeConfigurationChanges(for: engine)
+        if let live = input as? EngineMicrophoneInput { observeConfigurationChanges(for: live.engine) }
         do {
             try installTapAndStart(inputFormat: inputFormat, recordingFormat: recordingFormat)
         } catch {
@@ -396,8 +404,8 @@ final class MicRecorder {
         reconfigurationTask = nil
         updateRecoveryState(.healthy)
         removeConfigurationChangeObserver()
-        engine.inputNode.removeTap(onBus: 0)
-        engine.stop()
+        input.removeTap()
+        input.stop()
         // Draining the queue first preserves callback order. Then flush the
         // converter's tail before closing either output.
         ioQueue.sync {
@@ -417,13 +425,13 @@ final class MicRecorder {
     }
 
     func captureHealth() -> CaptureHealth {
-        let running = engine.isRunning
+        let running = input.isRunning
         return ioQueue.sync { healthOnWriterQueue(isEngineRunning: running) }
     }
 
     @MainActor
     func captureHealthInBackground() async -> CaptureHealth {
-        let running = engine.isRunning
+        let running = input.isRunning
         return await withCheckedContinuation { continuation in
             ioQueue.async {
                 continuation.resume(returning: self.healthOnWriterQueue(isEngineRunning: running))
@@ -490,8 +498,8 @@ final class MicRecorder {
     /// the same artifact.
     private func rebuildCaptureGraph(recordingFormat: AVAudioFormat) throws {
         removeConfigurationChangeObserver()
-        engine.inputNode.removeTap(onBus: 0)
-        engine.stop()
+        input.removeTap()
+        input.stop()
         ioQueue.sync { activeCaptureGraphID = nil }
         bufferPoolBroker?.clear()
         bufferPoolBroker = nil
@@ -500,14 +508,14 @@ final class MicRecorder {
             recoverySilenceCommitGate.cancel()
         }
 
-        let replacementEngine = AVAudioEngine()
-        engine = replacementEngine
-        let inputFormat = replacementEngine.inputNode.outputFormat(forBus: 0)
+        let replacement = try makeInput()
+        input = replacement
+        let inputFormat = replacement.inputFormat
         guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
             throw RecorderError.inputUnavailable
         }
 
-        observeConfigurationChanges(for: replacementEngine)
+        if let live = replacement as? EngineMicrophoneInput { observeConfigurationChanges(for: live.engine) }
         do {
             try installTapAndStart(inputFormat: inputFormat,
                                    recordingFormat: recordingFormat,
@@ -515,8 +523,8 @@ final class MicRecorder {
                                    stageRecoverySilence: true)
         } catch {
             removeConfigurationChangeObserver()
-            replacementEngine.inputNode.removeTap(onBus: 0)
-            replacementEngine.stop()
+            replacement.removeTap()
+            replacement.stop()
             bufferPoolBroker?.clear()
             bufferPoolBroker = nil
             throw error
@@ -535,7 +543,7 @@ final class MicRecorder {
         if shouldDrainExistingConverter {
             drainAndResetConverter()
         }
-        let input = engine.inputNode
+        let tapInput = input
         let broker = MicAudioBufferPoolBroker(
             bufferCount: Self.bufferPoolSize,
             frameCapacity: Self.pooledBufferFrameCapacity)
@@ -550,7 +558,7 @@ final class MicRecorder {
         // device switch, `outputFormat(forBus:)` can briefly report a stale
         // client format while the input unit has already moved to the new
         // hardware rate, and passing that stale format makes installTap raise.
-        input.installTap(onBus: 0, bufferSize: 4096, format: nil) { [weak self, broker] buffer, audioTime in
+        tapInput.installTap(bufferSize: 4096) { [weak self, broker] buffer, audioTime in
             guard let self else { return }
             let capturedAt = ContinuousClock.now
             let callbackHostTime = RecordingAudioClock.now
@@ -604,11 +612,10 @@ final class MicRecorder {
             }
         }
         do {
-            engine.prepare()
-            try engine.start()
-            guard engine.isRunning else { throw RecorderError.inputUnavailable }
+            try tapInput.start()
+            guard tapInput.isRunning else { throw RecorderError.inputUnavailable }
         } catch {
-            input.removeTap(onBus: 0)
+            tapInput.removeTap()
             bufferPoolBroker?.clear()
             bufferPoolBroker = nil
             ioQueue.sync {
@@ -739,7 +746,7 @@ final class MicRecorder {
     /// the graph after Core Audio has settled. Reinstalling immediately can hit
     /// AVAudioEngine's transient "config change pending" state.
     private func handleConfigurationChange(for changedEngine: AVAudioEngine) {
-        guard isRecording, engine === changedEngine else { return }
+        guard isRecording, (input as? EngineMicrophoneInput)?.engine === changedEngine else { return }
         removeConfigurationChangeObserver()
         changedEngine.inputNode.removeTap(onBus: 0)
         changedEngine.stop()

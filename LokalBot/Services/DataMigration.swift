@@ -87,7 +87,14 @@ enum DataMigration {
                             secrets: SecretStore = .live) -> StartupOutcome {
         guard shouldRun(environment: environment, defaults: defaults,
                         identity: identity, arguments: arguments) else { return .ready }
+        return migrate(appSupport: appSupport, currentDirectory: currentDirectory,
+                       defaults: defaults, secrets: secrets)
+    }
 
+    /// The migration itself, without the launch gate (which skips every test
+    /// host). Upgrade tests run it on each release's library.
+    static func migrate(appSupport: URL, currentDirectory: URL,
+                        defaults: UserDefaults, secrets: SecretStore) -> StartupOutcome {
         let currentDir = currentDirectory
         let oldV3Dir = appSupport.appendingPathComponent(oldV3BundleID, isDirectory: true)
         let oldV2Dir = appSupport.appendingPathComponent(oldV2BundleID, isDirectory: true)

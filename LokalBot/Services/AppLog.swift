@@ -57,7 +57,7 @@ enum AppLog {
     /// diagnostics to, so existing tooling keeps working. Follows the
     /// `LOKALBOT_STORAGE_ROOT` override so isolated runs log into their own
     /// library instead of the real one.
-    private static func debugLogURL() -> URL {
+    static func debugLogURL() -> URL {
         AppDirectories.libraryRoot.appendingPathComponent("debug.log", isDirectory: false)
     }
 }

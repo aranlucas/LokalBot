@@ -1,0 +1,16 @@
+{
+  "calls" : [
+    {
+      "completionTokens" : 120,
+      "content" : "{\"tool\": \"search_meetings\", \"arguments\": {\"query\": \"caching layer decision owner next step\"}}",
+      "finishReason" : "stop",
+      "latencyMilliseconds" : 3105,
+      "maxTokens" : 2048,
+      "purpose" : "ask",
+      "reasoningTokens" : 93
+    }
+  ],
+  "caseName" : "ask-answer",
+  "model" : "qwen\/qwen3.8-flash",
+  "recordedAt" : "2026-09-30T05:57:05Z"
+}

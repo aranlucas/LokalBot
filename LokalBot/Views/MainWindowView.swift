@@ -316,6 +316,7 @@ private struct SidebarPrivacyFooter: View {
                         .buttonStyle(.plain)
                         .font(.scaled(.callout))
                         .help("Open the current recording")
+                        .accessibilityIdentifier("sidebar.recording")
                 }
                 .foregroundStyle(LBTokens.Palette.recordingText)
                 .padding(10)

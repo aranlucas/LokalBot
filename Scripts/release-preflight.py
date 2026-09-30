@@ -58,6 +58,9 @@ def validate(root, *, version=None, candidate=False, staged=False, remote="origi
             ["git", "-C", str(root), "show", f"{base}:LokalBot/Info.plist"]))
         if int(build) <= int(previous["CFBundleVersion"]):
             raise ValueError("Build number must increase from the changelog base")
+        fixture = root / "LokalBotTests/Fixtures/upgrade" / base[1:] / "manifest.json"
+        if not fixture.exists():
+            raise ValueError(f"Add the upgrade fixture for {base} (run the Upgrade fixtures workflow) before releasing")
     if staged:
         required = {"project.yml", "LokalBot/Info.plist", notes_path}
         changed = set(git(root, "diff", "--cached", "--name-only").splitlines())

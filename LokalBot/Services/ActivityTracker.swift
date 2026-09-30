@@ -1285,7 +1285,7 @@ final class FocusedWindowTitleLookup: @unchecked Sendable {
     init(
         deadlineMilliseconds: Int = defaultDeadlineMilliseconds,
         resolver: @escaping Resolver = { processID in
-            FocusedWindowTitleLookup.resolveTitle(processID: processID)
+            CaptureEnvironment.current.accessibility.focusedWindowTitle(processID: processID)
         }
     ) {
         self.deadlineMilliseconds = max(1, deadlineMilliseconds)
@@ -1403,7 +1403,8 @@ final class ActivitySampler: ObservableObject {
     /// `appChanged` distinguishes an app switch from a window/tab change
     /// inside the same app. Excluded apps arrive as ("Private", "").
     var onActivityBoundary: ((_ app: String, _ title: String, _ appChanged: Bool) -> Void)?
-    private var timer: Timer?
+    private var sampleTimer: CaptureTimer?
+    private var environment: CaptureEnvironment { .current }
     private let notificationCenter: NotificationCenter
     private var terminationObserver: NSObjectProtocol?
     private var current: (app: String, title: String, start: Date)?
@@ -1427,9 +1428,9 @@ final class ActivitySampler: ObservableObject {
     var hasTerminationObserver: Bool { terminationObserver != nil }
 
     func start() {
-        guard timer == nil else { return }
+        guard sampleTimer == nil else { return }
         lokalbotLog("sampler start — AX trusted: \(Self.hasAccessibility ? "yes" : "no")")
-        timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+        sampleTimer = environment.clock.repeating(every: 5) { [weak self] in
             Task { @MainActor in await self?.sample() }
         }
         terminationObserver = notificationCenter.addObserver(
@@ -1440,8 +1441,8 @@ final class ActivitySampler: ObservableObject {
 
     func stop() {
         samplingGeneration &+= 1
-        timer?.invalidate()
-        timer = nil
+        sampleTimer?.cancel()
+        sampleTimer = nil
         if let terminationObserver {
             notificationCenter.removeObserver(terminationObserver)
             self.terminationObserver = nil
@@ -1456,24 +1457,23 @@ final class ActivitySampler: ObservableObject {
     }
 
     /// Window titles need Accessibility; unknown privacy state is anonymized.
-    nonisolated static var hasAccessibility: Bool { AXIsProcessTrusted() }
+    nonisolated static var hasAccessibility: Bool { CaptureEnvironment.current.accessibility.isTrusted() }
 
-    private func sample() async {
+    func sample() async {
         guard !isPaused, !isSampling else { return }
         isSampling = true
         let generation = samplingGeneration
         defer { isSampling = false }
 
         // Idle: any input event type, session-wide.
-        let idle = CGEventSource.secondsSinceLastEventType(
-            .combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
+        let idle = environment.workspace.secondsSinceLastInput()
         if idle > Self.idleLimit {
             closeCurrentBlock(at: lastSeen)
             return
         }
-        lastSeen = Date()
+        lastSeen = environment.clock.now()
 
-        guard let frontmost = NSWorkspace.shared.frontmostApplication,
+        guard let frontmost = environment.workspace.frontmostApplication(),
               let appName = frontmost.localizedName else { return }
         let processID = frontmost.processIdentifier
         let isExcluded = ScreenshotCaptureLayout.isExcluded(
@@ -1482,7 +1482,7 @@ final class ActivitySampler: ObservableObject {
             ? ScreenAccessibilityCaptureResult(snapshot: nil, timedOut: false)
             : await accessibilityReader.capture(processID: processID)
         guard !isPaused, generation == samplingGeneration else { return }
-        guard NSWorkspace.shared.frontmostApplication?.processIdentifier == processID else {
+        guard environment.workspace.frontmostApplication()?.processIdentifier == processID else {
             closeCurrentBlock()
             return
         }
@@ -1493,7 +1493,8 @@ final class ActivitySampler: ObservableObject {
     /// Shared ingestion path for live samples and synthetic regression tests.
     /// Exclusions and unknown AX state preserve duration without title or URL.
     func recordSample(appName: String, bundleIdentifier: String?,
-                      accessibility: ScreenAccessibilityCaptureResult, at timestamp: Date = Date()) {
+                      accessibility: ScreenAccessibilityCaptureResult, at timestamp: Date? = nil) {
+        let timestamp = timestamp ?? environment.clock.now()
         let observation = accessibility.timedOut ? nil : accessibility.snapshot?.privacyObservation(
             appName: appName, bundleIdentifier: bundleIdentifier)
         let disposition = ScreenContextPrivacy.activityDisposition(
@@ -1514,7 +1515,8 @@ final class ActivitySampler: ObservableObject {
         current = (storedApp, title, timestamp)
     }
 
-    private func closeCurrentBlock(at end: Date = Date()) {
+    private func closeCurrentBlock(at end: Date? = nil) {
+        let end = end ?? environment.clock.now()
         guard let block = current else { return }
         current = nil
         guard end.timeIntervalSince(block.start) >= Self.minBlock else { return }

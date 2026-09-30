@@ -21,8 +21,8 @@ for a directory previously marked as a LokalBot demo library.
 Point the app at <storage-root> via LOKALBOT_STORAGE_ROOT. See
 Scripts/capture-screenshots.sh for the full capture flow.
 """
-import argparse, json, math, os, re, shutil, sqlite3, struct, subprocess, sys, time, wave, zlib
-from datetime import datetime, timezone, timedelta
+import argparse, json, math, os, random, re, shutil, sqlite3, struct, subprocess, sys, time, uuid, wave, zlib
+from datetime import date, datetime, timezone, timedelta
 
 ENGINE = "on-device demo"
 OWNERSHIP_MARKER = ".lokalbot-demo-library"
@@ -480,9 +480,7 @@ def write_demo_png(path, accent, variant):
         handle.write(png)
 
 
-def seed_activity(root):
-    con = sqlite3.connect(os.path.join(root, "lokalbotv3.sqlite"))
-    cur = con.cursor()
+def ensure_activity_tables(cur):
     cur.execute("""CREATE TABLE IF NOT EXISTS activity_blocks (id INTEGER PRIMARY KEY AUTOINCREMENT,
         app TEXT NOT NULL, title TEXT NOT NULL, start REAL NOT NULL, end REAL NOT NULL);""")
     cur.executescript("""
@@ -506,6 +504,12 @@ def seed_activity(root):
             text_source UNINDEXED, snapshot_id UNINDEXED,
             tokenize='unicode61 remove_diacritics 2');
     """)
+
+
+def seed_activity(root):
+    con = sqlite3.connect(os.path.join(root, "lokalbotv3.sqlite"))
+    cur = con.cursor()
+    ensure_activity_tables(cur)
     days = {
         0: [("Xcode", "TimelineView.swift", 9 * 60, 10 * 60 + 30),
             ("Safari", "Pull request #42 - caching", 10 * 60 + 30, 11 * 60 + 15),
@@ -582,10 +586,158 @@ def seed_activity(root):
     con.close()
 
 
+FULL_DAY_BLOCKS = [  # (app, title, start minute, end minute) on the seeded day
+    ("Xcode", "EvictionPolicy.swift", 8 * 60 + 30, 10 * 60 + 40),
+    ("Google Chrome", "Pull request #42 - caching layer", 10 * 60 + 40, 11 * 60),
+    ("Microsoft Teams", "Design review", 11 * 60, 11 * 60 + 6),
+    ("Slack", "#engineering", 11 * 60 + 6, 11 * 60 + 45),
+    ("Private", "", 11 * 60 + 45, 12 * 60 + 20),
+    ("Notion", "Q3 planning doc", 13 * 60, 14 * 60 + 10),
+    ("Terminal", "load harness", 14 * 60 + 10, 15 * 60),
+    ("Microsoft Teams", "Sprint planning", 15 * 60, 15 * 60 + 4),
+    ("Xcode", "SearchIndex.swift", 15 * 60 + 4, 17 * 60 + 30),
+    ("Google Chrome", "Redis failover docs", 17 * 60 + 30, 18 * 60 + 30),
+]
+
+FULL_DAY_TEXT = {
+    "Xcode": "func evict(olderThan cutoff: Date) LRU eviction for the Redis cache; 12 tests passed",
+    "Google Chrome": "Review: approve after benchmarking failover latency. Merge blocked on cluster mode decision.",
+    "Slack": "Redis failover benchmark is booked for Thursday with the search team's load harness.",
+    "Notion": "Postgres migration timeline, Q3 priorities, onboarding first and reliability second.",
+    "Terminal": "failover p95 1.8s to 0.9s after connection pool change; benchmark complete",
+}
+
+# (start seconds, speaker, text). The lines are SyntheticModelPrompts'
+# standupTranscript() lines; the start times match the golden transcripts in
+# LokalBotTests/Fixtures/day-in-the-life/golden-transcripts.
+DESIGN_REVIEW_LINES = [
+    (0, "me", "Let's lock the caching layer. I propose Redis for the pub-sub support."),
+    (7, "them", "Agreed on Redis. Open question: do we need cluster mode from day one?"),
+    (16, "me", "I'll draft the eviction-policy doc by Thursday."),
+    (22, "them", "Please benchmark failover latency before we commit to a cluster."),
+    (30, "me", "Fair. I'll borrow the load harness from the search team for that."),
+]
+
+# Sprint planning merges two 2-minute sources; one line falls in each.
+SPRINT_LINES = [
+    (0, "them", "Sprint goal is the search index rebuild."),
+    (121, "me", "I'll pair on the tombstone cleanup tomorrow."),
+]
+
+
+def say_track(lines, speaker, path):
+    """Synthesize one speaker's lines at their start times (silence between) into
+    an m4a. Both tracks of a meeting run to the same length, like a recording."""
+    rate = 22_050
+    samples = bytearray()
+    for start, who, text in lines:
+        if who != speaker:
+            continue
+        clip = path + ".line.wav"
+        subprocess.run(["/usr/bin/say", f"--data-format=LEI16@{rate}", "-o", clip, text], check=True)
+        with wave.open(clip) as reader:
+            speech = reader.readframes(reader.getnframes())
+        os.remove(clip)
+        offset = int(start * rate) * 2
+        samples.extend(bytes(max(0, offset - len(samples))))
+        samples[offset:offset + len(speech)] = speech
+    length = int((max(start for start, _, _ in lines) + 8) * rate) * 2
+    samples.extend(bytes(max(0, length - len(samples))))
+    track = path + ".wav"
+    with wave.open(track, "wb") as writer:
+        writer.setnchannels(1)
+        writer.setsampwidth(2)
+        writer.setframerate(rate)
+        writer.writeframes(bytes(samples))
+    subprocess.run(["/usr/bin/afconvert", "-f", "m4af", "-d", "aac", track, path], check=True,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    os.remove(track)
+
+
+def seed_full_day(root, day):
+    con = sqlite3.connect(os.path.join(root, "lokalbotv3.sqlite"))
+    cur = con.cursor()
+    ensure_activity_tables(cur)
+    midnight = time.mktime(day.timetuple())
+    for app, title, start, end in FULL_DAY_BLOCKS:
+        cur.execute("INSERT INTO activity_blocks (app,title,start,end) VALUES (?,?,?,?)",
+                    (app, title, midnight + start * 60, midnight + end * 60))
+        text = FULL_DAY_TEXT.get(app)
+        if text and end - start >= 30:
+            for offset in range(3):
+                ts = midnight + (start + 5 + offset * (end - start - 10) / 3) * 60
+                cur.execute("""INSERT INTO screenshots (ts, path, app, window_title, capture_trigger,
+                               perceptual_hash, similarity_group, source_url, document_name, meeting_id,
+                               privacy_redactions) VALUES (?, '', ?, ?, 'window_change', '', 0, '', ?, '', 0)""",
+                            (ts, app, title, title))
+                cur.execute("""INSERT INTO ocr_fts (text, window_title, ts, app, text_source, snapshot_id)
+                               VALUES (?, ?, ?, ?, 'accessibility', ?)""", (text, title, ts, app, cur.lastrowid))
+    con.commit()
+    con.close()
+    for slug, title, hour, minutes, lines, merged in [
+            ("design-review", "Design review", 11, 6, DESIGN_REVIEW_LINES, False),
+            ("sprint-planning", "Sprint planning", 15, 4, SPRINT_LINES, True)]:
+        # Local wall-clock time, like the activity blocks.
+        started = datetime(day.year, day.month, day.day, hour, 0).astimezone(timezone.utc)
+        rel = relpath(started, slug)
+        folder = os.path.join(root, rel)
+        os.makedirs(folder, exist_ok=True)
+        meta = {"appName": "Microsoft Teams", "endedAt": iso(started + timedelta(minutes=minutes)),
+                "hasSystemTrack": True, "id": str(uuid.uuid5(uuid.NAMESPACE_URL, slug)),
+                "relativePath": rel, "startedAt": iso(started), "title": title}
+        with open(os.path.join(folder, "meta.json"), "w") as f:
+            json.dump(meta, f, indent=2)
+        say_track(lines, "me", os.path.join(folder, "mic.m4a"))
+        say_track(lines, "them", os.path.join(folder, "system.m4a"))
+        if merged:
+            half = minutes * 30
+            sources = [{"id": str(uuid.uuid5(uuid.NAMESPACE_URL, f"{slug}-{part}")),
+                        "title": f"{title} (part {part})",
+                        "startedAt": iso(started + timedelta(seconds=half * (part - 1))),
+                        "duration": half, "hasAudio": True, "hasTranscript": False} for part in (1, 2)]
+            with open(os.path.join(folder, "merge-manifest.json"), "w") as f:
+                json.dump({"version": 2, "sources": sources}, f, indent=2, sort_keys=True)
+
+
+def seed_large(root):
+    rng = random.Random(7)
+    con = sqlite3.connect(os.path.join(root, "lokalbotv3.sqlite"))
+    cur = con.cursor()
+    ensure_activity_tables(cur)
+    apps = ["Xcode", "Google Chrome", "Slack", "Terminal", "Notion", "Microsoft Teams", "Figma", "Private"]
+    now = time.time()
+    blocks = []
+    for index in range(50_000):
+        start = now - 180 * 86400 + index * (180 * 86400 / 50_000)
+        blocks.append((rng.choice(apps), f"Window {index % 97}", start, start + rng.randint(60, 240)))
+    cur.executemany("INSERT INTO activity_blocks (app,title,start,end) VALUES (?,?,?,?)", blocks)
+    for index in range(20_000):
+        ts = now - 180 * 86400 + index * (180 * 86400 / 20_000)
+        app = rng.choice(apps[:-1])
+        cur.execute("""INSERT INTO screenshots (ts, path, app, window_title, capture_trigger, perceptual_hash,
+                       similarity_group, source_url, document_name, meeting_id, privacy_redactions)
+                       VALUES (?, '', ?, 'Window', 'interval', '', 0, '', '', '', 0)""", (ts, app))
+        cur.execute("INSERT INTO ocr_fts (text, window_title, ts, app, text_source, snapshot_id) VALUES (?, ?, ?, ?, 'accessibility', ?)",
+                    (f"synthetic screen text {index}", "Window", ts, app, cur.lastrowid))
+    con.commit()
+    con.close()
+    base = datetime.now(timezone.utc)
+    for index in range(200):
+        started = base - timedelta(days=180 * index / 200, hours=rng.randint(0, 8))
+        write_meeting(root, m(str(uuid.UUID(int=rng.getrandbits(128), version=4)), f"Meeting {index}", "Zoom",
+                              started, 30, True,
+                              [seg(0, 10, "me", f"Synthetic topic {index} update."), seg(10, 20, "them", "Noted.")],
+                              "## TL;DR\nSynthetic meeting.\n"))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reset", action="store_true",
                         help="replace an existing directory created by this script")
+    parser.add_argument("--profile", choices=["demo", "full-day", "large"], default="demo",
+                        help="demo (default): the screenshot library; full-day: one untranscribed "
+                             "9-hour day; large: 180 days for scale checks")
+    parser.add_argument("--day", help="YYYY-MM-DD for full-day (default: yesterday)")
     parser.add_argument("storage_root")
     args = parser.parse_args()
     root = os.path.abspath(args.storage_root)
@@ -602,6 +754,15 @@ def main():
     with open(marker, "w", encoding="utf-8") as owned:
         owned.write("LokalBot synthetic demo library\n")
     os.makedirs(os.path.join(root, "meetings"), exist_ok=True)
+    if args.profile == "full-day":
+        day = date.fromisoformat(args.day) if args.day else date.today() - timedelta(days=1)
+        seed_full_day(root, day)
+        print(f"Seeded full-day library at {root} for {day.isoformat()}")
+        return
+    if args.profile == "large":
+        seed_large(root)
+        print(f"Seeded large library at {root}")
+        return
     now = datetime.now(timezone.utc)
     for mm in build(now):
         write_meeting(root, mm)

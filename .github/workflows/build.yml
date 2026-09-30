@@ -23,6 +23,16 @@ on:
         type: choice
         options: ["warm", "cold", "off"]
         default: warm
+  workflow_call:
+    inputs:
+      cache_mode:
+        type: string
+        default: warm
+      # The nightly workflow needs only the compiled products; it skips the
+      # per-PR unit and workday jobs so their failures cannot hide its own.
+      products_only:
+        type: boolean
+        default: false
   pull_request:
     branches: [master, dev]
   push:
@@ -31,7 +41,9 @@ on:
 # Cancel superseded runs for the same ref so rapid pushes/force-pushes don't
 # leave a backlog of stale builds burning runner minutes.
 concurrency:
-  group: build-${{ github.ref }}
+  # A called build runs under the caller's workflow name; never cancel the
+  # regular Build of the same ref.
+  group: build-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -53,7 +65,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Bind manual dispatch to the requested candidate
-        if: github.event_name == 'workflow_dispatch'
+        # In a called workflow github.event_name/github.workflow are the
+        # caller's; the exact-SHA binding keeps applying to Build dispatches.
+        if: github.event_name == 'workflow_dispatch' && github.workflow == 'Build'
         env:
           REQUESTED_SHA: ${{ inputs.candidate_sha }}
         run: |
@@ -190,6 +204,7 @@ jobs:
   tests:
     name: xcodebuild test (macOS)
     needs: build
+    if: ${{ !inputs.products_only }}
     runs-on: macos-15
     timeout-minutes: 30
     steps:
@@ -206,7 +221,11 @@ jobs:
         env:
           CODE_SIGNING_ALLOWED: "NO"
         run: python3 Scripts/ci/test-products.py unpack unit
+      - name: Fetch pinned Bun for the model stub
+        run: echo "TEST_RUNNER_LOKALBOT_TEST_BUN=$(bash Scripts/ci/fetch-bun.sh | tail -1)" >> "$GITHUB_ENV"
       - name: Run unit tests without rebuilding
+        env:
+          TEST_RUNNER_CI: "true"
         run: |
           runs=(.build/dd/Build/Products/*.xctestrun)
           test "${#runs[@]}" -eq 1
@@ -222,4 +241,39 @@ jobs:
           overwrite: true # full reruns replace artifacts from earlier attempts
           name: unit-results
           path: .build/unit.xcresult
+          retention-days: 14
+
+  day-in-the-life:
+    name: Day in the life (macOS)
+    needs: build
+    if: ${{ !inputs.products_only }}
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90
+        with:
+          xcode-version: "26.3"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: unit-products
+          path: .build/transfer
+      - name: Verify and restore compiled products
+        env:
+          CODE_SIGNING_ALLOWED: "NO"
+        run: python3 Scripts/ci/test-products.py unpack unit
+      - name: Run one synthetic workday through the real pipelines
+        run: |
+          export LOKALBOT_TEST_BUN="$(bash Scripts/ci/fetch-bun.sh | tail -1)"
+          export LOKALBOT_APP="$PWD/.build/dd/Build/Products/Debug/LokalBot.app"
+          bash Scripts/day-in-the-life.sh 2>&1 | tee .build/day-in-the-life.log
+      - name: Keep the failed library
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: day-in-the-life
+          path: |
+            .build/day-in-the-life.log
+            /tmp/lokalbot-day.*
           retention-days: 14

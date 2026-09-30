@@ -1,0 +1,17 @@
+{
+  "calls" : [
+    {
+      "completionTokens" : 362,
+      "content" : "{\n  \"actions\": [\n    {\n      \"quote\": \"I'll draft the eviction-policy doc by Thursday.\",\n      \"source\": \"s3\",\n      \"owner\": \"p1\",\n      \"basis\": \"commitment\",\n      \"importance\": 4,\n      \"context\": [],\n      \"text\": \"Draft the eviction-policy document by Thursday.\",\n      \"due\": \"Thursday\"\n    },\n    {\n      \"quote\": \"I'll borrow the load harness from the search team for that.\",\n      \"source\": \"s5\",\n      \"owner\": \"p1\",\n      \"basis\": \"commitment\",\n      \"importance\": 4,\n      \"context\": [\n       \"s4\"\n      ],\n      \"text\": \"Borrow the load harness from the search team to benchmark failover latency.\",\n      \"due\": \"\"\n    }\n  ],\n  \"notes\": [\n    {\n      \"section\": \"TL;DR\",\n      \"text\": \"Redis selected for caching layer. User committed to drafting eviction policy and benchmarking failover latency using a borrowed harness.\",\n      \"source\": \"s1\"\n    },\n    {\n      \"section\": \"Key points\",\n      \"text\": \"Redis proposed for pub-sub support in the caching layer and agreed upon by participants.\",\n      \"source\": \"s1\"\n    },\n    {\n      \"section\": \"Open questions\",\n      \"text\": \"Whether cluster mode is required from day one remains an open question pending failover latency benchmarks.\",\n      \"source\": \"s2\"\n    }\n  ],\n  \"has_more\": false\n}",
+      "finishReason" : "stop",
+      "latencyMilliseconds" : 6073,
+      "maxTokens" : 4096,
+      "purpose" : "notes",
+      "reasoningBudgetTokens" : 0,
+      "reasoningTokens" : 0
+    }
+  ],
+  "caseName" : "notes-design-review",
+  "model" : "qwen\/qwen3.8-flash",
+  "recordedAt" : "2026-09-30T05:57:02Z"
+}

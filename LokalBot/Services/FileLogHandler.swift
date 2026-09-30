@@ -16,19 +16,26 @@ import Logging
 /// the conformance cannot be derived automatically.
 final class FileLogSink: @unchecked Sendable {
     private let fileURL: URL
-    private let sizeCapBytes: UInt64
+    let sizeCapBytes: UInt64
+    let maxRotations: Int
     private let lock = NSLock()
     private var handle: FileHandle?
     private var byteOffset: UInt64 = 0
 
-    /// `sizeCapBytes` defaults to ~2 MB — plenty for a session's diagnostics
-    /// without unbounded growth. `fileURL` is the live log; rotation keeps a
-    /// single `<name>.1` backup beside it.
-    init(fileURL: URL, sizeCapBytes: UInt64 = 2 * 1024 * 1024) {
+    /// `sizeCapBytes` defaults to 8 MB and five rotations are kept (`.1` is
+    /// the newest), about 40 MB in total — enough for a full working day of
+    /// diagnostics, which a single 2 MB backup could not hold.
+    init(fileURL: URL, sizeCapBytes: UInt64 = 8 * 1024 * 1024, maxRotations: Int = 5) {
         self.fileURL = fileURL
         self.sizeCapBytes = sizeCapBytes
+        self.maxRotations = max(1, maxRotations)
         // Safe to touch the locked body directly: the sink is not yet shared.
         openHandleLocked()
+    }
+
+    /// Rotated files, newest first.
+    static func rotatedURLs(for fileURL: URL, maxRotations: Int) -> [URL] {
+        (1...max(1, maxRotations)).map { fileURL.appendingPathExtension(String($0)) }
     }
 
     /// Appends one already-formatted line (the caller supplies the trailing
@@ -52,17 +59,22 @@ final class FileLogSink: @unchecked Sendable {
         }
     }
 
-    /// One-step rotation: move the live file to `<name>.1` (overwriting any
-    /// prior rotation), then open a fresh empty file. Keeps roughly the last
-    /// 2x cap of history instead of truncating away the most recent events at
-    /// the exact moment a debugger needs them.
+    /// Shift `.1…(n-1)` to `.2…n` (dropping the oldest), then move the live
+    /// file to `.1` and open a fresh empty file.
     private func rotateLocked() {
         try? handle?.close()
         handle = nil
 
         let fileManager = FileManager.default
-        let backupURL = fileURL.appendingPathExtension("1")
-        try? fileManager.removeItem(at: backupURL)
+        let rotated = Self.rotatedURLs(for: fileURL, maxRotations: maxRotations)
+        try? fileManager.removeItem(at: rotated[rotated.count - 1])
+        for index in stride(from: rotated.count - 1, to: 0, by: -1) {
+            let source = rotated[index - 1]
+            if fileManager.fileExists(atPath: source.path) {
+                try? fileManager.moveItem(at: source, to: rotated[index])
+            }
+        }
+        let backupURL = rotated[0]
 
         // Only recreate an empty live file when the move actually displaced the
         // old one. If the move fails and the original is still present, writing

@@ -166,7 +166,10 @@ class ParallelGateTests(unittest.TestCase):
         for job in ['build-smoke', 'reduced-motion', 'shards']:
             block = workflow.split(f'  {job}:\n', 1)[1].split('    steps:', 1)[0]
             self.assertIn('    needs: build\n', block)
-        self.assertIn('needs: [build, build-smoke, reduced-motion, shards]', workflow)
+        self.assertIn('needs: [changes, build, build-smoke, reduced-motion, shards]', workflow)
+        build_block = workflow.split('  build:\n', 1)[1].split('    steps:', 1)[0]
+        self.assertIn("    needs: changes\n", build_block)
+        self.assertIn("if: needs.changes.outputs.relevant == 'true'", build_block)
         self.assertIn('cancel-in-progress: true', workflow)
         self.assertIn('name: UI build and critical tests', workflow)
         self.assertIn('XCUITest (macOS)', workflow)
@@ -191,6 +194,33 @@ class ParallelGateTests(unittest.TestCase):
                            ('success', 'success', 'success', 'success', 'Suite/testOne')]:
                 with self.assertRaises(ValueError):
                     shards.gate(*values)
+
+
+    def test_background_flows_run_only_in_their_own_shard(self):
+        with patch.object(shards, 'inventory', return_value=[
+                'BackgroundFlowUITests/testA', 'MainWindowUITests/testB', *shards.SMOKE,
+                shards.REDUCED, shards.VISUAL]):
+            with patch.object(shards, 'SMOKE', []):
+                plan = shards.plan()
+        self.assertEqual(plan['background'], ['BackgroundFlowUITests/testA'])
+        self.assertNotIn('BackgroundFlowUITests/testA', plan['functional-1'] + plan['functional-2'])
+        workflow = (ROOT / '.github/workflows/ui-tests.yml').read_text()
+        self.assertIn('background', workflow.split('phase: [', 1)[1].split(']', 1)[0])
+
+class NightlyTests(unittest.TestCase):
+    def test_nightly_build_only_compiles_and_a_failed_build_opens_an_issue(self):
+        build = (ROOT / '.github/workflows/build.yml').read_text()
+        nightly = (ROOT / '.github/workflows/nightly.yml').read_text()
+        self.assertIn('products_only:', build.split('workflow_call:', 1)[1].split('pull_request:', 1)[0])
+        for job in ['tests', 'day-in-the-life']:
+            block = build.split(f'\n  {job}:\n', 1)[1].split('    steps:', 1)[0]
+            self.assertIn('if: ${{ !inputs.products_only }}', block, job)
+        call = nightly.split('\n  build:\n', 1)[1].split('\n  model-drift:', 1)[0]
+        self.assertIn('products_only: true', call)
+        failed = nightly.split('\n  build-failed:\n', 1)[1]
+        self.assertIn('needs: build', failed)
+        self.assertIn("if: failure() && github.event_name == 'schedule'", failed)
+        self.assertIn('gh issue create', failed)
 
 
 class CompilerCacheTests(unittest.TestCase):

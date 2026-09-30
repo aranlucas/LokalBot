@@ -19,6 +19,13 @@ enum HeadlessCommand: Equatable {
     case chat(question: String)
     case agent(prompt: String)
     case cotypingBench
+    case exportDiagnostics(destination: URL)
+    case health(dayKey: String?, json: Bool)
+    case recordCapture(seconds: Int, scenario: String)
+#if LOKALBOT_TEST_HOOKS
+    case setBoundaries(folder: URL, start: TimeInterval, end: TimeInterval)
+    case searchScreen(query: String)
+#endif
     /// Print a day's coding-agent evidence and exit. Runs before SwiftUI
     /// launches: it reads transcripts only, so it needs no window, library
     /// lock, or app subsystem.
@@ -51,6 +58,29 @@ enum HeadlessCommand: Equatable {
             return .dream(dayKey: next.flatMap { $0.hasPrefix("--") ? nil : $0 })
         }
         if args.contains("--cotyping-bench") { return .cotypingBench }
+        if args.contains("--health") {
+            let dayFlag = args.firstIndex(of: "--day")
+            let dayKey = dayFlag.flatMap { args.count > $0 + 1 ? args[$0 + 1] : nil }
+            return .health(dayKey: dayKey, json: args.contains("--json"))
+        }
+        if let flag = args.firstIndex(of: "--export-diagnostics"), args.count > flag + 1 {
+            return .exportDiagnostics(destination: URL(fileURLWithPath: args[flag + 1]))
+        }
+#if LOKALBOT_TEST_HOOKS
+        if let flag = args.firstIndex(of: "--set-boundaries"), args.count > flag + 3,
+           let start = TimeInterval(args[flag + 2]), let end = TimeInterval(args[flag + 3]) {
+            return .setBoundaries(folder: URL(fileURLWithPath: args[flag + 1], isDirectory: true), start: start, end: end)
+        }
+        if let flag = args.firstIndex(of: "--search-screen"), args.count > flag + 1 {
+            return .searchScreen(query: args[flag + 1])
+        }
+#endif
+#if DEBUG
+        if let flag = args.firstIndex(of: "--record-capture"), args.count > flag + 1, let seconds = Int(args[flag + 1]) {
+            let scenario = args.firstIndex(of: "--scenario").flatMap { args.count > $0 + 1 ? args[$0 + 1] : nil }
+            return .recordCapture(seconds: seconds, scenario: scenario ?? "real")
+        }
+#endif
         if let flag = args.firstIndex(of: "--chat"), args.count > flag + 1 {
             return .chat(question: args[flag + 1])
         }
@@ -178,6 +208,13 @@ struct HeadlessCommandRunner {
         case .chat(let question): runChat(question: question)
         case .agent(let prompt): runAgent(prompt: prompt)
         case .cotypingBench: runCotypingBench()
+        case .exportDiagnostics(let destination): runExportDiagnostics(to: destination)
+        case .health(let dayKey, let json): runHealth(dayKey: dayKey, json: json)
+        case .recordCapture(let seconds, let scenario): runRecordCapture(seconds: seconds, scenario: scenario)
+#if LOKALBOT_TEST_HOOKS
+        case .setBoundaries(let folder, let start, let end): runSetBoundaries(folder: folder, start: start, end: end)
+        case .searchScreen(let query): runSearchScreen(query: query)
+#endif
         // Normally handled before launch by `LokalBotMain`.
         case .agentSessions(let dayKey): exit(CodingAgentSessionsCLI.run(dayKey: dayKey))
         }
@@ -196,23 +233,121 @@ struct HeadlessCommandRunner {
             exit(2)
         }
         app.pipeline.enqueue(decoded, transcribe: transcribe, summarize: summarize)
-        // Poll the pipeline until the job leaves the stage table, then exit.
+        waitForPipeline(decoded.id, label: "--process", folder: folder)
+    }
+
+    /// Polls the pipeline until the job leaves the stage table, then exits
+    /// 0 when it finished or 1 when it failed.
+    private func waitForPipeline(_ id: Meeting.ID, label: String, folder: URL) {
         Task { @MainActor in
             while true {
                 try? await Task.sleep(for: .milliseconds(500))
-                switch app.pipeline.stages[decoded.id] {
+                switch app.pipeline.stages[id] {
                 case .none:
-                    print("LokalBot --process: done → \(folder.path)")
+                    print("LokalBot \(label): done → \(folder.path)")
                     await LlamaServer.shared.stop()
                     exit(0)
                 case .failed(let message):
-                    print("LokalBot --process: FAILED — \(message)")
+                    print("LokalBot \(label): FAILED — \(message)")
                     await LlamaServer.shared.stop()
                     exit(1)
                 default:
                     continue
                 }
             }
+        }
+    }
+
+#if LOKALBOT_TEST_HOOKS
+    /// Test hook: apply a reviewed meeting boundary exactly as the review UI
+    /// does, then wait for the re-transcription and summary to finish.
+    private func runSetBoundaries(folder: URL, start: TimeInterval, end: TimeInterval) {
+        guard let meeting = app.meetings.first(where: { $0.folderURL(in: app.storage).standardizedFileURL == folder.standardizedFileURL }) else {
+            print("LokalBot --set-boundaries: no meeting at \(folder.path)")
+            exit(2)
+        }
+        do {
+            try app.setMeetingBoundaries(Meeting.ContentRange(start: start, end: end), for: meeting)
+        } catch {
+            print("LokalBot --set-boundaries: FAILED — \(error.localizedDescription)")
+            exit(1)
+        }
+        waitForPipeline(meeting.id, label: "--set-boundaries", folder: folder)
+    }
+#endif
+
+    /// `LokalBot --health [--day yyyy-MM-dd] [--json]`: evaluate one day
+    /// (default: yesterday), write the report, print it. Exit 0 pass/warn,
+    /// 1 fail, 2 invalid day.
+    private func runHealth(dayKey: String?, json: Bool) {
+        let day: Date
+        if let dayKey {
+            guard let parsed = DreamDay.date(fromKey: dayKey), DreamDay.key(for: parsed) == dayKey else {
+                print("LokalBot --health: invalid day \(dayKey) (expected yyyy-MM-dd)")
+                exit(2)
+            }
+            day = parsed
+        } else {
+            day = Calendar.current.date(byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: Date()))
+                ?? Date()
+        }
+        let report = app.libraryHealthReport(for: day)
+        do {
+            try LibraryHealthReportStore.write(report, root: app.storage.rootURL)
+        } catch {
+            print("LokalBot --health: could not write report — \(error.localizedDescription)")
+        }
+        if json {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            encoder.dateEncodingStrategy = .iso8601
+            print(String(data: (try? encoder.encode(report)) ?? Data(), encoding: .utf8) ?? "{}")
+        } else {
+            print(LibraryHealthReportStore.markdown(report))
+        }
+        exit(report.status == .fail ? 1 : 0)
+    }
+
+    /// `LokalBot --record-capture <seconds> [--scenario name]` (Debug only):
+    /// runs tracking, screen capture, and meeting detection with the
+    /// recording environment, then writes a scrubbed trace. Use a throwaway
+    /// `LOKALBOT_STORAGE_ROOT`: captures land in that library.
+    private func runRecordCapture(seconds: Int, scenario: String) {
+#if DEBUG
+        guard let recorder = CaptureTraceRecorder.active else {
+            print("LokalBot --record-capture: FAILED — recorder was not installed at launch")
+            exit(1)
+        }
+        app.sampler.start()
+        app.screenshots.start()
+        app.detector.start()
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(seconds))
+            app.detector.stop()
+            app.screenshots.stop()
+            app.sampler.stop()
+            do {
+                let url = try recorder.finish(to: DiagnosticsPaths.captureTraces(root: app.storage.rootURL))
+                print("LokalBot --record-capture: \(url.path)")
+                exit(0)
+            } catch {
+                print("LokalBot --record-capture: FAILED — \(error.localizedDescription)")
+                exit(1)
+            }
+        }
+#endif
+    }
+
+    /// `LokalBot --export-diagnostics <zip>`: the Settings export, headless.
+    private func runExportDiagnostics(to destination: URL) {
+        do {
+            let manifest = try app.exportDiagnostics(to: destination)
+            let missing = manifest.missing.isEmpty ? "none" : manifest.missing.joined(separator: ", ")
+            print("LokalBot --export-diagnostics: \(destination.path) (missing: \(missing))")
+            exit(0)
+        } catch {
+            print("LokalBot --export-diagnostics: FAILED — \(error.localizedDescription)")
+            exit(1)
         }
     }
 
@@ -457,6 +592,19 @@ struct HeadlessCommandRunner {
             exit(summary.results.allSatisfy(\.passedSafety) ? 0 : 1)
         }
     }
+
+#if LOKALBOT_TEST_HOOKS
+    /// Test hook: `LokalBot --search-screen <query>` prints screen-text hits
+    /// from the FTS search the Recall view uses; exit 1 when there are none.
+    private func runSearchScreen(query: String) {
+        let hits = app.activityStore.searchOCR(query)
+        print("LokalBot --search-screen: \(hits.count) screen hit(s)")
+        for hit in hits {
+            print("[screen] \(hit.app) @ \(hit.ts.formatted(.iso8601)): \(hit.snippet)")
+        }
+        exit(hits.isEmpty ? 1 : 0)
+    }
+#endif
 
     /// `LokalBot --search <query>`: print index hits and exit. Test hook
     /// for the FTS5 index, same spirit as --process.

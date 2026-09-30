@@ -85,7 +85,14 @@ enum AttributedTrackTranscriber {
             }
             try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
             try Task.checkCancellation()
+#if LOKALBOT_TEST_HOOKS
+            let slice = GoldenTranscriptionEngine.Region(track: url, start: region.start, end: region.end)
+            let value = try await GoldenTranscriptionEngine.$region.withValue(slice) {
+                try await engine.transcribe(audio: audio, language: language, prompt: prompt)
+            }
+#else
             let value = try await engine.transcribe(audio: audio, language: language, prompt: prompt)
+#endif
             engineName = value.engine
             segments += value.segments.compactMap { segment in
                 guard !segment.displayText.isEmpty, segment.start.isFinite, segment.end.isFinite else { return nil }

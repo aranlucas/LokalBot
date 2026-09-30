@@ -39,6 +39,7 @@ final class MeetingDetectionOwnershipTests: XCTestCase {
         XCTAssertFalse(RecordingController.recordsSameCall(capturedBundleID: "us.zoom.xos", recordingURL: nil, detected: chrome))
     }
 
+    @MainActor
     func testNativeAudioStartsGetDistinctLifecycleIDsAndRejectStaleEnds() throws {
         let detector = MeetingDetector()
         let zoom = MeetingDetector.DetectedApp(name: "Zoom", bundleID: "us.zoom.xos", pid: 42)

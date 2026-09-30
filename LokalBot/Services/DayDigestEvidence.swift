@@ -916,6 +916,18 @@ enum DayDigestGenerationQuality: String, Codable, Equatable, Sendable {
 struct DayDigestOverviewGeneration: Equatable, Sendable {
     var summary: String
     var quality: DayDigestGenerationQuality
+    var coverage: DayDigestCoverage?
+}
+
+/// How much of the day's tracked activity reached the digest: active seconds
+/// of evidence segments whose extraction produced a usable block, over the
+/// active seconds of all segments. Lost segments (truncation, provider stop,
+/// unusable output) lower it.
+struct DayDigestCoverage: Codable, Equatable, Sendable {
+    var coveredSeconds: TimeInterval
+    var trackedSeconds: TimeInterval
+
+    var ratio: Double? { trackedSeconds > 0 ? coveredSeconds / trackedSeconds : nil }
 }
 
 /// How far a digest run has come, for progress surfaces. Segment extraction
@@ -1047,6 +1059,8 @@ enum DayDigestOverviewGenerator {
                 context: dateContext, schema: schema, options: options, sleep: sleep)
         }
         let segments = evidence.summarySegments()
+        let trackedSeconds = segments.reduce(0) { $0 + $1.activeDuration }
+        var coveredSeconds: TimeInterval = 0
         guard !segments.isEmpty else {
             return DayDigestOverviewGeneration(
                 summary: fallback(evidence),
@@ -1176,6 +1190,7 @@ enum DayDigestOverviewGenerator {
             }
             if parsed == nil { degraded = true }
             if let parsed, let block = parsed.block {
+                coveredSeconds += segment.activeDuration
                 if parsed.isSubstantive {
                     substantiveBlocks.append(block)
                 } else {
@@ -1206,7 +1221,8 @@ enum DayDigestOverviewGenerator {
         guard !selectedBlocks.isEmpty else {
             return DayDigestOverviewGeneration(
                 summary: fallback(evidence),
-                quality: degraded ? .fallback : .complete)
+                quality: degraded ? .fallback : .complete,
+                coverage: DayDigestCoverage(coveredSeconds: coveredSeconds, trackedSeconds: trackedSeconds))
         }
 
         let digest: DigestDraft?
@@ -1257,7 +1273,7 @@ enum DayDigestOverviewGenerator {
                     prompt: aggregationPrompt,
                     schema: digestSchema,
                     options: TextGenerationOptions(
-                        maxTokens: 1_600,
+                        maxTokens: aggregationTokens,
                         reasoningBudgetTokens: 512,
                         temperature: 0.2))
             } catch TextEngineError.outputTruncated {
@@ -1268,7 +1284,7 @@ enum DayDigestOverviewGenerator {
                     prompt: digestRetryPrompt + "\n\n" + aggregationPrompt,
                     schema: digestSchema,
                     options: TextGenerationOptions(
-                        maxTokens: 3_200,
+                        maxTokens: aggregationRetryTokens,
                         reasoningBudgetTokens: 0,
                         temperature: 0))
                 lokalbotLog(
@@ -1293,15 +1309,18 @@ enum DayDigestOverviewGenerator {
 
         return DayDigestOverviewGeneration(
             summary: render(blocks: selectedBlocks, draft: digest, sessionCandidates: sessionCandidates),
-            quality: degraded ? .partial : .complete)
+            quality: degraded ? .partial : .complete,
+            coverage: DayDigestCoverage(coveredSeconds: coveredSeconds, trackedSeconds: trackedSeconds))
     }
 
     /// Routed reasoning models can spend most of a small budget thinking even
     /// when asked not to. The compact focus JSON needs far less than this; the
     /// headroom only matters for those models, and llama-server keeps its own
     /// thinking budget independent of the larger cap.
-    private static let focusTokens = 2_048
-    private static let focusRetryTokens = 4_096
+    static let focusTokens = 2_048
+    static let focusRetryTokens = 4_096
+    static let aggregationTokens = 1_600
+    static let aggregationRetryTokens = 3_200
 
     /// Remote providers intermittently answer 429/5xx or drop the connection.
     /// Replay that one request after the shared policy delay instead of
@@ -1940,6 +1959,7 @@ struct DayDigestGenerationMetadata: Codable, Equatable, Sendable {
     var evidenceSignature: String?
     var meetingEvidenceSignature: String?
     var journalDigest: String?
+    var coverage: DayDigestCoverage?
 }
 
 enum DayDigestGenerationMetadataStore {
@@ -1982,6 +2002,7 @@ enum DayDigestGenerationMetadataStore {
         evidenceLatestAt: Date?,
         evidenceSignature: String? = nil,
         meetingEvidenceSignature: String? = nil,
+        coverage: DayDigestCoverage? = nil,
         for journalURL: URL,
         generatedAt: Date = Date()
     ) throws -> DayDigestGenerationMetadata {
@@ -1992,6 +2013,7 @@ enum DayDigestGenerationMetadataStore {
            previous.evidenceLatestAt == evidenceLatestAt,
            previous.evidenceSignature == evidenceSignature,
            previous.meetingEvidenceSignature == meetingEvidenceSignature,
+           previous.coverage == coverage,
            journalMatches(previous, at: journalURL) {
             return previous
         }
@@ -2000,6 +2022,7 @@ enum DayDigestGenerationMetadataStore {
             evidenceLatestAt: evidenceLatestAt,
             evidenceSignature: evidenceSignature,
             meetingEvidenceSignature: meetingEvidenceSignature,
+            coverage: coverage,
             for: journalURL,
             generatedAt: generatedAt,
             previous: previous)
@@ -2012,6 +2035,7 @@ enum DayDigestGenerationMetadataStore {
         evidenceLatestAt: Date?,
         evidenceSignature: String?,
         meetingEvidenceSignature: String?,
+        coverage: DayDigestCoverage? = nil,
         for journalURL: URL,
         generatedAt: Date,
         previous: DayDigestGenerationMetadata?
@@ -2041,7 +2065,8 @@ enum DayDigestGenerationMetadataStore {
             degradedAttemptCount: degradedAttemptCount,
             evidenceSignature: evidenceSignature,
             meetingEvidenceSignature: meetingEvidenceSignature,
-            journalDigest: ContentFingerprint.digest(try Data(contentsOf: journalURL)))
+            journalDigest: ContentFingerprint.digest(try Data(contentsOf: journalURL)),
+            coverage: coverage)
         return metadata
     }
 
