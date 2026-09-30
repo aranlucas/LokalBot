@@ -1,6 +1,7 @@
 import SwiftUI
 import LaunchAtLogin
 import AppKit
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @EnvironmentObject var app: AppState
@@ -1014,7 +1015,8 @@ struct SettingsView: View {
 
     @ViewBuilder private var systemSection: some View {
             if shows("System", ["system", "hardware", "ram", "memory", "chip", "cpu", "battery",
-                                "power", "low power", "diagnostics", "performance", "generations"]) {
+                                "power", "low power", "diagnostics", "performance", "generations",
+                                "export", "logs", "support"]) {
                 Section("System") {
                     LabeledContent("This Mac") {
                         Text(DeviceInfo.snapshot().summaryLine)
@@ -1041,9 +1043,25 @@ struct SettingsView: View {
                             }
                         }
                     }
+                    Button("Export Diagnostics…") { exportDiagnostics() }
+                        .accessibilityIdentifier("settings.exportDiagnostics")
+                    SettingsHelp("Logs, health reports, settings without secrets, and library counts. Never meeting audio, transcripts, notes, or screenshots.")
                 }
             }
 
+    }
+
+    private func exportDiagnostics() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.zip]
+        panel.nameFieldStringValue = "LokalBot Diagnostics \(DreamDay.key(for: Date())).zip"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try app.exportDiagnostics(to: url)
+            NSWorkspace.shared.activateFileViewerSelecting([url])
+        } catch {
+            app.lastError = error.localizedDescription
+        }
     }
 
     @ViewBuilder private var agentCLISection: some View {

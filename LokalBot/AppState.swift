@@ -1885,6 +1885,22 @@ final class AppState: ObservableObject {
         }
     }
 
+    func diagnosticsSources() -> DiagnosticsExporter.Sources {
+        let log = AppLog.debugLogURL()
+        let root = storage.rootURL
+        return DiagnosticsExporter.Sources(
+            logURLs: [log] + FileLogSink.rotatedURLs(for: log, maxRotations: 5),
+            healthReportsDirectory: DiagnosticsPaths.healthReports(root: root),
+            captureTracesDirectory: DiagnosticsPaths.captureTraces(root: root),
+            databaseURL: DiagnosticsPaths.database(root: root),
+            settingsJSON: try? JSONEncoder().encode(settings))
+    }
+
+    @discardableResult
+    func exportDiagnostics(to destination: URL) throws -> DiagnosticsExporter.Manifest {
+        try DiagnosticsExporter.export(diagnosticsSources(), to: destination)
+    }
+
     /// Open Timeline on a local day, e.g. to read that day's digest.
     func openTimelineDay(_ day: Date) {
         navigationHandoff.stageTimelineDay(day)

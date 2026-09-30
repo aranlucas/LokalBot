@@ -19,6 +19,7 @@ enum HeadlessCommand: Equatable {
     case chat(question: String)
     case agent(prompt: String)
     case cotypingBench
+    case exportDiagnostics(destination: URL)
 
     /// Set by `LokalBotMain.main()`; consumed by `AppState.init`.
     @MainActor static var requested: HeadlessCommand?
@@ -47,6 +48,9 @@ enum HeadlessCommand: Equatable {
             return .dream(dayKey: next.flatMap { $0.hasPrefix("--") ? nil : $0 })
         }
         if args.contains("--cotyping-bench") { return .cotypingBench }
+        if let flag = args.firstIndex(of: "--export-diagnostics"), args.count > flag + 1 {
+            return .exportDiagnostics(destination: URL(fileURLWithPath: args[flag + 1]))
+        }
         if let flag = args.firstIndex(of: "--chat"), args.count > flag + 1 {
             return .chat(question: args[flag + 1])
         }
@@ -132,6 +136,7 @@ struct HeadlessCommandRunner {
         case .chat(let question): runChat(question: question)
         case .agent(let prompt): runAgent(prompt: prompt)
         case .cotypingBench: runCotypingBench()
+        case .exportDiagnostics(let destination): runExportDiagnostics(to: destination)
         }
     }
 
@@ -165,6 +170,19 @@ struct HeadlessCommandRunner {
                     continue
                 }
             }
+        }
+    }
+
+    /// `LokalBot --export-diagnostics <zip>`: the Settings export, headless.
+    private func runExportDiagnostics(to destination: URL) {
+        do {
+            let manifest = try app.exportDiagnostics(to: destination)
+            let missing = manifest.missing.isEmpty ? "none" : manifest.missing.joined(separator: ", ")
+            print("LokalBot --export-diagnostics: \(destination.path) (missing: \(missing))")
+            exit(0)
+        } catch {
+            print("LokalBot --export-diagnostics: FAILED — \(error.localizedDescription)")
+            exit(1)
         }
     }
 
