@@ -100,4 +100,29 @@ final class CaptureReplayTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(started.first ?? 0,
                                     60 + MeetingDetector.nativeAudioMinimumConfirmationDuration - 2)
     }
+
+    /// Every scripted browser trace must replay to at least one text capture.
+    func testScriptedBrowserTracesReplayToACapture() async throws {
+        let folder = try XCTUnwrap(Bundle(for: Self.self).url(
+            forResource: "capture-traces", withExtension: nil, subdirectory: "Fixtures"))
+        let scripted = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
+            .filter { $0.lastPathComponent.hasPrefix("scripted-") }
+        guard !scripted.isEmpty else { throw XCTSkip("no scripted traces recorded yet") }
+        for url in scripted {
+            let replay = ReplayCaptureEnvironment(trace: try CaptureTrace.load(from: url), start: Date())
+            CaptureEnvironment.install(replay.environment)
+            let store = ActivityStore(databaseURL: root.appendingPathComponent("\(UUID()).sqlite"))
+            var settings = AppSettings()
+            settings.trackingEnabled = true
+            settings.screenContextCaptureMode = .accessibleText
+            let service = ScreenshotService(store: store, storage: StorageManager(),
+                                            sampler: ActivitySampler(store: store),
+                                            now: { replay.clock.now() }, settings: { settings })
+            for second in stride(from: 5.0, through: replay.trace.events.last?.t ?? 5, by: 5) {
+                await replay.clock.advance(to: second)
+                await service.captureIfAppropriate(trigger: .manual)
+            }
+            XCTAssertFalse(store.screenshots(in: nil, includingMissingFiles: true).isEmpty, url.lastPathComponent)
+        }
+    }
 }
