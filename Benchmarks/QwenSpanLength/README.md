@@ -106,4 +106,17 @@ swiftc -O nlid.swift -o $SPAN_BENCH_OUT/nlid
 .venv/bin/python score_language.py --results results/2026-09-30
 ```
 
+### Voice-activity gate
+
+`make_noise.py` cuts the gaps between benchmark chunks out of the owner's meeting tracks, up to 10 minutes per track, read-only through `lokalbot-cli path`. The benchmark's VAD judged that audio speech-free, so every word decoded there is a false alarm. The harness layout keys `vadThreshold` and `padding` set FluidAudio's Silero entry threshold (default 0.85) and region padding (default 0.1 s).
+
+```sh
+.venv/bin/python make_noise.py
+.venv/bin/python make_vad_jobs.py
+for j in vad_noise vad_noise_06b vad_english vad_english_06b; do
+  $SPAN_BENCH_OUT/dd/Build/Products/Release/qwen-span-harness $SPAN_BENCH_OUT/$j.json
+done
+.venv/bin/python score_vad.py --results results/2026-09-30
+```
+
 `make_jobs.py` and `make_region_jobs.py` read meeting transcripts and audio through `lokalbot-cli path`, which is read-only. Nothing is sent over the network. Transcripts stay in `SPAN_BENCH_OUT`; `results/` holds only aggregates.

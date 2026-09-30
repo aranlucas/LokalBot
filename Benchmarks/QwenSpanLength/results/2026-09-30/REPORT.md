@@ -229,6 +229,28 @@ New installs default to automatic language detection; the owner's settings use `
 
 The English meeting gains have intervals that include zero, because a handful of misfired chunks drive them. The invented-run and wrong-script counts show the same effect more directly. FLEURS is read speech, and the code-switched track is synthetic.
 
+## Voice-activity gate
+
+FluidAudio's Silero gate decides what audio is decoded at all. It uses an entry threshold of 0.85, 256 ms frames and 0.1 s of padding. The sweep measured recall on the benchmark sets and false alarms on 32 minutes of speech-free audio from the owner's meeting tracks: the gaps between benchmark chunks, which the benchmark's more sensitive VAD found silent.
+
+| 1.7B word-attribution path | Meetings | AMI WER | Δ AMI (95% CI) | AMI deletions | Invented words per 10 min of silence |
+|---|---:|---:|---:|---:|---:|
+| **Threshold 0.85, padding 0.1 s (shipped)** | 4.41% | 17.69% | — | 13.43% | 10 |
+| 0.7 | 4.41% | 17.57% | −0.12 (−0.29…0.00) | 13.38% | 18 |
+| 0.5 | 4.39% | 17.42% | −0.26 (−0.59…−0.02) | 13.19% | 30 |
+| 0.35 | 4.31% | 17.31% | −0.38 (−0.89…+0.08) | 12.81% | 30 |
+| 0.85, padding 0.3 s | 4.28% | 17.54% | −0.14 (−0.82…+0.30) | 13.14% | 12 |
+| No gate (whole chunk) | 4.23% | 17.73% | +0.05 (−0.73…+0.81) | 12.95% | — |
+
+- **The gate is not the bottleneck.** On the shipped path, the decode windows already hold 99% of the meeting chunks' audio and 86% of AMI's. Even removing the gate entirely gains only 0.18 points on meetings and nothing on AMI. Most of AMI's 13% deletions are overlapping speakers on one mixed channel.
+- **Lowering the threshold trades little recall for more invented text.**
+  - At 0.5, AMI improves by 0.26 points, and false alarms in silence triple, from 10 to 30 words per 10 minutes. They are mostly "Oh. Okay. Hmm." fillers, plus the odd invented sentence.
+  - On the plain ≤14 s path, 0.5 is not better (5.34% vs 5.30%, 18.50% vs 18.38%).
+  - On 0.6B, 0.5 trades an uncertain AMI gain (−0.64, interval crosses zero) for five times the false alarms: 66 against 12 words per 10 minutes.
+- **Wider padding is the only balanced lever, and it is unproven.** 0.3 s of padding lowers every error rate slightly and cuts invented-run words from 27 to 18, for 1.6 more false-alarm words per 10 minutes. No interval excludes zero, though. FluidAudio's Debug builds also assert that padding stays within the minimum speech duration (0.15 s), so shipping it would mean raising that as well, and that change was not tested.
+
+No gate setting changed. The benchmark's meeting chunks were pre-cut by a VAD, so speech that every gate misses cannot show up here. The noise set is also the owner's room and system audio only.
+
 ## Recommendations
 
 1. **Leave `maxSegmentSeconds` as it is.** It is inert. Raising it together with the VAD cap gave no gain and moves windows into speech-swift's repetition-blocking range.
@@ -253,4 +275,4 @@ Meeting scores measure agreement with other vendors, not accuracy: a system that
 
 ## Reproduction and privacy
 
-`../../README.md` describes the harness and commands. `summary.json` (span sweep), `regions-summary.json` (speaker regions), `align-summary.json` (word attribution), `hill-summary.json` (1.7B hill-climb), `compact-summary.json` (0.6B) and `language-summary.json` (language handling) hold aggregates only. Transcripts stay in the private `SPAN_BENCH_OUT` folder. This run sent no audio or text over the network. The meeting consensus reuses the CloudSTT outputs saved on 30 September. Meeting transcripts were read through `lokalbot-cli path`, which is read-only. The source baseline is `13e01c0`.
+`../../README.md` describes the harness and commands. `summary.json` (span sweep), `regions-summary.json` (speaker regions), `align-summary.json` (word attribution), `hill-summary.json` (1.7B hill-climb), `compact-summary.json` (0.6B), `language-summary.json` (language handling) and `vad-summary.json` (VAD gate) hold aggregates only. Transcripts stay in the private `SPAN_BENCH_OUT` folder. This run sent no audio or text over the network. The meeting consensus reuses the CloudSTT outputs saved on 30 September. Meeting transcripts were read through `lokalbot-cli path`, which is read-only. The source baseline is `13e01c0`.

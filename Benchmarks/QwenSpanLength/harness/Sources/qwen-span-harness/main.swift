@@ -44,6 +44,10 @@ struct Layout: Decodable {
     var gap: Double?
     var maxLen: Double?
     var key: String?
+    /// Silero entry threshold (FluidAudio default 0.85; exit is 0.15 lower).
+    var vadThreshold: Float?
+    /// Padding added around each VAD region, seconds (FluidAudio default 0.1).
+    var padding: Double?
 }
 
 struct Condition: Decodable {
@@ -125,9 +129,22 @@ func normalized(_ raw: String) -> String {
 
 // MARK: - Layouts
 
-func vadRegions(_ vad: VadManager, _ audio: [Float], maxSpeech: Double) async throws -> [(Double, Double)] {
-    let config = VadSegmentationConfig(maxSpeechDuration: maxSpeech)
-    let segments = try await vad.segmentSpeech(audio, config: config)
+var vadModelForThresholds: MLModel?
+var vadManagers: [Float: VadManager] = [:]
+
+/// One VadManager per entry threshold, sharing the loaded Core ML model.
+func vadManager(_ fallback: VadManager, threshold: Float?) -> VadManager {
+    guard let threshold, let model = vadModelForThresholds else { return fallback }
+    if let cached = vadManagers[threshold] { return cached }
+    let manager = VadManager(config: VadConfig(defaultThreshold: threshold), vadModel: model)
+    vadManagers[threshold] = manager
+    return manager
+}
+
+func vadRegions(_ vad: VadManager, _ audio: [Float], maxSpeech: Double,
+                threshold: Float? = nil, padding: Double? = nil) async throws -> [(Double, Double)] {
+    let config = VadSegmentationConfig(maxSpeechDuration: maxSpeech, speechPadding: padding ?? 0.1)
+    let segments = try await vadManager(vad, threshold: threshold).segmentSpeech(audio, config: config)
     return segments.compactMap { segment in
         guard segment.startTime.isFinite, segment.endTime.isFinite else { return nil }
         let start = max(0, segment.startTime)
@@ -141,11 +158,11 @@ func windows(for layout: Layout, item: Item, audio: [Float], vad: VadManager) as
     case "whole":
         return [(0, duration)]
     case "vad":
-        let regions = try await vadRegions(vad, audio, maxSpeech: layout.vadMax ?? 14)
+        let regions = try await vadRegions(vad, audio, maxSpeech: layout.vadMax ?? 14, threshold: layout.vadThreshold, padding: layout.padding)
         return regions.flatMap { split(start: $0.0, end: $0.1, maxSegmentSeconds: layout.split) }
     case "merge":
         let maxLen = layout.maxLen ?? 120
-        let regions = try await vadRegions(vad, audio, maxSpeech: layout.vadMax ?? maxLen)
+        let regions = try await vadRegions(vad, audio, maxSpeech: layout.vadMax ?? maxLen, threshold: layout.vadThreshold, padding: layout.padding)
         var out: [(Double, Double)] = []
         for region in regions {
             for piece in split(start: region.0, end: region.1, maxSegmentSeconds: maxLen) {
@@ -163,7 +180,7 @@ func windows(for layout: Layout, item: Item, audio: [Float], vad: VadManager) as
         // Whole-item VAD windows clipped to each explicit region: region cuts
         // without restarting VAD at every region edge. With `gap`, clipped
         // pieces inside one region are merged across pauses <= gap up to maxLen.
-        let track = try await vadRegions(vad, audio, maxSpeech: layout.vadMax ?? 14)
+        let track = try await vadRegions(vad, audio, maxSpeech: layout.vadMax ?? 14, threshold: layout.vadThreshold, padding: layout.padding)
             .flatMap { split(start: $0.0, end: $0.1, maxSegmentSeconds: layout.split ?? 15) }
         var out: [(Double, Double)] = []
         for region in item.layouts?[layout.key ?? ""] ?? [] {
@@ -186,7 +203,7 @@ func windows(for layout: Layout, item: Item, audio: [Float], vad: VadManager) as
         for region in item.layouts?[layout.key ?? ""] ?? [] {
             let regionAudio = slice(audio, region[0], region[1])
             guard !regionAudio.isEmpty else { continue }
-            let spans = try await vadRegions(vad, regionAudio, maxSpeech: layout.vadMax ?? 14)
+            let spans = try await vadRegions(vad, regionAudio, maxSpeech: layout.vadMax ?? 14, threshold: layout.vadThreshold, padding: layout.padding)
                 .flatMap { split(start: $0.0, end: $0.1, maxSegmentSeconds: layout.split ?? 15) }
             out += spans.map { (region[0] + $0.0, min(region[1], region[0] + $0.1)) }
         }
@@ -359,7 +376,9 @@ let model = try await Qwen3ASRModel.fromPretrained(
     modelId: jobs.modelId, cacheDir: URL(fileURLWithPath: jobs.modelDir), offlineMode: true)
 let vadConfig = MLModelConfiguration()
 vadConfig.computeUnits = VadConfig.default.computeUnits
-let vad = VadManager(vadModel: try MLModel(contentsOf: URL(fileURLWithPath: jobs.vadModel), configuration: vadConfig))
+let loadedVadModel = try MLModel(contentsOf: URL(fileURLWithPath: jobs.vadModel), configuration: vadConfig)
+vadModelForThresholds = loadedVadModel
+let vad = VadManager(vadModel: loadedVadModel)
 log("loaded in \(String(format: "%.1f", Date().timeIntervalSince(loadStarted)))s")
 
 var audioCache: [String: [Float]] = [:]
