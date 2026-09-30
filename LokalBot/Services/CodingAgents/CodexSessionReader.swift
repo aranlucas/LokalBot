@@ -167,7 +167,7 @@ struct CodexSessionReader: CodingAgentSessionReader {
         switch item["type"] as? String {
         case "CommandExecution":
             // Only the command; `aggregated_output` and friends are never read.
-            guard let command = item["command"] as? String else { return }
+            guard let command = Self.command(in: item) else { return }
             for action in CodingAgentText.actions(inCommand: command) {
                 transcript.events.append(CodingAgentEvent(at: at, kind: .action(action)))
             }
@@ -186,6 +186,13 @@ struct CodexSessionReader: CodingAgentSessionReader {
         default:
             break
         }
+    }
+
+    /// A completed command as the shell ran it. Codex records the argv as an
+    /// array such as `["/bin/zsh", "-lc", "git push"]`; the script is last.
+    private static func command(in item: [String: Any]) -> String? {
+        if let argv = item["command"] as? [String] { return argv.last }
+        return item["command"] as? String
     }
 
     /// `apply_patch` names each file on a header line.
@@ -216,7 +223,7 @@ struct CodexSessionReader: CodingAgentSessionReader {
         let item = payload["item"] as? [String: Any]
         let server = item?["server"] as? String ?? ""
         let name = payload["name"] as? String ?? ""
-        let command = (item?["command"] as? String)
+        let command = item.flatMap(Self.command(in:))
             ?? shellCommand(inArguments: (payload["arguments"] ?? payload["input"]) as? String ?? "")
             ?? ""
         if CodingAgentText.readsLokalBot(toolName: server)
