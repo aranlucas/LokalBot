@@ -22,6 +22,7 @@ enum HeadlessCommand: Equatable {
     case exportDiagnostics(destination: URL)
     case health(dayKey: String?, json: Bool)
     case recordCapture(seconds: Int, scenario: String)
+    case setBoundaries(folder: URL, start: TimeInterval, end: TimeInterval)
 
     /// Set by `LokalBotMain.main()`; consumed by `AppState.init`.
     @MainActor static var requested: HeadlessCommand?
@@ -58,6 +59,12 @@ enum HeadlessCommand: Equatable {
         if let flag = args.firstIndex(of: "--export-diagnostics"), args.count > flag + 1 {
             return .exportDiagnostics(destination: URL(fileURLWithPath: args[flag + 1]))
         }
+#if LOKALBOT_TEST_HOOKS
+        if let flag = args.firstIndex(of: "--set-boundaries"), args.count > flag + 3,
+           let start = TimeInterval(args[flag + 2]), let end = TimeInterval(args[flag + 3]) {
+            return .setBoundaries(folder: URL(fileURLWithPath: args[flag + 1], isDirectory: true), start: start, end: end)
+        }
+#endif
 #if DEBUG
         if let flag = args.firstIndex(of: "--record-capture"), args.count > flag + 1, let seconds = Int(args[flag + 1]) {
             let scenario = args.firstIndex(of: "--scenario").flatMap { args.count > $0 + 1 ? args[$0 + 1] : nil }
@@ -152,6 +159,7 @@ struct HeadlessCommandRunner {
         case .exportDiagnostics(let destination): runExportDiagnostics(to: destination)
         case .health(let dayKey, let json): runHealth(dayKey: dayKey, json: json)
         case .recordCapture(let seconds, let scenario): runRecordCapture(seconds: seconds, scenario: scenario)
+        case .setBoundaries(let folder, let start, let end): runSetBoundaries(folder: folder, start: start, end: end)
         }
     }
 
@@ -168,17 +176,22 @@ struct HeadlessCommandRunner {
             exit(2)
         }
         app.pipeline.enqueue(decoded, transcribe: transcribe, summarize: summarize)
-        // Poll the pipeline until the job leaves the stage table, then exit.
+        waitForPipeline(decoded.id, label: "--process", folder: folder)
+    }
+
+    /// Polls the pipeline until the job leaves the stage table, then exits
+    /// 0 when it finished or 1 when it failed.
+    private func waitForPipeline(_ id: Meeting.ID, label: String, folder: URL) {
         Task { @MainActor in
             while true {
                 try? await Task.sleep(for: .milliseconds(500))
-                switch app.pipeline.stages[decoded.id] {
+                switch app.pipeline.stages[id] {
                 case .none:
-                    print("LokalBot --process: done → \(folder.path)")
+                    print("LokalBot \(label): done → \(folder.path)")
                     await LlamaServer.shared.stop()
                     exit(0)
                 case .failed(let message):
-                    print("LokalBot --process: FAILED — \(message)")
+                    print("LokalBot \(label): FAILED — \(message)")
                     await LlamaServer.shared.stop()
                     exit(1)
                 default:
@@ -186,6 +199,22 @@ struct HeadlessCommandRunner {
                 }
             }
         }
+    }
+
+    /// Test hook: apply a reviewed meeting boundary exactly as the review UI
+    /// does, then wait for the re-transcription and summary to finish.
+    private func runSetBoundaries(folder: URL, start: TimeInterval, end: TimeInterval) {
+        guard let meeting = app.meetings.first(where: { $0.folderURL(in: app.storage).standardizedFileURL == folder.standardizedFileURL }) else {
+            print("LokalBot --set-boundaries: no meeting at \(folder.path)")
+            exit(2)
+        }
+        do {
+            try app.setMeetingBoundaries(Meeting.ContentRange(start: start, end: end), for: meeting)
+        } catch {
+            print("LokalBot --set-boundaries: FAILED — \(error.localizedDescription)")
+            exit(1)
+        }
+        waitForPipeline(meeting.id, label: "--set-boundaries", folder: folder)
     }
 
     /// `LokalBot --health [--day yyyy-MM-dd] [--json]`: evaluate one day

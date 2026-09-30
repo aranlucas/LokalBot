@@ -586,7 +586,8 @@ final class AppState: ObservableObject {
         jobStore: pipelineJobStore,
         settings: { [store = settingsStore] in store.current },
         thinkExecution: thinkExecution,
-        speakerIdentity: speakerIdentity)
+        speakerIdentity: speakerIdentity,
+        automationReadiness: ProcessingPipeline.defaultAutomationReadiness)
     /// Canonical state machine for Transcribe, Think, and Autocomplete.
     private(set) lazy var modelRoles = ModelRoles(
         settings: { [store = settingsStore] in store.current },

@@ -148,6 +148,24 @@ final class ProcessingPipeline: ObservableObject {
             think: ModelReadinessSnapshot.thinkReady)
     }
 
+    static func transcriptionEngine(for config: AppSettings) -> TranscriptionEngine {
+#if LOKALBOT_TEST_HOOKS
+        if let directory = TestHooks.goldenTranscriptsDirectory {
+            return GoldenTranscriptionEngine(directory: directory)
+        }
+#endif
+        return config.transcriptionEngine()
+    }
+
+    static var defaultAutomationReadiness: AutomationReadiness {
+#if LOKALBOT_TEST_HOOKS
+        if TestHooks.goldenTranscriptsDirectory != nil {
+            return AutomationReadiness(transcription: { _ in true }, think: ModelReadinessSnapshot.thinkReady)
+        }
+#endif
+        return .live
+    }
+
     /// Stage per meeting. `.failed` sticks around until the next attempt;
     /// successful meetings are removed (the files on disk are the result).
     @Published private(set) var stages: [Meeting.ID: Stage] = [:]
@@ -612,7 +630,7 @@ final class ProcessingPipeline: ObservableObject {
                 // trusts them.
                 if !job.resumed { clearCheckpoints(in: folder) }
                 stages[meeting.id] = .preparingTranscriptionModel
-                let engine = config.transcriptionEngine()   // engines prepare lazily inside transcribe
+                let engine = Self.transcriptionEngine(for: config)   // engines prepare lazily inside transcribe
 
                 let root = storage.rootURL
                 let resumed = job.resumed
