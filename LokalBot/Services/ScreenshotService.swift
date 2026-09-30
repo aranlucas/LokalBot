@@ -2,7 +2,6 @@ import Foundation
 import AppKit
 import ApplicationServices
 import ImageIO
-import ScreenCaptureKit
 import Vision
 import CryptoKit
 
@@ -582,6 +581,8 @@ private enum ScreenshotImageProcessing {
 @MainActor
 final class ScreenshotService: ObservableObject {
 
+    private var environment: CaptureEnvironment { .current }
+
     @Published private(set) var lastCapture: Date?
     @Published private(set) var lastVisualCapture: Date?
     @Published private(set) var lastAccessibilityCapture: Date?
@@ -663,7 +664,7 @@ final class ScreenshotService: ObservableObject {
         initialCaptureTask?.cancel()
         initialCaptureTask = Task { @MainActor [weak self] in
             do {
-                try await Task.sleep(for: .seconds(20))
+                try await environment.clock.sleep(seconds: 20)
             } catch {
                 return
             }
@@ -709,7 +710,7 @@ final class ScreenshotService: ObservableObject {
         retentionTimer = maintenance
     }
 
-    private func captureIfAppropriate(trigger: ScreenCaptureTrigger) async {
+    func captureIfAppropriate(trigger: ScreenCaptureTrigger) async {
         let config = settings()
         let consent = ScreenshotCaptureConsent(
             generation: captureGeneration, pauseRevision: sampler.capturePauseRevision, settings: config)
@@ -744,10 +745,9 @@ final class ScreenshotService: ObservableObject {
             lokalbotLog("context skip: meeting capture cooldown")
             return
         }
-        let idle = CGEventSource.secondsSinceLastEventType(
-            .combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
+        let idle = environment.workspace.secondsSinceLastInput()
         guard idle < 180 else { lokalbotLog("context skip: idle \(Int(idle))s"); return }
-        guard let frontmostApp = NSWorkspace.shared.frontmostApplication,
+        guard let frontmostApp = environment.workspace.frontmostApplication(),
               let frontmost = frontmostApp.localizedName,
               frontmost != "loginwindow" else { lokalbotLog("context skip: lock screen"); return }
         guard !Self.shouldSkipAutomaticSelfCapture(
@@ -780,13 +780,13 @@ final class ScreenshotService: ObservableObject {
             // A tab switch or page load can change the window while it is
             // read; the capture event often fires at exactly that moment.
             // Let it settle once instead of losing the capture to the cooldown.
-            try? await Task.sleep(for: .milliseconds(750))
-            if NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmostApp.processIdentifier {
+            try? await environment.clock.sleep(seconds: 0.75)
+            if environment.workspace.frontmostApplication()?.processIdentifier == frontmostApp.processIdentifier {
                 accessibility = await accessibilityReader.capture(processID: frontmostApp.processIdentifier)
             }
         }
         guard captureIsAuthorized(consent), !accessibility.timedOut, let snapshot = accessibility.snapshot,
-              NSWorkspace.shared.frontmostApplication?.processIdentifier
+              environment.workspace.frontmostApplication()?.processIdentifier
                 == frontmostApp.processIdentifier,
               ScreenContextPrivacy.permitsContent(
                 snapshot.privacyObservation(
@@ -815,7 +815,7 @@ final class ScreenshotService: ObservableObject {
             + redactedDocumentName.count
         let meetingID = recordingActive ? activeMeetingID()?.uuidString : nil
         let previousCapture = lastCapture
-        let screenCaptureGranted = mode.capturesPixels && CGPreflightScreenCaptureAccess()
+        let screenCaptureGranted = mode.capturesPixels && environment.windows.screenCaptureGranted()
 
         do {
             if !mode.capturesPixels || preCaptureRedactions > 0
@@ -925,22 +925,12 @@ final class ScreenshotService: ObservableObject {
             stages.append("\(stage)=\(String(format: "%.2f", seconds))s")
         }
         defer { lokalbotLog("shot timing app=\(frontApp) \(stages.joined(separator: " "))") }
-        let content = try await SCShareableContent.excludingDesktopWindows(
-            false, onScreenWindowsOnly: true)
+        let candidateWindows = try await environment.windows.onScreenWindows()
         mark("windows")
         guard captureIsAuthorized(consent),
-              NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmostProcessID else {
+              environment.workspace.frontmostApplication()?.processIdentifier == frontmostProcessID else {
             lokalbotLog("shot skip: focus changed while preparing capture")
             return
-        }
-        let candidateWindows: [ScreenshotCaptureLayout.Window] = content.windows.compactMap { window in
-            guard let application = window.owningApplication else { return nil }
-            return .init(
-                id: window.windowID,
-                processID: application.processID,
-                appName: application.applicationName,
-                title: window.title ?? "",
-                frame: window.frame)
         }
         let layout = ScreenshotCaptureLayout.selection(
             windows: candidateWindows,
@@ -948,10 +938,8 @@ final class ScreenshotService: ObservableObject {
             focusedWindowTitle: windowTitle,
             focusedWindowFrame: accessibilitySnapshot.windowFrame,
             excludedApps: excludedApps)
-        guard let layout,
-              let window = content.windows.first(where: { $0.windowID == layout.windowID })
-        else {
-            policy.noteCheck(at: Date())
+        guard let layout else {
+            policy.noteCheck(at: environment.clock.now())
             let summary = ScreenshotCaptureLayout.mismatchSummary(
                 windows: candidateWindows,
                 frontmostProcessID: frontmostProcessID,
@@ -961,32 +949,16 @@ final class ScreenshotService: ObservableObject {
             return
         }
 
-        // Bound the source frame before ScreenCaptureKit allocates it. Vision
-        // receives this same readable 1,500 px frame in the worker; requesting
-        // a native 5K/6K IOSurface only inflated transient memory.
-        let configuration = SCStreamConfiguration()
-        // This filter contains only the AX-checked window. Display capture,
-        // even with app exclusions, can include unchecked background domains.
-        let filter = SCContentFilter(desktopIndependentWindow: window)
-        let dimensions = ScreenshotCaptureDimensions.bounded(
-            pixelWidth: Int(filter.contentRect.width * CGFloat(filter.pointPixelScale)),
-            pixelHeight: Int(filter.contentRect.height * CGFloat(filter.pointPixelScale)))
-        configuration.width = dimensions.width
-        configuration.height = dimensions.height
-        configuration.showsCursor = false
-        configuration.includeChildWindows = false
-        configuration.ignoreShadowsSingleWindow = true
-        let image = try await SCScreenshotManager.captureImage(
-            contentFilter: filter, configuration: configuration)
+        let image = try await environment.windows.captureImage(windowID: layout.windowID)
         mark("image")
-        guard captureIsAuthorized(consent), CGPreflightScreenCaptureAccess() else {
+        guard captureIsAuthorized(consent), environment.windows.screenCaptureGranted() else {
             lokalbotLog("shot skip: consent or screen recording access changed during capture")
             return
         }
         let currentAccessibility = await accessibilityReader.capture(processID: frontmostProcessID)
         mark("recheck")
         guard captureIsAuthorized(consent),
-              NSWorkspace.shared.frontmostApplication?.processIdentifier == frontmostProcessID,
+              environment.workspace.frontmostApplication()?.processIdentifier == frontmostProcessID,
               ScreenshotWindowFocusValidation.matches(
                 expected: accessibilitySnapshot,
                 current: currentAccessibility),
@@ -1001,7 +973,7 @@ final class ScreenshotService: ObservableObject {
             return
         }
 
-        let timestamp = Date()
+        let timestamp = environment.clock.now()
 
         // The worker keeps hash → text-source selection → optional OCR →
         // redaction → encryption/write serial and off the main actor.
@@ -1022,7 +994,7 @@ final class ScreenshotService: ObservableObject {
             return
         }
 
-        guard captureIsAuthorized(consent), CGPreflightScreenCaptureAccess() else {
+        guard captureIsAuthorized(consent), environment.windows.screenCaptureGranted() else {
             // Processing stages encrypted bytes only in memory. Revocation
             // cannot leave a file behind while the worker finishes its work.
             await processingWorker.discardStored(contentHash: stored.contentHash)
@@ -1075,7 +1047,7 @@ final class ScreenshotService: ObservableObject {
         consent.permits(current: ScreenshotCaptureConsent(
             generation: captureGeneration, pauseRevision: sampler.capturePauseRevision, settings: settings()),
                         paused: sampler.isPaused, cancelled: Task.isCancelled)
-            && AXIsProcessTrusted()
+            && environment.accessibility.isTrusted()
     }
 
     /// Manual trigger (menu bar) — the one non-onboarding place allowed to
