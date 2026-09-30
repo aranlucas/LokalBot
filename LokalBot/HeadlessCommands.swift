@@ -22,8 +22,10 @@ enum HeadlessCommand: Equatable {
     case exportDiagnostics(destination: URL)
     case health(dayKey: String?, json: Bool)
     case recordCapture(seconds: Int, scenario: String)
+#if LOKALBOT_TEST_HOOKS
     case setBoundaries(folder: URL, start: TimeInterval, end: TimeInterval)
     case searchScreen(query: String)
+#endif
 
     /// Set by `LokalBotMain.main()`; consumed by `AppState.init`.
     @MainActor static var requested: HeadlessCommand?
@@ -163,8 +165,10 @@ struct HeadlessCommandRunner {
         case .exportDiagnostics(let destination): runExportDiagnostics(to: destination)
         case .health(let dayKey, let json): runHealth(dayKey: dayKey, json: json)
         case .recordCapture(let seconds, let scenario): runRecordCapture(seconds: seconds, scenario: scenario)
+#if LOKALBOT_TEST_HOOKS
         case .setBoundaries(let folder, let start, let end): runSetBoundaries(folder: folder, start: start, end: end)
         case .searchScreen(let query): runSearchScreen(query: query)
+#endif
         }
     }
 
@@ -206,6 +210,7 @@ struct HeadlessCommandRunner {
         }
     }
 
+#if LOKALBOT_TEST_HOOKS
     /// Test hook: apply a reviewed meeting boundary exactly as the review UI
     /// does, then wait for the re-transcription and summary to finish.
     private func runSetBoundaries(folder: URL, start: TimeInterval, end: TimeInterval) {
@@ -221,6 +226,7 @@ struct HeadlessCommandRunner {
         }
         waitForPipeline(meeting.id, label: "--set-boundaries", folder: folder)
     }
+#endif
 
     /// `LokalBot --health [--day yyyy-MM-dd] [--json]`: evaluate one day
     /// (default: yesterday), write the report, print it. Exit 0 pass/warn,
@@ -539,6 +545,7 @@ struct HeadlessCommandRunner {
         }
     }
 
+#if LOKALBOT_TEST_HOOKS
     /// Test hook: `LokalBot --search-screen <query>` prints screen-text hits
     /// from the FTS search the Recall view uses; exit 1 when there are none.
     private func runSearchScreen(query: String) {
@@ -549,6 +556,7 @@ struct HeadlessCommandRunner {
         }
         exit(hits.isEmpty ? 1 : 0)
     }
+#endif
 
     /// `LokalBot --search <query>`: print index hits and exit. Test hook
     /// for the FTS5 index, same spirit as --process.
