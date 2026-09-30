@@ -13,6 +13,8 @@ struct ModelPresetsSection: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(preset.title).font(.scaled(.body).weight(.medium))
                         Text(preset.subtitle).font(.scaled(.callout)).settingsSecondary()
+                        Text(preset.modelSummary).font(.scaled(.caption)).settingsSecondary()
+                            .accessibilityIdentifier("models.preset.\(preset.rawValue).models")
                     }
                     Spacer(minLength: 8)
                     if preset.patch.matches(settings) {

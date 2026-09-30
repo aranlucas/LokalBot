@@ -173,6 +173,9 @@ final class AppState: ObservableObject {
                 if Self.dayDigestChanged(from: oldValue, to: settings) {
                     applyDayDigestSetting()
                 }
+                if Self.codingAgentEvidenceChanged(from: oldValue, to: settings) {
+                    applyCodingAgentEvidenceSetting()
+                }
                 if Self.screenContextChanged(from: oldValue, to: settings) {
                     applyTrackingSetting()
                 }
@@ -221,6 +224,13 @@ final class AppState: ObservableObject {
         old.dayDigestAutoEnabled != new.dayDigestAutoEnabled
             || old.dayDigestHour != new.dayDigestHour
             || automaticInferenceChanged(from: old, to: new)
+    }
+
+    /// Retention bounds which days are read, so it restarts ingestion too.
+    private static func codingAgentEvidenceChanged(from old: AppSettings,
+                                                   to new: AppSettings) -> Bool {
+        CodingAgentEvidenceIngestor.Configuration(settings: old)
+            != CodingAgentEvidenceIngestor.Configuration(settings: new)
     }
 
     private static func screenContextChanged(from old: AppSettings,
@@ -649,7 +659,17 @@ final class AppState: ObservableObject {
             return (self.currentMeeting.map { [$0] } ?? []) + self.meetings
         },
         settings: { [store = settingsStore] in store.current },
+        prepareEvidence: { [weak self] day in await self?.codingAgentEvidence.refresh(including: day) },
         onGenerated: { [weak self] day in self?.dayDigestDidChange(on: day) })
+    /// Settled Claude Code and Codex work, read into the activity store while
+    /// the person has opted in.
+    private(set) lazy var codingAgentEvidence = CodingAgentEvidenceIngestor(
+        store: activityStore,
+        configuration: { [store = settingsStore] in .init(settings: store.current) },
+        mutateEvidence: { [weak self] days, mutation in
+            try self?.withPrimaryEvidenceChange(on: days, mutation)
+        },
+        onChange: { [weak self] days in self?.codingAgentEvidenceDidChange(on: days) })
     /// Meeting-recording lifecycle: recorders, watchdog, timer tick, prewarm.
     private(set) lazy var recording = RecordingController(
         storage: storage,
@@ -1078,6 +1098,7 @@ final class AppState: ObservableObject {
         applyQuickRecallSetting()
         applyDailyMemoryExportSetting()
         applyDayDigestSetting()
+        applyCodingAgentEvidenceSetting()
         applyMemoryRoutineSetting()
         applyDreamingSetting()
         applyHealthCheckSetting()
@@ -1829,6 +1850,35 @@ final class AppState: ObservableObject {
         } onError: { [weak self] message in
             self?.lastError = message
         }
+    }
+
+    /// Starts or stops transcript reading. Turning it off keeps what was
+    /// already saved, like the other capture sources; deletion is explicit.
+    func applyCodingAgentEvidenceSetting() {
+        codingAgentEvidence.start()
+    }
+
+    /// New settled work usually lands today, before the evening digest.
+    /// Yesterday may already be final, so late work reopens it.
+    private func codingAgentEvidenceDidChange(on days: [Date]) {
+        let calendar = Calendar.current
+        guard let yesterday = calendar.date(
+            byAdding: .day, value: -1, to: calendar.startOfDay(for: Date())) else { return }
+        let reopened = days.filter { calendar.isDate($0, inSameDayAs: yesterday) }
+        if !reopened.isEmpty { dayDigest.reconsiderEvidence(for: reopened) }
+    }
+
+    /// Stops reading coding-agent sessions and deletes every saved burst.
+    /// The agents' own transcripts are never touched.
+    func deleteCodingAgentEvidence() throws {
+        settings.codingAgentEvidenceEnabled = false
+        let starts = try activityStore.codingAgentBurstStarts()
+        guard !starts.isEmpty else { return }
+        let days = Array(Set(starts.values.map { Calendar.current.startOfDay(for: $0) }))
+        try withPrimaryEvidenceChange(on: days) {
+            try activityStore.deleteCodingAgentBursts(ids: Array(starts.keys))
+        }
+        NotificationCenter.default.post(name: .codingAgentEvidenceChanged, object: nil)
     }
 
     func applyDayDigestSetting() {

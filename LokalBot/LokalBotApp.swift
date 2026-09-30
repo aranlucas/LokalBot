@@ -21,6 +21,9 @@ enum LokalBotMain {
             migrate: { DataMigration.runIfNeeded() },
             launchApplication: {
                 HeadlessCommand.requested = HeadlessCommand.parse(CommandLine.arguments)
+                if case .agentSessions(let dayKey)? = HeadlessCommand.requested {
+                    exit(CodingAgentSessionsCLI.run(dayKey: dayKey))
+                }
 #if DEBUG
                 if case .recordCapture(_, let scenario) = HeadlessCommand.requested {
                     let recorder = CaptureTraceRecorder(scenario: scenario, origin: scenario == "real" ? .real : .scripted)

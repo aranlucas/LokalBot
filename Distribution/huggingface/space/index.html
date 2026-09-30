@@ -11,7 +11,7 @@
   <header class="hero">
     <p class="eyebrow">Measured locally · published with sources</p>
     <h1>LokalBot local-stack benchmarks</h1>
-    <p class="lede">Transcription, summaries, autocomplete, OCR, and diarization measured on an Apple M4 Max. No estimates and no rehosted model weights.</p>
+    <p class="lede">Speaker diarization, summaries, semantic search, speech recognition, autocomplete, and OCR measured on an Apple M4 Max, with the known gaps listed. No estimates and no rehosted model weights.</p>
     <nav aria-label="Project links">
       <a href="https://github.com/stevyhacker/lokalbot">GitHub repository</a>
       <a href="https://huggingface.co/collections/stevyhacker/lokalbot-recommended-local-stack">Recommended model collection</a>
@@ -19,70 +19,255 @@
     </nav>
   </header>
   <main><h1>LokalBot local-stack benchmarks — extracted numbers</h1>
-<p>Every number below is copied verbatim from a file in this repository; the <strong>Source</strong> column is the path to check. Nothing here is estimated or invented. All measurements to date were taken on a single machine: an <strong>Apple M4 Max MacBook Pro, 48 GB</strong>, running LokalBot's bundled llama.cpp runtime with full Metal offload (per <a href="https://github.com/stevyhacker/lokalbot/blob/master/README.md"><code>README.md</code></a>, "Example model stack and performance").</p>
-<h2>Recommended-stack leaderboard (generation throughput)</h2>
+<p>Every number below is copied verbatim from a file in this repository; the <strong>Source</strong> column or line is the path to check. Nothing here is estimated or invented. All measurements to date were taken on a single machine: an <strong>Apple M4 Max, 48 GB</strong> of unified memory. These are engine-level benchmarks, not end-to-end UI timings. The repository index of every report is <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/README.md"><code>Benchmarks/README.md</code></a>.</p>
+<h2>Current default stack</h2>
+<p>The defaults on a fresh install total about <strong>6.8 GB</strong> of model files if every role is used (<a href="https://github.com/stevyhacker/lokalbot/blob/master/README.md"><code>README.md</code></a>, "Local AI, your choice").</p>
 <table>
 <thead>
 <tr>
 <th>Role</th>
-<th>Model</th>
-<th>Quant / format</th>
-<th style="text-align: right;">Model files size</th>
-<th>Measured</th>
-<th>Hardware</th>
+<th>Default model</th>
+<th>Format</th>
+<th style="text-align: right;">Model files</th>
+<th>Headline result</th>
 <th>Source</th>
 </tr>
 </thead>
 <tbody>
 <tr>
+<td>Transcription</td>
+<td>Qwen3-ASR 1.7B</td>
+<td>MLX 8-bit</td>
+<td style="text-align: right;">2.47 GB</td>
+<td>Not yet measured (see gaps)</td>
+<td><a href="https://github.com/stevyhacker/lokalbot/blob/master/README.md"><code>README.md</code></a></td>
+</tr>
+<tr>
+<td>Speaker diarization</td>
+<td>Nemotron 3 (preview) via FluidAudio</td>
+<td>Core ML</td>
+<td style="text-align: right;">~0.20 GB</td>
+<td>14.56% DER vs 43.44% for the previous default; 500× real time</td>
+<td><a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/NemotronDiarization/results/2026-09-23/REPORT.md"><code>Benchmarks/NemotronDiarization/results/2026-09-23/REPORT.md</code></a></td>
+</tr>
+<tr>
 <td>Summaries and chat</td>
 <td>Qwen3.5 4B</td>
 <td><code>Q4_K_M</code></td>
 <td style="text-align: right;">2.74 GB</td>
-<td>~100 tokens/s generation</td>
-<td>48 GB M4 Max, bundled llama.cpp, full Metal offload</td>
-<td><a href="https://github.com/stevyhacker/lokalbot/blob/master/README.md"><code>README.md</code></a> (model stack table)</td>
-</tr>
-<tr>
-<td>Autocomplete (higher-capacity option)</td>
-<td>Gemma 4 E4B</td>
-<td><code>UD-Q5_K_XL</code></td>
-<td style="text-align: right;">6.66 GB</td>
-<td>~78 tokens/s generation</td>
-<td>48 GB M4 Max, bundled llama.cpp, full Metal offload</td>
-<td><a href="https://github.com/stevyhacker/lokalbot/blob/master/README.md"><code>README.md</code></a> (model stack table)</td>
-</tr>
-<tr>
-<td>Transcription (default)</td>
-<td>IBM Granite Speech 4.1 2B</td>
-<td><code>Q4_K_M</code> + F16 projector</td>
-<td style="text-align: right;">2.30 GB</td>
-<td>ASR — no generation-speed figure published</td>
-<td>48 GB M4 Max</td>
-<td><a href="https://github.com/stevyhacker/lokalbot/blob/master/README.md"><code>README.md</code></a> (model stack table)</td>
+<td>26-minute meeting summarized in 33.4 s warm / 59.8 s cold</td>
+<td><a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/SummaryEfficiency/results-2026-09-09.json"><code>Benchmarks/SummaryEfficiency/results-2026-09-09.json</code></a></td>
 </tr>
 <tr>
 <td>Semantic search</td>
-<td>Qwen3-Embedding 0.6B</td>
+<td>Harrier OSS v1 0.6B</td>
 <td><code>Q8_0</code></td>
 <td style="text-align: right;">0.64 GB</td>
-<td>Embeddings; not generative</td>
-<td>48 GB M4 Max</td>
-<td><a href="https://github.com/stevyhacker/lokalbot/blob/master/README.md"><code>README.md</code></a> (model stack table)</td>
+<td>Correct passage first for 40/48 queries vs 35/48 for Qwen3 Embedding 0.6B</td>
+<td><a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/ModelAlternatives/2026-09-07/REPORT.md"><code>Benchmarks/ModelAlternatives/2026-09-07/REPORT.md</code></a></td>
 </tr>
 <tr>
-<td>Speaker diarization</td>
-<td>pyannote-community-1 via FluidAudio</td>
-<td>Core ML</td>
-<td style="text-align: right;">~0.10 GB</td>
-<td>Diarization; not generative</td>
-<td>48 GB M4 Max</td>
-<td><a href="https://github.com/stevyhacker/lokalbot/blob/master/README.md"><code>README.md</code></a> (model stack table)</td>
+<td>Autocomplete</td>
+<td>LFM2.5 1.2B Instruct</td>
+<td><code>Q4_K_M</code></td>
+<td style="text-align: right;">0.73 GB</td>
+<td>28/28 safety, 12/13 completions, 484–494 ms p95</td>
+<td><a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/Cotyping/results/2026-07-21-model-debounce-benchmark.md"><code>Benchmarks/Cotyping/results/2026-07-21-model-debounce-benchmark.md</code></a></td>
+</tr>
+<tr>
+<td>Screen text (opt-in)</td>
+<td>Apple Vision</td>
+<td>Built into macOS</td>
+<td style="text-align: right;">—</td>
+<td>0.971 token F1 at 119.6 ms per synthetic screenshot</td>
+<td><a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/OCR/SYNTHETIC-RESULTS-2026-06-24.md"><code>Benchmarks/OCR/SYNTHETIC-RESULTS-2026-06-24.md</code></a></td>
 </tr>
 </tbody>
 </table>
-<p>The full measured example stack occupies about <strong>12.4 GB</strong> after download (<a href="https://github.com/stevyhacker/lokalbot/blob/master/README.md"><code>README.md</code></a>). The current <em>Recommended</em> preset uses the smaller LFM2.5 1.2B for Autocomplete instead of Gemma (see next table).</p>
-<p>Transcription speed headline: <strong>Parakeet runs up to ~190× realtime in local benchmarks</strong> (<a href="https://github.com/stevyhacker/lokalbot/blob/master/README.md"><code>README.md</code></a>, features section; repeated in <a href="https://github.com/stevyhacker/lokalbot/blob/master/Docs/show-hn-kit.md"><code>Docs/show-hn-kit.md</code></a>, <a href="https://github.com/stevyhacker/lokalbot/blob/master/Docs/reddit-launch-posts.md"><code>Docs/reddit-launch-posts.md</code></a>). No realtime factor has been published for Granite Speech 4.1, Whisper large-v3 turbo, or Qwen3-ASR.</p>
+<p>Alternatives remain selectable in the app: Parakeet, Granite Speech, Whisper large-v3 turbo, SenseVoice, and GigaAM for transcription, and Pyannote Community-1 for diarization (<a href="https://github.com/stevyhacker/lokalbot/blob/master/README.md"><code>README.md</code></a>).</p>
+<h2>Speaker diarization — Nemotron 3 vs Pyannote Community-1</h2>
+<p>Four independent English AMI test meetings, each evaluated as headset mix and distant-microphone audio: <strong>8 conditions, 184.55 minutes of audio</strong>, four speakers in every reference. DER adds missed speech, false alarms, and speaker confusion, divided by reference speaker time; overlap is scored and no speaker-count hints were used. Speed is the warm median over three runs on the 17.49-minute ES2004a headset recording. Source: <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/NemotronDiarization/results/2026-09-23/REPORT.md"><code>Benchmarks/NemotronDiarization/results/2026-09-23/REPORT.md</code></a> (scores in <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/NemotronDiarization/results/2026-09-23/scores.json"><code>Benchmarks/NemotronDiarization/results/2026-09-23/scores.json</code></a>).</p>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th style="text-align: right;">DER, zero collar</th>
+<th style="text-align: right;">DER, 250 ms collar</th>
+<th style="text-align: right;">Correct speaker count</th>
+<th style="text-align: right;">Audio / processing time</th>
+<th style="text-align: right;">Peak process RSS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pyannote Community-1 via FluidAudio (previous LokalBot default)</td>
+<td style="text-align: right;">43.44%</td>
+<td style="text-align: right;">30.45%</td>
+<td style="text-align: right;">5/8</td>
+<td style="text-align: right;">243×</td>
+<td style="text-align: right;">0.68 GiB</td>
+</tr>
+<tr>
+<td>FluidAudio community defaults + overlap</td>
+<td style="text-align: right;">43.61%</td>
+<td style="text-align: right;">30.44%</td>
+<td style="text-align: right;">5/8</td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">0.66 GiB</td>
+</tr>
+<tr>
+<td><strong>Nemotron 3 offline, full-precision Core ML (current default)</strong></td>
+<td style="text-align: right;"><strong>14.56%</strong></td>
+<td style="text-align: right;"><strong>8.34%</strong></td>
+<td style="text-align: right;"><strong>8/8</strong></td>
+<td style="text-align: right;"><strong>500×</strong></td>
+<td style="text-align: right;">0.67 GiB</td>
+</tr>
+<tr>
+<td>Nemotron 3 fast128</td>
+<td style="text-align: right;">14.51%</td>
+<td style="text-align: right;">8.19%</td>
+<td style="text-align: right;">8/8</td>
+<td style="text-align: right;">365×</td>
+<td style="text-align: right;">0.64 GiB</td>
+</tr>
+<tr>
+<td>Nemotron 3 c128 W8A8 (CPU/ANE)</td>
+<td style="text-align: right;">15.73%</td>
+<td style="text-align: right;">9.34%</td>
+<td style="text-align: right;">7/8</td>
+<td style="text-align: right;">480×</td>
+<td style="text-align: right;">0.63 GiB</td>
+</tr>
+</tbody>
+</table>
+<p>The offline model reduced speaker confusion from <strong>8.87% to 1.77%</strong>, missed speech from <strong>15.34% to 8.40%</strong>, and false alarms from <strong>19.23% to 4.38%</strong> (percentage points of reference speaker time), and beat the baseline on all eight conditions. The report's caveat applies: this is a comparison against the pinned FluidAudio implementation and its configurations, not a claim about every implementation of Pyannote Community-1. It does not cover more than four speakers, other languages, or end-to-end name attribution.</p>
+<h2>Summaries and action items — Qwen3.5 4B</h2>
+<p>Replay of LokalBot's production summary and action extractor with <code>Qwen3.5-4B-Q4_K_M.gguf</code> on llama.cpp <strong>b10173</strong>. Cold includes runtime startup; warm reuses the loaded runtime. ASR time is excluded. Source: <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/SummaryEfficiency/results-2026-09-09.json"><code>Benchmarks/SummaryEfficiency/results-2026-09-09.json</code></a>.</p>
+<table>
+<thead>
+<tr>
+<th>Meeting</th>
+<th style="text-align: right;">Transcript</th>
+<th style="text-align: right;">Cold</th>
+<th style="text-align: right;">Warm</th>
+<th>Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>26-minute meeting</td>
+<td style="text-align: right;">4,477 words</td>
+<td style="text-align: right;">59.8 s</td>
+<td style="text-align: right;">33.4 s</td>
+<td>Complete</td>
+</tr>
+<tr>
+<td>91-minute meeting</td>
+<td style="text-align: right;">11,229 words</td>
+<td style="text-align: right;">71.5 s</td>
+<td style="text-align: right;">74.2 s</td>
+<td>Complete</td>
+</tr>
+</tbody>
+</table>
+<p>Decode speed across these runs was about 85 tokens/s (<a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/README.md"><code>Benchmarks/README.md</code></a>). These are timings, not a summary-quality score.</p>
+<p>In the 2026-09-07 pilot, MiniCPM5-2B <code>Q4_K_M</code> was smaller (1.561 GB vs 2.741 GB) and faster on long context (18.68 s vs 32.41 s), but it looped on one summary and misattributed action items, so Qwen3.5 4B remains the default (<a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/ModelAlternatives/2026-09-07/REPORT.md"><code>Benchmarks/ModelAlternatives/2026-09-07/REPORT.md</code></a>).</p>
+<h2>Semantic search — Harrier vs Qwen3 Embedding</h2>
+<p>48 authored queries (24 English, 24 Serbian/Montenegrin in Latin and Cyrillic) against a 110-document corpus; relevant passage IDs fixed before inference. Both models used Q8 weights, 1,024 dimensions, and the app's query/document prefixes. Source: <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/ModelAlternatives/2026-09-07/REPORT.md"><code>Benchmarks/ModelAlternatives/2026-09-07/REPORT.md</code></a>.</p>
+<table>
+<thead>
+<tr>
+<th>Measure</th>
+<th style="text-align: right;">Qwen3 Embedding 0.6B Q8 (previous default)</th>
+<th style="text-align: right;">Harrier 0.6B Q8 (current default)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Correct passage ranked first</td>
+<td style="text-align: right;">35/48 (72.9%)</td>
+<td style="text-align: right;"><strong>40/48 (83.3%)</strong></td>
+</tr>
+<tr>
+<td>Correct passage in top five</td>
+<td style="text-align: right;">45/48 (93.8%)</td>
+<td style="text-align: right;"><strong>47/48 (97.9%)</strong></td>
+</tr>
+<tr>
+<td>English top one</td>
+<td style="text-align: right;">22/24</td>
+<td style="text-align: right;">22/24</td>
+</tr>
+<tr>
+<td>Serbian/Montenegrin top one</td>
+<td style="text-align: right;">13/24</td>
+<td style="text-align: right;"><strong>18/24</strong></td>
+</tr>
+<tr>
+<td>Mean reciprocal rank</td>
+<td style="text-align: right;">0.814</td>
+<td style="text-align: right;"><strong>0.903</strong></td>
+</tr>
+<tr>
+<td>Repeated query latency, median</td>
+<td style="text-align: right;">11.85 ms</td>
+<td style="text-align: right;">11.97 ms</td>
+</tr>
+</tbody>
+</table>
+<p>The gain came from the Serbian/Montenegrin queries; English tied. 48 correlated, authored queries make this a pilot, not a general retrieval benchmark.</p>
+<h2>Speech recognition — Granite Speech 4.1 vs Granite Speech 5</h2>
+<p>44 public clips / 271.3 seconds (24 conversational AMI clips, 20 clean LibriSpeech clips), scored with the standard Whisper English normalizer. Source: <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/ModelAlternatives/2026-09-07/REPORT.md"><code>Benchmarks/ModelAlternatives/2026-09-07/REPORT.md</code></a>. <strong>Qwen3-ASR 1.7B, the current default, was not part of this run.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Measure</th>
+<th style="text-align: right;">Granite 4.1 Q4</th>
+<th style="text-align: right;">Granite 4.1 Q8</th>
+<th style="text-align: right;">Granite 5 TurboCTC BF16</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Normalized word-error rate</td>
+<td style="text-align: right;">4.42% (35/791)</td>
+<td style="text-align: right;">4.93% (39/791)</td>
+<td style="text-align: right;">5.18% (41/791)</td>
+</tr>
+<tr>
+<td>AMI normalized WER</td>
+<td style="text-align: right;">8.83%</td>
+<td style="text-align: right;">9.09%</td>
+<td style="text-align: right;">10.13%</td>
+</tr>
+<tr>
+<td>LibriSpeech normalized WER</td>
+<td style="text-align: right;">0.25%</td>
+<td style="text-align: right;">0.99%</td>
+<td style="text-align: right;">0.49%</td>
+</tr>
+<tr>
+<td>Audio seconds processed per second</td>
+<td style="text-align: right;">33.2×</td>
+<td style="text-align: right;">29.3×</td>
+<td style="text-align: right;"><strong>280.2×</strong></td>
+</tr>
+<tr>
+<td>Median clip latency</td>
+<td style="text-align: right;">161 ms</td>
+<td style="text-align: right;">187 ms</td>
+<td style="text-align: right;"><strong>17.5 ms</strong></td>
+</tr>
+<tr>
+<td>Sampled peak process RSS</td>
+<td style="text-align: right;">2.87 GiB</td>
+<td style="text-align: right;">3.62 GiB</td>
+<td style="text-align: right;">1.05 GiB</td>
+</tr>
+</tbody>
+</table>
+<p>Granite 5 is English-only, emits unpunctuated lowercase text, and is not integrated into LokalBot. This small set does not establish a reliable accuracy ordering.</p>
 <h2>Cotyping (inline autocomplete) latency matrix</h2>
 <p>Harness: production <code>LokalBot --cotyping-bench</code>, all 28 default scenarios through the real in-process llama.cpp engine. Gate = 28/28 safety, ≥12/13 word completions, p95 ≤ 2000 ms. Source: <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/Cotyping/results/2026-07-21-model-debounce-benchmark.md"><code>Benchmarks/Cotyping/results/2026-07-21-model-debounce-benchmark.md</code></a>.</p>
 <table>
@@ -312,24 +497,20 @@
 </thead>
 <tbody>
 <tr>
-<td>Single-chip coverage: every number above is one M4 Max (48 GB)</td>
-<td>Re-run <code>--cotyping-bench</code> and the OCR harness on M1, M2, and M3 machines before claiming per-chip guidance.</td>
+<td>Single-chip coverage: every number above is one M4 Max (48 GB); no 16 GB, M1, M2, or M3 results</td>
+<td>Re-run the summary replay, <code>--cotyping-bench</code>, and the OCR harness on M1, M2, and M3 machines before claiming per-chip guidance.</td>
 </tr>
 <tr>
-<td>No ASR accuracy (WER/CER) for any transcription engine</td>
-<td>Run Granite Speech 4.1, Parakeet v3, Whisper large-v3 turbo, and Qwen3-ASR against a standard eval set (e.g. Common Voice / ESB subsets) and publish WER alongside the realtime factors.</td>
+<td>No word-error rate or realtime factor for Qwen3-ASR 1.7B, the default transcription model</td>
+<td>Run it through the 44-clip set from <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/ModelAlternatives/2026-09-07/REPORT.md"><code>Benchmarks/ModelAlternatives/2026-09-07/REPORT.md</code></a> alongside Parakeet and Whisper large-v3 turbo.</td>
 </tr>
 <tr>
-<td>No realtime factor for Granite Speech 4.1, Whisper, or Qwen3-ASR</td>
-<td>Time each engine over a fixed reference audio file and record ×realtime like the existing Parakeet figure.</td>
+<td>Diarization tested only on four-speaker English AMI meetings</td>
+<td>Add five-to-eight-speaker and non-English recordings, plus LokalBot's own mic/system-track captures.</td>
 </tr>
 <tr>
-<td>No diarization error rate (DER) for pyannote-community-1 via FluidAudio</td>
-<td>Score against a labeled multi-speaker fixture using pyannote.metrics or dscore.</td>
-</tr>
-<tr>
-<td>No embedding-retrieval quality metric for Qwen3-Embedding 0.6B</td>
-<td>Build a small recall@k fixture from real meeting queries and measure hit rate against hand-labeled relevant meetings.</td>
+<td>Search pilot is 48 authored queries</td>
+<td>Validate Harrier with annotated queries over a larger real library.</td>
 </tr>
 <tr>
 <td>No summarization-quality evaluation for Qwen3.5 4B</td>

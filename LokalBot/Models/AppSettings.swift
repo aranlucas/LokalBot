@@ -242,6 +242,30 @@ struct AppSettings: Codable, Equatable {
     /// and `--digest` CLI generation alike. Empty keeps the built-in prompt.
     var dayDigestCustomPrompt: String = ""
 
+    // MARK: - Coding agent sessions
+
+    /// Read local Claude Code and Codex transcripts into day evidence. Off by
+    /// default: transcripts hold requests and reports about private work.
+    var codingAgentEvidenceEnabled: Bool = false
+    var codingAgentReadsClaudeCode: Bool = true
+    var codingAgentReadsCodex: Bool = true
+    /// Comma-separated folders whose sessions are never read.
+    var codingAgentExcludedFolders: String = ""
+    var codingAgentExcludedFolderList: [String] {
+        codingAgentExcludedFolders
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+    }
+    /// Agents whose sessions are read now; empty while the feature is off.
+    var enabledCodingAgents: Set<CodingAgentKind> {
+        guard codingAgentEvidenceEnabled else { return [] }
+        var agents: Set<CodingAgentKind> = []
+        if codingAgentReadsClaudeCode { agents.insert(.claudeCode) }
+        if codingAgentReadsCodex { agents.insert(.codex) }
+        return agents
+    }
+
     // MARK: - Daily memory export
 
     enum DailyMemoryExportFormat: String, Codable, CaseIterable, Identifiable {
@@ -686,6 +710,10 @@ struct AppSettings: Codable, Equatable {
         case dayDigestAutoEnabled
         case dayDigestHour
         case dayDigestCustomPrompt
+        case codingAgentEvidenceEnabled
+        case codingAgentReadsClaudeCode
+        case codingAgentReadsCodex
+        case codingAgentExcludedFolders
         case dailyMemoryExportEnabled
         case dailyMemoryExportFolder
         case dailyMemoryExportFormat
@@ -851,6 +879,10 @@ struct AppSettings: Codable, Equatable {
         try c.encode(dayDigestAutoEnabled, forKey: .dayDigestAutoEnabled)
         try c.encode(min(23, max(0, dayDigestHour)), forKey: .dayDigestHour)
         try c.encode(dayDigestCustomPrompt, forKey: .dayDigestCustomPrompt)
+        try c.encode(codingAgentEvidenceEnabled, forKey: .codingAgentEvidenceEnabled)
+        try c.encode(codingAgentReadsClaudeCode, forKey: .codingAgentReadsClaudeCode)
+        try c.encode(codingAgentReadsCodex, forKey: .codingAgentReadsCodex)
+        try c.encode(codingAgentExcludedFolders, forKey: .codingAgentExcludedFolders)
         try c.encode(dailyMemoryExportEnabled, forKey: .dailyMemoryExportEnabled)
         try c.encode(dailyMemoryExportFolder, forKey: .dailyMemoryExportFolder)
         try c.encode(dailyMemoryExportFormat, forKey: .dailyMemoryExportFormat)
@@ -994,6 +1026,13 @@ struct AppSettings: Codable, Equatable {
         dayDigestAutoEnabled = decode(.dayDigestAutoEnabled, defaults.dayDigestAutoEnabled)
         dayDigestHour = min(23, max(0, decode(.dayDigestHour, defaults.dayDigestHour)))
         dayDigestCustomPrompt = decode(.dayDigestCustomPrompt, defaults.dayDigestCustomPrompt)
+        codingAgentEvidenceEnabled = decode(
+            .codingAgentEvidenceEnabled, defaults.codingAgentEvidenceEnabled)
+        codingAgentReadsClaudeCode = decode(
+            .codingAgentReadsClaudeCode, defaults.codingAgentReadsClaudeCode)
+        codingAgentReadsCodex = decode(.codingAgentReadsCodex, defaults.codingAgentReadsCodex)
+        codingAgentExcludedFolders = decode(
+            .codingAgentExcludedFolders, defaults.codingAgentExcludedFolders)
         dailyMemoryExportEnabled = decode(
             .dailyMemoryExportEnabled, defaults.dailyMemoryExportEnabled)
         dailyMemoryExportFolder = decode(

@@ -103,6 +103,12 @@ struct DayDigestView: View {
                 }
             }
 
+            if mode.showsMeetings, let sessions = presentation.agentSessionsMarkdown {
+                digestSection("Agent sessions", icon: "terminal") {
+                    SelectableDigestText(sessions)
+                }
+            }
+
             if mode.showsTimeAllocation, !presentation.timeAllocations.isEmpty {
                 timeAllocationDisclosure
             }

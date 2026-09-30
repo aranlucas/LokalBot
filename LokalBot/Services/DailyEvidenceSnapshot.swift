@@ -53,23 +53,26 @@ struct DailyEvidenceSnapshot: Equatable, Sendable {
     var savedMoments: [ScreenMemorySavedMoment]
     var stats: ScreenMemoryDaySummary
     var appUsage: [ScreenMemoryAppUsage]
+    /// Settled coding-agent work, loaded alongside detailed activity.
+    var codingAgentBursts: [CodingAgentBurst] = []
 
     var latestEvidenceAt: Date? {
-        let values = activityBlocks.map(\.end)
-            + screenContexts.map(\.capturedAt)
-            + [screenEvidenceAt].compactMap { $0 }
-            + meetings.compactMap { meeting in
-                [meeting.meeting.endedAt, meeting.artifactModifiedAt]
-                    .compactMap { $0 }
-                    .max()
-            }
-            + savedMoments.flatMap { [$0.capturedAt, $0.savedAt] }
+        // Appended one source at a time: a single chained sum of six arrays
+        // exceeds the type checker's time limit on slower build machines.
+        var values: [Date] = activityBlocks.map(\.end)
+        values += screenContexts.map(\.capturedAt)
+        if let screenEvidenceAt { values.append(screenEvidenceAt) }
+        values += meetings.compactMap { meeting -> Date? in
+            [meeting.meeting.endedAt, meeting.artifactModifiedAt].compactMap { $0 }.max()
+        }
+        values += savedMoments.flatMap { [$0.capturedAt, $0.savedAt] }
+        values += codingAgentBursts.map(\.end)
         return values.max()
     }
 
     var isEmpty: Bool {
         activityBlocks.isEmpty && screenContexts.isEmpty && meetings.isEmpty
-            && savedMoments.isEmpty && stats.trackedSeconds <= 0
+            && savedMoments.isEmpty && stats.trackedSeconds <= 0 && codingAgentBursts.isEmpty
     }
 
     /// A deterministic content signature for cache and derived-artifact
@@ -118,6 +121,9 @@ struct DailyEvidenceSnapshot: Equatable, Sendable {
             "stats|\(stats.trackedSeconds)|\(stats.appCount)|"
                 + "\(stats.activityBlockCount)|\(stats.screenshotCount)|"
                 + "\(stats.savedMomentCount)")
+        // Appended only when present, so days without agent work keep the
+        // signatures their cached artifacts were saved with.
+        fields += codingAgentBursts.map { "agent|" + $0.signatureFields.joined(separator: "|") }
         return Self.fnv1a(fields.joined(separator: "\u{1f}"))
     }
 
@@ -167,6 +173,7 @@ struct FileDailyEvidenceSource: DailyEvidenceSource {
         meetings allMeetings: [Meeting],
         activityBlocks suppliedBlocks: [ActivityBlock]? = nil,
         screenContexts suppliedContexts: [DayScreenContext]? = nil,
+        codingAgentBursts suppliedBursts: [CodingAgentBurst]? = nil,
         includeDetailedActivity: Bool = true,
         includeScreenSummary: Bool = true
     ) throws -> DailyEvidenceSnapshot {
@@ -243,6 +250,18 @@ struct FileDailyEvidenceSource: DailyEvidenceSource {
             if includeDetailedActivity { coverage.insert(.screenContexts) }
         }
 
+        // Loaded under the same rule as activity blocks, so every consumer
+        // that proves a digest current sees the same agent evidence.
+        let agentBursts: [CodingAgentBurst]
+        if let suppliedBursts {
+            agentBursts = suppliedBursts.filter { interval.contains($0.start) }
+        } else if coverage.contains(.activityBlocks), hasDatabase {
+            agentBursts = ActivityStore(databaseURL: databaseURL, readOnly: true)
+                .codingAgentBursts(in: interval)
+        } else {
+            agentBursts = []
+        }
+
         let detailedEvidenceAt = (blocks.map(\.end) + contexts.map(\.capturedAt)).max()
         if includeScreenSummary, hasDatabase {
             coverage.insert(.screenSummary)
@@ -285,7 +304,8 @@ struct FileDailyEvidenceSource: DailyEvidenceSource {
             meetings: meetings,
             savedMoments: moments,
             stats: stats,
-            appUsage: usage)
+            appUsage: usage,
+            codingAgentBursts: agentBursts)
     }
 }
 

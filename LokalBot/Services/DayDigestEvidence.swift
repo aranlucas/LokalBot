@@ -77,9 +77,13 @@ struct DayDigestEvidence: Equatable, Sendable {
     var activities: [Activity]
     var standaloneContexts: [DayScreenContext]
     var meetings: [DayDigestMeetingEvidence]
+    /// Settled coding-agent work. Like meetings, it arrives pre-structured
+    /// and is rendered in its own lossless journal section.
+    var codingAgentBursts: [CodingAgentBurst] = []
 
     var isEmpty: Bool {
         activities.isEmpty && standaloneContexts.isEmpty && meetings.isEmpty
+            && codingAgentBursts.isEmpty
     }
 
     var latestEvidenceAt: Date? {
@@ -87,7 +91,8 @@ struct DayDigestEvidence: Equatable, Sendable {
         let contextCapture = standaloneContexts.map(\.capturedAt).max()
         let meetingEnd = meetings.map(\.endedAt).max()
         let meetingArtifact = meetings.compactMap(\.artifactModifiedAt).max()
-        return [activityEnd, contextCapture, meetingEnd, meetingArtifact]
+        let agentEnd = codingAgentBursts.map(\.end).max()
+        return [activityEnd, contextCapture, meetingEnd, meetingArtifact, agentEnd]
             .compactMap { $0 }
             .max()
     }
@@ -97,6 +102,7 @@ struct DayDigestEvidence: Equatable, Sendable {
         blocks: [ActivityBlock],
         screenContexts: [DayScreenContext],
         meetings: [DayDigestMeetingEvidence],
+        codingAgentBursts: [CodingAgentBurst] = [],
         calendar: Calendar = .current
     ) -> DayDigestEvidence {
         let interval = ActivityStore.dayInterval(containing: day, calendar: calendar)
@@ -139,7 +145,12 @@ struct DayDigestEvidence: Equatable, Sendable {
                 lhs.startedAt == rhs.startedAt
                     ? lhs.id.uuidString < rhs.id.uuidString
                     : lhs.startedAt < rhs.startedAt
-            })
+            },
+            codingAgentBursts: codingAgentBursts
+                .filter { interval.contains($0.start) }
+                .sorted { lhs, rhs in
+                    lhs.start == rhs.start ? lhs.id < rhs.id : lhs.start < rhs.start
+                })
     }
 
     /// Full-day evidence for LLM summarization. Every summary-worthy activity
@@ -224,12 +235,32 @@ struct DayDigestEvidence: Equatable, Sendable {
         let summaryBody = cleanSummary.isEmpty
             ? "_No grounded summary was generated. The chronological log below is complete._"
             : cleanSummary
-        return [
+        var sections = [
             "## Day summary\n\n\(summaryBody)",
             "## Meetings\n\n\(meetingsSection(calendar: calendar))",
+        ]
+        // Only days with agent work gain the section, so journals written
+        // without the feature keep their existing shape.
+        if !codingAgentBursts.isEmpty {
+            sections.append("## Agent sessions\n\n\(agentSessionsSection(calendar: calendar))")
+        }
+        sections += [
             "## Time allocation\n\n\(timeAllocationSection())",
             "## Full activity log\n\n\(chronologicalLog(calendar: calendar))",
-        ].joined(separator: "\n\n") + "\n"
+        ]
+        return sections.joined(separator: "\n\n") + "\n"
+    }
+
+    /// Bursts of one session, in order, one group per session.
+    var codingAgentSessions: [[CodingAgentBurst]] {
+        var order: [String] = []
+        var groups: [String: [CodingAgentBurst]] = [:]
+        for burst in codingAgentBursts {
+            let key = "\(burst.agent.rawValue):\(burst.sessionID)"
+            if groups[key] == nil { order.append(key) }
+            groups[key, default: []].append(burst)
+        }
+        return order.compactMap { groups[$0] }
     }
 
     private static func deduplicated(_ contexts: [DayScreenContext]) -> [DayScreenContext] {
@@ -276,13 +307,49 @@ struct DayDigestEvidence: Equatable, Sendable {
     }
 
     private struct SummaryEvent {
+        enum Source: Equatable {
+            case meeting
+            /// `recordedOutcome`: the burst committed, opened or merged a PR,
+            /// released, pushed, or ran tests.
+            case agentSession(recordedOutcome: Bool)
+            case activity
+            case screenContext
+        }
+
         var start: Date
         var end: Date
-        var order: Int
+        var source: Source
         var text: String
         var sourceIDs: [Int64]
         var app: String
         var title: String
+        /// The burst behind an agent-session event; several after merging.
+        var agentBursts: [CodingAgentBurst] = []
+
+        /// Tie-break for events that begin together.
+        var order: Int {
+            switch source {
+            case .meeting: 0
+            case .agentSession: 1
+            case .activity: 2
+            case .screenContext: 3
+            }
+        }
+    }
+
+    /// Apps that host coding agents: their chat window, a terminal, or an
+    /// editor. Screen text captured there while a stored session ran is
+    /// mostly that session on screen, which the session evidence already
+    /// states more exactly.
+    private static let codingAgentHostApps: Set<String> = [
+        "claude", "codex", "terminal", "iterm", "iterm2", "ghostty", "warp", "alacritty",
+        "kitty", "wezterm", "cursor", "zed", "code", "visual studio code", "windsurf",
+    ]
+
+    private func isCoveredByCodingAgentSession(app: String, from start: Date, to end: Date) -> Bool {
+        let name = app.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard Self.codingAgentHostApps.contains(name) else { return false }
+        return codingAgentBursts.contains { $0.start <= end && start <= $0.end }
     }
 
     private func sessionWeight(_ events: [SummaryEvent]) -> Double {
@@ -315,7 +382,11 @@ struct DayDigestEvidence: Equatable, Sendable {
     private func summaryEvents() -> [SummaryEvent] {
         var events: [SummaryEvent] = []
         for activity in activities where !isSystemOnlySummaryActivity(app: activity.app) {
-            let contexts = summaryContexts(for: activity)
+            let coveredByAgent = isCoveredByCodingAgentSession(
+                app: activity.app, from: activity.start, to: activity.end)
+            let contexts = coveredByAgent
+                ? representativeContexts(activity.contexts, limit: 1)
+                : summaryContexts(for: activity)
             let perContextBudget = contexts.isEmpty
                 ? 0
                 : max(360, min(1_200, 8_400 / contexts.count))
@@ -324,6 +395,11 @@ struct DayDigestEvidence: Equatable, Sendable {
                 lines.append(
                     "Possible task context (weak; corroborate before summarizing): "
                         + activity.title)
+            }
+            if coveredByAgent {
+                lines.append(
+                    "A coding-agent session covers this interval; this screen text "
+                        + "likely shows that session, so prefer the AGENT SESSION evidence.")
             }
             for context in contexts {
                 let source = context.snapshotID > 0 ? "[screen:\(context.snapshotID)]" : "[screen]"
@@ -343,19 +419,21 @@ struct DayDigestEvidence: Equatable, Sendable {
             events.append(SummaryEvent(
                 start: activity.start,
                 end: activity.end,
-                order: 1,
+                source: .activity,
                 text: lines.joined(separator: "\n"),
                 sourceIDs: contexts.map(\.snapshotID).filter { $0 > 0 },
                 app: activity.app,
                 title: activity.title))
         }
         for context in standaloneContexts where !isSystemOnlySummaryActivity(app: context.app) {
+            guard !isCoveredByCodingAgentSession(
+                app: context.app, from: context.capturedAt, to: context.capturedAt) else { continue }
             let source = context.snapshotID > 0 ? "[screen:\(context.snapshotID)]" : "[screen]"
             let text = summaryExcerpt(context.text, maxCharacters: 1_200)
             events.append(SummaryEvent(
                 start: context.capturedAt,
                 end: context.capturedAt,
-                order: 2,
+                source: .screenContext,
                 text: """
                     WORK SOURCE: SCREEN CONTEXT \(source)
                     Captured work text: \(text)
@@ -381,11 +459,22 @@ struct DayDigestEvidence: Equatable, Sendable {
             events.append(SummaryEvent(
                 start: meeting.startedAt,
                 end: meeting.endedAt,
-                order: 0,
+                source: .meeting,
                 text: lines.joined(separator: "\n"),
                 sourceIDs: [],
                 app: meeting.app,
                 title: meeting.title))
+        }
+        for burst in codingAgentBursts {
+            events.append(SummaryEvent(
+                start: burst.start,
+                end: burst.end,
+                source: .agentSession(recordedOutcome: burst.recordedOutcome),
+                text: burst.evidenceText(maxPrompts: 3),
+                sourceIDs: [],
+                app: burst.agent.displayName,
+                title: burst.title,
+                agentBursts: [burst]))
         }
         events.sort { lhs, rhs in
             if lhs.start == rhs.start { return lhs.order < rhs.order }
@@ -405,12 +494,13 @@ struct DayDigestEvidence: Equatable, Sendable {
         events: [SummaryEvent],
         maxCharacters: Int
     ) -> DayDigestSummarySegment {
-        let detailIndices = summaryDetailIndices(events: events, limit: 12)
+        let detailEvents = mergingAgentSessions(events)
+        let detailIndices = summaryDetailIndices(events: detailEvents, limit: 12)
         let contentBudget = max(120, Int(Double(maxCharacters) * 0.82))
         let perDetailBudget = max(120, contentBudget / max(1, detailIndices.count))
         let details = detailIndices.map { index in
             PromptContextSanitizer.sanitize(
-                events[index].text,
+                detailEvents[index].text,
                 maxCharacters: perDetailBudget)
         }.filter { !$0.isEmpty }
         var evidence = "WORK CONTENT — primary evidence:\n"
@@ -444,27 +534,70 @@ struct DayDigestEvidence: Equatable, Sendable {
             sourceIDs: sourceIDs)
     }
 
+    /// A session often has several bursts in one segment. Show it once, with
+    /// every burst's requests, actions, and files, so parallel sessions do
+    /// not crowd each other out of the detail budget.
+    private func mergingAgentSessions(_ events: [SummaryEvent]) -> [SummaryEvent] {
+        var merged: [SummaryEvent] = []
+        var positions: [String: Int] = [:]
+        for event in events {
+            guard let burst = event.agentBursts.first else {
+                merged.append(event)
+                continue
+            }
+            let key = "\(burst.agent.rawValue):\(burst.sessionID)"
+            if let position = positions[key] {
+                merged[position].agentBursts += event.agentBursts
+            } else {
+                positions[key] = merged.count
+                merged.append(event)
+            }
+        }
+        return merged.map { event in
+            guard event.agentBursts.count > 1,
+                  let session = CodingAgentBurstBuilder.merging(event.agentBursts) else { return event }
+            var combined = event
+            combined.end = session.end
+            combined.source = .agentSession(recordedOutcome: session.recordedOutcome)
+            combined.text = session.evidenceText(maxPrompts: 3)
+            return combined
+        }
+    }
+
     /// Meetings are already structured work evidence, so a busy interval must
     /// not sample around them merely because it contains many short activity
-    /// events. Fill the remaining detail budget evenly across the interval.
+    /// events. Agent sessions that recorded an outcome get the same guarantee,
+    /// up to `reservedAgentSessions`, ahead of those that did not. Fill the
+    /// remaining detail budget evenly across the interval.
     private func summaryDetailIndices(
         events: [SummaryEvent],
-        limit: Int
+        limit: Int,
+        reservedAgentSessions: Int = 6
     ) -> [Int] {
         guard !events.isEmpty, limit > 0 else { return [] }
-        let meetingIndices = events.indices.filter { events[$0].order == 0 }
+        func sample(_ indices: [Int], _ count: Int) -> [Int] {
+            evenlySpacedIndices(count: indices.count, limit: min(max(0, count), indices.count))
+                .map { indices[$0] }
+        }
+        let meetingIndices = events.indices.filter { events[$0].source == .meeting }
         if meetingIndices.count >= limit {
-            return evenlySpacedIndices(count: meetingIndices.count, limit: limit)
-                .map { meetingIndices[$0] }
+            return sample(meetingIndices, limit)
         }
 
-        let remainingIndices = events.indices.filter { events[$0].order != 0 }
-        let remainingLimit = min(limit - meetingIndices.count, remainingIndices.count)
-        let sampled = evenlySpacedIndices(
-            count: remainingIndices.count,
-            limit: remainingLimit
-        ).map { remainingIndices[$0] }
-        return (meetingIndices + sampled).sorted()
+        let withOutcome = events.indices.filter {
+            events[$0].source == .agentSession(recordedOutcome: true)
+        }
+        let withoutOutcome = events.indices.filter {
+            events[$0].source == .agentSession(recordedOutcome: false)
+        }
+        let agentLimit = min(reservedAgentSessions, limit - meetingIndices.count)
+        var reserved = sample(withOutcome, agentLimit)
+        reserved += sample(withoutOutcome, agentLimit - reserved.count)
+
+        let taken = Set(meetingIndices + reserved)
+        let remainingIndices = events.indices.filter { !taken.contains($0) }
+        let sampled = sample(remainingIndices, limit - taken.count)
+        return (meetingIndices + reserved + sampled).sorted()
     }
 
     private func evenlySpacedIndices(count: Int, limit: Int) -> [Int] {
@@ -485,12 +618,14 @@ struct DayDigestEvidence: Equatable, Sendable {
             case activity(Activity)
             case context(DayScreenContext)
             case meeting(DayDigestMeetingEvidence)
+            case agent(CodingAgentBurst)
 
             var date: Date {
                 switch self {
                 case .activity(let value): value.start
                 case .context(let value): value.capturedAt
                 case .meeting(let value): value.startedAt
+                case .agent(let value): value.start
                 }
             }
 
@@ -499,6 +634,7 @@ struct DayDigestEvidence: Equatable, Sendable {
                 case .meeting: 0
                 case .activity: 1
                 case .context: 2
+                case .agent: 3
                 }
             }
         }
@@ -506,6 +642,7 @@ struct DayDigestEvidence: Equatable, Sendable {
         var events = activities.map(Event.activity)
         events += standaloneContexts.map(Event.context)
         events += meetings.map(Event.meeting)
+        events += codingAgentBursts.map(Event.agent)
         events.sort { lhs, rhs in
             lhs.date == rhs.date ? lhs.order < rhs.order : lhs.date < rhs.date
         }
@@ -542,6 +679,15 @@ struct DayDigestEvidence: Equatable, Sendable {
                 return "- **\(time(meeting.startedAt, calendar: calendar))–"
                     + "\(time(meeting.endedAt, calendar: calendar))** — **Meeting** — "
                     + "\(markdownInline(meeting.title)) (\(markdownInline(meeting.app)))"
+            case .agent(let burst):
+                var line = "- **\(time(burst.start, calendar: calendar))–"
+                    + "\(time(burst.end, calendar: calendar))** — **\(burst.agent.displayName)** — "
+                    + "\(markdownInline(burst.title)) (\(markdownInline(burst.project)))"
+                if !burst.actions.isEmpty {
+                    line += "\n  - Recorded actions: "
+                        + burst.actions.map { markdownInline($0.summary) }.joined(separator: "; ")
+                }
+                return line
             }
         }.joined(separator: "\n")
     }
@@ -560,6 +706,70 @@ struct DayDigestEvidence: Equatable, Sendable {
             if !outcomes.isEmpty { lines.append("- Outcomes: \(markdownInline(outcomes))") }
             return lines.joined(separator: "\n")
         }.joined(separator: "\n\n")
+    }
+
+    /// Recorded facts only, one entry per session. The agent's own report is
+    /// a claim for the model to corroborate, so it stays out of this section.
+    private func agentSessionsSection(calendar: Calendar) -> String {
+        codingAgentSessions.compactMap { bursts -> String? in
+            guard let first = bursts.first else { return nil }
+            var lines = [
+                "### \(time(first.start, calendar: calendar)) — \(markdownInline(first.title)) "
+                    + "(\(first.agent.displayName))",
+                "- Project: \(markdownInline(first.project))"
+                    + (first.branch.map { " (branch \(markdownInline($0)))" } ?? ""),
+            ]
+            let spans = bursts.map {
+                "\(time($0.start, calendar: calendar))–\(time($0.end, calendar: calendar))"
+            }.joined(separator: ", ")
+            let active = bursts.reduce(0) { $0 + $1.activeDuration }
+            lines.append("- Time: \(spans) (\(duration(active)) active)")
+            let prompts = bursts.flatMap(\.prompts)
+            let promptCount = bursts.reduce(0) { $0 + $1.promptCount }
+            if !prompts.isEmpty {
+                let shown = prompts.prefix(3).map { markdownInline(singleLine($0, maxCharacters: 160)) }
+                lines.append("- Requests: " + shown.joined(separator: "; ")
+                    + (promptCount > shown.count ? " (+\(promptCount - shown.count) more)" : ""))
+            }
+            var actions: [CodingAgentAction] = []
+            for action in bursts.flatMap(\.actions) where !actions.contains(action) {
+                actions.append(action)
+            }
+            if !actions.isEmpty {
+                lines.append("- Recorded actions: "
+                    + actions.map { markdownInline($0.summary) }.joined(separator: "; "))
+            }
+            var pullRequests: [String] = []
+            for url in bursts.flatMap(\.pullRequests) where !pullRequests.contains(url) {
+                pullRequests.append(url)
+            }
+            if !pullRequests.isEmpty {
+                lines.append("- Pull requests: "
+                    + pullRequests.map(Self.pullRequestLink).joined(separator: ", "))
+            }
+            var files: [String] = []
+            for file in bursts.flatMap(\.changedFiles) where !files.contains(file) { files.append(file) }
+            let hidden = bursts.reduce(0) { $0 + max(0, $1.changedFileCount - $1.changedFiles.count) }
+            if !files.isEmpty || hidden > 0 {
+                let shown = files.prefix(5).map(markdownInline)
+                let more = files.count - shown.count + hidden
+                lines.append("- Changed files (\(files.count + hidden)): " + shown.joined(separator: ", ")
+                    + (more > 0 ? ", +\(more) more" : ""))
+            }
+            return lines.joined(separator: "\n")
+        }.joined(separator: "\n\n")
+    }
+
+    /// `owner/repo#N` for a GitHub pull request URL.
+    static func pullRequestLabel(_ url: String) -> String? {
+        let parts = url.split(separator: "/")
+        guard parts.count >= 6, parts[parts.count - 2] == "pull" else { return nil }
+        return "\(parts[parts.count - 4])/\(parts[parts.count - 3])#\(parts[parts.count - 1])"
+    }
+
+    /// A Markdown link labelled `owner/repo#N`.
+    static func pullRequestLink(_ url: String) -> String {
+        pullRequestLabel(url).map { "[\($0)](\(url))" } ?? "<\(url)>"
     }
 
     private func timeAllocationSection() -> String {
@@ -997,6 +1207,12 @@ enum DayDigestOverviewGenerator {
                     + String(format: "%.2fs", Date().timeIntervalSince(startedAt)))
         }
 
+        // Segment extraction yields one task per segment, so of several
+        // parallel sessions all but one would vanish. Those that recorded an
+        // outcome are stated from their actions and added after aggregation:
+        // a small model asked to merge them blends unrelated sessions.
+        let sessionCandidates = agentSessionCandidates(evidence)
+
         let usesBestAvailableActivity = substantiveBlocks.isEmpty
         // Substantive work leads; lighter but identifiable work follows it
         // instead of disappearing whenever one segment clears the bar.
@@ -1092,7 +1308,7 @@ enum DayDigestOverviewGenerator {
                 + String(format: "%.2fs", Date().timeIntervalSince(digestStartedAt)))
 
         return DayDigestOverviewGeneration(
-            summary: render(blocks: selectedBlocks, draft: digest),
+            summary: render(blocks: selectedBlocks, draft: digest, sessionCandidates: sessionCandidates),
             quality: degraded ? .partial : .complete,
             coverage: DayDigestCoverage(coveredSeconds: coveredSeconds, trackedSeconds: trackedSeconds))
     }
@@ -1159,6 +1375,38 @@ enum DayDigestOverviewGenerator {
         Do not quote or restate candidate metadata.
         """
 
+    /// One candidate per agent session that recorded an outcome, from
+    /// recorded facts only. Scheduled runs are left to segment extraction:
+    /// their reports often describe other days.
+    static func agentSessionCandidates(_ evidence: DayDigestEvidence) -> [DayDigestGeneratedFocusBlock] {
+        evidence.codingAgentSessions.compactMap { bursts -> DayDigestGeneratedFocusBlock? in
+            guard let session = CodingAgentBurstBuilder.merging(bursts), session.recordedOutcome,
+                  !session.isScheduledRun else { return nil }
+            let title = session.title.localizedCaseInsensitiveContains(session.project)
+                ? session.title : "\(session.title) (\(session.project))"
+            var workDone = "Worked with \(session.agent.displayName) in \(session.project)."
+            if !session.actions.isEmpty {
+                workDone += " Recorded actions: "
+                    + session.actions.prefix(6).map(\.summary).joined(separator: "; ") + "."
+            }
+            let pullRequests = session.pullRequests.compactMap(DayDigestEvidence.pullRequestLabel)
+            let finished = session.actions.contains { action in
+                switch action {
+                case .mergedPullRequest, .release: true
+                default: false
+                }
+            }
+            return DayDigestGeneratedFocusBlock(
+                task: cleanInline(title, maxCharacters: FieldLimit.titleCharacters),
+                workDone: cleanSummary(workDone, maxWords: FieldLimit.workDoneWords),
+                status: finished ? "completed" : "in_progress",
+                outcome: pullRequests.isEmpty
+                    ? "" : cleanSummary("Pull requests: " + pullRequests.joined(separator: ", "), maxWords: 32),
+                nextStep: "",
+                sourceIDs: [])
+        }
+    }
+
     static func fallback(_ evidence: DayDigestEvidence) -> String {
         if evidence.isEmpty {
             return "### At a glance\n_No activity was recorded._"
@@ -1189,6 +1437,28 @@ enum DayDigestOverviewGenerator {
                 workDone: workDone.isEmpty ? "Participated in the recorded meeting." : workDone,
                 status: "unknown",
                 outcome: cleanSummary(meeting.outcomes, maxWords: 32),
+                nextStep: "",
+                sourceIDs: []))
+            if blocks.count == limit { return blocks }
+        }
+
+        // Agent sessions name their work and record their actions, which
+        // says more than a window title without claiming an outcome.
+        for session in evidence.codingAgentSessions {
+            guard let first = session.first else { continue }
+            var actions: [String] = []
+            for action in session.flatMap(\.actions) where !actions.contains(action.summary) {
+                actions.append(action.summary)
+            }
+            let context = "Worked with \(first.agent.displayName) in \(first.project)"
+            let workDone = actions.isEmpty
+                ? context + "."
+                : context + ". Recorded actions: " + actions.prefix(4).joined(separator: "; ") + "."
+            blocks.append(DayDigestGeneratedFocusBlock(
+                task: cleanInline(first.title, maxCharacters: FieldLimit.titleCharacters),
+                workDone: cleanSummary(workDone, maxWords: FieldLimit.workDoneWords),
+                status: "unknown",
+                outcome: "",
                 nextStep: "",
                 sourceIDs: []))
             if blocks.count == limit { return blocks }
@@ -1408,9 +1678,13 @@ enum DayDigestOverviewGenerator {
 
     private static func render(
         blocks: [DayDigestGeneratedFocusBlock],
-        draft: DigestDraft?
+        draft: DigestDraft?,
+        sessionCandidates: [DayDigestGeneratedFocusBlock] = []
     ) -> String {
-        let normalized = normalizedDigest(draft, blocks: blocks)
+        var normalized = normalizedDigest(draft, blocks: blocks)
+        for (offset, candidate) in sessionCandidates.enumerated() {
+            mergeSessionCandidate(candidate, index: blocks.count + offset, into: &normalized.tasks)
+        }
         guard !normalized.tasks.isEmpty else {
             return "### Tasks\n- **Recorded activity** — Activity was captured, but the available context did not identify a more specific item."
         }
@@ -1505,6 +1779,55 @@ enum DayDigestOverviewGenerator {
             summary: candidateSummary(block),
             nextStep: block.nextStep,
             blockIndices: [index]))
+    }
+
+    /// A session already described by a task adds its recorded facts to that
+    /// task; otherwise it becomes its own task after the model's.
+    private static func mergeSessionCandidate(
+        _ block: DayDigestGeneratedFocusBlock,
+        index: Int,
+        into tasks: inout [NormalizedTask]
+    ) {
+        let key = normalizedTaskKey(block.task)
+        guard let taskIndex = tasks.firstIndex(where: {
+            normalizedTaskKey($0.title) == key || DayDigestTextSimilarity.isSimilar($0.title, block.task)
+        }) else {
+            tasks.append(NormalizedTask(
+                title: block.task,
+                status: block.status,
+                summary: candidateSummary(block),
+                nextStep: "",
+                blockIndices: [index]))
+            return
+        }
+        let addition = unmentionedOutcome(block.outcome, in: tasks[taskIndex].summary)
+        if !addition.isEmpty {
+            tasks[taskIndex].summary = cleanSummary(
+                tasks[taskIndex].summary + " " + addition, maxWords: FieldLimit.summaryWords)
+        }
+        // A recorded merge or release settles the status; nothing weaker
+        // overrides what the model concluded.
+        if block.status == "completed" { tasks[taskIndex].status = "completed" }
+        tasks[taskIndex].blockIndices.append(index)
+    }
+
+    /// The part of a session's outcome a task does not state yet. Several
+    /// sessions can merge into one task, so each adds only pull requests it
+    /// has not already named; `#10` is not mentioned by `#105`.
+    private static func unmentionedOutcome(_ outcome: String, in summary: String) -> String {
+        let prefix = "Pull requests: "
+        guard outcome.hasPrefix(prefix) else {
+            return summary.localizedCaseInsensitiveContains(outcome) ? "" : outcome
+        }
+        let missing = outcome.dropFirst(prefix.count)
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { label in
+                summary.range(
+                    of: NSRegularExpression.escapedPattern(for: label) + #"(?!\d)"#,
+                    options: .regularExpression) == nil
+            }
+        return missing.isEmpty ? "" : prefix + missing.joined(separator: ", ")
     }
 
     private static func candidateSummary(_ block: DayDigestGeneratedFocusBlock) -> String {

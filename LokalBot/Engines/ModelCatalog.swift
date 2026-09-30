@@ -97,7 +97,7 @@ struct ModelCatalog {
     /// Local GGUF catalog, roughly ordered from tiny fallbacks to higher-quality
     /// meeting-summary and cotyping options.
     static let entries: [Entry] = [
-        Entry(id: compactFallbackID, displayName: "Qwen 3.5 · 0.8B",
+        Entry(id: compactFallbackID, displayName: "Qwen3.5 0.8B",
               fileName: "Qwen3.5-0.8B-Q4_K_M.gguf",
               url: "https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/6ab461498e2023f6e3c1baea90a8f0fe38ab64d0/Qwen3.5-0.8B-Q4_K_M.gguf",
               sha256: "bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517",

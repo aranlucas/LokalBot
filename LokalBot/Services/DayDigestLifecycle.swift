@@ -46,6 +46,10 @@ final class DayDigestLifecycle: ObservableObject {
     private let storageRoot: URL
     private let blocks: (Date) -> [ActivityBlock]
     private let screenContexts: (Date) -> [DayScreenContext]
+    private let codingAgentBursts: (Date) -> [CodingAgentBurst]
+    /// Brings slower sources, such as coding-agent transcripts, up to date
+    /// before a day's evidence is read for generation.
+    private let prepareEvidence: @MainActor (Date) async -> Void
     private let meetings: () -> [Meeting]
     private let latestActivityEvidenceAt: (Date) -> Date?
     private let settings: () -> AppSettings
@@ -69,6 +73,8 @@ final class DayDigestLifecycle: ObservableObject {
         scheduler: DayDigestScheduler? = nil,
         blocks: @escaping (Date) -> [ActivityBlock],
         screenContexts: @escaping (Date) -> [DayScreenContext],
+        codingAgentBursts: @escaping (Date) -> [CodingAgentBurst] = { _ in [] },
+        prepareEvidence: @escaping @MainActor (Date) async -> Void = { _ in },
         meetings: @escaping () -> [Meeting],
         latestActivityEvidenceAt: @escaping (Date) -> Date?,
         settings: @escaping () -> AppSettings,
@@ -80,6 +86,8 @@ final class DayDigestLifecycle: ObservableObject {
         self.scheduler = scheduler ?? DayDigestScheduler()
         self.blocks = blocks
         self.screenContexts = screenContexts
+        self.codingAgentBursts = codingAgentBursts
+        self.prepareEvidence = prepareEvidence
         self.meetings = meetings
         self.latestActivityEvidenceAt = latestActivityEvidenceAt
         self.settings = settings
@@ -93,12 +101,15 @@ final class DayDigestLifecycle: ObservableObject {
         pipeline: ProcessingPipeline,
         meetings: @escaping () -> [Meeting],
         settings: @escaping () -> AppSettings,
+        prepareEvidence: @escaping @MainActor (Date) async -> Void = { _ in },
         onGenerated: @escaping (Date) -> Void = { _ in }
     ) {
         self.init(
             storageRoot: storage.rootURL,
             blocks: { activityStore.blocks(on: $0) },
             screenContexts: { activityStore.screenContexts(on: $0) },
+            codingAgentBursts: { activityStore.codingAgentBursts(on: $0) },
+            prepareEvidence: prepareEvidence,
             meetings: meetings,
             latestActivityEvidenceAt: { activityStore.latestEvidenceAt(on: $0) },
             settings: settings,
@@ -159,7 +170,8 @@ final class DayDigestLifecycle: ObservableObject {
             let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
             let signature = text == nil ? nil : try? FileDailyEvidenceSource(root: root, calendar: calendar)
                 .snapshot(for: day, meetings: finished, activityBlocks: store.blocks(on: day),
-                          screenContexts: store.screenContexts(on: day), includeScreenSummary: false)
+                          screenContexts: store.screenContexts(on: day),
+                          codingAgentBursts: store.codingAgentBursts(on: day), includeScreenSummary: false)
                 .digestEvidence(calendar: calendar).contentSignature
             let latestArtifact = finished.compactMap {
                 DayDigestMeetingArtifacts.latestModifiedAt(in: root.appendingPathComponent($0.relativePath))
@@ -197,6 +209,7 @@ final class DayDigestLifecycle: ObservableObject {
         for day: Date,
         settings override: AppSettings? = nil
     ) async throws -> DayDigestGenerationResult {
+        await prepareEvidence(day)
         let evidence = try evidenceInput(for: day)
         let validateEvidence = evidenceValidator(for: evidence)
         let result = try await trackingRun(for: evidence.day) { progress in
@@ -247,6 +260,7 @@ final class DayDigestLifecycle: ObservableObject {
                     throw TextEngineError.unavailable("LokalBot is shutting down.")
                 }
                 guard self.settings().allowsAutomaticMainInference else { return .deferred }
+                await self.prepareEvidence(day)
                 let evidence = try self.evidenceInput(for: day)
                 let validateEvidence = self.evidenceValidator(for: evidence)
                 let url = self.journalURL(for: day)
@@ -291,6 +305,7 @@ final class DayDigestLifecycle: ObservableObject {
             meetings: meetings(for: day, includeInProgress: false),
             activityBlocks: blocks(day),
             screenContexts: screenContexts(day),
+            codingAgentBursts: codingAgentBursts(day),
             includeScreenSummary: false)
     }
 
@@ -304,6 +319,9 @@ final class DayDigestLifecycle: ObservableObject {
         let blockIDs = Set(original.activityBlocks.map(\.id))
         let contextIDs = Set(original.screenContexts.map(\.snapshotID))
         let meetingIDs = Set(original.meetings.map { $0.meeting.id })
+        // Stored bursts are settled, so a new id is new work; only the
+        // original set must be unchanged.
+        let burstIDs = Set(original.codingAgentBursts.map(\.id))
         let day = original.day
         return { [weak self] in
             guard let self else {
@@ -316,6 +334,7 @@ final class DayDigestLifecycle: ObservableObject {
             current.activityBlocks.removeAll { !blockIDs.contains($0.id) }
             current.screenContexts.removeAll { !contextIDs.contains($0.snapshotID) }
             current.meetings.removeAll { !meetingIDs.contains($0.meeting.id) }
+            current.codingAgentBursts.removeAll { !burstIDs.contains($0.id) }
             let currentSignature = current.digestEvidence(calendar: self.calendar).contentSignature
             guard currentSignature == expectedSignature else {
                 throw GenerationError.evidenceChangedDuringGeneration

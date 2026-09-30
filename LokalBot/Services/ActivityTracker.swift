@@ -71,6 +71,13 @@ final class ActivityStore {
                 CREATE INDEX IF NOT EXISTS idx_screenshot_app_ts ON screenshots(app, ts);
                 CREATE INDEX IF NOT EXISTS idx_screen_bookmarks_created
                     ON screen_bookmarks(created_at);
+                CREATE TABLE IF NOT EXISTS coding_agent_bursts (
+                    id TEXT PRIMARY KEY,
+                    agent TEXT NOT NULL,
+                    start REAL NOT NULL, end REAL NOT NULL,
+                    payload TEXT NOT NULL);
+                CREATE INDEX IF NOT EXISTS idx_coding_agent_bursts_start
+                    ON coding_agent_bursts(start);
                 """)
             try migrateScreenshotColumns()
             try migrateOCRTable()
@@ -809,9 +816,21 @@ final class ActivityStore {
             let attributes = try? FileManager.default.attributesOfItem(atPath: candidate.path)
             return sum + ((attributes?[.size] as? NSNumber)?.int64Value ?? 0)
         }
+        // Agent requests and reports are text: they follow the text rule.
+        var agentBursts: [RetentionReview.CodingAgentBurst] = []
+        if !keepTextForever {
+            agentBursts = try database.queryChecked("""
+                SELECT id, start FROM coding_agent_bursts WHERE end < ?1 ORDER BY start, id
+                """, bind: [cutoff.timeIntervalSince1970]) { statement in
+                    RetentionReview.CodingAgentBurst(
+                        id: String(cString: sqlite3_column_text(statement, 0)),
+                        start: Date(timeIntervalSince1970: sqlite3_column_double(statement, 1)))
+                }
+        }
         return RetentionReview(days: days, keepTextForever: keepTextForever, reviewedAt: now,
                                candidates: candidates, savedCount: savedCounts.first ?? 0,
-                               bytes: bytes, activityTitles: activityTitles)
+                               bytes: bytes, activityTitles: activityTitles,
+                               codingAgentBursts: agentBursts)
     }
 
     func clearRetainedActivityTitles(_ reviewed: [RetentionReview.ActivityTitle]) throws {
@@ -1090,7 +1109,8 @@ final class ActivityStore {
                 guard sqlite3_column_type(statement, 0) != SQLITE_NULL else { return nil }
                 return Date(timeIntervalSince1970: sqlite3_column_double(statement, 0))
             }
-            return timestamps.first ?? nil
+            let agentEnd = codingAgentBursts(in: interval).map(\.end).max()
+            return [timestamps.first ?? nil, agentEnd].compactMap { $0 }.max()
         } catch {
             lokalbotLog("day latest-evidence lookup failed: \(error.localizedDescription)")
             return nil
@@ -1144,6 +1164,83 @@ final class ActivityStore {
 
     private nonisolated static func decodePerceptualHash(_ value: String) -> UInt64? {
         UInt64(value, radix: 16)
+    }
+
+    // MARK: - Coding-agent evidence
+
+    /// Settled coding-agent bursts that began inside `interval`, oldest
+    /// first. A burst never crosses midnight, so its start names its day.
+    func codingAgentBursts(in interval: DateInterval) -> [CodingAgentBurst] {
+        do {
+            let database = try requiredDatabase()
+            // Read-only connections can predate the table's creation.
+            guard try database.hasRowChecked("""
+                SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'coding_agent_bursts'
+                """) else { return [] }
+            let decoder = JSONDecoder()
+            return try database.queryChecked("""
+                SELECT payload FROM coding_agent_bursts
+                WHERE start >= ?1 AND start < ?2 ORDER BY start, id
+                """, bind: [interval.start.timeIntervalSince1970,
+                             interval.end.timeIntervalSince1970]) { statement -> CodingAgentBurst? in
+                let payload = Data(String(cString: sqlite3_column_text(statement, 0)).utf8)
+                return try? decoder.decode(CodingAgentBurst.self, from: payload)
+            }
+        } catch {
+            lokalbotLog("coding-agent evidence query failed: \(error.localizedDescription)")
+            return []
+        }
+    }
+
+    func codingAgentBursts(on day: Date) -> [CodingAgentBurst] {
+        codingAgentBursts(in: Self.dayInterval(containing: day))
+    }
+
+    /// Insert or replace bursts by id. Callers compute what changed; this
+    /// only writes, so a failure never looks like an empty source.
+    func upsertCodingAgentBursts(_ bursts: [CodingAgentBurst]) throws {
+        guard !bursts.isEmpty else { return }
+        let database = try requiredDatabase()
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        try database.withTransaction {
+            try database.withPreparedStatement("""
+                INSERT OR REPLACE INTO coding_agent_bursts (id, agent, start, end, payload)
+                VALUES (?1, ?2, ?3, ?4, ?5)
+                """) { statement in
+                for burst in bursts {
+                    let payload = String(decoding: try encoder.encode(burst), as: UTF8.self)
+                    try database.runChecked(statement, bind: [
+                        burst.id, burst.agent.rawValue, burst.start.timeIntervalSince1970,
+                        burst.end.timeIntervalSince1970, payload,
+                    ])
+                }
+            }
+        }
+    }
+
+    func deleteCodingAgentBursts(ids: [String]) throws {
+        let unique = Array(Set(ids)).sorted()
+        guard !unique.isEmpty else { return }
+        let database = try requiredDatabase()
+        try database.withTransaction {
+            for start in stride(from: 0, to: unique.count, by: 400) {
+                let chunk = Array(unique[start..<min(start + 400, unique.count)])
+                let placeholders = (1...chunk.count).map { "?\($0)" }.joined(separator: ", ")
+                try database.runChecked(
+                    "DELETE FROM coding_agent_bursts WHERE id IN (\(placeholders))", bind: chunk)
+            }
+        }
+    }
+
+    /// Start times of every stored burst, for the days a full clear revokes.
+    func codingAgentBurstStarts() throws -> [String: Date] {
+        let database = try requiredDatabase()
+        let rows = try database.queryChecked("SELECT id, start FROM coding_agent_bursts") { statement in
+            (String(cString: sqlite3_column_text(statement, 0)),
+             Date(timeIntervalSince1970: sqlite3_column_double(statement, 1)))
+        }
+        return Dictionary(rows, uniquingKeysWith: { first, _ in first })
     }
 }
 

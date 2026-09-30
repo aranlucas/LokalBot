@@ -112,6 +112,8 @@ struct SettingDescriptor: Identifiable {
         .init(id: "settings.useCalendarAgenda", title: "Use invitation agendas", category: .recording, aliases: "agenda calendar invitation notes description"),
         .init(id: "settings.meetingVisualContextEnabled", title: "Capture low-frequency visual context during meetings", category: .dayMemory, aliases: "meetingVisualContextEnabled"),
         .init(id: "settings.dayDigestAutoEnabled", title: "Generate the day digest automatically", category: .dayMemory, aliases: "dayDigestAutoEnabled"),
+        .init(id: "settings.codingAgentEvidenceEnabled", title: "Read coding agent sessions", category: .dayMemory, aliases: "claude code codex agent transcripts sessions digest pull requests commits"),
+        .init(id: "settings.codingAgentExcludedFolders", title: "Never read sessions in these folders", category: .dayMemory, aliases: "coding agent exclude folders projects repositories"),
         .init(id: "settings.dailyMemoryExportEnabled", title: "Export a daily memory note", category: .dayMemory, aliases: "dailyMemoryExportEnabled"),
         .init(id: "settings.dailyMemoryExportFormat", title: "Format", category: .dayMemory, aliases: "dailyMemoryExportFormat"),
         .init(id: "settings.memoryRoutinesEnabled", title: "Enable safe local routines", category: .dayMemory, aliases: "memoryRoutinesEnabled"),

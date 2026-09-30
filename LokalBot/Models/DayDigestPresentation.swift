@@ -41,6 +41,7 @@ struct DayDigestPresentation: Equatable {
     let otherActivityBlocks: [FocusBlock]
     let decisionsMarkdown: String?
     let meetingsMarkdown: String?
+    let agentSessionsMarkdown: String?
     let timeAllocations: [TimeAllocation]
     let activityGroups: [ActivityHourGroup]
 
@@ -118,6 +119,9 @@ struct DayDigestPresentation: Equatable {
             Self.normalized($0.title) == "meetings"
         })?.body
         meetingsMarkdown = Self.meaningful(meetings)
+        agentSessionsMarkdown = Self.meaningful(document.first(where: {
+            Self.normalized($0.title) == "agent sessions"
+        })?.body)
 
         let timeBody = document.first(where: {
             Self.normalized($0.title) == "time allocation"

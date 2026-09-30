@@ -19,7 +19,7 @@ Key facts:
 - [LokalBot home](https://www.lokalbot.com/): features, demo, and FAQ
 - [About LokalBot](https://www.lokalbot.com/about): fact sheet, what it does and does not do
 - [System requirements](https://www.lokalbot.com/system-requirements): macOS version, Apple Silicon, memory, disk, and permissions
-- [Benchmarks](https://www.lokalbot.com/benchmarks): measured speech, search, summary, autocomplete, and OCR results with methods and known gaps
+- [Benchmarks](https://www.lokalbot.com/benchmarks): measured speech, speaker diarization, search, summary, autocomplete, and OCR results with methods and known gaps
 - [Privacy policy](https://www.lokalbot.com/privacy): what stays on the Mac and exactly when the app uses the network
 
 ## Guides
@@ -46,6 +46,5 @@ Key facts:
 - [Source code and README](https://github.com/stevyhacker/lokalbot)
 - [Release notes](https://github.com/stevyhacker/lokalbot/releases)
 - [Benchmark data and scripts](https://github.com/stevyhacker/lokalbot/tree/master/Benchmarks)
-- [Benchmarks Space on Hugging Face](https://huggingface.co/spaces/stevyhacker/lokalbot-benchmarks)
 - [Enshittification-proof](https://www.lokalbot.com/enshittification-proof): why the project cannot get worse on purpose
 - [Support](https://www.lokalbot.com/support) and [Terms](https://www.lokalbot.com/terms)

@@ -611,7 +611,8 @@ struct SettingsView: View {
                                       "ocr", "window", "accessibility", "retention", "private",
                                       "excluded apps", "never capture", "export", "obsidian",
                                       "logseq", "markdown", "daily note", "vault", "digest",
-                                      "journal", "schedule", "prompt"]) {
+                                      "journal", "schedule", "prompt", "coding agent", "claude code",
+                                      "codex", "agent sessions"]) {
                 Section("Day Memory") {
                     Toggle(isOn: Binding(
                         get: { app.settings.trackingEnabled },
@@ -692,6 +693,9 @@ struct SettingsView: View {
                                             + "(see Privacy). Saved moments keep their encrypted frame and text "
                                             + "until you unsave or delete them. Excluded apps log as “Private”.")
                     }
+                }
+                Section("Coding agent sessions") {
+                    CodingAgentEvidenceSettings()
                 }
                 Section("Day digest") {
                     Toggle(isOn: $app.settings.dayDigestAutoEnabled) {
