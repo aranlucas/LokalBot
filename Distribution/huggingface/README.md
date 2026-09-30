@@ -5,7 +5,7 @@ Everything in this directory ships LokalBot's Hugging Face presence: a curated m
 ## Live resources
 
 - [LokalBot recommended local stack](https://huggingface.co/collections/stevyhacker/lokalbot-recommended-local-stack) — public Collection with six model links and curation notes.
-- [LokalBot Local-Stack Benchmarks](https://huggingface.co/spaces/stevyhacker/lokalbot-benchmarks) — public Static Space, published at Space commit `d3315ea`.
+- [LokalBot Local-Stack Benchmarks](https://huggingface.co/spaces/stevyhacker/lokalbot-benchmarks) — public Static Space, refreshed for the current default stack at Space commit `933968b` (2026-09-30).
 
 ## Files
 
@@ -50,7 +50,7 @@ Without a write token, create a public Static Space named `lokalbot-benchmarks` 
 ## Step 3 — Publish checklist
 
 - [x] Collection is public; all six items show curation notes; order matches `COLLECTION.md`.
-- [x] Space renders all four sections (stack leaderboard, cotyping matrix, two OCR tables) plus the gaps table.
+- [x] Space renders the current default stack, diarization, summary, search, speech-recognition, cotyping, and two OCR tables, plus the gaps table.
 - [x] Space header/footer link to the GitHub repo; each table's source path resolves on GitHub.
 - [ ] Collection description contains the repo link (`https://github.com/stevyhacker/lokalbot`).
   The inline web editor did not persist this optional field, and the installed API token receives 403 for Collection metadata writes; use a token with Collection-write permission to finish it.

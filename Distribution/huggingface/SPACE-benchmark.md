@@ -40,8 +40,9 @@ short_description: Measured on-device model benchmarks behind LokalBot (macOS, M
 # LokalBot local-stack benchmarks
 
 Extracted, sourced benchmark numbers for the local model stack behind
-[LokalBot](https://github.com/stevyhacker/lokalbot) — transcription, summaries,
-autocomplete, OCR, and diarization on an Apple M4 Max. Every figure links back
+[LokalBot](https://github.com/stevyhacker/lokalbot): speaker diarization,
+summaries, semantic search, speech recognition, autocomplete, and OCR on an
+Apple M4 Max. Every figure links back
 to its source file in the repository; nothing is estimated.
 
 - Repo: https://github.com/stevyhacker/lokalbot

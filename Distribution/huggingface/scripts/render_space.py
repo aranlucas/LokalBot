@@ -63,7 +63,7 @@ def main() -> None:
   <header class="hero">
     <p class="eyebrow">Measured locally · published with sources</p>
     <h1>LokalBot local-stack benchmarks</h1>
-    <p class="lede">Transcription, summaries, autocomplete, OCR, and diarization measured on an Apple M4 Max. No estimates and no rehosted model weights.</p>
+    <p class="lede">Speaker diarization, summaries, semantic search, speech recognition, autocomplete, and OCR measured on an Apple M4 Max, with the known gaps listed. No estimates and no rehosted model weights.</p>
     <nav aria-label="Project links">
       <a href="https://github.com/stevyhacker/lokalbot">GitHub repository</a>
       <a href="{escaped_collection_url}">Recommended model collection</a>
