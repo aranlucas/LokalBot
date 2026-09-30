@@ -109,14 +109,20 @@ def recordings(manifest):
 def main():
     manifest = json.loads((DATA / 'manifest.json').read_text())
     recording = recordings(manifest)
-    if sys.argv[1:] == ['align-job']:
-        # Word timings for today's engine windows (condition engine-15 in runs.jsonl).
+    if sys.argv[1:2] == ['align-job']:
+        # Word timings for a condition's windows in runs.jsonl (default engine-15).
+        # ALIGNER_VARIANT=8bit uses the 8-bit aligner in ALIGNER_MODEL_DIR instead.
         items = [{'id': r['id'], 'wav': r['path']} for r in manifest]
-        (OUT / 'align.json').write_text(json.dumps({
-            'modelId': 'aufklarer/Qwen3-ForcedAligner-0.6B-4bit', 'modelDir': str(ALIGNER_DIR),
-            'runs': str(OUT / 'runs.jsonl'), 'condition': 'engine-15', 'language': 'English',
-            'items': items, 'output': str(OUT / 'aligned-engine15.jsonl')}))
-        print(f'{len(items)} items')
+        variant = os.environ.get('ALIGNER_VARIANT', '4bit')
+        for condition in sys.argv[2:] or ['engine-15']:
+            name = 'aligned-engine15' if condition == 'engine-15' and variant == '4bit' else (
+                f'aligned-{condition}' if variant == '4bit' else f'aligned8-{condition}')
+            path = OUT / ('align.json' if name == 'aligned-engine15' else f'align-{variant}-{condition}.json')
+            path.write_text(json.dumps({
+                'modelId': f'aufklarer/Qwen3-ForcedAligner-0.6B-{variant}', 'modelDir': str(ALIGNER_DIR),
+                'runs': str(OUT / 'runs.jsonl'), 'condition': condition, 'language': 'English',
+                'items': items, 'output': str(OUT / f'{name}.jsonl')}))
+            print(f'{path.name}: {len(items)} items -> {name}.jsonl')
         return
     if sys.argv[1:] == ['diarize-job']:
         files = sorted({recording(r) for r in manifest})

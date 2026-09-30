@@ -22,6 +22,8 @@ from score_regions import REGION, cp_errors  # noqa: E402
 from make_region_jobs import recordings  # noqa: E402
 
 TOLERANCE = 1.0  # AttributedTrackTranscriber.wordGapTolerance
+PAUSE_SPLIT = 0.75  # AttributedTrackTranscriber.wordPauseSplit
+MAX_SEGMENT = 15.0  # AttributedTrackTranscriber.maxSegmentSeconds
 
 
 def clipped_turns(turns, lo, hi):
@@ -51,14 +53,15 @@ def majority(turns, start, end):
 
 
 def word_pieces(windows, aligned_windows, turns, snap):
-    """Mirror of AttributedTrackTranscriber.attribute's piece timing (labels and bounds)."""
+    """Mirror of AttributedTrackTranscriber.attribute's piece timing (labels and bounds):
+    a new piece at a speaker change, a pause of PAUSE_SPLIT, or past MAX_SEGMENT."""
     out = []
     for win, words_ in zip(windows, aligned_windows):
         local = []
         for _, s, e in words_:
             s, e = float(s), float(e)
             label = speaker_at(turns, (s + e) / 2, TOLERANCE)
-            if local and local[-1][2] == label:
+            if local and local[-1][2] == label and s - local[-1][1] < PAUSE_SPLIT and e - local[-1][0] <= MAX_SEGMENT:
                 local[-1][1] = e
             else:
                 local.append([s, e, label])
@@ -187,7 +190,7 @@ def main():
         chunk_ids = [r['id'] for r in manifest if r['set'] == subset]
         for name, build in [('production regions', lambda i: [(s, e, lab) for s, e, lab, _ in region_segments(i)]),
                             ('aligned words', lambda i: word_pieces(text_windows(i), aligned[i]['windows'], turns[i], False)),
-                            ('aligned words, snapped to turns',
+                            ('aligned words, snapped to turns (as shipped)',
                              lambda i: word_pieces(text_windows(i), aligned[i]['windows'], turns[i], True))]:
             ok = el = 0
             for i in chunk_ids:

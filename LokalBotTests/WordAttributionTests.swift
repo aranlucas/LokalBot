@@ -87,6 +87,33 @@ final class WordAttributionTests: XCTestCase {
         XCTAssertEqual(result.map(\.text), ["你好", "世界。"])
     }
 
+    func testPausesAndLongMonologuesStartNewSegments() {
+        let turns: [DiarizedSegment] = [.init(start: 0, end: 40, speakerId: "A")]
+        let paused = aligned("One two. Three four.", start: 0, end: 5, words: [
+            ("One", 0.1, 0.4), ("two.", 0.5, 0.9), ("Three", 2.9, 3.2), ("four.", 3.3, 3.6),
+        ])
+        XCTAssertEqual(AttributedTrackTranscriber.attribute([paused], duration: 40, turns: turns, source: .system,
+                                                            contentRange: nil).map(\.text),
+                       ["One two.", "Three four."])
+
+        // 40 back-to-back half-second words: the 15 s cap splits after word 29.
+        let words = (0..<40).map { ("w\($0)", Double($0) * 0.5, Double($0) * 0.5 + 0.5) }
+        let monologue = aligned(words.map(\.0).joined(separator: " "), start: 0, end: 20, words: words)
+        let pieces = AttributedTrackTranscriber.attribute([monologue], duration: 40, turns: turns, source: .system,
+                                                          contentRange: nil)
+        XCTAssertEqual(pieces.map { $0.text.split(separator: " ").count }, [30, 10])
+        XCTAssertEqual(Set(pieces.map(\.speaker)), ["them 1"])
+    }
+
+    func testLongContextWindowsJoinShortPausesUpToTheLimit() {
+        let spans = [(0.0, 10.0), (11, 20), (26, 30), (30.5, 50), (50.5, 70), (70.5, 90)]
+            .map { SpeechSpan(start: $0.0, end: $0.1, timingPrecision: .span) }
+        let windows = QwenASREngine.merged(spans, maxGap: 5, maxLength: 60)
+        XCTAssertEqual(windows.map(\.start), [0, 26, 70.5])
+        XCTAssertEqual(windows.map(\.end), [20, 70, 90])
+        XCTAssertTrue(windows.allSatisfy { $0.timingPrecision == .span })
+    }
+
     func testWordStartsMatchLettersPastAdjacentPunctuation() throws {
         let text = "\"Well, state-of-the-art isn't cheap.\""
         let starts = try XCTUnwrap(AttributedTrackTranscriber.wordStarts(

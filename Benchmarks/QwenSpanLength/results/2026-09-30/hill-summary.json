@@ -1,0 +1,207 @@
+{
+ "≤14 s windows, 4-bit aligner (first shipped)": {
+  "meetings": 0.05295640055743579,
+  "meetings_delta": null,
+  "ami_wer": 0.18376577005474887,
+  "ami_wer_delta": null,
+  "ami_cpwer": 0.3453939538205189,
+  "ami_cpwer_delta": null,
+  "support": {
+   "ami": [
+    371,
+    417
+   ],
+   "meetings": [
+    1418,
+    1501
+   ]
+  },
+  "aligner_x": 178.60567025340737
+ },
+ "≤14 s windows, 8-bit aligner": {
+  "meetings": 0.05295640055743579,
+  "meetings_delta": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "ami_wer": 0.18376577005474887,
+  "ami_wer_delta": [
+   0.0,
+   0.0,
+   0.0
+  ],
+  "ami_cpwer": 0.34515591525827183,
+  "ami_cpwer_delta": [
+   -0.02,
+   -0.48,
+   0.5
+  ],
+  "support": {
+   "ami": [
+    372,
+    417
+   ],
+   "meetings": [
+    1416,
+    1501
+   ]
+  },
+  "aligner_x": 179.68221548029447
+ },
+ "merge ≤15 s": {
+  "meetings": 0.049372884730240894,
+  "meetings_delta": [
+   -0.36,
+   -0.6,
+   -0.11
+  ],
+  "ami_wer": 0.18067126874553677,
+  "ami_wer_delta": [
+   -0.31,
+   -0.79,
+   0.14
+  ],
+  "ami_cpwer": 0.3458700309450131,
+  "ami_cpwer_delta": [
+   0.05,
+   -1.05,
+   1.12
+  ],
+  "support": {
+   "ami": [
+    358,
+    417
+   ],
+   "meetings": [
+    1400,
+    1501
+   ]
+  },
+  "aligner_x": 208.56413207834981
+ },
+ "merge ≤30 s, blocking off": {
+  "meetings": 0.04588891100935696,
+  "meetings_delta": [
+   -0.71,
+   -1.1,
+   -0.35
+  ],
+  "ami_wer": 0.17829088312306593,
+  "ami_wer_delta": [
+   -0.55,
+   -1.38,
+   0.12
+  ],
+  "ami_cpwer": 0.33492025708164724,
+  "ami_cpwer_delta": [
+   -1.05,
+   -2.15,
+   0.32
+  ],
+  "support": {
+   "ami": [
+    360,
+    417
+   ],
+   "meetings": [
+    1418,
+    1501
+   ]
+  },
+  "aligner_x": 63.436262939578384
+ },
+ "merge ≤60 s, blocking off": {
+  "meetings": 0.04330081624527175,
+  "meetings_delta": [
+   -0.97,
+   -1.35,
+   -0.59
+  ],
+  "ami_wer": 0.17638657462508928,
+  "ami_wer_delta": [
+   -0.74,
+   -1.47,
+   -0.05
+  ],
+  "ami_cpwer": 0.3380147583908593,
+  "ami_cpwer_delta": [
+   -0.74,
+   -1.76,
+   0.36
+  ],
+  "support": {
+   "ami": [
+    369,
+    417
+   ],
+   "meetings": [
+    1413,
+    1501
+   ]
+  },
+  "aligner_x": 121.98265906502668
+ },
+ "merge ≤60 s from 14 s VAD, blocking off (shipped)": {
+  "meetings": 0.044097153095759505,
+  "meetings_delta": [
+   -0.89,
+   -1.26,
+   -0.51
+  ],
+  "ami_wer": 0.17686265174958343,
+  "ami_wer_delta": [
+   -0.69,
+   -1.54,
+   0.16
+  ],
+  "ami_cpwer": 0.33896691263984763,
+  "ami_cpwer_delta": [
+   -0.64,
+   -1.86,
+   0.57
+  ],
+  "support": {
+   "ami": [
+    364,
+    417
+   ],
+   "meetings": [
+    1405,
+    1501
+   ]
+  },
+  "aligner_x": 137.54648564339425
+ },
+ "whole chunk, blocking off": {
+  "meetings": 0.04230539518216205,
+  "meetings_delta": [
+   -1.07,
+   -1.49,
+   -0.68
+  ],
+  "ami_wer": 0.1773387288740776,
+  "ami_wer_delta": [
+   -0.64,
+   -1.33,
+   0.03
+  ],
+  "ami_cpwer": 0.3503927636277077,
+  "ami_cpwer_delta": [
+   0.5,
+   -0.67,
+   2.12
+  ],
+  "support": {
+   "ami": [
+    354,
+    417
+   ],
+   "meetings": [
+    1410,
+    1501
+   ]
+  },
+  "aligner_x": 142.79352753294734
+ }
+}

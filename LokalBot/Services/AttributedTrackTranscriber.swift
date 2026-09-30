@@ -122,6 +122,12 @@ enum AttributedTrackTranscriber {
     /// midpoint rule (Benchmarks/QwenSpanLength).
     static let wordGapTolerance: TimeInterval = 1.0
 
+    /// A pause this long between aligned words starts a new segment (FluidAudio
+    /// VAD's own split), and no segment grows past `maxSegmentSeconds`. Long
+    /// decode windows then keep the segment granularity of short ones.
+    static let wordPauseSplit: TimeInterval = 0.75
+    static let maxSegmentSeconds: TimeInterval = 15
+
     /// Transcribes the whole track, then attributes forced-aligned words, so
     /// speaker turns never cut the audio the model hears. Nil means "use
     /// regions": an unsupported language or an unavailable aligner.
@@ -139,7 +145,7 @@ enum AttributedTrackTranscriber {
             lokalbotLog("word attribution unavailable, using speaker regions: \(error.localizedDescription)")
             return nil
         }
-        let transcript = try await engine.transcribe(audio: url, language: language, prompt: prompt)
+        let transcript = try await engine.transcribeForWordAttribution(audio: url, language: language, prompt: prompt)
         guard !transcript.segments.isEmpty else { return transcript }
         guard let alignLanguage = language
                 ?? QwenWordAligner.detectedLanguage(of: transcript.segments.map(\.text).joined(separator: " ")) else {
@@ -180,7 +186,8 @@ enum AttributedTrackTranscriber {
         return aligned
     }
 
-    /// Splits each engine segment where its aligned words change speaker.
+    /// Splits each engine segment where its aligned words change speaker,
+    /// pause for `wordPauseSplit`, or would outgrow `maxSegmentSeconds`.
     /// Labels and attributions follow `regions`: one active turn names the
     /// speaker, overlapping turns are unclear, and words away from every turn
     /// keep the track label. Text is cut from the segment, never divided
@@ -270,7 +277,9 @@ enum AttributedTrackTranscriber {
                     continue
                 }
                 let who = speaker(at: middle)
-                if run?.speaker == who {
+                if let current = run, current.speaker == who,
+                   word.start - item.words[current.last].end < wordPauseSplit,
+                   word.end - item.words[current.first].start <= maxSegmentSeconds {
                     run?.last = index
                 } else {
                     close(before: index)

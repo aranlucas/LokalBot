@@ -149,6 +149,9 @@ protocol TranscriptionEngine {
     func prepare(progress: ModelPreparationProgressHandler?) async throws
     func transcribe(audio: URL, language: String?) async throws -> Transcript
     func transcribe(audio: URL, language: String?, prompt: String?) async throws -> Transcript
+    /// Whole-track transcription whose words will be re-timed by forced
+    /// alignment (`.alignedWords`), so decode windows may be longer.
+    func transcribeForWordAttribution(audio: URL, language: String?, prompt: String?) async throws -> Transcript
 }
 
 /// How a diarized (or content-trimmed) track is attributed to speakers.
@@ -163,6 +166,10 @@ enum SpeakerAttributionStrategy: Sendable {
 
 extension TranscriptionEngine {
     var speakerAttribution: SpeakerAttributionStrategy { .regions }
+
+    func transcribeForWordAttribution(audio: URL, language: String?, prompt: String?) async throws -> Transcript {
+        try await transcribe(audio: audio, language: language, prompt: prompt)
+    }
 }
 
 extension TranscriptionEngine {

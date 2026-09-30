@@ -39,6 +39,9 @@ actor QwenASREngine: TranscriptionEngine {
 
     private static let sampleRate = 16_000
     private static let maxSegmentSeconds = 15.0
+    /// Word-attribution decode windows: VAD spans merged across short pauses.
+    private static let longContextSeconds = 60.0
+    private static let longContextGapSeconds = 5.0
 
     private let variant: Variant
     private var model: Qwen3ASRModel?
@@ -102,16 +105,40 @@ actor QwenASREngine: TranscriptionEngine {
     }
 
     func transcribe(audio url: URL, language: String?, prompt: String?) async throws -> Transcript {
+        try await transcribe(audio: url, language: language, prompt: prompt, longContext: false)
+    }
+
+    /// The 1.7B tier decodes longer windows here, because the forced aligner
+    /// re-times every word afterwards: segment granularity no longer depends
+    /// on the decode window (Benchmarks/QwenSpanLength: 4.41% vs 5.30%).
+    func transcribeForWordAttribution(audio url: URL, language: String?, prompt: String?) async throws -> Transcript {
+        try await transcribe(audio: url, language: language, prompt: prompt, longContext: variant == .accuracy)
+    }
+
+    private func transcribe(audio url: URL, language: String?, prompt: String?,
+                            longContext: Bool) async throws -> Transcript {
         activeUses += 1
         defer { finishUse() }
         try await prepare()
         guard let model else { throw EngineError.notLoaded }
 
         let started = Date()
-        let spans = try await SpeechActivity.shared.spans(
+        var spans = try await SpeechActivity.shared.spans(
             in: url, maxSegmentSeconds: Self.maxSegmentSeconds)
+        if longContext {
+            spans = Self.merged(spans, maxGap: Self.longContextGapSeconds, maxLength: Self.longContextSeconds)
+        }
         let segments = try await SpanTranscription.segments(in: url, spans: spans) { samples, _ in
-            model.transcribe(
+            if longContext {
+                // speech-swift turns on no-repeat-3-gram blocking above 15 s,
+                // which forces substitutions in ordinary repeated phrases.
+                return model.transcribe(
+                    audio: Self.samplesForInference(samples), sampleRate: Self.sampleRate,
+                    options: Qwen3DecodingOptions(
+                        maxTokens: Self.maxTokens(for: samples.count), language: Self.qwenLanguage(language),
+                        context: TranscriptionPrompt.normalized(prompt), longInputThresholdSeconds: .infinity))
+            }
+            return model.transcribe(
                 audio: Self.samplesForInference(samples),
                 sampleRate: Self.sampleRate,
                 language: Self.qwenLanguage(language),
@@ -121,7 +148,7 @@ actor QwenASREngine: TranscriptionEngine {
         let elapsed = Date().timeIntervalSince(started)
         let duration = spans.last?.end ?? 0
         lokalbotLog(
-            "qwen-asr profile model=\(variant.modelID) spans=\(spans.count) elapsed=\(String(format: "%.2fs", elapsed)) rtfx=\(String(format: "%.1fx", elapsed > 0 ? duration / elapsed : 0))")
+            "qwen-asr profile model=\(variant.modelID) spans=\(spans.count) longContext=\(longContext) elapsed=\(String(format: "%.2fs", elapsed)) rtfx=\(String(format: "%.1fx", elapsed > 0 ? duration / elapsed : 0))")
         return Transcript(segments: segments, engine: "\(variant.modelID) (Qwen3ASR MLX)")
     }
 
@@ -183,6 +210,23 @@ actor QwenASREngine: TranscriptionEngine {
         let minimumSamples = 160
         guard !samples.isEmpty, samples.count < minimumSamples else { return samples }
         return samples + [Float](repeating: 0, count: minimumSamples - samples.count)
+    }
+
+    /// Joins consecutive speech spans separated by at most `maxGap` seconds
+    /// while the joined window stays within `maxLength`. The window keeps the
+    /// pause audio between its spans, as the benchmark's windows did.
+    nonisolated static func merged(_ spans: [SpeechSpan], maxGap: TimeInterval,
+                                   maxLength: TimeInterval) -> [SpeechSpan] {
+        var windows: [SpeechSpan] = []
+        for span in spans {
+            if let last = windows.last, span.start - last.end <= maxGap, span.end - last.start <= maxLength {
+                windows[windows.count - 1] = SpeechSpan(start: last.start, end: span.end,
+                                                        timingPrecision: last.timingPrecision)
+            } else {
+                windows.append(span)
+            }
+        }
+        return windows
     }
 
     private static func maxTokens(for sampleCount: Int) -> Int {

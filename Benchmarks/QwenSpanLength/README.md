@@ -68,4 +68,16 @@ $SPAN_BENCH_OUT/dd/Build/Products/Release/qwen-span-harness align $SPAN_BENCH_OU
 .venv/bin/python score_align.py --results results/2026-09-30
 ```
 
+The hill-climb aligns more conditions, and the 8-bit aligner, the same way, then compares them with `score_hill.py`. `merge-60-off-v14` is the layout the app ships:
+
+```sh
+.venv/bin/python make_region_jobs.py align-job merge-15 merge-30-off merge-60-off merge-60-off-v14 whole-en-off
+for f in $SPAN_BENCH_OUT/align-4bit-*.json; do $SPAN_BENCH_OUT/dd/Build/Products/Release/qwen-span-harness align $f; done
+# 8-bit aligner: fetch revision 0457b7f546f629bacd1671d57252f1c561347bcb of aufklarer/Qwen3-ForcedAligner-0.6B-8bit as above
+ALIGNER_VARIANT=8bit ALIGNER_MODEL_DIR=$SPAN_BENCH_OUT/aligner8/models/aufklarer/Qwen3-ForcedAligner-0.6B-8bit \
+  .venv/bin/python make_region_jobs.py align-job engine-15
+$SPAN_BENCH_OUT/dd/Build/Products/Release/qwen-span-harness align $SPAN_BENCH_OUT/align-8bit-engine-15.json
+.venv/bin/python score_hill.py --results results/2026-09-30
+```
+
 `make_jobs.py` and `make_region_jobs.py` read meeting transcripts and audio through `lokalbot-cli path`, which is read-only. Nothing is sent over the network. Transcripts stay in `SPAN_BENCH_OUT`; `results/` holds only aggregates.

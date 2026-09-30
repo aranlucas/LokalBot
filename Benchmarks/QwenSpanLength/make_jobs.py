@@ -99,6 +99,8 @@ def main():
         c('merge-60-off', merge(60), ngram='off'),
         c('merge-120-off', merge(120), ngram='off'),
         c('merge-120-off-4096', merge(120), ngram='off', max_tokens=4096),
+        # App-implementable long windows: default 14 s VAD regions merged across <=5 s pauses.
+        c('merge-60-off-v14', {'kind': 'merge', 'vadMax': 14, 'gap': 5, 'maxLen': 60}, ngram='off'),
         # Language hint.
         c('engine-15-English', vad(14, 15), language='English'),
         c('engine-15-auto', vad(14, 15), language=None),

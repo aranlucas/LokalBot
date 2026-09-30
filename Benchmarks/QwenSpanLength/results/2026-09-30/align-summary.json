@@ -81,21 +81,21 @@
   },
   "aligned words": {
    "ami": {
-    "accepted": 244,
+    "accepted": 212,
     "eligible": 417
    },
    "meetings": {
-    "accepted": 1067,
+    "accepted": 862,
     "eligible": 1501
    }
   },
-  "aligned words, snapped to turns": {
+  "aligned words, snapped to turns (as shipped)": {
    "ami": {
-    "accepted": 375,
+    "accepted": 371,
     "eligible": 417
    },
    "meetings": {
-    "accepted": 1443,
+    "accepted": 1418,
     "eligible": 1501
    }
   }
