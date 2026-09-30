@@ -43,6 +43,23 @@ final class CaptureTraceScrubberTests: XCTestCase {
         XCTAssertFalse(url.contains("example"))
     }
 
+    func testBundleIDsKeepOnlyDetectionAppsAndTheirHelpers() {
+        XCTAssertEqual(scrubber.scrubBundleID("com.google.Chrome.helper"), "com.google.Chrome.helper")
+        XCTAssertEqual(scrubber.scrubBundleID("com.apple.dt.Xcode"), "com.apple.dt.Xcode")
+        let scrubbed = scrubber.scrubBundleID("com.acme.payroll")
+        XCTAssertNotEqual(scrubbed, "com.acme.payroll")
+        XCTAssertTrue(isScrubbed(scrubbed), scrubbed)
+        XCTAssertEqual(scrubbed.split(separator: ".").count, 3, "the shape survives")
+    }
+
+    func testEveryDetectionBundleIDSurvivesScrubbing() {
+        let detection = Array(MeetingDetector.knownApps.keys) + Array(MeetingDetector.browsers)
+            + Array(MeetingDetector.alwaysOpenAudioBundles)
+        for id in detection {
+            XCTAssertEqual(scrubber.scrubBundleID(id), id)
+        }
+    }
+
     func testKnownAppNamesSurviveAndUnknownOnesDoNot() {
         XCTAssertEqual(scrubber.scrubAppName("Google Chrome"), "Google Chrome")
         XCTAssertNotEqual(scrubber.scrubAppName("Acme Payroll"), "Acme Payroll")
@@ -57,6 +74,8 @@ final class CaptureTraceScrubberTests: XCTestCase {
         XCTAssertEqual(Set(object["vocabulary"] as? [String] ?? []), CaptureTraceScrubber.allowlist.vocabulary)
         XCTAssertEqual(Set(object["appNames"] as? [String] ?? []), CaptureTraceScrubber.allowlist.appNames)
         XCTAssertEqual(Set(object["meetingHosts"] as? [String] ?? []), CaptureTraceScrubber.allowlist.meetingHosts)
+        XCTAssertEqual(Set(object["bundleIDs"] as? [String] ?? []), CaptureTraceScrubber.allowlist.bundleIDs)
+        XCTAssertEqual(object["bundlePrefixes"] as? [String] ?? [], CaptureTraceScrubber.allowlist.bundlePrefixes)
     }
 
     func testRecorderWritesOnlyScrubbedTraces() async throws {
@@ -78,5 +97,7 @@ final class CaptureTraceScrubberTests: XCTestCase {
         let name = try XCTUnwrap(trace.events.first?.app?.localizedName)
         XCTAssertNotEqual(name, "Acme Payroll")
         XCTAssertTrue(isScrubbed(name), name)
+        let bundleID = try XCTUnwrap(trace.events.first?.app?.bundleIdentifier)
+        XCTAssertNotEqual(bundleID, "com.acme.payroll")
     }
 }

@@ -28,6 +28,11 @@ on:
       cache_mode:
         type: string
         default: warm
+      # The nightly workflow needs only the compiled products; it skips the
+      # per-PR unit and workday jobs so their failures cannot hide its own.
+      products_only:
+        type: boolean
+        default: false
   pull_request:
     branches: [master, dev]
   push:
@@ -199,6 +204,7 @@ jobs:
   tests:
     name: xcodebuild test (macOS)
     needs: build
+    if: ${{ !inputs.products_only }}
     runs-on: macos-15
     timeout-minutes: 30
     steps:
@@ -240,6 +246,7 @@ jobs:
   day-in-the-life:
     name: Day in the life (macOS)
     needs: build
+    if: ${{ !inputs.products_only }}
     runs-on: macos-15
     timeout-minutes: 25
     steps:

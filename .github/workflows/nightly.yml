@@ -37,6 +37,29 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       cache_mode: warm
+      products_only: true
+
+  # Every nightly job needs the build; when it fails they are skipped, so
+  # report the failure here instead of letting the night pass silently.
+  build-failed:
+    name: Report a failed nightly build
+    needs: build
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Open or update the nightly build issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Nightly build failed"
+          number=$(gh issue list --state open --search "in:title \"$title\"" --json number --jq '.[0].number // empty')
+          if [[ -n "$number" ]]; then
+            gh issue comment "$number" --body "Run: $RUN_URL"
+          else
+            gh issue create --title "$title" --body "The nightly build failed, so model drift, the real-Parakeet workday, and scale checks did not run. Run: $RUN_URL"
+          fi
 
   model-drift:
     name: Model drift

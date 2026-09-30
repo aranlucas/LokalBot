@@ -32,6 +32,17 @@ class CaptureTraceCheckerTests(unittest.TestCase):
     def test_unknown_app_name_must_be_scrubbed(self):
         self.assertTrue(checker.violations(trace("bcd", app="Acme Payroll"), "t"))
 
+    def test_unscrubbed_bundle_ids_fail(self):
+        def with_bundle(bundle):
+            value = trace("bcd")
+            value["events"][0]["app"]["bundleIdentifier"] = bundle
+            value["events"].append({"query": "audioProcesses", "processes": [
+                {"name": "Google Chrome Helper", "bundleID": "com.google.Chrome.helper"}]})
+            return value
+        self.assertTrue(checker.violations(with_bundle("com.acme.payroll"), "t"))
+        for allowed in ("com.google.Chrome", "com.apple.dt.Xcode", "cbm.xcmf.pvbrfll"):
+            self.assertEqual(checker.violations(with_bundle(allowed), "t"), [], allowed)
+
     def test_nested_meeting_hosts_pass_in_any_order(self):
         # Set order changes between processes; stripping zoom.us before
         # app.zoom.us must not leave "app." behind as unscrubbed text.

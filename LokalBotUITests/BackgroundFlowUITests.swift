@@ -60,7 +60,7 @@ final class BackgroundFlowUITests: XCTestCase {
         let settings = """
             {"menuBarOnly": false, "trackingEnabled": true, "screenshotsEnabled": false,
              "screenContextCaptureMode": "Text context", "calendarDetectionEnabled": false,
-             "autoRecordMode": "always", "summarizerBackend": "OpenAI-compatible server",
+             "autoRecordMode": "Record automatically", "summarizerBackend": "OpenAI-compatible server",
              "openAIBaseURL": "\(base)", "openAIModel": "z-ai/glm-5.3-flash",
              "dictationEnabled": false, "cotypingEnabled": false, "dayDigestAutoEnabled": true,
              "dayDigestHour": 0, "dreamingEnabled": false, "semanticSearchEnabled": false,

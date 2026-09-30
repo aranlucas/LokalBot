@@ -14,6 +14,8 @@ ALLOW = json.loads((ROOT / "Scripts/record-capture/scrub-allowlist.json").read_t
 VOCABULARY = {word.lower() for word in ALLOW["vocabulary"]}
 APP_NAMES = set(ALLOW["appNames"])
 HOSTS = set(ALLOW["meetingHosts"])
+BUNDLE_IDS = set(ALLOW.get("bundleIDs", []))
+BUNDLE_PREFIXES = tuple(ALLOW.get("bundlePrefixes", []))
 TOKEN = re.compile(r"[^\W_]+", re.UNICODE)
 VOWEL = re.compile(r"[aeiouy]", re.IGNORECASE)
 
@@ -33,6 +35,12 @@ def url_ok(value):
     return text_ok(value)
 
 
+def bundle_ok(value):
+    """Detection apps, their helpers, and allowed prefixes stay verbatim."""
+    return (any(value == allowed or value.startswith(allowed + ".") for allowed in BUNDLE_IDS)
+            or value.startswith(BUNDLE_PREFIXES))
+
+
 def violations(trace, name):
     problems = []
     header = trace.get("header", {})
@@ -42,7 +50,10 @@ def violations(trace, name):
     def check(value, kind, where):
         if value is None:
             return
-        ok = url_ok(value) if kind == "url" else (value in APP_NAMES or text_ok(value)) if kind == "app" else text_ok(value)
+        if kind == "bundle":
+            ok = bundle_ok(value) or text_ok(value)
+        else:
+            ok = url_ok(value) if kind == "url" else (value in APP_NAMES or text_ok(value)) if kind == "app" else text_ok(value)
         if not ok:
             problems.append(f"{name}: unscrubbed {where}: {value[:40]!r}")
 
@@ -50,6 +61,7 @@ def violations(trace, name):
         where = f"event {index}"
         for app in ([event.get("app")] if event.get("app") else []) + (event.get("apps") or []):
             check(app.get("localizedName"), "app", f"{where} app name")
+            check(app.get("bundleIdentifier"), "bundle", f"{where} bundle id")
         check(event.get("title"), "text", f"{where} title")
         snapshot = (event.get("read") or {}).get("snapshot") or {}
         for field in ("text", "documentName", "windowTitle"):
@@ -61,6 +73,7 @@ def violations(trace, name):
             check(window.get("appName"), "app", f"{where} window app")
         for process in event.get("processes") or []:
             check(process.get("name"), "app", f"{where} process name")
+            check(process.get("bundleID"), "bundle", f"{where} process bundle id")
     return problems
 
 

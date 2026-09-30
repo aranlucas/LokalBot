@@ -76,6 +76,8 @@ struct LibraryHealthInput: Sendable {
     /// Private share of each earlier day in the last week that had activity.
     var privateShareHistory: [Double]
     var recordings: [Recording]
+    /// Off means the app never repairs a missing transcript on its own.
+    var automaticTranscription = true
     var schedulers: Schedulers
     var digestCoverage: DayDigestCoverage?
 }
@@ -85,6 +87,8 @@ struct LibraryHealthInput: Sendable {
 /// of rules.
 enum LibraryHealthEvaluator {
     static let privateApp = "Private"
+    /// Capture skips LokalBot's own windows and the lock screen by design.
+    static let uncapturedApps: Set<String> = ["LokalBot", "LokalBot Dev", "LokalBot UI Test Host", "loginwindow"]
     static let minimumTrackedSecondsForCapture: TimeInterval = 30 * 60
     static let privateShareWarning = 0.15
     static let privateShareBaselineFloor = 0.10
@@ -129,7 +133,8 @@ enum LibraryHealthEvaluator {
         }
         let seconds = blocks.reduce(into: [String: TimeInterval]()) { $0[$1.app, default: 0] += $1.duration }
         let silent = seconds
-            .filter { $0.key != privateApp && $0.value >= minimumTrackedSecondsForCapture }
+            .filter { $0.key != privateApp && !uncapturedApps.contains($0.key)
+                && $0.value >= minimumTrackedSecondsForCapture }
             .filter { (input.captureCountsByApp[$0.key] ?? 0) == 0 }
             .keys.sorted()
         guard !silent.isEmpty else {
@@ -183,6 +188,10 @@ enum LibraryHealthEvaluator {
     }
 
     private static func finishedRecordings(_ input: LibraryHealthInput) -> LibraryHealthFinding {
+        guard input.automaticTranscription else {
+            return .init(check: .finishedRecordings, status: .pass,
+                         summary: "Automatic transcription is off; recordings are transcribed when you ask.")
+        }
         let stuck = input.recordings.filter { $0.missingTranscript != nil && !$0.hasQueuedJob }
         guard !stuck.isEmpty else {
             return .init(check: .finishedRecordings, status: .pass,

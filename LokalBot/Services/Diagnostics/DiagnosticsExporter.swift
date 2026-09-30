@@ -38,10 +38,12 @@ enum DiagnosticsExporter {
 
     enum ExportError: LocalizedError {
         case archiveFailed(Int32)
+        case destinationIsFolder(String)
 
         var errorDescription: String? {
             switch self {
             case .archiveFailed(let status): "Could not create the diagnostics archive (ditto exit \(status))."
+            case .destinationIsFolder(let path): "\(path) is a folder. Choose a file name for the diagnostics archive."
             }
         }
     }
@@ -51,6 +53,10 @@ enum DiagnosticsExporter {
     @discardableResult
     static func export(_ sources: Sources, to destination: URL, now: Date = Date()) throws -> Manifest {
         let fileManager = FileManager.default
+        var isFolder: ObjCBool = false
+        if fileManager.fileExists(atPath: destination.path, isDirectory: &isFolder), isFolder.boolValue {
+            throw ExportError.destinationIsFolder(destination.path)
+        }
         let parent = fileManager.temporaryDirectory
             .appendingPathComponent("lokalbot-diagnostics-\(UUID().uuidString)", isDirectory: true)
         let staging = parent.appendingPathComponent("LokalBot Diagnostics", isDirectory: true)
@@ -99,13 +105,20 @@ enum DiagnosticsExporter {
         encoder.dateEncodingStrategy = .iso8601
         try encoder.encode(manifest).write(to: staging.appendingPathComponent("manifest.json"), options: .atomic)
 
-        try? fileManager.removeItem(at: destination)
+        // Build the archive beside the staging folder, then swap it in: an
+        // earlier archive is replaced only once the new one exists.
+        let archive = parent.appendingPathComponent("diagnostics.zip")
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
-        process.arguments = ["-c", "-k", "--keepParent", staging.path, destination.path]
+        process.arguments = ["-c", "-k", "--keepParent", staging.path, archive.path]
         try process.run()
         process.waitUntilExit()
         guard process.terminationStatus == 0 else { throw ExportError.archiveFailed(process.terminationStatus) }
+        if fileManager.fileExists(atPath: destination.path) {
+            _ = try fileManager.replaceItemAt(destination, withItemAt: archive)
+        } else {
+            try fileManager.moveItem(at: archive, to: destination)
+        }
         return manifest
     }
 

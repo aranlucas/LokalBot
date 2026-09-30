@@ -13,6 +13,10 @@ struct CaptureTraceScrubber {
         let vocabulary: Set<String>
         let appNames: Set<String>
         let meetingHosts: Set<String>
+        /// Detection-relevant apps; their helper processes (an allowed ID
+        /// followed by ".") are kept too.
+        let bundleIDs: Set<String>
+        let bundlePrefixes: [String]
     }
 
     static let allowlist = Allowlist(
@@ -27,7 +31,12 @@ struct CaptureTraceScrubber {
                    "Messages", "Notes", "Pages", "Keynote", "Numbers", "Google Chrome Helper",
                    "Google Chrome Helper (Renderer)", "Microsoft Teams (work or school)"],
         meetingHosts: ["meet.google.com", "teams.microsoft.com", "teams.live.com", "zoom.us", "app.zoom.us",
-                       "webex.com", "whereby.com", "app.slack.com"])
+                       "webex.com", "whereby.com", "app.slack.com"],
+        bundleIDs: ["us.zoom.xos", "com.microsoft.teams2", "com.microsoft.teams", "com.tinyspeck.slackmacgap",
+                    "com.webex.meetingmanager", "Cisco-Systems.Spark", "com.apple.FaceTime", "com.google.Chrome",
+                    "com.apple.Safari", "company.thebrowser.Browser", "com.microsoft.edgemac", "com.brave.Browser",
+                    "org.mozilla.firefox", "com.microsoft.teams2.modulehost", "me.dotenv.LokalBot"],
+        bundlePrefixes: ["com.apple."])
 
     private static let consonants = Array("bcdfghjklmnpqrstvwxz")
     private static let email = try? NSRegularExpression(pattern: #"[^\s@]+@[^\s@]+"#)
@@ -57,8 +66,9 @@ struct CaptureTraceScrubber {
             read.snapshot = snapshot
             event.read = read
         }
-        if var browser = event.browser, let url = URL(string: scrubURL(browser.url.absoluteString)) {
-            browser.url = url
+        if var browser = event.browser {
+            // Fail closed: an unparseable scrubbed URL never keeps the original.
+            browser.url = URL(string: scrubURL(browser.url.absoluteString)) ?? URL(fileURLWithPath: "/")
             event.browser = browser
         }
         event.windows = event.windows?.map {
@@ -66,8 +76,8 @@ struct CaptureTraceScrubber {
                                            title: scrubText($0.title), frame: $0.frame)
         }
         event.processes = event.processes?.map {
-            AudioProcess(id: $0.id, name: scrubAppName($0.name), bundleID: $0.bundleID, objectID: $0.objectID,
-                         isRunningOutput: $0.isRunningOutput)
+            AudioProcess(id: $0.id, name: scrubAppName($0.name), bundleID: $0.bundleID.map(scrubBundleID),
+                         objectID: $0.objectID, isRunningOutput: $0.isRunningOutput)
         }
         return event
     }
@@ -75,7 +85,19 @@ struct CaptureTraceScrubber {
     private func scrub(_ app: RunningApp) -> RunningApp {
         var app = app
         app.localizedName = app.localizedName.map(scrubAppName)
+        app.bundleIdentifier = app.bundleIdentifier.map(scrubBundleID)
         return app
+    }
+
+    func scrubBundleID(_ id: String) -> String {
+        let allowlist = Self.allowlist
+        if allowlist.bundleIDs.contains(where: { id == $0 || id.hasPrefix($0 + ".") })
+            || allowlist.bundlePrefixes.contains(where: { id.hasPrefix($0) }) {
+            return id
+        }
+        return id.split(separator: ".", omittingEmptySubsequences: false)
+            .map { scrubTokens(String($0), keepVocabulary: false) }
+            .joined(separator: ".")
     }
 
     func scrubAppName(_ name: String) -> String {

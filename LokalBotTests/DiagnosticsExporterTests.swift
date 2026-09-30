@@ -64,6 +64,24 @@ final class DiagnosticsExporterTests: XCTestCase {
         XCTAssertTrue(try unzippedFiles(destination).contains { $0.hasSuffix("manifest.json") })
     }
 
+    /// `--export-diagnostics ~/Desktop` must never delete the Desktop.
+    func testExportRefusesAnExistingFolderAndLeavesItIntact() throws {
+        let folder = root.appendingPathComponent("Desktop", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let keep = folder.appendingPathComponent("keep.txt")
+        try Data("mine".utf8).write(to: keep)
+        XCTAssertThrowsError(try DiagnosticsExporter.export(sources(logs: []), to: folder))
+        XCTAssertEqual(try String(contentsOf: keep, encoding: .utf8), "mine")
+    }
+
+    /// Replacing an earlier archive happens only once the new one exists.
+    func testExportReplacesAnEarlierArchiveFile() throws {
+        let destination = root.appendingPathComponent("out.zip")
+        try Data("old".utf8).write(to: destination)
+        _ = try DiagnosticsExporter.export(sources(logs: []), to: destination)
+        XCTAssertTrue(try unzippedFiles(destination).contains { $0.hasSuffix("manifest.json") })
+    }
+
     private func sources(logs: [URL]) -> DiagnosticsExporter.Sources {
         DiagnosticsExporter.Sources(
             logURLs: logs,

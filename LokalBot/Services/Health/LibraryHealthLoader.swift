@@ -27,6 +27,7 @@ struct LibraryHealthLoader {
             captureCountsByApp: Dictionary(grouping: captures, by: \.app).mapValues(\.count),
             privateShareHistory: privateShareHistory(before: interval.start, calendar: calendar),
             recordings: recordings(now: now),
+            automaticTranscription: settings.autoTranscribe,
             schedulers: schedulers(now: now, calendar: calendar),
             digestCoverage: DayDigestGenerationMetadataStore.load(
                 for: Self.journalURL(root: storageRoot, day: day, calendar: calendar))?.coverage)

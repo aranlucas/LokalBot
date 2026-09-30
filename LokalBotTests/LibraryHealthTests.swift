@@ -63,6 +63,28 @@ final class LibraryHealthTests: XCTestCase {
         XCTAssertEqual(report.finding(.captureRate)?.status, .pass)
     }
 
+    /// Capture never records LokalBot itself or the lock screen, so time
+    /// there must not read as an app capture has gone silent for.
+    func testCaptureRateIgnoresLokalBotsOwnWindowsAndTheLockScreen() {
+        let report = evaluate(input {
+            $0.blocks.append(self.block("LokalBot", date(29, 13), date(29, 14)))
+            $0.blocks.append(self.block("LokalBot Dev", date(29, 14), date(29, 15)))
+            $0.blocks.append(self.block("loginwindow", date(29, 15), date(29, 16)))
+        })
+        XCTAssertEqual(report.finding(.captureRate)?.status, .pass)
+    }
+
+    /// With automatic transcription off, the app never repairs a missing
+    /// transcript on its own, so that is the user's choice, not a failure.
+    func testFinishedRecordingsPassWhenAutomaticTranscriptionIsOff() {
+        let report = evaluate(input {
+            $0.automaticTranscription = false
+            $0.recordings = [.init(meetingID: UUID(), title: "Standup", missingTranscript: .neverTranscribed,
+                                   hasQueuedJob: false)]
+        })
+        XCTAssertEqual(report.finding(.finishedRecordings)?.status, .pass)
+    }
+
     func testPrivateTimeAboveFifteenPercentWarns() {
         let report = evaluate(input { $0.blocks.append(self.block("Private", date(29, 13), date(29, 14))) })
         XCTAssertEqual(report.finding(.privateShare)?.status, .warn)
