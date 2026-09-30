@@ -166,7 +166,10 @@ class ParallelGateTests(unittest.TestCase):
         for job in ['build-smoke', 'reduced-motion', 'shards']:
             block = workflow.split(f'  {job}:\n', 1)[1].split('    steps:', 1)[0]
             self.assertIn('    needs: build\n', block)
-        self.assertIn('needs: [build, build-smoke, reduced-motion, shards]', workflow)
+        self.assertIn('needs: [changes, build, build-smoke, reduced-motion, shards]', workflow)
+        build_block = workflow.split('  build:\n', 1)[1].split('    steps:', 1)[0]
+        self.assertIn("    needs: changes\n", build_block)
+        self.assertIn("if: needs.changes.outputs.relevant == 'true'", build_block)
         self.assertIn('cancel-in-progress: true', workflow)
         self.assertIn('name: UI build and critical tests', workflow)
         self.assertIn('XCUITest (macOS)', workflow)

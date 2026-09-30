@@ -9,8 +9,9 @@
 # dies with "Timed out while enabling automation mode.", the runner lost the
 # TCC grant — that is an infrastructure failure, not a test regression.
 #
-# Runs for app/UI-test PR changes and every master/dev push (exact-SHA gates),
-# plus weekly and manual dispatches. Whether it blocks merging remains a branch
+# Runs on every PR (the `changes` job skips the expensive jobs when no app or
+# UI-test path changed, so the aggregate check always reports) and every
+# master/dev push (exact-SHA gates), plus weekly and manual dispatches. Whether it blocks merging remains a branch
 # protection decision; the workflow itself does not mutate repository state.
 
 name: UI Tests
@@ -37,15 +38,6 @@ on:
         required: true
         type: string
   pull_request:
-    paths:
-      - "LokalBot/**"
-      - "LokalBotUITests/**"
-      - "project.yml"
-      - "Scripts/ui-tests.sh"
-      - "Scripts/ci/**"
-      - "Scripts/fetch-llama.sh"
-      - "Scripts/fetch-sherpa.sh"
-      - ".github/workflows/ui-tests.yml"
   push:
     branches:
       - master
@@ -65,8 +57,26 @@ defaults:
     shell: bash # enable -e -o pipefail, including outer evidence/log pipelines
 
 jobs:
+  changes:
+    name: UI relevance
+    runs-on: ubuntu-latest
+    outputs:
+      relevant: ${{ steps.decide.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Decide whether the UI suite must run
+        id: decide
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 Scripts/ci/ui-relevance.py "$BASE_SHA" "$HEAD_SHA"
+
   build:
     name: UI build (macOS)
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
     # Move to a self-hosted Mac (runs-on: [self-hosted, macOS]) once one
     # exists — see the TCC note at the top of this file.
     runs-on: macos-15
@@ -330,12 +340,21 @@ jobs:
 
   complete:
     name: ${{ (inputs.filter != '' || inputs.capture_mode == 'legacy') && 'UI focused / comparison (macOS)' || 'XCUITest (macOS)' }}
-    needs: [build, build-smoke, reduced-motion, shards]
+    needs: [changes, build, build-smoke, reduced-motion, shards]
     if: always()
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Require the relevance decision
+        if: needs.changes.result != 'success'
+        run: |
+          echo "::error::The UI relevance job did not succeed" >&2
+          exit 1
+      - name: No UI-relevant changes
+        if: needs.changes.outputs.relevant != 'true'
+        run: echo "No app or UI-test paths changed; the UI suite is not required."
       - name: Require successful selected jobs
+        if: needs.changes.outputs.relevant == 'true'
         env:
           BUILD_RESULT: ${{ needs.build.result }}
           CRITICAL_RESULT: ${{ needs.build-smoke.result }}
@@ -346,10 +365,10 @@ jobs:
         run: |
           python3 Scripts/ci/ui-shards.py gate "$BUILD_RESULT" "$CRITICAL_RESULT" "$REDUCED_RESULT" "$SHARD_RESULT" "$FILTER"
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-        if: inputs.filter == ''
+        if: needs.changes.outputs.relevant == 'true' && inputs.filter == ''
         with:
           pattern: ui-results-*
           path: .build/evidence
       - name: Verify complete test and capture coverage
-        if: inputs.filter == ''
+        if: needs.changes.outputs.relevant == 'true' && inputs.filter == ''
         run: python3 Scripts/ci/ui-shards.py verify .build/evidence

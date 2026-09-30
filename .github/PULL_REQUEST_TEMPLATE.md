@@ -23,6 +23,18 @@ For UI changes, attach a screenshot or short screen recording.
 For changes that can't be verified end-to-end yet, say so explicitly.
 -->
 
+## Changed test expectations
+
+<!--
+List every test whose expected result this PR changes. For each one:
+
+  TestClass/testName: old expectation → new expectation
+  Why the old expectation was wrong: …
+
+"To match the new behaviour" is not a reason — three shipped regressions came
+from tests rewritten to match the bug. Write "None" if no expectation changed.
+-->
+
 ## Linked issues
 
 <!--
