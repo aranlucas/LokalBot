@@ -6,7 +6,7 @@
 - AMI cpWER fell from 36.52% to 33.90%;
 - more diarizer turns stay usable for speaker memory.
 
-LokalBot now uses this path for Qwen3-ASR 1.7B.
+The same change helps Qwen3-ASR 0.6B even more, with merged ≤15 s windows. Meeting disagreement fell from 10.02% to 6.77%, AMI WER from 30.49% to 21.40%, and AMI cpWER from 40.18% to 36.56%. LokalBot now uses this path for both Qwen3-ASR tiers.
 
 **Setup.** Every condition used the app's runtime and weights: speech-swift 0.0.26, FluidAudio 0.17.1, mlx-swift 0.31.4 and `aufklarer/Qwen3-ASR-1.7B-MLX-8bit`, run headless by `../../harness` on an Apple M4 Max. The audio was the CloudSTT benchmark's own chunks from 30 September:
 
@@ -142,6 +142,28 @@ With speakers assigned from aligned words, decode windows no longer set segment 
 - **Segments keep their size.** With pause and 15 s splits on the aligned words, merged windows produce segments with a median of 2.6 s, a 95th percentile of 14.8 s and a maximum of 16 s. The first version produced 2.2 s, 12.2 s and 14 s. Speaker memory dips about 1–2% from the first version but stays well above production regions (286/417, 1,319/1,501).
 - **Only diarized or trimmed Qwen3-ASR 1.7B tracks use long windows.** Tracks without speaker separation or a content range keep the ≤15 s path, whose segment boundaries come straight from the decode windows.
 
+## Qwen3-ASR 0.6B
+
+The compact tier (`aufklarer/Qwen3-ASR-0.6B-MLX-4bit`, the app's pinned revision) ran through the same steps. The baseline is what diarized 0.6B tracks got before this change: production regions from the same Nemotron turns. Two extra columns track degeneration, because speech-swift added its long-input repetition blocking for 0.6B:
+- words in invented runs of four or more, across both sets;
+- windows whose output reached the token cap.
+
+| Candidate | Meetings | Δ vs regions (95% CI) | AMI WER | Δ (95% CI) | AMI cpWER | Δ (95% CI) | Speaker memory, AMI and meetings | Invented-run words | Cap hits | ASR speed |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Production regions (before) | 10.02% | — | 30.49% | — | 40.18% | — | 286/417, 1,320/1,501 | 120 | 0 | 27× |
+| Words, ≤14 s windows | 7.21% | −2.82 (−3.67…−2.04) | 21.45% | −9.05 (−13.07…−6.06) | 36.28% | −3.90 (−7.33…−1.22) | 372/417, 1,440/1,501 | 39 | 0 | 112× |
+| **Words, merged ≤15 s (shipped)** | **6.77%** | −3.26 (−4.16…−2.45) | **21.40%** | −9.09 (−13.10…−6.16) | **36.56%** | −3.62 (−7.15…−1.01) | 360/417, 1,422/1,501 | 33 | 0 | 116× |
+| Words, merged ≤30 s, blocking off | 6.45% | −3.57 (−4.67…−2.62) | 20.73% | −9.76 (−13.43…−6.50) | 35.28% | −4.90 (−7.92…−2.03) | 355/417, 1,407/1,501 | 30 | 0 | 11× |
+| Words, merged ≤60 s, blocking off | 6.37% | −3.65 (−4.73…−2.71) | 20.73% | −9.76 (−13.61…−6.71) | 36.35% | −3.83 (−7.44…−0.88) | 344/417, 1,413/1,501 | 34 | 0 | 22× |
+| Words, merged ≤60 s, blocking on | 7.81% | −2.21 (−3.46…−1.01) | 21.71% | −8.78 (−12.59…−5.67) | 36.97% | −3.21 (−6.40…−0.63) | 343/417, 1,409/1,501 | 59 | 0 | 35× |
+| 1.7B shipped (reference) | 4.41% | −5.61 (−6.98…−4.45) | 17.69% | −12.81 (−16.66…−9.54) | 33.90% | −6.28 (−10.15…−2.89) | 364/417, 1,405/1,501 | 27 | 0 | 48× |
+
+- **Speaker regions hurt 0.6B more than 1.7B.** Moving from regions to word attribution cut meeting disagreement by 2.8 points and AMI WER by 9.0 points, even at the same ≤14 s windows. The regions also produced more invented runs (120 words, against 39).
+- **Merged ≤15 s windows are the right size for 0.6B.** They add another 0.4 points on meetings, and the merge stays under speech-swift's 15 s threshold, so decoding is unchanged. They are also 4× faster than regions, because fewer, longer windows replace many sub-second ones.
+- **Longer windows cost too much time for 0.6B.** With blocking off, 30 s and 60 s windows gained only 0.3–0.4 points more on meetings, while decoding at 11× and 22× real time instead of 116×. Neither reached the token cap, so the slowdown is not runaway looping. With blocking on, 60 s windows were worse than ≤15 s.
+- **The 0.6B still trails 1.7B by about 2.4 points on meetings and 3.7 on AMI** after the change.
+- **The aligner (about 1 GB) is larger than the 0.6B model it accompanies (0.7 GB).** Compact-tier users with speaker separation now download both. The accuracy gain is large enough to justify this, but it changes the tier's size story.
+
 ## Recommendations
 
 1. **Leave `maxSegmentSeconds` as it is.** It is inert. Raising it together with the VAD cap gave no gain and moves windows into speech-swift's repetition-blocking range.
@@ -149,7 +171,7 @@ With speakers assigned from aligned words, decode windows no longer set segment 
    - **Fold short unlabeled gaps (not taken).** In `AttributedTrackTranscriber.regions`, each unlabeled gap of about 2 s or less would go to its neighbours. That keeps audio partitioned by speaker before ASR and cuts the chunks' regions from 4,756 to 1,317, but it was never scored. It remains the fallback idea for engines that keep the region path.
    - **Transcribe first, then attribute (taken).** Transcribe each track with the engine path alone, as `engine-15` does, then assign aligned words to speakers as described above. Text accuracy matches the engine path by construction, and longer windows (recommendation 3) become an independent gain.
 
-     It needs an extra aligner model of about 1 GB, and for Qwen3-ASR 1.7B it replaces the rule of partitioning audio by speaker before ASR. The alignment is acoustic rather than proportional, so the rule that text is never divided proportionally still holds. Other engines, Qwen3-ASR 0.6B, and languages the aligner does not support (anything outside zh, en, yue, fr, de, it, ja, ko, pt, ru and es) keep the region path. The app also falls back to regions if the aligner cannot be downloaded.
+     It needs an extra aligner model of about 1 GB, and for Qwen3-ASR 1.7B it replaces the rule of partitioning audio by speaker before ASR. The alignment is acoustic rather than proportional, so the rule that text is never divided proportionally still holds. Other engines and languages the aligner does not support (anything outside zh, en, yue, fr, de, it, ja, ko, pt, ru and es) keep the region path. Qwen3-ASR 0.6B uses word attribution with ≤15 s windows (see its section). The app also falls back to regions if the aligner cannot be downloaded.
 3. **Long windows (implemented for the word-attribution path).** Merge VAD regions across ≤5 s pauses into ≤60 s windows, and call `transcribe(audio:sampleRate:options:)` with `Qwen3DecodingOptions(longInputThresholdSeconds: .infinity)`. The app now does this for diarized or trimmed Qwen3-ASR 1.7B tracks (see the hill-climb above). Extending it to the plain path would need:
    - key `SpeechActivity`'s one-entry segment cache by VAD configuration as well as file;
    - rerun on Qwen3-ASR 0.6B 4-bit, the model speech-swift's blocking was written for;
@@ -161,8 +183,8 @@ With speakers assigned from aligned words, decode windows no longer set segment 
 
 ## Limits
 
-Meeting scores measure agreement with other vendors, not accuracy: a system that alone gets a hard word right is penalized. AMI covers only 27 minutes, so its intervals are about ±1 point. The AMI speaker-region condition uses reference turns, which are not what the app's diarizer produces. Each condition was run once with greedy decoding. Only Qwen3-ASR 1.7B was tested, on three English meetings from one owner. Diarization ran on the Mix-Headset mix, which is harder than the app's separate microphone and system tracks. cpWER is scored only on AMI, because the meetings have no speaker reference. Four speaker-region variants were built but not scored. Word attribution and the hill-climb used Qwen3-ASR 1.7B text in English only; the aligner's other ten languages and the 0.6B model were not measured. The hill-climb picked among seven candidates on the same data, so its gains are slightly optimistic. The meeting gain's interval is far from zero; the AMI gains are not.
+Meeting scores measure agreement with other vendors, not accuracy: a system that alone gets a hard word right is penalized. AMI covers only 27 minutes, so its intervals are about ±1 point. The AMI speaker-region condition uses reference turns, which are not what the app's diarizer produces. Each condition was run once with greedy decoding. Only Qwen3-ASR 1.7B was tested, on three English meetings from one owner. Diarization ran on the Mix-Headset mix, which is harder than the app's separate microphone and system tracks. cpWER is scored only on AMI, because the meetings have no speaker reference. Four speaker-region variants were built but not scored. Word attribution and the hill-climbs used English text only; the aligner's other ten languages were not measured. The hill-climb picked among seven candidates on the same data, so its gains are slightly optimistic. The meeting gain's interval is far from zero; the AMI gains are not.
 
 ## Reproduction and privacy
 
-`../../README.md` describes the harness and commands. `summary.json` (span sweep), `regions-summary.json` (speaker regions), `align-summary.json` (word attribution) and `hill-summary.json` (hill-climb) hold aggregates only. Transcripts stay in the private `SPAN_BENCH_OUT` folder. This run sent no audio or text over the network. The meeting consensus reuses the CloudSTT outputs saved on 30 September. Meeting transcripts were read through `lokalbot-cli path`, which is read-only. The source baseline is `13e01c0`.
+`../../README.md` describes the harness and commands. `summary.json` (span sweep), `regions-summary.json` (speaker regions), `align-summary.json` (word attribution), `hill-summary.json` (1.7B hill-climb) and `compact-summary.json` (0.6B) hold aggregates only. Transcripts stay in the private `SPAN_BENCH_OUT` folder. This run sent no audio or text over the network. The meeting consensus reuses the CloudSTT outputs saved on 30 September. Meeting transcripts were read through `lokalbot-cli path`, which is read-only. The source baseline is `13e01c0`.

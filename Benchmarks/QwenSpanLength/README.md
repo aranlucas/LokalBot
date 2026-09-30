@@ -80,4 +80,16 @@ $SPAN_BENCH_OUT/dd/Build/Products/Release/qwen-span-harness align $SPAN_BENCH_OU
 .venv/bin/python score_hill.py --results results/2026-09-30
 ```
 
+The 0.6B (compact) tier repeats the region baseline and the window candidates with its own weights. Clone the app's copy of `aufklarer/Qwen3-ASR-0.6B-MLX-4bit` the same way as the 1.7B model, or use the pinned Hugging Face snapshot:
+
+```sh
+export QWEN06_MODEL_DIR=$SPAN_BENCH_OUT/qwen06/models/aufklarer/Qwen3-ASR-0.6B-MLX-4bit
+.venv/bin/python make_region_jobs.py compact-job      # needs region_jobs.json
+$SPAN_BENCH_OUT/dd/Build/Products/Release/qwen-span-harness $SPAN_BENCH_OUT/compact_jobs.json
+RUNS_FILE=runs-06b.jsonl ALIGNED_PREFIX=aligned06 .venv/bin/python make_region_jobs.py align-job \
+  engine-15 merge-15-v14 merge-30-off-v14 merge-60-off-v14 merge-60-v14
+for f in $SPAN_BENCH_OUT/align-aligned06-*.json; do $SPAN_BENCH_OUT/dd/Build/Products/Release/qwen-span-harness align $f; done
+.venv/bin/python score_compact.py --results results/2026-09-30
+```
+
 `make_jobs.py` and `make_region_jobs.py` read meeting transcripts and audio through `lokalbot-cli path`, which is read-only. Nothing is sent over the network. Transcripts stay in `SPAN_BENCH_OUT`; `results/` holds only aggregates.

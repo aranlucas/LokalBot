@@ -122,10 +122,15 @@ final class WordAttributionTests: XCTestCase {
         XCTAssertNil(AttributedTrackTranscriber.wordStarts(["missing"], in: text))
     }
 
-    func testOnlyTheMeasuredQwenTierAttributesAlignedWords() {
+    func testQwenTiersAttributeAlignedWordsWithTheirMeasuredWindows() {
         XCTAssertEqual(QwenASREngine.accuracy.speakerAttribution, .alignedWords)
-        XCTAssertEqual(QwenASREngine.compact.speakerAttribution, .regions)
+        XCTAssertEqual(QwenASREngine.compact.speakerAttribution, .alignedWords)
         XCTAssertEqual(TranscriptionModelChoice.parakeetV3.engine.speakerAttribution, .regions)
+        XCTAssertEqual(QwenASREngine.wordAttributionWindows(for: .accuracy),
+                       .init(maxSeconds: 60, maxGapSeconds: 5, disablesRepetitionBlocking: true))
+        // 0.6B stays at 15 s: longer windows decoded 5–10× slower for a small gain.
+        XCTAssertEqual(QwenASREngine.wordAttributionWindows(for: .compact),
+                       .init(maxSeconds: 15, maxGapSeconds: 5, disablesRepetitionBlocking: false))
     }
 
     func testAlignerLanguagesAndPinnedSnapshot() throws {

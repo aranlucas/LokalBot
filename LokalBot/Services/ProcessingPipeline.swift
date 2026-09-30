@@ -969,7 +969,7 @@ final class ProcessingPipeline: ObservableObject {
                     config.diarizationModel.checkpointIdentity,
                     meeting.contentRange.map { "\($0.start):\($0.end)" } ?? "full", "identity-v2"]
                 if engine.speakerAttribution == .alignedWords {
-                    checkpointParts.append("aligned-words-\(QwenWordAligner.snapshot.revision)-60s-v1")
+                    checkpointParts.append("aligned-words-\(QwenWordAligner.snapshot.revision)-merged-windows-v2")
                 }
                 let checkpointInput = try JSONEncoder().encode(checkpointParts)
                 let prepared = track == .mic

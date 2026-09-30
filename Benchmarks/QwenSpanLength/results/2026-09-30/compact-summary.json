@@ -1,0 +1,221 @@
+{
+ "0.6B production regions (today)": {
+  "meetings": 0.10024,
+  "ami_wer": 0.30493,
+  "ami_cpwer": 0.40181,
+  "meetings_delta": null,
+  "ami_wer_delta": null,
+  "ami_cpwer_delta": null,
+  "support": {
+   "ami": [
+    286,
+    417
+   ],
+   "meetings": [
+    1320,
+    1501
+   ]
+  },
+  "invented_run_words": 120,
+  "cap_hits": 0,
+  "asr_speed_x_realtime": 27.3
+ },
+ "0.6B words, ≤14 s windows": {
+  "meetings": 0.07207,
+  "ami_wer": 0.21447,
+  "ami_cpwer": 0.36277,
+  "meetings_delta": [
+   -2.82,
+   -3.67,
+   -2.04
+  ],
+  "ami_wer_delta": [
+   -9.05,
+   -13.07,
+   -6.06
+  ],
+  "ami_cpwer_delta": [
+   -3.9,
+   -7.33,
+   -1.22
+  ],
+  "support": {
+   "ami": [
+    372,
+    417
+   ],
+   "meetings": [
+    1440,
+    1501
+   ]
+  },
+  "invented_run_words": 39,
+  "cap_hits": 0,
+  "asr_speed_x_realtime": 112.2
+ },
+ "0.6B words, merged ≤15 s": {
+  "meetings": 0.06769,
+  "ami_wer": 0.214,
+  "ami_cpwer": 0.36563,
+  "meetings_delta": [
+   -3.26,
+   -4.16,
+   -2.45
+  ],
+  "ami_wer_delta": [
+   -9.09,
+   -13.1,
+   -6.16
+  ],
+  "ami_cpwer_delta": [
+   -3.62,
+   -7.15,
+   -1.01
+  ],
+  "support": {
+   "ami": [
+    360,
+    417
+   ],
+   "meetings": [
+    1422,
+    1501
+   ]
+  },
+  "invented_run_words": 33,
+  "cap_hits": 0,
+  "asr_speed_x_realtime": 116.1
+ },
+ "0.6B words, merged ≤30 s, blocking off": {
+  "meetings": 0.0645,
+  "ami_wer": 0.20733,
+  "ami_cpwer": 0.35277,
+  "meetings_delta": [
+   -3.57,
+   -4.67,
+   -2.62
+  ],
+  "ami_wer_delta": [
+   -9.76,
+   -13.43,
+   -6.5
+  ],
+  "ami_cpwer_delta": [
+   -4.9,
+   -7.92,
+   -2.03
+  ],
+  "support": {
+   "ami": [
+    355,
+    417
+   ],
+   "meetings": [
+    1407,
+    1501
+   ]
+  },
+  "invented_run_words": 30,
+  "cap_hits": 0,
+  "asr_speed_x_realtime": 11.1
+ },
+ "0.6B words, merged ≤60 s, blocking off": {
+  "meetings": 0.06371,
+  "ami_wer": 0.20733,
+  "ami_cpwer": 0.36348,
+  "meetings_delta": [
+   -3.65,
+   -4.73,
+   -2.71
+  ],
+  "ami_wer_delta": [
+   -9.76,
+   -13.61,
+   -6.71
+  ],
+  "ami_cpwer_delta": [
+   -3.83,
+   -7.44,
+   -0.88
+  ],
+  "support": {
+   "ami": [
+    344,
+    417
+   ],
+   "meetings": [
+    1413,
+    1501
+   ]
+  },
+  "invented_run_words": 34,
+  "cap_hits": 0,
+  "asr_speed_x_realtime": 21.7
+ },
+ "0.6B words, merged ≤60 s, blocking on": {
+  "meetings": 0.07814,
+  "ami_wer": 0.21709,
+  "ami_cpwer": 0.36967,
+  "meetings_delta": [
+   -2.21,
+   -3.46,
+   -1.01
+  ],
+  "ami_wer_delta": [
+   -8.78,
+   -12.59,
+   -5.67
+  ],
+  "ami_cpwer_delta": [
+   -3.21,
+   -6.4,
+   -0.63
+  ],
+  "support": {
+   "ami": [
+    343,
+    417
+   ],
+   "meetings": [
+    1409,
+    1501
+   ]
+  },
+  "invented_run_words": 59,
+  "cap_hits": 0,
+  "asr_speed_x_realtime": 35.4
+ },
+ "1.7B shipped (reference)": {
+  "meetings": 0.0441,
+  "ami_wer": 0.17686,
+  "ami_cpwer": 0.33897,
+  "meetings_delta": [
+   -5.61,
+   -6.98,
+   -4.45
+  ],
+  "ami_wer_delta": [
+   -12.81,
+   -16.66,
+   -9.54
+  ],
+  "ami_cpwer_delta": [
+   -6.28,
+   -10.15,
+   -2.89
+  ],
+  "support": {
+   "ami": [
+    364,
+    417
+   ],
+   "meetings": [
+    1405,
+    1501
+   ]
+  },
+  "invented_run_words": 27,
+  "cap_hits": 0,
+  "asr_speed_x_realtime": 47.8
+ }
+}

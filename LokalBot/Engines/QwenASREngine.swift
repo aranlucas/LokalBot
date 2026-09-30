@@ -31,17 +31,31 @@ actor QwenASREngine: TranscriptionEngine {
 
     nonisolated var displayName: String { variant.displayName }
     nonisolated let supportsStreaming = false
-    /// Only the measured 1.7B tier transcribes whole tracks before attribution;
-    /// the aligner is larger than the compact model it would accompany.
-    nonisolated var speakerAttribution: SpeakerAttributionStrategy {
-        variant == .accuracy ? .alignedWords : .regions
-    }
+    /// Both tiers transcribe whole tracks before attribution. On the
+    /// benchmark, regions cost 0.6B 2.8 points of meeting WER and 9.0 of AMI
+    /// WER, which outweighs the aligner being larger than the compact model.
+    nonisolated var speakerAttribution: SpeakerAttributionStrategy { .alignedWords }
 
     private static let sampleRate = 16_000
     private static let maxSegmentSeconds = 15.0
-    /// Word-attribution decode windows: VAD spans merged across short pauses.
-    private static let longContextSeconds = 60.0
-    private static let longContextGapSeconds = 5.0
+
+    /// Decode windows for the word-attribution path: VAD spans merged across
+    /// short pauses. 1.7B gains from 60 s windows without speech-swift's
+    /// repetition blocking. 0.6B decoded long windows 5–10× slower for a small
+    /// gain, and worse with blocking on, so it stays at 15 s, where blocking
+    /// never engages (Benchmarks/QwenSpanLength).
+    struct WordAttributionWindows: Equatable, Sendable {
+        var maxSeconds: TimeInterval
+        var maxGapSeconds: TimeInterval
+        var disablesRepetitionBlocking: Bool
+    }
+
+    nonisolated static func wordAttributionWindows(for variant: Variant) -> WordAttributionWindows {
+        switch variant {
+        case .accuracy: .init(maxSeconds: 60, maxGapSeconds: 5, disablesRepetitionBlocking: true)
+        case .compact: .init(maxSeconds: 15, maxGapSeconds: 5, disablesRepetitionBlocking: false)
+        }
+    }
 
     private let variant: Variant
     private var model: Qwen3ASRModel?
@@ -105,18 +119,18 @@ actor QwenASREngine: TranscriptionEngine {
     }
 
     func transcribe(audio url: URL, language: String?, prompt: String?) async throws -> Transcript {
-        try await transcribe(audio: url, language: language, prompt: prompt, longContext: false)
+        try await transcribe(audio: url, language: language, prompt: prompt, windows: nil)
     }
 
-    /// The 1.7B tier decodes longer windows here, because the forced aligner
-    /// re-times every word afterwards: segment granularity no longer depends
-    /// on the decode window (Benchmarks/QwenSpanLength: 4.41% vs 5.30%).
+    /// Decodes merged windows, because the forced aligner re-times every word
+    /// afterwards: segment granularity no longer depends on the decode window.
     func transcribeForWordAttribution(audio url: URL, language: String?, prompt: String?) async throws -> Transcript {
-        try await transcribe(audio: url, language: language, prompt: prompt, longContext: variant == .accuracy)
+        try await transcribe(audio: url, language: language, prompt: prompt,
+                             windows: Self.wordAttributionWindows(for: variant))
     }
 
     private func transcribe(audio url: URL, language: String?, prompt: String?,
-                            longContext: Bool) async throws -> Transcript {
+                            windows: WordAttributionWindows?) async throws -> Transcript {
         activeUses += 1
         defer { finishUse() }
         try await prepare()
@@ -125,11 +139,12 @@ actor QwenASREngine: TranscriptionEngine {
         let started = Date()
         var spans = try await SpeechActivity.shared.spans(
             in: url, maxSegmentSeconds: Self.maxSegmentSeconds)
-        if longContext {
-            spans = Self.merged(spans, maxGap: Self.longContextGapSeconds, maxLength: Self.longContextSeconds)
+        if let windows {
+            spans = Self.merged(spans, maxGap: windows.maxGapSeconds, maxLength: windows.maxSeconds)
         }
+        let unblocked = windows?.disablesRepetitionBlocking == true
         let segments = try await SpanTranscription.segments(in: url, spans: spans) { samples, _ in
-            if longContext {
+            if unblocked {
                 // speech-swift turns on no-repeat-3-gram blocking above 15 s,
                 // which forces substitutions in ordinary repeated phrases.
                 return model.transcribe(
@@ -148,7 +163,7 @@ actor QwenASREngine: TranscriptionEngine {
         let elapsed = Date().timeIntervalSince(started)
         let duration = spans.last?.end ?? 0
         lokalbotLog(
-            "qwen-asr profile model=\(variant.modelID) spans=\(spans.count) longContext=\(longContext) elapsed=\(String(format: "%.2fs", elapsed)) rtfx=\(String(format: "%.1fx", elapsed > 0 ? duration / elapsed : 0))")
+            "qwen-asr profile model=\(variant.modelID) spans=\(spans.count) merged=\(windows != nil) elapsed=\(String(format: "%.2fs", elapsed)) rtfx=\(String(format: "%.1fx", elapsed > 0 ? duration / elapsed : 0))")
         return Transcript(segments: segments, engine: "\(variant.modelID) (Qwen3ASR MLX)")
     }
 

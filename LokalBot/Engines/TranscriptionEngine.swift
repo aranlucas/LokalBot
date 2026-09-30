@@ -159,8 +159,8 @@ enum SpeakerAttributionStrategy: Sendable {
     /// Cut the audio at speaker turns and transcribe each region on its own.
     case regions
     /// Transcribe the whole track, then assign each forced-aligned word to the
-    /// speaker active at that moment. Measured on Qwen3-ASR 1.7B in
-    /// Benchmarks/QwenSpanLength: regions cost 3.0 points of meeting WER.
+    /// speaker active at that moment. Measured on Qwen3-ASR 1.7B and 0.6B in
+    /// Benchmarks/QwenSpanLength: regions cost 3.0 and 2.8 points of meeting WER.
     case alignedWords
 }
 

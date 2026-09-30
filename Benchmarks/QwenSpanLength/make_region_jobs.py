@@ -22,6 +22,8 @@ OUT = Path(os.environ.get('SPAN_BENCH_OUT', DATA / 'span-length'))
 NEMOTRON_DIR = Path(os.environ.get('NEMOTRON_MODEL_DIR', OUT / 'nemotron'))
 # Hub-style folder holding the pinned Qwen3-ForcedAligner-0.6B-4bit files.
 ALIGNER_DIR = Path(os.environ.get('ALIGNER_MODEL_DIR', OUT / 'aligner/models/aufklarer/Qwen3-ForcedAligner-0.6B-4bit'))
+# Hub-style folder holding the pinned Qwen3-ASR-0.6B-MLX-4bit files (compact tier).
+COMPACT_DIR = Path(os.environ.get('QWEN06_MODEL_DIR', OUT / 'qwen06/models/aufklarer/Qwen3-ASR-0.6B-MLX-4bit'))
 ABSORB = 2.0
 TRACKS = ['mic', 'system']
 
@@ -112,17 +114,37 @@ def main():
     if sys.argv[1:2] == ['align-job']:
         # Word timings for a condition's windows in runs.jsonl (default engine-15).
         # ALIGNER_VARIANT=8bit uses the 8-bit aligner in ALIGNER_MODEL_DIR instead.
+        # RUNS_FILE=runs-06b.jsonl ALIGNED_PREFIX=aligned06 aligns the compact-tier runs.
         items = [{'id': r['id'], 'wav': r['path']} for r in manifest]
         variant = os.environ.get('ALIGNER_VARIANT', '4bit')
+        runs_file = os.environ.get('RUNS_FILE', 'runs.jsonl')
+        prefix = os.environ.get('ALIGNED_PREFIX', 'aligned' if variant == '4bit' else 'aligned8')
         for condition in sys.argv[2:] or ['engine-15']:
-            name = 'aligned-engine15' if condition == 'engine-15' and variant == '4bit' else (
-                f'aligned-{condition}' if variant == '4bit' else f'aligned8-{condition}')
-            path = OUT / ('align.json' if name == 'aligned-engine15' else f'align-{variant}-{condition}.json')
+            name = 'aligned-engine15' if (prefix, condition) == ('aligned', 'engine-15') else f'{prefix}-{condition}'
+            path = OUT / ('align.json' if name == 'aligned-engine15' else
+                          f'align-{variant}-{condition}.json' if prefix in ('aligned', 'aligned8') else
+                          f'align-{prefix}-{condition}.json')
             path.write_text(json.dumps({
                 'modelId': f'aufklarer/Qwen3-ForcedAligner-0.6B-{variant}', 'modelDir': str(ALIGNER_DIR),
-                'runs': str(OUT / 'runs.jsonl'), 'condition': condition, 'language': 'English',
+                'runs': str(OUT / runs_file), 'condition': condition, 'language': 'English',
                 'items': items, 'output': str(OUT / f'{name}.jsonl')}))
             print(f'{path.name}: {len(items)} items -> {name}.jsonl')
+        return
+    if sys.argv[1:] == ['compact-job']:
+        # Qwen3-ASR 0.6B on the same items: production regions plus word-attribution windows.
+        base = json.loads((OUT / 'region_jobs.json').read_text())
+        vad = {'kind': 'vad', 'vadMax': 14, 'split': 15}
+        merge = lambda n: {'kind': 'merge', 'vadMax': 14, 'gap': 5, 'maxLen': n}
+        c = lambda name, layout, ngram='runtime': {'name': name, 'layout': layout, 'language': 'en',
+                                                   'ngram': ngram, 'maxTokens': None, 'prefixes': None}
+        (OUT / 'compact_jobs.json').write_text(json.dumps({
+            'modelDir': str(COMPACT_DIR), 'modelId': 'aufklarer/Qwen3-ASR-0.6B-MLX-4bit',
+            'vadModel': base['vadModel'], 'output': str(OUT / 'runs-06b.jsonl'), 'items': base['items'],
+            'conditions': [c('engine-15', vad), c('merge-15-v14', merge(15)),
+                           c('merge-30-off-v14', merge(30), 'off'), c('merge-60-off-v14', merge(60), 'off'),
+                           c('merge-60-v14', merge(60)),
+                           c('diar-prod', {'kind': 'regions', 'key': 'prod', 'vadMax': 14, 'split': 15})]}))
+        print('compact_jobs.json: 6 conditions')
         return
     if sys.argv[1:] == ['diarize-job']:
         files = sorted({recording(r) for r in manifest})
