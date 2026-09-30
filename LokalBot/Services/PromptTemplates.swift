@@ -136,6 +136,11 @@ enum PromptTemplates {
 
         Work done with an AI assistant or coding agent is the person's own work. When a conversation or agent session shows a concrete task being specified, implemented, debugged, reviewed, tested, merged, or decided, it is substantive: describe that task and its result, not the assistant or the chat. Reading an unrelated answer or scrolling old chat history is not substantive.
 
+        AGENT SESSION evidence is read from the person's own coding-agent session. Its requests say what the person asked for. \
+        Its recorded actions (commits, opened or merged pull requests, releases, pushes, test runs) are the strongest evidence of what changed. \
+        The agent's final report is the agent's claim: use it to describe the work, but call the work completed only when a recorded action or other evidence supports that. \
+        Name the task by its project and deliverable, such as a pull request or commit title, never by the agent. When screen text and an agent session cover the same work, prefer the session.
+
         App names, window titles, timestamps, durations, screen IDs, tab or page changes, navigation, reading, typing, and tool usage are weak metadata. Use them only to understand context.
         Never mention them in `task`, `work_done`, `outcome`, or `next_step` unless the tool itself is the subject or deliverable of the work. Browser chrome, notifications, repetitive accessibility labels, and routine navigation are always noise.
 

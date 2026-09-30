@@ -307,13 +307,49 @@ struct DayDigestEvidence: Equatable, Sendable {
     }
 
     private struct SummaryEvent {
+        enum Source: Equatable {
+            case meeting
+            /// `recordedOutcome`: the burst committed, opened or merged a PR,
+            /// released, pushed, or ran tests.
+            case agentSession(recordedOutcome: Bool)
+            case activity
+            case screenContext
+        }
+
         var start: Date
         var end: Date
-        var order: Int
+        var source: Source
         var text: String
         var sourceIDs: [Int64]
         var app: String
         var title: String
+        /// The burst behind an agent-session event; several after merging.
+        var agentBursts: [CodingAgentBurst] = []
+
+        /// Tie-break for events that begin together.
+        var order: Int {
+            switch source {
+            case .meeting: 0
+            case .agentSession: 1
+            case .activity: 2
+            case .screenContext: 3
+            }
+        }
+    }
+
+    /// Apps that host coding agents: their chat window, a terminal, or an
+    /// editor. Screen text captured there while a stored session ran is
+    /// mostly that session on screen, which the session evidence already
+    /// states more exactly.
+    private static let codingAgentHostApps: Set<String> = [
+        "claude", "codex", "terminal", "iterm", "iterm2", "ghostty", "warp", "alacritty",
+        "kitty", "wezterm", "cursor", "zed", "code", "visual studio code", "windsurf",
+    ]
+
+    private func isCoveredByCodingAgentSession(app: String, from start: Date, to end: Date) -> Bool {
+        let name = app.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard Self.codingAgentHostApps.contains(name) else { return false }
+        return codingAgentBursts.contains { $0.start <= end && start <= $0.end }
     }
 
     private func sessionWeight(_ events: [SummaryEvent]) -> Double {
@@ -346,7 +382,11 @@ struct DayDigestEvidence: Equatable, Sendable {
     private func summaryEvents() -> [SummaryEvent] {
         var events: [SummaryEvent] = []
         for activity in activities where !isSystemOnlySummaryActivity(app: activity.app) {
-            let contexts = summaryContexts(for: activity)
+            let coveredByAgent = isCoveredByCodingAgentSession(
+                app: activity.app, from: activity.start, to: activity.end)
+            let contexts = coveredByAgent
+                ? representativeContexts(activity.contexts, limit: 1)
+                : summaryContexts(for: activity)
             let perContextBudget = contexts.isEmpty
                 ? 0
                 : max(360, min(1_200, 8_400 / contexts.count))
@@ -355,6 +395,11 @@ struct DayDigestEvidence: Equatable, Sendable {
                 lines.append(
                     "Possible task context (weak; corroborate before summarizing): "
                         + activity.title)
+            }
+            if coveredByAgent {
+                lines.append(
+                    "A coding-agent session covers this interval; this screen text "
+                        + "likely shows that session, so prefer the AGENT SESSION evidence.")
             }
             for context in contexts {
                 let source = context.snapshotID > 0 ? "[screen:\(context.snapshotID)]" : "[screen]"
@@ -374,19 +419,21 @@ struct DayDigestEvidence: Equatable, Sendable {
             events.append(SummaryEvent(
                 start: activity.start,
                 end: activity.end,
-                order: 1,
+                source: .activity,
                 text: lines.joined(separator: "\n"),
                 sourceIDs: contexts.map(\.snapshotID).filter { $0 > 0 },
                 app: activity.app,
                 title: activity.title))
         }
         for context in standaloneContexts where !isSystemOnlySummaryActivity(app: context.app) {
+            guard !isCoveredByCodingAgentSession(
+                app: context.app, from: context.capturedAt, to: context.capturedAt) else { continue }
             let source = context.snapshotID > 0 ? "[screen:\(context.snapshotID)]" : "[screen]"
             let text = summaryExcerpt(context.text, maxCharacters: 1_200)
             events.append(SummaryEvent(
                 start: context.capturedAt,
                 end: context.capturedAt,
-                order: 2,
+                source: .screenContext,
                 text: """
                     WORK SOURCE: SCREEN CONTEXT \(source)
                     Captured work text: \(text)
@@ -412,11 +459,22 @@ struct DayDigestEvidence: Equatable, Sendable {
             events.append(SummaryEvent(
                 start: meeting.startedAt,
                 end: meeting.endedAt,
-                order: 0,
+                source: .meeting,
                 text: lines.joined(separator: "\n"),
                 sourceIDs: [],
                 app: meeting.app,
                 title: meeting.title))
+        }
+        for burst in codingAgentBursts {
+            events.append(SummaryEvent(
+                start: burst.start,
+                end: burst.end,
+                source: .agentSession(recordedOutcome: !burst.actions.isEmpty || !burst.pullRequests.isEmpty),
+                text: burst.evidenceText(maxPrompts: 3),
+                sourceIDs: [],
+                app: burst.agent.displayName,
+                title: burst.title,
+                agentBursts: [burst]))
         }
         events.sort { lhs, rhs in
             if lhs.start == rhs.start { return lhs.order < rhs.order }
@@ -436,12 +494,13 @@ struct DayDigestEvidence: Equatable, Sendable {
         events: [SummaryEvent],
         maxCharacters: Int
     ) -> DayDigestSummarySegment {
-        let detailIndices = summaryDetailIndices(events: events, limit: 12)
+        let detailEvents = mergingAgentSessions(events)
+        let detailIndices = summaryDetailIndices(events: detailEvents, limit: 12)
         let contentBudget = max(120, Int(Double(maxCharacters) * 0.82))
         let perDetailBudget = max(120, contentBudget / max(1, detailIndices.count))
         let details = detailIndices.map { index in
             PromptContextSanitizer.sanitize(
-                events[index].text,
+                detailEvents[index].text,
                 maxCharacters: perDetailBudget)
         }.filter { !$0.isEmpty }
         var evidence = "WORK CONTENT — primary evidence:\n"
@@ -475,27 +534,71 @@ struct DayDigestEvidence: Equatable, Sendable {
             sourceIDs: sourceIDs)
     }
 
+    /// A session often has several bursts in one segment. Show it once, with
+    /// every burst's requests, actions, and files, so parallel sessions do
+    /// not crowd each other out of the detail budget.
+    private func mergingAgentSessions(_ events: [SummaryEvent]) -> [SummaryEvent] {
+        var merged: [SummaryEvent] = []
+        var positions: [String: Int] = [:]
+        for event in events {
+            guard let burst = event.agentBursts.first else {
+                merged.append(event)
+                continue
+            }
+            let key = "\(burst.agent.rawValue):\(burst.sessionID)"
+            if let position = positions[key] {
+                merged[position].agentBursts += event.agentBursts
+            } else {
+                positions[key] = merged.count
+                merged.append(event)
+            }
+        }
+        return merged.map { event in
+            guard event.agentBursts.count > 1,
+                  let session = CodingAgentBurstBuilder.merging(event.agentBursts) else { return event }
+            var combined = event
+            combined.end = session.end
+            combined.source = .agentSession(
+                recordedOutcome: !session.actions.isEmpty || !session.pullRequests.isEmpty)
+            combined.text = session.evidenceText(maxPrompts: 3)
+            return combined
+        }
+    }
+
     /// Meetings are already structured work evidence, so a busy interval must
     /// not sample around them merely because it contains many short activity
-    /// events. Fill the remaining detail budget evenly across the interval.
+    /// events. Agent sessions that recorded an outcome get the same guarantee,
+    /// up to `reservedAgentSessions`, ahead of those that did not. Fill the
+    /// remaining detail budget evenly across the interval.
     private func summaryDetailIndices(
         events: [SummaryEvent],
-        limit: Int
+        limit: Int,
+        reservedAgentSessions: Int = 6
     ) -> [Int] {
         guard !events.isEmpty, limit > 0 else { return [] }
-        let meetingIndices = events.indices.filter { events[$0].order == 0 }
+        func sample(_ indices: [Int], _ count: Int) -> [Int] {
+            evenlySpacedIndices(count: indices.count, limit: min(max(0, count), indices.count))
+                .map { indices[$0] }
+        }
+        let meetingIndices = events.indices.filter { events[$0].source == .meeting }
         if meetingIndices.count >= limit {
-            return evenlySpacedIndices(count: meetingIndices.count, limit: limit)
-                .map { meetingIndices[$0] }
+            return sample(meetingIndices, limit)
         }
 
-        let remainingIndices = events.indices.filter { events[$0].order != 0 }
-        let remainingLimit = min(limit - meetingIndices.count, remainingIndices.count)
-        let sampled = evenlySpacedIndices(
-            count: remainingIndices.count,
-            limit: remainingLimit
-        ).map { remainingIndices[$0] }
-        return (meetingIndices + sampled).sorted()
+        let withOutcome = events.indices.filter {
+            events[$0].source == .agentSession(recordedOutcome: true)
+        }
+        let withoutOutcome = events.indices.filter {
+            events[$0].source == .agentSession(recordedOutcome: false)
+        }
+        let agentLimit = min(reservedAgentSessions, limit - meetingIndices.count)
+        var reserved = sample(withOutcome, agentLimit)
+        reserved += sample(withoutOutcome, agentLimit - reserved.count)
+
+        let taken = Set(meetingIndices + reserved)
+        let remainingIndices = events.indices.filter { !taken.contains($0) }
+        let sampled = sample(remainingIndices, limit - taken.count)
+        return (meetingIndices + reserved + sampled).sorted()
     }
 
     private func evenlySpacedIndices(count: Int, limit: Int) -> [Int] {

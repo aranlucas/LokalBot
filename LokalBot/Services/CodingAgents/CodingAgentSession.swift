@@ -274,6 +274,33 @@ enum CodingAgentBurstBuilder {
             toolCallCount: toolCalls)
     }
 
+    /// One session's bursts as a single view, for a summary that should see
+    /// the session once rather than once per burst. `nil` for no bursts.
+    static func merging(_ bursts: [CodingAgentBurst]) -> CodingAgentBurst? {
+        let ordered = bursts.sorted { $0.start < $1.start }
+        guard var merged = ordered.first else { return nil }
+        var files = merged.changedFiles
+        var hiddenFiles = max(0, merged.changedFileCount - merged.changedFiles.count)
+        for burst in ordered.dropFirst() {
+            merged.end = max(merged.end, burst.end)
+            merged.activeDuration += burst.activeDuration
+            merged.prompts += burst.prompts
+            merged.promptCount += burst.promptCount
+            merged.finalReply = burst.finalReply ?? merged.finalReply
+            merged.branch = burst.branch ?? merged.branch
+            for file in burst.changedFiles where !files.contains(file) { files.append(file) }
+            hiddenFiles += max(0, burst.changedFileCount - burst.changedFiles.count)
+            for action in burst.actions where !merged.actions.contains(action) { merged.actions.append(action) }
+            for url in burst.pullRequests where !merged.pullRequests.contains(url) {
+                merged.pullRequests.append(url)
+            }
+            merged.toolCallCount += burst.toolCallCount
+        }
+        merged.changedFiles = Array(files.prefix(storedFiles))
+        merged.changedFileCount = files.count + hiddenFiles
+        return merged
+    }
+
     /// Drops timestamp-only events that change neither a burst boundary nor
     /// its active time. A ping is redundant when the events either side of it
     /// are within `activeGapCap` of each other: the gaps it splits count in

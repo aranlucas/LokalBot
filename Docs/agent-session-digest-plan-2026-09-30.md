@@ -1,13 +1,13 @@
 # Agent sessions as Day Digest evidence — exploration (2026-09-30)
 
-Status: phases 1 and 2 are implemented.
+Status: phases 1–3 are implemented.
 - **Phase 1** added the transcript readers, bursts, fixture tests, and the
   `--agent-sessions [yyyy-MM-dd]` debug flag in `LokalBot/Services/CodingAgents/`.
 - **Phase 2** added the opt-in setting, settled-burst storage with retention
   and revocation, the `## Agent sessions` journal section, and the evidence
   signature and validator changes.
-- The model does not read agent evidence yet (phase 3), apart from the
-  fallback task list.
+- **Phase 3** gives agent sessions to the digest model as segment evidence.
+  Its results on real data are under phase 3 below.
 
 Measured with the Swift readers on this Mac:
 
@@ -274,10 +274,31 @@ Agent sessions should enter the same way.
    - Settings → Day Memory → Coding agent sessions offers the toggle,
      per-agent switches, a folder exclusion list, and "Delete saved agent
      sessions", which also stops reading.
-3. **LLM integration.** Add burst `SummaryEvent`s, detail-index reservation,
-   screen down-weighting for agent host apps, and prompt changes. Evaluate
-   against the 2026-09-29 journal. It should surface the Mojo #186 and #175
-   work and the alpha #377 work, and drop the two dashboard-noise tasks.
+3. **LLM integration (done).**
+   - Each settled burst becomes a `WORK SOURCE: AGENT SESSION` summary event.
+   - Within a segment, a session's bursts merge into one detail. Up to six of
+     the twelve detail slots are reserved for sessions, those with recorded
+     outcomes first.
+   - While a session covers the time, screen text from agent host apps
+     (Claude, Codex, terminals, editors) keeps one sample, and standalone
+     captures there are dropped. The lossless journal keeps both.
+   - The focus prompt says requests show intent, recorded actions are the
+     strongest evidence, and the agent's report is a claim.
+   - Evaluated on the real 2026-09-29 model input, without running a model:
+
+     | | Before | After |
+     | --- | --- | --- |
+     | Agent-session details | 0 of 8 segments | 29 details in all 8 segments |
+     | Claude-app screen blocks | 7 | 3 |
+
+   - The previously missing work now reaches the model: Mojo branding #186
+     (3 segments), Review PR #175 (2), alpha CI #377 (1), and LokalBot
+     #108–#117.
+   - A first attempt with a four-slot reservation and no merging repeated one
+     session up to three times per segment and still dropped PR #175. That
+     led to per-session merging and the six-slot reservation.
+   - Still to do: compare the generated journal itself by running the model
+     on this day.
 4. **Follow-ons.**
    - Index bursts in Recall, e.g. "what did Codex change for branding?".
    - Expose bursts through CLI/MCP under the screen-memory toggle.
