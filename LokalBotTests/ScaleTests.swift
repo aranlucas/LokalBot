@@ -6,7 +6,7 @@ import XCTest
 @MainActor
 final class ScaleTests: XCTestCase {
     private func library() throws -> URL {
-        guard let path = ProcessInfo.processInfo.environment["LOKALBOT_SCALE_LIBRARY"] else {
+        guard let path = ProcessInfo.processInfo.environment["LOKALBOT_SCALE_LIBRARY"], !path.isEmpty else {
             throw XCTSkip("Set LOKALBOT_SCALE_LIBRARY to a large seeded library")
         }
         return URL(fileURLWithPath: path, isDirectory: true)
