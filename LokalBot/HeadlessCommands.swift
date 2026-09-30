@@ -19,6 +19,10 @@ enum HeadlessCommand: Equatable {
     case chat(question: String)
     case agent(prompt: String)
     case cotypingBench
+    /// Print a day's coding-agent evidence and exit. Runs before SwiftUI
+    /// launches: it reads transcripts only, so it needs no window, library
+    /// lock, or app subsystem.
+    case agentSessions(dayKey: String?)
 
     /// Set by `LokalBotMain.main()`; consumed by `AppState.init`.
     @MainActor static var requested: HeadlessCommand?
@@ -49,6 +53,10 @@ enum HeadlessCommand: Equatable {
         if args.contains("--cotyping-bench") { return .cotypingBench }
         if let flag = args.firstIndex(of: "--chat"), args.count > flag + 1 {
             return .chat(question: args[flag + 1])
+        }
+        if let flag = args.firstIndex(of: "--agent-sessions") {
+            let next = args.count > flag + 1 ? args[flag + 1] : nil
+            return .agentSessions(dayKey: next.flatMap { $0.hasPrefix("--") ? nil : $0 })
         }
         if let flag = args.firstIndex(of: "--agent"), args.count > flag + 1 {
             return .agent(prompt: args[flag + 1])
@@ -111,6 +119,44 @@ enum DayDigestCLIOutput {
     }
 }
 
+/// `LokalBot --agent-sessions [yyyy-MM-dd]`: the evidence the day digest
+/// would receive from local Claude Code and Codex sessions, for inspecting
+/// the transcript readers against real data. Read-only; nothing is stored.
+enum CodingAgentSessionsCLI {
+    static func run(dayKey: String?, now: Date = Date()) -> Int32 {
+        let day: Date
+        if let dayKey {
+            guard let parsed = DreamDay.date(fromKey: dayKey),
+                  DreamDay.key(for: parsed) == dayKey else {
+                print("LokalBot --agent-sessions: invalid day \(dayKey) (expected yyyy-MM-dd)")
+                return 2
+            }
+            day = parsed
+        } else {
+            day = now
+        }
+        let started = Date()
+        let scan = CodingAgentSessionScanner.standard().scan(day: day)
+        print(render(scan, day: day, elapsed: Date().timeIntervalSince(started)))
+        return 0
+    }
+
+    static func render(
+        _ scan: CodingAgentDayScan, day: Date, elapsed: TimeInterval, calendar: Calendar = .current
+    ) -> String {
+        var blocks = scan.bursts.map { $0.evidenceText(calendar: calendar) }
+        blocks += scan.unreadableFiles.map { "Unreadable transcript: \($0)" }
+        let megabytes = Double(scan.bytesRead) / 1_000_000
+        blocks.append(
+            "LokalBot --agent-sessions: \(DreamDay.key(for: day, calendar: calendar)) — "
+                + "\(scan.sessionCount) sessions, \(scan.bursts.count) bursts, "
+                + "\(scan.evidenceCharacters) evidence chars from \(scan.filesRead) files "
+                + String(format: "(%.0f MB) in %.1fs", megabytes, elapsed)
+                + (scan.excludedSessions > 0 ? "; \(scan.excludedSessions) excluded" : ""))
+        return blocks.joined(separator: "\n\n")
+    }
+}
+
 /// Executes headless subcommands against the app's real subsystems (pipeline,
 /// indexes, recorder). Test hooks for CI and `Scripts/e2e.sh` — the same code
 /// paths as the UI, no window required.
@@ -132,6 +178,8 @@ struct HeadlessCommandRunner {
         case .chat(let question): runChat(question: question)
         case .agent(let prompt): runAgent(prompt: prompt)
         case .cotypingBench: runCotypingBench()
+        // Normally handled before launch by `LokalBotMain`.
+        case .agentSessions(let dayKey): exit(CodingAgentSessionsCLI.run(dayKey: dayKey))
         }
     }
 

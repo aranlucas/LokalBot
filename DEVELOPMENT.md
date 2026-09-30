@@ -218,6 +218,7 @@ The app binary doubles as a test harness; flows that need ungranted permissions 
 | `--chat "<question>"` | Ask the meeting chat assistant once and print the answer |
 | `--agent "<prompt>"` | Run one Agent Mode turn headlessly (tool calls auto-approved) and exit by result |
 | `--cotyping-bench` | Run the cotyping quality benchmark and print a JSON report (exit 0 when every scenario passes) |
+| `--agent-sessions [yyyy-MM-dd]` | Print the day's Claude Code and Codex session evidence as the digest would read it (default: today), then exit before any window opens. Read-only: nothing is stored or sent |
 
 ## Testing
 

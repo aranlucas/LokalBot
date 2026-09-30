@@ -21,6 +21,9 @@ enum LokalBotMain {
             migrate: { DataMigration.runIfNeeded() },
             launchApplication: {
                 HeadlessCommand.requested = HeadlessCommand.parse(CommandLine.arguments)
+                if case .agentSessions(let dayKey)? = HeadlessCommand.requested {
+                    exit(CodingAgentSessionsCLI.run(dayKey: dayKey))
+                }
                 if HeadlessCommand.requested == nil, !UITestRuntime.isEnabled, !UITestRuntime.isUnitTesting {
                     let root = AppDirectories.libraryRoot
                     guard let lock = LibraryInstanceLock.acquire(root: root) else {
