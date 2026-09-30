@@ -104,6 +104,13 @@ final class ModelCatalogTests: XCTestCase {
         XCTAssertEqual(ModelStackPreset.recommended.patch.transcription, .qwenASR17B)
     }
 
+    func testPresetModelSummaryNamesEveryRoleModel() {
+        XCTAssertEqual(ModelStackPreset.recommended.modelSummary,
+                       "Transcribe: Qwen3-ASR 1.7B, Think: Qwen3.5 4B, Autocomplete: LFM2.5 1.2B Instruct")
+        XCTAssertEqual(ModelStackPreset.lightweight.modelSummary,
+                       "Transcribe: Qwen3-ASR 0.6B, Think: Qwen3.5 0.8B, Autocomplete: LFM2.5 1.2B Instruct")
+    }
+
     func testGraniteSpeechModelIsRunnableChoice() {
         XCTAssertTrue(TranscriptionModelChoice.allCases.contains(.graniteSpeech))
         XCTAssertEqual(TranscriptionModelChoice.graniteSpeech.engine.displayName, "Granite Speech 4.1 2B")
