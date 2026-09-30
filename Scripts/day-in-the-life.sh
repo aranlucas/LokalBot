@@ -67,9 +67,6 @@ done
 python3 "$ROOT_DIR/Scripts/day-in-the-life/assertions.py" owned-action "$DESIGN" \
   && pass "design review has an action owned by me" || fail "no action owned by me in the design review"
 
-echo "== digest =="
-"$BIN" --digest "$DAY" > "$LIB/digest.log" 2>&1 && pass "digest written" || fail "digest failed (see $LIB/digest.log)"
-
 echo "== boundary review keeps the meeting searchable =="
 "$BIN" --set-boundaries "$DESIGN" 0 30 > "$LIB/boundaries.log" 2>&1 \
   && pass "boundaries applied" || fail "boundary review failed (see $LIB/boundaries.log)"
@@ -78,6 +75,11 @@ echo "== boundary review keeps the meeting searchable =="
 found=$("$BIN" --search "caching layer" 2>/dev/null || true)
 grep -q "Design review" <<<"$found" \
   && pass "meeting still found after review" || fail "meeting not found after boundary review"
+
+# A boundary review revokes the day's derived evidence (its digest), so the
+# digest is written after it, as the last derived artifact of the day.
+echo "== digest =="
+"$BIN" --digest "$DAY" > "$LIB/digest.log" 2>&1 && pass "digest written" || fail "digest failed (see $LIB/digest.log)"
 
 echo "== search =="
 found=$("$BIN" --search-screen "connection pool" 2>/dev/null || true)

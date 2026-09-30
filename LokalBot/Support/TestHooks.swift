@@ -24,6 +24,16 @@ enum TestHooks {
 
 /// Returns the golden transcript for a meeting track instead of running ASR.
 struct GoldenTranscriptionEngine: TranscriptionEngine {
+    /// The track and time span a sliced region file was cut from. Boundary
+    /// reviews transcribe `<temp>/<index>.wav` slices, which name no meeting.
+    struct Region: Sendable {
+        let track: URL
+        let start: TimeInterval
+        let end: TimeInterval
+    }
+
+    @TaskLocal static var region: Region?
+
     let directory: URL
     var displayName: String { "Golden transcript" }
     var supportsStreaming: Bool { false }
@@ -31,11 +41,23 @@ struct GoldenTranscriptionEngine: TranscriptionEngine {
     func prepare(progress: ModelPreparationProgressHandler?) async throws {}
 
     func transcribe(audio: URL, language: String?) async throws -> Transcript {
-        let folderName = audio.deletingLastPathComponent().lastPathComponent
+        let region = Self.region
+        let source = region?.track ?? audio
+        let folderName = source.deletingLastPathComponent().lastPathComponent
         let slug = folderName.replacingOccurrences(of: #"^\d{2}-"#, with: "", options: .regularExpression)
-        let track = audio.deletingPathExtension().lastPathComponent
+        let track = source.deletingPathExtension().lastPathComponent
         let url = directory.appendingPathComponent(slug).appendingPathComponent("\(track).json")
-        return try JSONDecoder().decode(Transcript.self, from: Data(contentsOf: url))
+        var transcript = try JSONDecoder().decode(Transcript.self, from: Data(contentsOf: url))
+        guard let region else { return transcript }
+        // A slice's timestamps start at the region's start.
+        transcript.segments = transcript.segments.compactMap { segment in
+            guard segment.end > region.start, segment.start < region.end else { return nil }
+            var clipped = segment
+            clipped.start = max(segment.start, region.start) - region.start
+            clipped.end = min(segment.end, region.end) - region.start
+            return clipped
+        }
+        return transcript
     }
 }
 #endif
