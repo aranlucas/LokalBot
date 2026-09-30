@@ -82,6 +82,55 @@ final class CodingAgentSessionTests: XCTestCase {
         XCTAssertEqual(bursts.last?.title, "Original (fork)")
     }
 
+    func testCacheReparsesOnlyChangedFilesAndStillDropsANewForksCopies() throws {
+        let original = [
+            claudeUser(uuid: "u10", at: "2026-09-29T08:00:00Z", text: "Original request"),
+            claudeAssistantText(uuid: "a10", at: "2026-09-29T08:01:00Z", text: "Original reply"),
+        ]
+        try writeClaudeSession("ORIGINAL", lines: original, created: "2026-09-28T08:00:00Z")
+        let reader = ClaudeCodeSessionReader(root: root.appendingPathComponent("claude"))
+        let cache = CodingAgentParseCache()
+
+        let first = reader.transcripts(in: dayInterval, cache: cache)
+        let unchanged = reader.transcripts(in: dayInterval, cache: cache)
+        XCTAssertEqual(first.filesRead, 1)
+        XCTAssertEqual(unchanged.filesRead, 0, "an unchanged file is reused, not parsed")
+        XCTAssertEqual(unchanged.transcripts, first.transcripts)
+
+        // The fork arrives after the original was cached; its copied
+        // history must still be credited to the original.
+        try writeClaudeSession(
+            "FORK",
+            lines: original + [claudeUser(uuid: "u11", at: "2026-09-29T08:30:00Z", text: "Fork-only request")],
+            created: "2026-09-29T08:20:00Z")
+        let withFork = reader.transcripts(in: dayInterval, cache: cache)
+
+        XCTAssertEqual(withFork.filesRead, 1, "only the new file is parsed")
+        let bursts = withFork.transcripts.flatMap { CodingAgentBurstBuilder.bursts(from: $0) }
+        XCTAssertEqual(bursts.map(\.prompts), [["Original request"], ["Fork-only request"]])
+    }
+
+    func testCompactingActivityNeverChangesABurst() throws {
+        let start = try utc("2026-09-29T09:00:00Z")
+        var events = [CodingAgentEvent(at: start, kind: .prompt("Build it"))]
+        // Tool results every 20 s for four minutes, a 7-minute wait, more
+        // results, then an idle gap long enough to start a new burst.
+        for second in stride(from: 20, through: 240, by: 20) {
+            events.append(CodingAgentEvent(at: start.addingTimeInterval(TimeInterval(second)), kind: .activity))
+        }
+        events.append(CodingAgentEvent(at: start.addingTimeInterval(660), kind: .activity))
+        events.append(CodingAgentEvent(at: start.addingTimeInterval(680), kind: .reply("Built.")))
+        events.append(CodingAgentEvent(at: start.addingTimeInterval(690), kind: .pullRequest("https://github.com/o/r/pull/1")))
+        events.append(CodingAgentEvent(at: start.addingTimeInterval(2_000), kind: .activity))
+        events.append(CodingAgentEvent(at: start.addingTimeInterval(2_010), kind: .fileChange("A.swift")))
+        let transcript = CodingAgentTranscript(agent: .codex, sessionID: "T", events: events)
+        var compacted = transcript
+        compacted.events = CodingAgentBurstBuilder.compactingActivity(events)
+
+        XCTAssertLessThan(compacted.events.count, events.count)
+        XCTAssertEqual(CodingAgentBurstBuilder.bursts(from: compacted), CodingAgentBurstBuilder.bursts(from: transcript))
+    }
+
     func testSessionThatReadTheLokalBotLibraryWithholdsReplies() throws {
         try writeClaudeSession("S2", lines: [
             claudeUser(uuid: "u1", at: "2026-09-29T10:00:00Z", text: "What did I promise Ana?"),

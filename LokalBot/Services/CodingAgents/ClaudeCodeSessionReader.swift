@@ -13,15 +13,21 @@ protocol CodingAgentSessionReader: Sendable {
     var agent: CodingAgentKind { get }
     /// Sessions with activity inside `interval`, their events clipped to it.
     func transcripts(in interval: DateInterval) -> CodingAgentReadResult
+    /// The same, reusing files parsed by an earlier scan of `interval`.
+    func transcripts(in interval: DateInterval, cache: CodingAgentParseCache?) -> CodingAgentReadResult
 }
 
 extension CodingAgentSessionReader {
+    func transcripts(in interval: DateInterval, cache: CodingAgentParseCache?) -> CodingAgentReadResult {
+        transcripts(in: interval)
+    }
+
     /// Transcript files that may hold activity inside `interval`: written
     /// since it began, and created before it ended. Skipping by metadata
     /// keeps multi-gigabyte archives out of every scan.
     static func candidateFiles(
         _ urls: [URL], in interval: DateInterval
-    ) -> [(url: URL, created: Date, size: Int)] {
+    ) -> [CodingAgentCandidateFile] {
         urls.compactMap { url in
             guard url.pathExtension == "jsonl",
                   let values = try? url.resourceValues(forKeys: [
@@ -32,8 +38,70 @@ extension CodingAgentSessionReader {
             else { return nil }
             let created = values.creationDate ?? modified
             guard created < interval.end else { return nil }
-            return (url, created, values.fileSize ?? 0)
+            return CodingAgentCandidateFile(
+                url: url, created: created, modified: modified, size: values.fileSize ?? 0)
         }
+    }
+}
+
+struct CodingAgentCandidateFile {
+    var url: URL
+    var created: Date
+    var modified: Date
+    var size: Int
+}
+
+/// Parsed transcripts from an earlier scan, reused while a file's size and
+/// modification date are unchanged. A refresh then parses only the sessions
+/// still being written instead of every file touched in the window.
+final class CodingAgentParseCache: @unchecked Sendable {
+    struct Entry: Sendable {
+        var size: Int
+        var modified: Date
+        /// `nil` when the file holds no session of the person's in the
+        /// window, such as a subagent thread.
+        var transcript: CodingAgentTranscript?
+        /// Every record id the file holds in the window, hashed, so a fork
+        /// read later can drop the copies it carries.
+        var recordKeys: Set<Int>
+    }
+
+    private let lock = NSLock()
+    private var interval: DateInterval?
+    private var entries: [String: Entry] = [:]
+
+    func entry(for file: CodingAgentCandidateFile, interval: DateInterval) -> Entry? {
+        lock.withLock {
+            guard self.interval == interval, let entry = entries[file.url.path],
+                  entry.size == file.size, entry.modified == file.modified else { return nil }
+            return entry
+        }
+    }
+
+    /// A new window replaces every entry: clipping depends on it.
+    func store(_ entry: Entry, for file: CodingAgentCandidateFile, interval: DateInterval) {
+        lock.withLock {
+            if self.interval != interval {
+                entries = [:]
+                self.interval = interval
+            }
+            entries[file.url.path] = entry
+        }
+    }
+
+    /// Forget files under `root` that a scan of `interval` no longer selected.
+    func prune(keeping paths: Set<String>, under root: URL, interval: DateInterval) {
+        let prefix = root.path + "/"
+        lock.withLock {
+            guard self.interval == interval else { return }
+            entries = entries.filter { !$0.key.hasPrefix(prefix) || paths.contains($0.key) }
+        }
+    }
+
+    static func recordKey(_ id: String) -> Int {
+        var hasher = Hasher()
+        hasher.combine(id)
+        return hasher.finalize()
     }
 }
 
@@ -56,6 +124,10 @@ struct ClaudeCodeSessionReader: CodingAgentSessionReader {
     private static let editTools: Set<String> = ["Edit", "MultiEdit", "Write", "NotebookEdit"]
 
     func transcripts(in interval: DateInterval) -> CodingAgentReadResult {
+        transcripts(in: interval, cache: nil)
+    }
+
+    func transcripts(in interval: DateInterval, cache: CodingAgentParseCache?) -> CodingAgentReadResult {
         var result = CodingAgentReadResult()
         let projectFolders = (try? FileManager.default.contentsOfDirectory(
             at: root, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles])) ?? []
@@ -75,40 +147,56 @@ struct ClaudeCodeSessionReader: CodingAgentSessionReader {
         let candidates = Self.candidateFiles(files, in: interval).sorted {
             $0.created == $1.created ? $0.url.path < $1.url.path : $0.created < $1.created
         }
-        var seenRecords: Set<String> = []
+        var seenRecords: Set<Int> = []
+        var selected: Set<String> = []
         for candidate in candidates {
-            do {
-                let lines = try CodingAgentJSONLines(contentsOf: candidate.url)
-                result.filesRead += 1
-                result.bytesRead += candidate.size
-                if let transcript = parse(
-                    lines, sessionID: candidate.url.deletingPathExtension().lastPathComponent,
-                    interval: interval, seenRecords: &seenRecords) {
-                    result.transcripts.append(transcript)
+            selected.insert(candidate.url.path)
+            let entry: CodingAgentParseCache.Entry
+            if let cached = cache?.entry(for: candidate, interval: interval) {
+                entry = cached
+            } else {
+                do {
+                    let lines = try CodingAgentJSONLines(contentsOf: candidate.url)
+                    result.filesRead += 1
+                    result.bytesRead += candidate.size
+                    let parsed = parse(
+                        lines, sessionID: candidate.url.deletingPathExtension().lastPathComponent,
+                        interval: interval)
+                    entry = .init(size: candidate.size, modified: candidate.modified,
+                                  transcript: parsed.transcript, recordKeys: parsed.recordKeys)
+                    cache?.store(entry, for: candidate, interval: interval)
+                } catch {
+                    result.unreadableFiles.append(candidate.url.path)
+                    continue
                 }
-            } catch {
-                result.unreadableFiles.append(candidate.url.path)
             }
+            guard var transcript = entry.transcript else { continue }
+            transcript.events.removeAll { event in event.recordKey.map(seenRecords.contains) == true }
+            // A file whose window holds only copies claims nothing.
+            guard transcript.events.contains(where: { !$0.isAnnotation }) else { continue }
+            seenRecords.formUnion(entry.recordKeys)
+            result.transcripts.append(transcript)
         }
+        cache?.prune(keeping: selected, under: root, interval: interval)
         return result
     }
 
+    /// One file's transcript before de-duplication against other files,
+    /// which depends on the whole scan and so happens after caching.
     func parse(
         _ lines: CodingAgentJSONLines,
         sessionID: String,
-        interval: DateInterval,
-        seenRecords: inout Set<String>
-    ) -> CodingAgentTranscript? {
+        interval: DateInterval
+    ) -> (transcript: CodingAgentTranscript?, recordKeys: Set<Int>) {
         var transcript = CodingAgentTranscript(agent: .claudeCode, sessionID: sessionID, events: [])
         var titles: [String: String] = [:]
-        var claimed: [String] = []
+        var recordKeys: Set<Int> = []
 
-        func claim(_ id: String?) -> Bool {
-            guard let id else { return true }
-            guard !seenRecords.contains(id) else { return false }
-            claimed.append(id)
-            seenRecords.insert(id)
-            return true
+        /// The record's key, or `nil` for a record this file already held.
+        func admit(_ id: String?) -> Int?? {
+            guard let id else { return .some(nil) }
+            let key = CodingAgentParseCache.recordKey(id)
+            return recordKeys.insert(key).inserted ? .some(key) : nil
         }
 
         lines.forEach { line in
@@ -117,8 +205,8 @@ struct ClaudeCodeSessionReader: CodingAgentSessionReader {
                 guard !line.prefix(768, contains: #""isSidechain":true"#),
                       let at = CodingAgentTimestamp.date(line.stringValue(forKey: "timestamp")),
                       interval.contains(at),
-                      claim(line.stringValue(forKey: "uuid")) else { return }
-                transcript.events.append(CodingAgentEvent(at: at, kind: .activity))
+                      let key = admit(line.stringValue(forKey: "uuid")) else { return }
+                transcript.events.append(CodingAgentEvent(at: at, kind: .activity, recordKey: key))
                 return
             }
             guard let record = line.object(), let type = record["type"] as? String else { return }
@@ -144,7 +232,7 @@ struct ClaudeCodeSessionReader: CodingAgentSessionReader {
                       record["isCompactSummary"] as? Bool != true,
                       let at = CodingAgentTimestamp.date(record["timestamp"] as? String),
                       interval.contains(at),
-                      claim(record["uuid"] as? String) else { return }
+                      let key = admit(record["uuid"] as? String) else { return }
                 if transcript.workingDirectory == nil {
                     transcript.workingDirectory = record["cwd"] as? String
                 }
@@ -152,10 +240,14 @@ struct ClaudeCodeSessionReader: CodingAgentSessionReader {
                     transcript.branch = branch
                 }
                 let content = (record["message"] as? [String: Any])?["content"]
+                let firstNew = transcript.events.count
                 if type == "user" {
                     appendPrompt(content, at: at, to: &transcript)
                 } else {
                     appendAssistant(content, at: at, to: &transcript)
+                }
+                for index in firstNew..<transcript.events.count {
+                    transcript.events[index].recordKey = key
                 }
             default:
                 break
@@ -164,13 +256,11 @@ struct ClaudeCodeSessionReader: CodingAgentSessionReader {
 
         transcript.title = ["custom", "agent", "ai", "summary"].lazy
             .compactMap { titles[$0].flatMap(CodingAgentText.title) }.first
+        transcript.events = CodingAgentBurstBuilder.compactingActivity(transcript.events)
         guard transcript.events.contains(where: { !$0.isAnnotation }) else {
-            // Nothing of this session belongs to the day; release its ids so
-            // a later file is not denied records it owns.
-            seenRecords.subtract(claimed)
-            return nil
+            return (nil, recordKeys)
         }
-        return transcript
+        return (transcript, recordKeys)
     }
 
     private func appendPrompt(_ content: Any?, at: Date, to transcript: inout CodingAgentTranscript) {

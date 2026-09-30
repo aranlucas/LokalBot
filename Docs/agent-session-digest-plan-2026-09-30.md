@@ -1,9 +1,13 @@
 # Agent sessions as Day Digest evidence — exploration (2026-09-30)
 
-Status: phase 1 is implemented: transcript readers, bursts, fixture tests, and
-the `--agent-sessions [yyyy-MM-dd]` debug flag in
-`LokalBot/Services/CodingAgents/`. Nothing feeds the digest yet, nothing is
-stored, and no setting exists. Phases 2–4 below are still plans.
+Status: phases 1 and 2 are implemented.
+- **Phase 1** added the transcript readers, bursts, fixture tests, and the
+  `--agent-sessions [yyyy-MM-dd]` debug flag in `LokalBot/Services/CodingAgents/`.
+- **Phase 2** added the opt-in setting, settled-burst storage with retention
+  and revocation, the `## Agent sessions` journal section, and the evidence
+  signature and validator changes.
+- The model does not read agent evidence yet (phase 3), apart from the
+  fallback task list.
 
 Measured with the Swift readers on this Mac:
 
@@ -153,8 +157,17 @@ Agent sessions should enter the same way.
      their timestamp, ignore unknown record types, and fail soft for each file.
    - Files are skipped by modification and creation date, so the 13 GB store
      is never scanned.
-   - Still to do in phase 2: cache per `(path, size, mtime)` plus a byte
-     offset, so re-reading a live session only parses the appended tail.
+   - `CodingAgentParseCache` (phase 2) reuses parsed files while their size
+     and modification date are unchanged. On this Mac, a cold seven-day scan
+     read 1.5–1.9 GB in 6–8 s. A cached refresh took 0.05–0.2 s, re-parsing
+     only the one or two live sessions, and produced the same bursts as a
+     fresh scan.
+   - Fork copies are dropped using each file's hashed record ids, which are
+     cached too. A cached original still removes the copies in a fork that
+     appears later.
+   - Timestamp-only events whose neighbours are within the five-minute
+     active cap are compacted away. That changes no burst boundary or active
+     time: 2026-09-28 gave the same 41 bursts and 43,840 characters.
 
 2. **Store** (recommended over reading sources at digest time)
    - Ingest bursts into a LokalBot-owned table next to the activity store, keyed by
@@ -244,10 +257,23 @@ Agent sessions should enter the same way.
    turns, secret redaction, and unknown or malformed records.
    `LokalBot --agent-sessions [yyyy-MM-dd]` prints a day's bursts before any
    window opens. No UI, storage, or digest change.
-2. **Evidence plus a deterministic section.** Add the store, snapshot fields,
-   the `## Agent sessions` journal section, chronological log lines, the
-   signature and validator changes, and the settings toggle with PRIVACY.md
-   copy. This delivers value on its own even when inference fails.
+2. **Evidence plus a deterministic section (done).**
+   - `CodingAgentEvidenceIngestor` scans the digest's seven-day window every
+     ten minutes and before each digest run.
+   - Only bursts idle for ten minutes are stored, in `coding_agent_bursts`.
+     Such a burst can never grow, so the validator only filters to the
+     original ids.
+   - New bursts are additions. Removed or corrected bursts go through
+     `withPrimaryEvidenceChange`, and an unreadable transcript never counts
+     as a deletion. A scan that finishes after the configuration changed is
+     discarded.
+   - Late work on yesterday reopens its digest; older days only show as
+     stale.
+   - Retention follows screen text. That covers the automatic prune and the
+     reviewed cleanup, which shows a row for agent records.
+   - Settings → Day Memory → Coding agent sessions offers the toggle,
+     per-agent switches, a folder exclusion list, and "Delete saved agent
+     sessions", which also stops reading.
 3. **LLM integration.** Add burst `SummaryEvent`s, detail-index reservation,
    screen down-weighting for agent host apps, and prompt changes. Evaluate
    against the 2026-09-29 journal. It should surface the Mojo #186 and #175

@@ -27,6 +27,10 @@ struct CodexSessionReader: CodingAgentSessionReader {
     ]
 
     func transcripts(in interval: DateInterval) -> CodingAgentReadResult {
+        transcripts(in: interval, cache: nil)
+    }
+
+    func transcripts(in interval: DateInterval, cache: CodingAgentParseCache?) -> CodingAgentReadResult {
         var result = CodingAgentReadResult()
         let files = ["sessions", "archived_sessions"].flatMap { folder -> [URL] in
             let enumerator = FileManager.default.enumerator(
@@ -38,18 +42,27 @@ struct CodexSessionReader: CodingAgentSessionReader {
             return (enumerator?.allObjects as? [URL]) ?? []
         }
         let candidates = Self.candidateFiles(files, in: interval).sorted { $0.url.path < $1.url.path }
+        var selected: Set<String> = []
         for candidate in candidates {
+            selected.insert(candidate.url.path)
+            if let cached = cache?.entry(for: candidate, interval: interval) {
+                if let transcript = cached.transcript { result.transcripts.append(transcript) }
+                continue
+            }
             do {
                 let lines = try CodingAgentJSONLines(contentsOf: candidate.url)
                 result.filesRead += 1
                 result.bytesRead += candidate.size
-                if let transcript = parse(lines, interval: interval) {
-                    result.transcripts.append(transcript)
-                }
+                let transcript = parse(lines, interval: interval)
+                cache?.store(
+                    .init(size: candidate.size, modified: candidate.modified, transcript: transcript, recordKeys: []),
+                    for: candidate, interval: interval)
+                if let transcript { result.transcripts.append(transcript) }
             } catch {
                 result.unreadableFiles.append(candidate.url.path)
             }
         }
+        cache?.prune(keeping: selected, under: root, interval: interval)
         if !result.transcripts.isEmpty {
             let titles = threadTitles()
             for index in result.transcripts.indices {
@@ -108,6 +121,7 @@ struct CodexSessionReader: CodingAgentSessionReader {
                 transcript.events.append(CodingAgentEvent(at: at, kind: .activity))
             }
         }
+        transcript.events = CodingAgentBurstBuilder.compactingActivity(transcript.events)
         guard !isSubagent, !transcript.sessionID.isEmpty,
               transcript.events.contains(where: { !$0.isAnnotation }) else { return nil }
         return transcript

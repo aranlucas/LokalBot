@@ -41,14 +41,25 @@ struct CodingAgentSessionScanner: Sendable {
     }
 
     func scan(day: Date, calendar: Calendar = .current) -> CodingAgentDayScan {
-        let start = calendar.startOfDay(for: day)
-        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? start.addingTimeInterval(86_400)
+        scan(from: day, through: day, calendar: calendar)
+    }
+
+    /// Every local day from `firstDay` through `lastDay`, reading each
+    /// transcript once. Bursts never cross midnight, so each belongs to
+    /// exactly one day's evidence.
+    func scan(
+        from firstDay: Date, through lastDay: Date, calendar: Calendar = .current,
+        cache: CodingAgentParseCache? = nil
+    ) -> CodingAgentDayScan {
+        let start = calendar.startOfDay(for: min(firstDay, lastDay))
+        let lastStart = calendar.startOfDay(for: max(firstDay, lastDay))
+        let end = calendar.date(byAdding: .day, value: 1, to: lastStart) ?? lastStart.addingTimeInterval(86_400)
         let interval = DateInterval(start: start, end: end)
         var scan = CodingAgentDayScan(
             interval: interval, bursts: [], sessionCount: 0, filesRead: 0, bytesRead: 0,
             unreadableFiles: [], excludedSessions: 0)
         for reader in readers {
-            let result = reader.transcripts(in: interval)
+            let result = reader.transcripts(in: interval, cache: cache)
             scan.filesRead += result.filesRead
             scan.bytesRead += result.bytesRead
             scan.unreadableFiles += result.unreadableFiles
@@ -57,7 +68,12 @@ struct CodingAgentSessionScanner: Sendable {
                     scan.excludedSessions += 1
                     continue
                 }
-                let bursts = CodingAgentBurstBuilder.bursts(from: transcript)
+                let days = Dictionary(grouping: transcript.events) { calendar.startOfDay(for: $0.at) }
+                let bursts = days.keys.sorted().flatMap { day -> [CodingAgentBurst] in
+                    var daily = transcript
+                    daily.events = days[day] ?? []
+                    return CodingAgentBurstBuilder.bursts(from: daily)
+                }
                 guard !bursts.isEmpty else { continue }
                 scan.sessionCount += 1
                 scan.bursts += bursts

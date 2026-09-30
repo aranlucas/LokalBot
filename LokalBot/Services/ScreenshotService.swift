@@ -1240,6 +1240,11 @@ final class ScreenshotService: ObservableObject {
         } catch {
             failures.append("Activity titles: \(error.localizedDescription)")
         }
+        do {
+            try store.deleteCodingAgentBursts(ids: current.codingAgentBursts.map(\.id))
+        } catch {
+            failures.append("Coding agent sessions: \(error.localizedDescription)")
+        }
         lastRetentionRun = now()
         lastRetentionError = failures.isEmpty ? nil : failures.joined(separator: "\n")
         return failures
@@ -1274,7 +1279,8 @@ final class ScreenshotService: ObservableObject {
                 ? ActivityStore.OrphanedScreenEvidence()
                 : try store.orphanedScreenEvidence(olderThan:
                     current.addingTimeInterval(-Double(configuration.retentionDays) * 86_400))
-            if !review.candidates.isEmpty || !review.activityTitles.isEmpty || !orphaned.isEmpty {
+            if !review.candidates.isEmpty || !review.activityTitles.isEmpty
+                || !review.codingAgentBursts.isEmpty || !orphaned.isEmpty {
                 let dates = Array(Set(review.evidenceDates + orphaned.timestamps)).sorted()
                 try mutateEvidence(dates) {
                     var retainedTextIDs: [Int64] = []
@@ -1306,6 +1312,7 @@ final class ScreenshotService: ObservableObject {
                     do {
                         try store.clearRetainedText(ids: retainedTextIDs)
                         try store.clearRetainedActivityTitles(review.activityTitles)
+                        try store.deleteCodingAgentBursts(ids: review.codingAgentBursts.map(\.id))
                         try store.clearOrphanedScreenEvidence(orphaned)
                     } catch {
                         if firstError == nil { firstError = error.localizedDescription }

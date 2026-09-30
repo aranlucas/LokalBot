@@ -25,6 +25,12 @@ struct RetentionReview: Identifiable {
             return dates
         }
     }
+    /// A stored coding-agent burst. Its requests and reports are text, so
+    /// they expire with screen text.
+    struct CodingAgentBurst: Equatable, Hashable, Identifiable {
+        let id: String
+        let start: Date
+    }
     let id = UUID()
     let days: Int
     let keepTextForever: Bool
@@ -33,12 +39,15 @@ struct RetentionReview: Identifiable {
     let savedCount: Int
     let bytes: Int64
     var activityTitles: [ActivityTitle] = []
+    var codingAgentBursts: [CodingAgentBurst] = []
 
     var pixelCount: Int { candidates.filter { !$0.path.isEmpty }.count }
     var textCount: Int { candidates.filter(\.removeText).count }
     var vectorCount: Int { candidates.filter(\.removeVector).count }
     var metadataCount: Int { candidates.filter(\.removeMetadata).count }
-    var evidenceDates: [Date] { candidates.map(\.timestamp) + activityTitles.flatMap(\.evidenceDates) }
+    var evidenceDates: [Date] {
+        candidates.map(\.timestamp) + activityTitles.flatMap(\.evidenceDates) + codingAgentBursts.map(\.start)
+    }
     var oldest: Date? { evidenceDates.min() }
     var newest: Date? { evidenceDates.max() }
 
@@ -49,6 +58,7 @@ struct RetentionReview: Identifiable {
         let approvedActivity = Set(activityTitles)
         return days == current.days && keepTextForever == current.keepTextForever
             && Set(current.activityTitles).isSubset(of: approvedActivity)
+            && Set(current.codingAgentBursts).isSubset(of: Set(codingAgentBursts))
             && current.candidates.allSatisfy { candidate in
                 guard let old = approved[candidate.id] else { return false }
                 return candidate.timestamp == old.timestamp

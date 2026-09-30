@@ -14,7 +14,7 @@ struct RetentionSettingsControls: View {
                 get: { app.settings.retentionDays },
                 set: { propose(days: $0, forever: app.settings.keepOCRTextForever) }), in: 1...90) {
                 SettingsLabel("Keep screen context \(app.settings.retentionDays) days",
-                              help: "Old images, screen text, screen titles, URLs, document names, and activity titles expire. App names and durations remain. Saved moments stay until unsaved or deleted.")
+                              help: "Old images, screen text, screen titles, URLs, document names, saved coding agent sessions, and activity titles expire. App names and durations remain. Saved moments stay until unsaved or deleted.")
             }
                 .settingTarget("settings.retentionDays", selected: app.focusedSettingID)
                 .accessibilityIdentifier("settings.retention")
@@ -94,6 +94,9 @@ private struct RetentionReviewSheet: View {
                 GridRow { Text("Search vectors to remove"); Text("\(review.vectorCount)") }
                 GridRow { Text("Screen metadata records to clear"); Text("\(review.metadataCount)") }
                 GridRow { Text("Activity titles to clear"); Text("\(review.activityTitles.count)") }
+                if !review.codingAgentBursts.isEmpty {
+                    GridRow { Text("Coding agent records to remove"); Text("\(review.codingAgentBursts.count)") }
+                }
                 GridRow { Text("Saved moments preserved"); Text("\(review.savedCount)") }
                 GridRow { Text("Image space recovered"); Text(ByteCountFormatter.string(fromByteCount: review.bytes, countStyle: .file)) }
             }
