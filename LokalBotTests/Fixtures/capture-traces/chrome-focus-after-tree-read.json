@@ -1,0 +1,16 @@
+{
+  "header": {"schemaVersion": 1, "macOSVersion": "26.0", "origin": "reconstructed",
+             "scenario": "chrome-focus-after-tree-read", "scrubberVersion": 1, "recordedAt": "2026-09-30T00:00:00Z"},
+  "events": [
+    {"t": 0, "query": "frontmost", "app": {"processIdentifier": 501, "bundleIdentifier": "com.google.Chrome", "localizedName": "Google Chrome"}},
+    {"t": 0, "query": "idleSeconds", "seconds": 2},
+    {"t": 0, "query": "trusted", "flag": true},
+    {"t": 0, "query": "screenCaptureGranted", "flag": false},
+    {"t": 0, "query": "axRead", "processID": 501, "includeText": true,
+     "read": {"failure": {"reason": "focused window changed while reading", "isTransient": true}}},
+    {"t": 0.7, "query": "axRead", "processID": 501, "includeText": true,
+     "read": {"snapshot": {"text": "Rvw: pprv ftr bnchmrkng flvr ltnc", "sourceURL": "https://gthb.cm/stvhckr/lklbt/pll/42",
+                           "windowTitle": "Pll rqst #42 - cchng lr", "windowFrame": [[0, 25], [1440, 875]],
+                           "hasWebContent": true, "containsSecureField": false}}}
+  ]
+}
