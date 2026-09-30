@@ -57,16 +57,16 @@ struct DailyEvidenceSnapshot: Equatable, Sendable {
     var codingAgentBursts: [CodingAgentBurst] = []
 
     var latestEvidenceAt: Date? {
-        let values = activityBlocks.map(\.end)
-            + screenContexts.map(\.capturedAt)
-            + [screenEvidenceAt].compactMap { $0 }
-            + meetings.compactMap { meeting in
-                [meeting.meeting.endedAt, meeting.artifactModifiedAt]
-                    .compactMap { $0 }
-                    .max()
-            }
-            + savedMoments.flatMap { [$0.capturedAt, $0.savedAt] }
-            + codingAgentBursts.map(\.end)
+        // Appended one source at a time: a single chained sum of six arrays
+        // exceeds the type checker's time limit on slower build machines.
+        var values: [Date] = activityBlocks.map(\.end)
+        values += screenContexts.map(\.capturedAt)
+        if let screenEvidenceAt { values.append(screenEvidenceAt) }
+        values += meetings.compactMap { meeting -> Date? in
+            [meeting.meeting.endedAt, meeting.artifactModifiedAt].compactMap { $0 }.max()
+        }
+        values += savedMoments.flatMap { [$0.capturedAt, $0.savedAt] }
+        values += codingAgentBursts.map(\.end)
         return values.max()
     }
 
