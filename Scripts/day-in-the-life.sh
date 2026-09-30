@@ -68,7 +68,10 @@ python3 "$ROOT_DIR/Scripts/day-in-the-life/assertions.py" owned-action "$DESIGN"
   && pass "design review has an action owned by me" || fail "no action owned by me in the design review"
 
 echo "== boundary review keeps the meeting searchable =="
-"$BIN" --set-boundaries "$DESIGN" 0 30 > "$LIB/boundaries.log" 2>&1 \
+# 0–36 s keeps every line the recorded notes answer cites (the last ends at
+# 35 s); trimming one makes that answer's evidence IDs invalid, which the app
+# rightly rejects. The review still rewrites the transcript and reindexes.
+"$BIN" --set-boundaries "$DESIGN" 0 36 > "$LIB/boundaries.log" 2>&1 \
   && pass "boundaries applied" || fail "boundary review failed (see $LIB/boundaries.log)"
 # Output is captured first: with pipefail, grep -q exiting early could
 # SIGPIPE the app and fail a check that matched.
