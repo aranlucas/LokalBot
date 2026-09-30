@@ -4,7 +4,7 @@ Everything in this directory ships LokalBot's Hugging Face presence: a curated m
 
 ## Live resources
 
-- [LokalBot recommended local stack](https://huggingface.co/collections/stevyhacker/lokalbot-recommended-local-stack) — public Collection with six model links and curation notes.
+- [LokalBot recommended local stack](https://huggingface.co/collections/stevyhacker/lokalbot-recommended-local-stack) — public Collection with the five default-stack model links and curation notes, refreshed 2026-09-30.
 - [LokalBot Local-Stack Benchmarks](https://huggingface.co/spaces/stevyhacker/lokalbot-benchmarks) — public Static Space, refreshed for the current default stack at Space commit `933968b` (2026-09-30).
 
 ## Files
@@ -14,7 +14,7 @@ Everything in this directory ships LokalBot's Hugging Face presence: a curated m
 | `benchmark-summary.md` | Every measured number in the repo, each with its source path, plus honest gaps. Single source of truth. |
 | `COLLECTION.md` | Spec for the "LokalBot recommended local stack" collection: verified repo ids, curation notes, creation steps (UI + API). |
 | `SPACE-benchmark.md` | Spec for the static Space hosting the benchmark summary, including frontmatter and cross-link plan. |
-| `scripts/create_collection.py` | Idempotently verifies the model repos and creates the public Collection. |
+| `scripts/create_collection.py` | Verifies the model repos, then creates or syncs the public Collection: items, notes, order, and description. |
 | `scripts/render_space.py` | Renders the benchmark summary into the static Space HTML. |
 | `scripts/create_space.py` | Creates or updates the public static Space through `huggingface_hub`. |
 | `space/` | Space-card template, generated card/HTML, and stylesheet. Only `README.md`, `index.html`, and `style.css` are uploaded. |
@@ -27,13 +27,13 @@ Everything in this directory ships LokalBot's Hugging Face presence: a curated m
 
 ## Step 1 — Create the Collection
 
-All referenced repo ids were verified against the HF API on 2026-08-21. With a write token, create and populate the Collection idempotently:
+All referenced repo ids were verified against the HF API on 2026-09-30. With a token that has Collection write permission, create or sync the Collection:
 
 ```sh
 uv run --with huggingface_hub python Distribution/huggingface/scripts/create_collection.py
 ```
 
-The script prints the Collection URL. Without a write token, follow the web-UI path in `COLLECTION.md` and save the resulting URL. The current live Collection was published through that web-UI path on 2026-08-21.
+The script prints the Collection URL. The installed fine-grained token lacks Collection write and gets 403, so follow the web-UI path in `COLLECTION.md` instead. The 2026-09-30 refresh went through the signed-in web session.
 
 ## Step 2 — Create the benchmark Space
 
@@ -49,11 +49,10 @@ Without a write token, create a public Static Space named `lokalbot-benchmarks` 
 
 ## Step 3 — Publish checklist
 
-- [x] Collection is public; all six items show curation notes; order matches `COLLECTION.md`.
+- [x] Collection is public; all five items show curation notes; order matches `COLLECTION.md`.
 - [x] Space renders the current default stack, diarization, summary, search, speech-recognition, cotyping, and two OCR tables, plus the gaps table.
 - [x] Space header/footer link to the GitHub repo; each table's source path resolves on GitHub.
-- [ ] Collection description contains the repo link (`https://github.com/stevyhacker/lokalbot`).
-  The inline web editor did not persist this optional field, and the installed API token receives 403 for Collection metadata writes; use a token with Collection-write permission to finish it.
+- [x] Collection description contains the repo link (`https://github.com/stevyhacker/lokalbot`).
 - [x] Nothing anywhere mirrors or re-uploads weights.
 
 ## Step 4 — Promotion checklist

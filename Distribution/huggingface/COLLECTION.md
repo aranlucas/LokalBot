@@ -1,74 +1,49 @@
 # COLLECTION.md — "LokalBot recommended local stack" Hugging Face Collection
 
-A Hugging Face **Collection** that curates the exact third-party model repos LokalBot's Recommended stack downloads. **We never rehost or mirror weights**: every item links to the model owner's repo, so licenses (Apache-2.0, Gemma terms, LFM Open License, CC-BY-4.0) and download bandwidth stay with their owners. The collection is pure curation — a one-click "get everything LokalBot recommends" list with per-model notes.
+A Hugging Face **Collection** that curates the exact third-party model repos LokalBot's default stack downloads. **We never rehost or mirror weights**: every item links to the model owner's repo, so licenses (Apache-2.0, OpenMDW-1.1, MIT, LFM Open License) and download bandwidth stay with their owners. The collection is pure curation — a one-click "get everything LokalBot recommends" list with per-model notes.
 
-## Curated items (all repo ids verified via the HF API on 2026-08-21)
+## Curated items (all repo ids verified via the HF API on 2026-09-30)
 
-| # | Role | HF repo id (verified) | Quant to note | Curation note |
-| --- | --- | --- | --- | --- |
-| 1 | Transcription (default) | `ibm-granite/granite-speech-4.1-2b-GGUF` | `Q4_K_M` + `mmproj-model-f16.gguf` (2.30 GB in-app) | Apache-2.0; LokalBot's default ASR; repo ships Q4_K_M→bf16 plus the F16 projector LokalBot loads. |
-| 2 | Summaries and chat | `unsloth/Qwen3.5-4B-GGUF` | `Q4_K_M` | Most-downloaded Qwen3.5 4B GGUF repo (API: 1.17M downloads); measured ~100 tok/s on M4 Max in LokalBot's stack. |
-| 3 | Autocomplete (default) | `unsloth/LFM2.5-1.2B-Instruct-GGUF` (quant of the official `LiquidAI/LFM2.5-1.2B-Instruct` model) | `Q4_K_M` (730,895,584 bytes) | This is the repo LokalBot downloads. It was the fastest model to clear LokalBot's full cotyping gate (143 ms avg / 484 ms p95); **LFM Open License v1.0 — free commercial use limited to entities under USD 10M revenue**, so link, don't rehost. |
-| 3b | Autocomplete (higher-capacity option) | `unsloth/gemma-4-E4B-it-GGUF` | `UD-Q5_K_XL` | The instruct tune measured strictly better than Cotypist's base file in LokalBot's pipeline (28/28 safety, 12/13 completions); Gemma license terms apply. |
-| 4 | Embeddings / semantic search | `Qwen/Qwen3-Embedding-0.6B-GGUF` | `Q8_0` (0.64 GB) | Official Qwen repo; runs on a second llama-server with `--embeddings`, vectors in SQLite. |
-| 5 | Speaker diarization | `FluidInference/speaker-diarization-coreml` | Core ML, FP16 on ANE (~0.10 GB) | FluidAudio's ANE-optimized conversion of `pyannote/speaker-diarization-community-1` (CC-BY-4.0); this is the exact artifact LokalBot downloads for Them 1/Them 2 labels. |
+Each id is the repo the app downloads, taken from the source file listed.
 
-Verification method (reproduce before publishing): query `https://huggingface.co/api/models?search=<name>` (or `?author=<org>`) and record the exact `id` returned; confirm the quantization filename exists via `https://huggingface.co/api/models/<id>` `siblings`. All six ids above were confirmed this way, including the quant files `Qwen3.5-4B-Q4_K_M.gguf`, `gemma-4-E4B-it-UD-Q5_K_XL.gguf`, `LFM2.5-1.2B-Instruct-Q4_K_M.gguf`, and `Qwen3-Embedding-0.6B-Q8_0.gguf`.
+| # | Role | HF repo id (verified) | What LokalBot loads | Source in the app | Curation note |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Transcription | `aufklarer/Qwen3-ASR-1.7B-MLX-8bit` | 8-bit MLX weights (2.47 GB) | `LokalBot/Engines/PinnedSpeechModels.swift` | Default transcription. 8-bit MLX conversion of Qwen/Qwen3-ASR-1.7B (2.47 GB). Apache-2.0. |
+| 2 | Speaker diarization | `FluidInference/nemotron-3-diarization-coreml` | `Nemotron3Diarizer_offline.mlmodelc` (0.2 GB) | `LokalBot/Services/NemotronDiarizationModels.swift` | Default speaker diarization. Core ML offline model (0.2 GB) of nvidia/Nemotron-3-Diarization, run through FluidAudio. 14.6% DER vs 43.4% for the previous Pyannote setup on AMI. OpenMDW-1.1. |
+| 3 | Summaries and chat | `unsloth/Qwen3.5-4B-GGUF` | `Qwen3.5-4B-Q4_K_M.gguf` (2.74 GB) | `LokalBot/Engines/ModelCatalog.swift` | Default for summaries and chat. Q4_K_M (2.74 GB): a 26-minute meeting to notes in 33 s warm, about 85 tok/s decode on M4 Max. Apache-2.0. |
+| 4 | Semantic search | `mradermacher/harrier-oss-v1-0.6b-GGUF` | `harrier-oss-v1-0.6b.Q8_0.gguf` (0.64 GB) | `LokalBot/Services/EmbeddingIndex.swift` | Default semantic search. Q8_0 (0.64 GB) on a dedicated llama-server with embeddings enabled. Correct passage first for 40/48 test queries vs 35/48 for Qwen3 Embedding 0.6B. MIT. |
+| 5 | Autocomplete | `unsloth/LFM2.5-1.2B-Instruct-GGUF` (quant of `LiquidAI/LFM2.5-1.2B-Instruct`) | `LFM2.5-1.2B-Instruct-Q4_K_M.gguf` (0.73 GB) | `LokalBot/Engines/ModelCatalog.swift` | Default autocomplete. Q4_K_M (0.73 GB) of LiquidAI's model; 484 ms p95 in LokalBot's cotyping gate. LFM Open License: check revenue eligibility. |
 
-## Collection description (paste as-is; 142 characters)
+The five files total 6.8 GB, matching the README's "Local AI, your choice" section. Screen text uses Apple Vision, which ships with macOS and has no repo to link. Every figure in the notes comes from the reports indexed in `Benchmarks/README.md`.
 
-> LokalBot on-device stack: transcription, summaries, autocomplete, search, and diarization. Links only. https://github.com/stevyhacker/lokalbot
+Removed on 2026-09-30, because they are no longer defaults: `ibm-granite/granite-speech-4.1-2b-GGUF`, `unsloth/gemma-4-E4B-it-GGUF`, `Qwen/Qwen3-Embedding-0.6B-GGUF`, and `FluidInference/speaker-diarization-coreml`. Granite Speech, Gemma 4 E4B, and Pyannote Community-1 diarization remain optional in the app. Harrier replaced Qwen3 Embedding for search.
 
-## Creating the collection
+Verification method (reproduce before publishing): query `https://huggingface.co/api/models/<id>` and confirm the file LokalBot loads exists in `siblings`. `scripts/create_collection.py` runs this check before it writes anything.
 
-### Option A — web UI
+## Collection description (paste as-is; 143 characters)
 
-1. Sign in at huggingface.co → your avatar → **New Collection** (or from any model page: ⋯ → **Add to collection** → *New collection*).
-2. Title: **LokalBot recommended local stack**. Visibility: **Public**. Description: paste the paragraph above.
-3. For each item in the table: open the repo page → **Add to collection** → pick the collection → set **Note** to the curation note (quant + one-line why).
-4. Order items so the roles read top-to-bottom as in the table (Transcription → Summaries → Autocomplete → Embeddings → Diarization).
-5. Copy the collection slug (e.g. `https://huggingface.co/collections/<username>/lokalbot-recommended-local-stack-<hash>`) — it is the link used in the runbook's promotion checklist.
+> LokalBot 6.8 GB default stack: transcription, diarization, summaries, search, autocomplete. Links only. https://github.com/stevyhacker/lokalbot
 
-### Option B — huggingface_hub Python API
+## Updating the collection
 
-```python
-from huggingface_hub import create_collection, add_collection_item
+### Option A — script
 
-NS = "stevyhacker"  # your HF username or org
-
-col = create_collection(
-    title="LokalBot recommended local stack",
-    namespace=NS,
-    description=(
-        "LokalBot on-device stack: transcription, summaries, autocomplete, search, "
-        "and diarization. Links only. https://github.com/stevyhacker/lokalbot"
-    ),
-    private=False,
-)
-
-items = [
-    ("model", "ibm-granite/granite-speech-4.1-2b-GGUF",
-     "Default ASR. Q4_K_M + F16 projector (2.30 GB). Apache-2.0."),
-    ("model", "unsloth/Qwen3.5-4B-GGUF",
-     "Summaries/chat. Q4_K_M, measured ~100 tok/s on M4 Max."),
-    ("model", "unsloth/LFM2.5-1.2B-Instruct-GGUF",
-     "Default autocomplete. Q4_K_M of LiquidAI's model. LFM Open License — check revenue eligibility."),
-    ("model", "unsloth/gemma-4-E4B-it-GGUF",
-     "Higher-capacity autocomplete. UD-Q5_K_XL; instruct tune outperformed the base file in LokalBot's gate."),
-    ("model", "Qwen/Qwen3-Embedding-0.6B-GGUF",
-     "Semantic search. Q8_0 (0.64 GB) on a second llama-server --embeddings."),
-    ("model", "FluidInference/speaker-diarization-coreml",
-     "Diarization via FluidAudio; Core ML conversion of pyannote-community-1 (CC-BY-4.0)."),
-]
-
-for item_type, repo_id, note in items:
-    add_collection_item(collection_slug=col.slug, item_id=repo_id,
-                        item_type=item_type, note=note, exists_ok=True)
-
-print(col.slug)  # save this — the promotion checklist needs it
+```sh
+uv run --with huggingface_hub python Distribution/huggingface/scripts/create_collection.py
 ```
 
-If `add_collection_item` rejects an item type, re-check the id against the API first — ids drift; never substitute an unverified look-alike.
+The script creates the collection if needed, adds missing items, removes items not in its list, rewrites every note, sets the order, and sets the description. It needs a token with Collection write permission. The current fine-grained token has repo write only and gets 403 on `/api/collections`.
+
+### Option B — web UI
+
+1. Sign in at huggingface.co and open the collection.
+2. **Add to collection** → paste each repo id from the table.
+3. Delete any item that is not in the table.
+4. For each item, **Edit note** → paste the curation note.
+5. Drag items into table order.
+6. **Edit collection description** → paste the description above.
+
+The 2026-09-30 update used the signed-in web session. It sent the same `/api/collections/<slug>` requests the page makes, so it produced the same result as the script.
 
 ## Non-goals
 
