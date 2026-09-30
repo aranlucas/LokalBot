@@ -36,13 +36,15 @@ struct ModelRecording: Codable, Equatable {
         return encoder
     }
 
-    /// Every committed recording in the test bundle.
+    /// Every committed recording in the test bundle. Recordings live in one
+    /// `<vendor>__<model>` folder per model; other files (the purpose
+    /// markers) sit beside those folders.
     static func committed() throws -> [ModelRecording] {
         guard let root = Bundle(for: RecordingTextEngine.self).url(
             forResource: "model-recordings", withExtension: nil, subdirectory: "Fixtures") else { return [] }
         let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)
         return try (enumerator?.allObjects as? [URL] ?? [])
-            .filter { $0.pathExtension == "json" }
+            .filter { $0.pathExtension == "json" && $0.deletingLastPathComponent().lastPathComponent.contains("__") }
             .map { try decoder.decode(ModelRecording.self, from: Data(contentsOf: $0)) }
     }
 

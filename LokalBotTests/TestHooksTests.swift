@@ -29,4 +29,9 @@ final class TestHooksTests: XCTestCase {
         XCTAssertEqual(HeadlessCommand.parse(["LokalBot", "--set-boundaries", "/tmp/m", "5", "60"]),
                        .setBoundaries(folder: URL(fileURLWithPath: "/tmp/m", isDirectory: true), start: 5, end: 60))
     }
+
+    func testParsesSearchScreen() {
+        XCTAssertEqual(HeadlessCommand.parse(["LokalBot", "--search-screen", "connection pool"]),
+                       .searchScreen(query: "connection pool"))
+    }
 }

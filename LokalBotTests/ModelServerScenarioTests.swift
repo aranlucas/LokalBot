@@ -50,6 +50,14 @@ final class ModelServerScenarioTests: XCTestCase {
         XCTAssertFalse(markers.contains(""))
     }
 
+    func testPurposeMarkersFileMatchesTheApp() throws {
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(
+            forResource: "purpose-markers", withExtension: "json", subdirectory: "Fixtures/model-recordings"))
+        let file = try JSONDecoder().decode([String: String].self, from: Data(contentsOf: url))
+        let expected = Dictionary(uniqueKeysWithValues: ModelRequestPurpose.allCases.map { ($0.rawValue, $0.systemMarker) })
+        XCTAssertEqual(file, expected, "regenerate purpose-markers.json from ModelRequestPurpose.systemMarker")
+    }
+
     func testPurposeMarkersAppearInTheRealPrompts() {
         XCTAssertEqual(ModelRequestPurpose.classify(system: PromptTemplates.dayDigestFocusSystem), .digestFocus)
         XCTAssertEqual(ModelRequestPurpose.classify(system: PromptTemplates.dayDigestSystem(custom: "")), .digestAggregate)

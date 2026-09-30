@@ -23,6 +23,7 @@ enum HeadlessCommand: Equatable {
     case health(dayKey: String?, json: Bool)
     case recordCapture(seconds: Int, scenario: String)
     case setBoundaries(folder: URL, start: TimeInterval, end: TimeInterval)
+    case searchScreen(query: String)
 
     /// Set by `LokalBotMain.main()`; consumed by `AppState.init`.
     @MainActor static var requested: HeadlessCommand?
@@ -63,6 +64,9 @@ enum HeadlessCommand: Equatable {
         if let flag = args.firstIndex(of: "--set-boundaries"), args.count > flag + 3,
            let start = TimeInterval(args[flag + 2]), let end = TimeInterval(args[flag + 3]) {
             return .setBoundaries(folder: URL(fileURLWithPath: args[flag + 1], isDirectory: true), start: start, end: end)
+        }
+        if let flag = args.firstIndex(of: "--search-screen"), args.count > flag + 1 {
+            return .searchScreen(query: args[flag + 1])
         }
 #endif
 #if DEBUG
@@ -160,6 +164,7 @@ struct HeadlessCommandRunner {
         case .health(let dayKey, let json): runHealth(dayKey: dayKey, json: json)
         case .recordCapture(let seconds, let scenario): runRecordCapture(seconds: seconds, scenario: scenario)
         case .setBoundaries(let folder, let start, let end): runSetBoundaries(folder: folder, start: start, end: end)
+        case .searchScreen(let query): runSearchScreen(query: query)
         }
     }
 
@@ -532,6 +537,17 @@ struct HeadlessCommandRunner {
             await LlamaServer.shared.stop()
             exit(summary.results.allSatisfy(\.passedSafety) ? 0 : 1)
         }
+    }
+
+    /// Test hook: `LokalBot --search-screen <query>` prints screen-text hits
+    /// from the FTS search the Recall view uses; exit 1 when there are none.
+    private func runSearchScreen(query: String) {
+        let hits = app.activityStore.searchOCR(query)
+        print("LokalBot --search-screen: \(hits.count) screen hit(s)")
+        for hit in hits {
+            print("[screen] \(hit.app) @ \(hit.ts.formatted(.iso8601)): \(hit.snippet)")
+        }
+        exit(hits.isEmpty ? 1 : 0)
     }
 
     /// `LokalBot --search <query>`: print index hits and exit. Test hook

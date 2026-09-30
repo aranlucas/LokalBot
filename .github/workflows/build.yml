@@ -236,3 +236,37 @@ jobs:
           name: unit-results
           path: .build/unit.xcresult
           retention-days: 14
+
+  day-in-the-life:
+    name: Day in the life (macOS)
+    needs: build
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90
+        with:
+          xcode-version: "26.3"
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
+        with:
+          name: unit-products
+          path: .build/transfer
+      - name: Verify and restore compiled products
+        env:
+          CODE_SIGNING_ALLOWED: "NO"
+        run: python3 Scripts/ci/test-products.py unpack unit
+      - name: Run one synthetic workday through the real pipelines
+        run: |
+          export LOKALBOT_TEST_BUN="$(bash Scripts/ci/fetch-bun.sh | tail -1)"
+          export LOKALBOT_APP="$PWD/.build/dd/Build/Products/Debug/LokalBot.app"
+          bash Scripts/day-in-the-life.sh 2>&1 | tee .build/day-in-the-life.log
+      - name: Keep the failed library
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: day-in-the-life
+          path: |
+            .build/day-in-the-life.log
+            /tmp/lokalbot-day.*
+          retention-days: 14
