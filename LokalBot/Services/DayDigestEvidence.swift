@@ -1057,7 +1057,7 @@ enum DayDigestOverviewGenerator {
                     prompt: aggregationPrompt,
                     schema: digestSchema,
                     options: TextGenerationOptions(
-                        maxTokens: 1_600,
+                        maxTokens: aggregationTokens,
                         reasoningBudgetTokens: 512,
                         temperature: 0.2))
             } catch TextEngineError.outputTruncated {
@@ -1068,7 +1068,7 @@ enum DayDigestOverviewGenerator {
                     prompt: digestRetryPrompt + "\n\n" + aggregationPrompt,
                     schema: digestSchema,
                     options: TextGenerationOptions(
-                        maxTokens: 3_200,
+                        maxTokens: aggregationRetryTokens,
                         reasoningBudgetTokens: 0,
                         temperature: 0))
                 lokalbotLog(
@@ -1101,8 +1101,10 @@ enum DayDigestOverviewGenerator {
     /// when asked not to. The compact focus JSON needs far less than this; the
     /// headroom only matters for those models, and llama-server keeps its own
     /// thinking budget independent of the larger cap.
-    private static let focusTokens = 2_048
-    private static let focusRetryTokens = 4_096
+    static let focusTokens = 2_048
+    static let focusRetryTokens = 4_096
+    static let aggregationTokens = 1_600
+    static let aggregationRetryTokens = 3_200
 
     /// Remote providers intermittently answer 429/5xx or drop the connection.
     /// Replay that one request after the shared policy delay instead of

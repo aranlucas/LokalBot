@@ -509,6 +509,9 @@ enum ChatPrompt {
 /// Runs the question → (tool calls) → answer loop against a resolved engine.
 @MainActor
 struct ChatAgent {
+    /// Answer budget for each streamed turn (tool call or final answer).
+    static let answerTokens = 2_048
+
     let engine: TextEngine
     let runner: ChatToolRunner
     /// Hard cap on tool calls before we force a final synthesis pass.
@@ -549,7 +552,7 @@ struct ChatAgent {
                 system: system,
                 prompt: directive + " Begin a final prose answer with FINAL_ANSWER: on its own line. Never use this prefix for a tool call.",
                 context: transcript,
-                options: TextGenerationOptions(maxTokens: 2_048)) { partial in
+                options: TextGenerationOptions(maxTokens: Self.answerTokens)) { partial in
                     if let answer = ChatPrompt.streamingAnswer(partial) {
                         onEvent(.answerPartial(ChatCitationParser.verified(answer, evidence: observedEvidence, streaming: true)))
                     }
@@ -597,7 +600,7 @@ struct ChatAgent {
             system: system,
             prompt: "Give your final answer now in plain language using the observations above. Begin with FINAL_ANSWER: on its own line. Do not call any more tools.",
             context: transcript,
-            options: TextGenerationOptions(maxTokens: 2_048)) { partial in
+            options: TextGenerationOptions(maxTokens: Self.answerTokens)) { partial in
                 if let answer = ChatPrompt.streamingAnswer(partial) {
                     onEvent(.answerPartial(ChatCitationParser.verified(answer, evidence: finalEvidence, streaming: true)))
                 }
