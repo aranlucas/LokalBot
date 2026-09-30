@@ -113,6 +113,18 @@ struct CodingAgentBurst: Equatable, Codable, Sendable {
         now.timeIntervalSince(end) >= CodingAgentBurstBuilder.inactivityGap
     }
 
+    /// Every request came from a schedule, not from the person at the time.
+    /// Such runs often report on earlier days.
+    var isScheduledRun: Bool {
+        !prompts.isEmpty && prompts.allSatisfy {
+            $0.hasPrefix("Scheduled automation:") || $0.hasPrefix("Scheduled task:")
+        }
+    }
+
+    /// The burst committed, opened or merged a pull request, released,
+    /// pushed, ran tests, or linked a pull request.
+    var recordedOutcome: Bool { !actions.isEmpty || !pullRequests.isEmpty }
+
     /// Every field the digest can read, in a fixed order, for evidence
     /// signatures that change exactly when the burst's content does.
     var signatureFields: [String] {
@@ -135,6 +147,11 @@ struct CodingAgentBurst: Equatable, Codable, Sendable {
             "Session: \(title)",
             "Project: \(project)" + (branch.map { " (branch \($0))" } ?? ""),
         ]
+        if isScheduledRun {
+            lines.append(
+                "Scheduled run: its report is omitted because it may describe other days; "
+                    + "only recorded actions show what happened in this session.")
+        }
         if prompts.isEmpty {
             lines.append("Requests: continued work from an earlier request")
         } else {
@@ -155,7 +172,7 @@ struct CodingAgentBurst: Equatable, Codable, Sendable {
         if !pullRequests.isEmpty {
             lines.append("Pull requests: " + pullRequests.joined(separator: ", "))
         }
-        if let finalReply {
+        if let finalReply, !isScheduledRun {
             lines.append("Agent's final report (a claim; corroborate with actions): \(finalReply)")
         }
         lines.append(
@@ -272,6 +289,33 @@ enum CodingAgentBurstBuilder {
             actions: actions,
             pullRequests: pullRequests,
             toolCallCount: toolCalls)
+    }
+
+    /// One session's bursts as a single view, for a summary that should see
+    /// the session once rather than once per burst. `nil` for no bursts.
+    static func merging(_ bursts: [CodingAgentBurst]) -> CodingAgentBurst? {
+        let ordered = bursts.sorted { $0.start < $1.start }
+        guard var merged = ordered.first else { return nil }
+        var files = merged.changedFiles
+        var hiddenFiles = max(0, merged.changedFileCount - merged.changedFiles.count)
+        for burst in ordered.dropFirst() {
+            merged.end = max(merged.end, burst.end)
+            merged.activeDuration += burst.activeDuration
+            merged.prompts += burst.prompts
+            merged.promptCount += burst.promptCount
+            merged.finalReply = burst.finalReply ?? merged.finalReply
+            merged.branch = burst.branch ?? merged.branch
+            for file in burst.changedFiles where !files.contains(file) { files.append(file) }
+            hiddenFiles += max(0, burst.changedFileCount - burst.changedFiles.count)
+            for action in burst.actions where !merged.actions.contains(action) { merged.actions.append(action) }
+            for url in burst.pullRequests where !merged.pullRequests.contains(url) {
+                merged.pullRequests.append(url)
+            }
+            merged.toolCallCount += burst.toolCallCount
+        }
+        merged.changedFiles = Array(files.prefix(storedFiles))
+        merged.changedFileCount = files.count + hiddenFiles
+        return merged
     }
 
     /// Drops timestamp-only events that change neither a burst boundary nor
