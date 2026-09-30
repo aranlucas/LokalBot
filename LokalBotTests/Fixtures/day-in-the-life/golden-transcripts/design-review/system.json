@@ -1,0 +1,17 @@
+{
+  "engine": "golden",
+  "segments": [
+    {
+      "start": 7,
+      "end": 13,
+      "speaker": "them",
+      "text": "Agreed on Redis. Open question: do we need cluster mode from day one?"
+    },
+    {
+      "start": 22,
+      "end": 28,
+      "speaker": "them",
+      "text": "Please benchmark failover latency before we commit to a cluster."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "engine": "golden",
+  "segments": [
+    {
+      "start": 0,
+      "end": 5,
+      "speaker": "me",
+      "text": "Let's lock the caching layer. I propose Redis for the pub-sub support."
+    },
+    {
+      "start": 16,
+      "end": 20,
+      "speaker": "me",
+      "text": "I'll draft the eviction-policy doc by Thursday."
+    },
+    {
+      "start": 30,
+      "end": 35,
+      "speaker": "me",
+      "text": "Fair. I'll borrow the load harness from the search team for that."
+    }
+  ]
+}

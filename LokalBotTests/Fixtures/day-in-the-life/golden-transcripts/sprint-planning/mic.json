@@ -1,0 +1,11 @@
+{
+  "engine": "golden",
+  "segments": [
+    {
+      "start": 121,
+      "end": 125,
+      "speaker": "me",
+      "text": "I'll pair on the tombstone cleanup tomorrow."
+    }
+  ]
+}

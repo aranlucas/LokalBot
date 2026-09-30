@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
 """Regression tests for the demo library destination ownership boundary."""
 
+import glob
 import importlib.util
+import json
+import os
 from pathlib import Path
+import sqlite3
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -60,6 +65,64 @@ class DemoLibraryDestinationTests(unittest.TestCase):
                              "LokalBot synthetic demo library\n")
             self.assertTrue((root / "meetings").is_dir())
 
+
+
+class SeedProfileTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = os.path.join(self.temp.name, "lib")
+
+    def run_seed(self, *args):
+        subprocess.run([sys.executable, str(SCRIPT), *args, self.root],
+                       check=True, capture_output=True)
+
+    def test_full_day_has_nine_hours_private_time_captures_and_untranscribed_meetings(self):
+        self.run_seed("--profile", "full-day", "--day", "2026-08-04")
+        con = sqlite3.connect(os.path.join(self.root, "lokalbotv3.sqlite"))
+        tracked = con.execute("SELECT SUM(end - start) FROM activity_blocks").fetchone()[0]
+        private = con.execute("SELECT SUM(end - start) FROM activity_blocks WHERE app = 'Private'").fetchone()[0]
+        self.assertGreater(tracked, 8 * 3600)
+        self.assertLess(private / tracked, 0.15)
+        for app, seconds in con.execute("SELECT app, SUM(end - start) FROM activity_blocks WHERE app != 'Private' GROUP BY app"):
+            if seconds >= 1800:
+                count = con.execute("SELECT COUNT(*) FROM screenshots WHERE app = ?", (app,)).fetchone()[0]
+                self.assertGreaterEqual(count, 3, app)
+        metas = glob.glob(os.path.join(self.root, "meetings/*/*/*/meta.json"))
+        self.assertEqual(len(metas), 2)
+        for meta in metas:
+            folder = os.path.dirname(meta)
+            self.assertTrue(os.path.exists(os.path.join(folder, "mic.m4a")))
+            self.assertFalse(os.path.exists(os.path.join(folder, "transcript.json")))
+
+    def test_large_profile_is_big_and_deterministic(self):
+        self.run_seed("--profile", "large")
+        con = sqlite3.connect(os.path.join(self.root, "lokalbotv3.sqlite"))
+        self.assertGreaterEqual(con.execute("SELECT COUNT(*) FROM activity_blocks").fetchone()[0], 50_000)
+        self.assertGreaterEqual(con.execute("SELECT COUNT(*) FROM screenshots").fetchone()[0], 20_000)
+        self.assertEqual(len(glob.glob(os.path.join(self.root, "meetings/*/*/*/meta.json"))), 200)
+
+    def test_full_day_merged_meeting_is_covered_by_its_golden_transcript(self):
+        # A merged source of 30 s or more with no transcript segment is a
+        # merged gap, which the pipeline repairs by re-transcribing; the seeded
+        # day must be healthy, so every source span holds golden speech.
+        self.run_seed("--profile", "full-day", "--day", "2026-08-04")
+        folder = glob.glob(os.path.join(self.root, "meetings/*/*/*-sprint-planning"))[0]
+        with open(os.path.join(folder, "merge-manifest.json")) as f:
+            manifest = json.load(f)
+        self.assertEqual(manifest["version"], 2)
+        golden = Path(__file__).resolve().parents[2] / "LokalBotTests/Fixtures/day-in-the-life/golden-transcripts"
+        segments = []
+        for track in ("mic", "system"):
+            with open(golden / "sprint-planning" / f"{track}.json") as f:
+                segments += json.load(f)["segments"]
+        offset = 0
+        for source in manifest["sources"]:
+            for key in ("id", "title", "startedAt", "duration", "hasAudio", "hasTranscript"):
+                self.assertIn(key, source)
+            span = (offset, offset + source["duration"])
+            self.assertTrue(any(s["end"] > span[0] and s["start"] < span[1] for s in segments), span)
+            offset += source["duration"]
 
 if __name__ == "__main__":
     unittest.main()
