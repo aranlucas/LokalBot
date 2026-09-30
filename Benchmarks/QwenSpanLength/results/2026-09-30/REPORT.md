@@ -164,6 +164,34 @@ The compact tier (`aufklarer/Qwen3-ASR-0.6B-MLX-4bit`, the app's pinned revision
 - **The 0.6B still trails 1.7B by about 2.4 points on meetings and 3.7 on AMI** after the change.
 - **The aligner (about 1 GB) is larger than the 0.6B model it accompanies (0.7 GB).** Compact-tier users with speaker separation now download both. The accuracy gain is large enough to justify this, but it changes the tier's size story.
 
+## End to end in the app
+
+The three owner meetings were also processed by the app itself, built from this branch (commit `26b13d2`). The run used the `LokalBot Dev` identity, Debug configuration, with `LokalBot --process <meeting> --no-summary`. It was isolated from the installed app:
+- a scratch library (`LOKALBOT_STORAGE_ROOT`) holding copies of each meeting's `meta.json` and audio;
+- a disposable settings suite with `transcriptionLanguage = en`, where every other default already matches the owner's settings (Nemotron 3, speaker separation on, voice memory off, echo cancellation off);
+- models cloned into the Dev identity's own Application Support.
+
+All six tracks decoded merged windows and assigned aligned words; the aligner never fell back to regions. The new `transcript.json` files were scored against the same consensus as the saved production transcripts:
+
+| Saved production transcript vs new app transcript | Saved | New |
+|---|---:|---:|
+| Disagreement, each track's chunks joined | 7.89% | **4.59%** |
+| Substitutions / deletions / insertions | 3.55% / 1.51% / 2.83% | 2.01% / 1.11% / 1.46% |
+| Words in invented runs | 56 | 29 |
+| Disagreement, per chunk by segment midpoint | 7.91% | 6.66% |
+| Segments (three meetings) | 1,827 | 766 |
+| Median segment, 57-minute meeting | 1.4 s | 4.0 s |
+
+- **The app reproduces the harness result.** Each of the five scored tracks improved:
+  - 63e27646 system: 14.4% to 7.7%;
+  - 84fd7a3e mic: 8.9% to 4.6%;
+  - 84fd7a3e system: 5.4% to 3.1%;
+  - the two short mic tracks also improved.
+- **Per-chunk midpoint scoring understates the gain.** Longer segments straddle the benchmark's cuts inside continuous speech, so that scoring counts words both as inserted in one chunk and dropped from its neighbour. Joining each track's chunks removes this artifact.
+- **Speaker groupings stay consistent.** After the best one-to-one mapping of labels, the new speakers agree with the saved transcripts on 94% of overlapping time: 93–96% on system tracks and 88% on microphone tracks. Label numbers themselves differ between the two runs.
+- **Segments are fewer and longer.** The longest was 23.5 s, where snapping widened a 15 s piece to its speaker's turn.
+- **Timings come from a Debug build**: 90 s for the 16-minute meeting and 329 s for the 57-minute one, including diarization and alignment. They are not production timings.
+
 ## Recommendations
 
 1. **Leave `maxSegmentSeconds` as it is.** It is inert. Raising it together with the VAD cap gave no gain and moves windows into speech-swift's repetition-blocking range.
