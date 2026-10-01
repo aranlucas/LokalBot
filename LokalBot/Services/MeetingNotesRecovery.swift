@@ -26,8 +26,10 @@ extension MeetingNotesGenerator {
     }
 
     /// At most three extraction pages and two repair calls per part in this
-    /// attempt. Every call also consumes the shared job allowance. A restart
-    /// resumes the ledger and pending repairs, including legacy checkpoints.
+    /// attempt, plus two for records queued behind a task whose owner the
+    /// repairs could not bind. Every call also consumes the shared job
+    /// allowance. A restart resumes the ledger and pending repairs, including
+    /// legacy checkpoints.
     static func generatePart(_ initial: Part, job: PartJob, save: (Part) throws -> Void) async throws {
         var part = initial
         var recovery = part.recovery ?? legacyRecovery(part, transcript: job.evidence.transcript)
@@ -182,62 +184,89 @@ extension MeetingNotesGenerator {
         queueMissingCommitments(part, job: job, recovery: &recovery)
         try checkpoint()
 
-        var previousRepairTokens = 0
-        for attempt in 0..<2 where !recovery.pending.isEmpty {
-            let repairable = repairBatch(recovery.pending, units: job.units)
-            guard !repairable.isEmpty else { break } // Never repair an invented source using unrelated evidence.
-            let repairUnits = repairEvidence(repairable, units: job.units)
-            let noteLimit = repairable.filter { $0.kind == "notes" }.count
-            let actionLimit = repairable.filter { $0.kind == "actions" }.count
-            let desired = min(4_096, max(minimum, recovery.repairTokenFloor ?? 0, attempt == 0
-                ? min(2_048, 512 + noteLimit * 128 + actionLimit * 384) : previousRepairTokens * 2))
-            let repairTokens = try await job.budget.allowance(remainingParts: job.remainingParts, desired: desired, minimum: minimum)
-            if attempt > 0, recovery.repairTokenFloor != nil, repairTokens <= previousRepairTokens { break }
-            let userPrompt = try repairPrompt(repairable, units: repairUnits, roster: job.evidence.roster,
-                noteLimit: noteLimit, actionLimit: actionLimit)
-                + (attempt == 0 || repairable.first?.actionID != nil ? ""
-                    : try continuation(recovery.records.filter { record in repairUnits.contains { $0.source == record.source } }))
-            let system = PromptTemplates.meetingNotesRepairSystem(language: job.language)
-            try await requireInputRoom(system: system, prompt: userPrompt, context: [], tokens: repairTokens, job: job)
-            let stage = attempt == 0 ? "repair-\(job.number)" : "continue-repair-\(job.number)"
-            let raw = try await request(engine: job.engine, system: system, prompt: userPrompt, context: [],
-                schema: MeetingNotesEvidence.schema(units: repairUnits, speakers: Array(job.evidence.speakers.keys),
-                    template: job.template, maximumNotes: noteLimit, maximumActions: actionLimit,
-                    actionTexts: repairable.allSatisfy { $0.actionID != nil } ? repairable.compactMap(\.text) : nil),
-                tokens: repairTokens, stage: stage, contextTokens: job.contextTokens, budget: job.budget)
-            let started = ProcessInfo.processInfo.systemUptime
-            let fixed = job.evidence.validate(raw.content, units: repairUnits, template: job.template,
-                meetingID: job.meetingID, maximumNotes: noteLimit, maximumActions: actionLimit)
-            await recordValidation(fixed, stage: stage, truncated: raw.truncated, budget: job.budget)
-            let repairSources = Set(repairUnits.map(\.source))
-            if fixed.rejected.contains(where: { repairSources.isDisjoint(with: $0.sources) }) {
-                recovery.terminalFailure = "The summary provider returned missing or invalid evidence IDs during repair. Source-linked partial notes were saved. Choose a different summary model or provider before retrying."
-                try checkpoint()
-                throw TextEngineError.badResponse(recovery.terminalFailure!)
-            }
-            let ownershipRepair = repairable.first?.actionID != nil
-            if ownershipRepair {
-                acceptOwnershipRepairs(fixed, requested: repairable, job: job, complete: fixed.complete && !raw.truncated,
-                                       part: &part, recovery: &recovery)
-            } else {
-                accept(fixed)
-            }
-            if fixed.complete && !raw.truncated {
-                // Unsupported records may be omitted after a complete repair;
-                // independently validated facts never depend on their survival.
-                if !ownershipRepair {
-                    recovery.pending.removeAll { repairable.contains($0) }
+        // Ownership repairs run first. A task whose latest repair answered in
+        // full but still could not bind it to one undertaking stays visible
+        // as owner-unclear, like a wrong-owner claim: the same evidence fails
+        // every retry, so holding the part open would fail the meeting each
+        // time. Records queued behind ownership repairs then get their own
+        // two repairs. The user's own commitments stay strict: a part missing
+        // one stays open.
+        let ownershipReasons: Set<String> = ["missing_ownership_evidence", "ambiguous_ownership_evidence", "ownership_quote_not_found"]
+        for phase in 0..<2 {
+            var answeredOwnership = Set<String>()
+            var repairedOwnership = false
+            var previousRepairTokens = 0
+            for attempt in 0..<2 where !recovery.pending.isEmpty {
+                let repairable = repairBatch(recovery.pending, units: job.units)
+                guard !repairable.isEmpty else { break } // Never repair an invented source using unrelated evidence.
+                let repairUnits = repairEvidence(repairable, units: job.units)
+                let noteLimit = repairable.filter { $0.kind == "notes" }.count
+                let actionLimit = repairable.filter { $0.kind == "actions" }.count
+                let desired = min(4_096, max(minimum, recovery.repairTokenFloor ?? 0, attempt == 0
+                    ? min(2_048, 512 + noteLimit * 128 + actionLimit * 384) : previousRepairTokens * 2))
+                let repairTokens = try await job.budget.allowance(remainingParts: job.remainingParts, desired: desired, minimum: minimum)
+                if attempt > 0, recovery.repairTokenFloor != nil, repairTokens <= previousRepairTokens { break }
+                let userPrompt = try repairPrompt(repairable, units: repairUnits, roster: job.evidence.roster,
+                    noteLimit: noteLimit, actionLimit: actionLimit)
+                    + (attempt == 0 || repairable.first?.actionID != nil ? ""
+                        : try continuation(recovery.records.filter { record in repairUnits.contains { $0.source == record.source } }))
+                let system = PromptTemplates.meetingNotesRepairSystem(language: job.language)
+                try await requireInputRoom(system: system, prompt: userPrompt, context: [], tokens: repairTokens, job: job)
+                let stage = attempt == 0 ? "repair-\(job.number)" : "continue-repair-\(job.number)"
+                let raw = try await request(engine: job.engine, system: system, prompt: userPrompt, context: [],
+                    schema: MeetingNotesEvidence.schema(units: repairUnits, speakers: Array(job.evidence.speakers.keys),
+                        template: job.template, maximumNotes: noteLimit, maximumActions: actionLimit,
+                        actionTexts: repairable.allSatisfy { $0.actionID != nil } ? repairable.compactMap(\.text) : nil),
+                    tokens: repairTokens, stage: stage, contextTokens: job.contextTokens, budget: job.budget)
+                let started = ProcessInfo.processInfo.systemUptime
+                let fixed = job.evidence.validate(raw.content, units: repairUnits, template: job.template,
+                    meetingID: job.meetingID, maximumNotes: noteLimit, maximumActions: actionLimit)
+                await recordValidation(fixed, stage: stage, truncated: raw.truncated, budget: job.budget)
+                let repairSources = Set(repairUnits.map(\.source))
+                if fixed.rejected.contains(where: { repairSources.isDisjoint(with: $0.sources) }) {
+                    recovery.terminalFailure = "The summary provider returned missing or invalid evidence IDs during repair. Source-linked partial notes were saved. Choose a different summary model or provider before retrying."
+                    try checkpoint()
+                    throw TextEngineError.badResponse(recovery.terminalFailure!)
                 }
-                recovery.repairTokenFloor = nil
-            } else if raw.truncated {
-                recovery.repairTokenFloor = min(4_096, repairTokens * 2)
+                let ownershipRepair = repairable.first?.actionID != nil
+                if ownershipRepair {
+                    repairedOwnership = true
+                    acceptOwnershipRepairs(fixed, requested: repairable, job: job, complete: fixed.complete && !raw.truncated,
+                                           part: &part, recovery: &recovery)
+                    // Ownership repairs keep each task's text fixed, so the text
+                    // identifies the task across replacement IDs.
+                    let texts = repairable.compactMap { $0.text.map(OutcomeTextSimilarity.normalized) }
+                    if fixed.complete && !raw.truncated { answeredOwnership.formUnion(texts) } else { answeredOwnership.subtract(texts) }
+                } else {
+                    accept(fixed)
+                }
+                if fixed.complete && !raw.truncated {
+                    // Unsupported records may be omitted after a complete repair;
+                    // independently validated facts never depend on their survival.
+                    if !ownershipRepair {
+                        recovery.pending.removeAll { repairable.contains($0) }
+                    }
+                    recovery.repairTokenFloor = nil
+                } else if raw.truncated {
+                    recovery.repairTokenFloor = min(4_096, repairTokens * 2)
+                }
+                queueMissingCommitments(part, job: job, recovery: &recovery)
+                previousRepairTokens = repairTokens
+                try checkpoint()
+                await job.budget.recordPhase("validation", seconds: ProcessInfo.processInfo.systemUptime - started)
+                if raw.truncated && repairTokens >= 4_096 { break }
+                if !fixed.complete && !raw.truncated && fixed.hasMore != true { break }
             }
-            queueMissingCommitments(part, job: job, recovery: &recovery)
-            previousRepairTokens = repairTokens
+            if missingCommitments(part, job: job).isEmpty {
+                recovery.pending.removeAll { rejection in
+                    guard let actionID = rejection.actionID, let text = rejection.text, ownershipReasons.contains(rejection.reason),
+                          answeredOwnership.contains(OutcomeTextSimilarity.normalized(text)) else { return false }
+                    return part.outcomes.actionItems.contains { $0.id == actionID && $0.ownershipIsUnclear }
+                }
+            }
+            guard phase == 0, repairedOwnership, !recovery.pending.isEmpty,
+                  !recovery.pending.contains(where: { $0.actionID != nil }) else { break }
             try checkpoint()
-            await job.budget.recordPhase("validation", seconds: ProcessInfo.processInfo.systemUptime - started)
-            if raw.truncated && repairTokens >= 4_096 { break }
-            if !fixed.complete && !raw.truncated && fixed.hasMore != true { break }
         }
         part.complete = recovery.scanComplete && recovery.pending.isEmpty && missingCommitments(part, job: job).isEmpty
         try checkpoint()
