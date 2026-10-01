@@ -31,9 +31,31 @@ actor QwenASREngine: TranscriptionEngine {
 
     nonisolated var displayName: String { variant.displayName }
     nonisolated let supportsStreaming = false
+    /// Both tiers transcribe whole tracks before attribution. On the
+    /// benchmark, regions cost 0.6B 2.8 points of meeting WER and 9.0 of AMI
+    /// WER, which outweighs the aligner being larger than the compact model.
+    nonisolated var speakerAttribution: SpeakerAttributionStrategy { .alignedWords }
 
     private static let sampleRate = 16_000
     private static let maxSegmentSeconds = 15.0
+
+    /// Decode windows for the word-attribution path: VAD spans merged across
+    /// short pauses. 1.7B gains from 60 s windows without speech-swift's
+    /// repetition blocking. 0.6B decoded long windows 5–10× slower for a small
+    /// gain, and worse with blocking on, so it stays at 15 s, where blocking
+    /// never engages (Benchmarks/QwenSpanLength).
+    struct WordAttributionWindows: Equatable, Sendable {
+        var maxSeconds: TimeInterval
+        var maxGapSeconds: TimeInterval
+        var disablesRepetitionBlocking: Bool
+    }
+
+    nonisolated static func wordAttributionWindows(for variant: Variant) -> WordAttributionWindows {
+        switch variant {
+        case .accuracy: .init(maxSeconds: 60, maxGapSeconds: 5, disablesRepetitionBlocking: true)
+        case .compact: .init(maxSeconds: 15, maxGapSeconds: 5, disablesRepetitionBlocking: false)
+        }
+    }
 
     private let variant: Variant
     private var model: Qwen3ASRModel?
@@ -97,26 +119,61 @@ actor QwenASREngine: TranscriptionEngine {
     }
 
     func transcribe(audio url: URL, language: String?, prompt: String?) async throws -> Transcript {
+        try await transcribe(audio: url, language: language, prompt: prompt, windows: nil)
+    }
+
+    /// Decodes merged windows, because the forced aligner re-times every word
+    /// afterwards: segment granularity no longer depends on the decode window.
+    func transcribeForWordAttribution(audio url: URL, language: String?, prompt: String?) async throws -> Transcript {
+        try await transcribe(audio: url, language: language, prompt: prompt,
+                             windows: Self.wordAttributionWindows(for: variant))
+    }
+
+    private func transcribe(audio url: URL, language: String?, prompt: String?,
+                            windows: WordAttributionWindows?) async throws -> Transcript {
         activeUses += 1
         defer { finishUse() }
         try await prepare()
         guard let model else { throw EngineError.notLoaded }
 
         let started = Date()
-        let spans = try await SpeechActivity.shared.spans(
+        var spans = try await SpeechActivity.shared.spans(
             in: url, maxSegmentSeconds: Self.maxSegmentSeconds)
-        let segments = try await SpanTranscription.segments(in: url, spans: spans) { samples, _ in
-            model.transcribe(
-                audio: Self.samplesForInference(samples),
-                sampleRate: Self.sampleRate,
-                language: Self.qwenLanguage(language),
-                maxTokens: Self.maxTokens(for: samples.count),
-                context: TranscriptionPrompt.normalized(prompt))
+        if let windows {
+            spans = Self.merged(spans, maxGap: windows.maxGapSeconds, maxLength: windows.maxSeconds)
+        }
+        let unblocked = windows?.disablesRepetitionBlocking == true
+        func decode(language qwenLanguage: String?) async throws -> [Transcript.Segment] {
+            try await SpanTranscription.segments(in: url, spans: spans) { samples, _ in
+                if unblocked {
+                    // speech-swift turns on no-repeat-3-gram blocking above 15 s,
+                    // which forces substitutions in ordinary repeated phrases.
+                    return model.transcribe(
+                        audio: Self.samplesForInference(samples), sampleRate: Self.sampleRate,
+                        options: Qwen3DecodingOptions(
+                            maxTokens: Self.maxTokens(for: samples.count), language: qwenLanguage,
+                            context: TranscriptionPrompt.normalized(prompt), longInputThresholdSeconds: .infinity))
+                }
+                return model.transcribe(
+                    audio: Self.samplesForInference(samples),
+                    sampleRate: Self.sampleRate,
+                    language: qwenLanguage,
+                    maxTokens: Self.maxTokens(for: samples.count),
+                    context: TranscriptionPrompt.normalized(prompt))
+            }
+        }
+        var segments = try await decode(language: Self.qwenLanguage(language))
+        var pinned: String?
+        if Self.qwenLanguage(language) == nil, let vote = Self.pinnedLanguage(for: segments.map(\.text)) {
+            // Per-window auto-detection misfires on short or accented speech;
+            // a track in one language decodes better pinned to it.
+            pinned = vote
+            segments = try await decode(language: vote)
         }
         let elapsed = Date().timeIntervalSince(started)
         let duration = spans.last?.end ?? 0
         lokalbotLog(
-            "qwen-asr profile model=\(variant.modelID) spans=\(spans.count) elapsed=\(String(format: "%.2fs", elapsed)) rtfx=\(String(format: "%.1fx", elapsed > 0 ? duration / elapsed : 0))")
+            "qwen-asr profile model=\(variant.modelID) spans=\(spans.count) merged=\(windows != nil) language=\(Self.qwenLanguage(language) ?? pinned.map { "auto→\($0)" } ?? "auto") elapsed=\(String(format: "%.2fs", elapsed)) rtfx=\(String(format: "%.1fx", elapsed > 0 ? duration / elapsed : 0))")
         return Transcript(segments: segments, engine: "\(variant.modelID) (Qwen3ASR MLX)")
     }
 
@@ -180,9 +237,42 @@ actor QwenASREngine: TranscriptionEngine {
         return samples + [Float](repeating: 0, count: minimumSamples - samples.count)
     }
 
+    /// Joins consecutive speech spans separated by at most `maxGap` seconds
+    /// while the joined window stays within `maxLength`. The window keeps the
+    /// pause audio between its spans, as the benchmark's windows did.
+    nonisolated static func merged(_ spans: [SpeechSpan], maxGap: TimeInterval,
+                                   maxLength: TimeInterval) -> [SpeechSpan] {
+        var windows: [SpeechSpan] = []
+        for span in spans {
+            if let last = windows.last, span.start - last.end <= maxGap, span.end - last.start <= maxLength {
+                windows[windows.count - 1] = SpeechSpan(start: last.start, end: span.end,
+                                                        timingPrecision: last.timingPrecision)
+            } else {
+                windows.append(span)
+            }
+        }
+        return windows
+    }
+
     private static func maxTokens(for sampleCount: Int) -> Int {
         let seconds = Double(sampleCount) / Double(sampleRate)
         return min(768, max(128, Int(seconds * 18)))
+    }
+
+    /// Qwen3-ASR's supported languages (model card), as ISO codes.
+    static let supportedLanguages: Set<String> = [
+        "zh", "en", "yue", "ar", "de", "fr", "es", "pt", "id", "it", "ko", "ru", "th", "vi", "ja",
+        "tr", "hi", "ms", "nl", "sv", "da", "fi", "pl", "cs", "fil", "fa", "el", "hu", "mk", "ro",
+    ]
+
+    /// With the language on auto, the track's language when one supported
+    /// language holds at least 80% of its text. Mixed-language tracks stay on
+    /// per-window detection: a 50/50 English–German track votes up to 66%
+    /// German by text length (Benchmarks/QwenSpanLength).
+    nonisolated static func pinnedLanguage(for texts: [String]) -> String? {
+        guard let vote = TranscriptLanguageVote.dominant(in: texts), vote.share >= 0.8,
+              supportedLanguages.contains(vote.code) else { return nil }
+        return vote.code
     }
 
     private static func qwenLanguage(_ language: String?) -> String? {

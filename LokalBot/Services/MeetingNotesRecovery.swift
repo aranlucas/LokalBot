@@ -9,28 +9,9 @@ extension MeetingNotesGenerator {
         var repairTokenFloor: Int?
         var terminalFailure: String?
         var noProgressAttempts: Int?
-        /// Complete ownership re-reads per task (normalized text). A task that
-        /// used its re-reads keeps an unclear owner; retries never repeat them.
-        var ownershipRepairs: [String: Int]?
-
-        var settledOwnership: Set<String> { Set((ownershipRepairs ?? [:]).filter { $0.value >= 2 }.keys) }
-
-        mutating func dropSettledOwnershipRepairs() {
-            let settled = settledOwnership
-            pending.removeAll { rejection in
-                rejection.actionID != nil
-                    && rejection.text.map { settled.contains(OutcomeTextSimilarity.normalized($0)) } == true
-            }
-        }
-
-        /// Repeating a rejection answers the re-read: temperature-zero
-        /// requests are deterministic, so the second identical one is skipped.
-        mutating func noteOwnershipRepair(_ text: String, repeated: Bool) {
-            let key = OutcomeTextSimilarity.normalized(text)
-            var repairs = ownershipRepairs ?? [:]
-            repairs[key] = repeated ? 2 : repairs[key, default: 0] + 1
-            ownershipRepairs = repairs
-        }
+        /// Tasks (normalized text) whose ownership repairs answered in full
+        /// but could not bind them; they stay visible as owner-unclear.
+        var settledOwnership: [String]?
     }
 
     struct PartJob {
@@ -48,8 +29,10 @@ extension MeetingNotesGenerator {
     }
 
     /// At most three extraction pages and two repair calls per part in this
-    /// attempt. Every call also consumes the shared job allowance. A restart
-    /// resumes the ledger and pending repairs, including legacy checkpoints.
+    /// attempt, plus two for records queued behind a task whose owner the
+    /// repairs could not bind. Every call also consumes the shared job
+    /// allowance. A restart resumes the ledger and pending repairs, including
+    /// legacy checkpoints.
     static func generatePart(_ initial: Part, job: PartJob, save: (Part) throws -> Void) async throws {
         var part = initial
         var recovery = part.recovery ?? legacyRecovery(part, transcript: job.evidence.transcript)
@@ -202,71 +185,98 @@ extension MeetingNotesGenerator {
 
         let terminalReasons: Set<String> = ["unsupported_commitment", "conversation_management", "status_not_task", "empty_outcome"]
         recovery.pending.removeAll { terminalReasons.contains($0.reason) }
-        recovery.dropSettledOwnershipRepairs()
         queueMissingCommitments(part, job: job, recovery: &recovery)
         try checkpoint()
 
-        var previousRepairTokens = 0
-        for attempt in 0..<2 where !recovery.pending.isEmpty {
-            let repairable = repairBatch(recovery.pending, units: job.units)
-            guard !repairable.isEmpty else { break } // Never repair an invented source using unrelated evidence.
-            let repairUnits = repairEvidence(repairable, units: job.units)
-            let noteLimit = repairable.filter { $0.kind == "notes" }.count
-            let actionLimit = repairable.filter { $0.kind == "actions" }.count
-            let desired = min(4_096, max(minimum, recovery.repairTokenFloor ?? 0, attempt == 0
-                ? min(2_048, 512 + noteLimit * 128 + actionLimit * 384) : previousRepairTokens * 2))
-            let allowance = try await job.budget.allowance(remainingParts: job.remainingParts, desired: desired, minimum: minimum)
-            if attempt > 0, recovery.repairTokenFloor != nil, allowance <= previousRepairTokens { break }
-            let userPrompt = try repairPrompt(repairable, units: repairUnits, roster: job.evidence.roster,
-                noteLimit: noteLimit, actionLimit: actionLimit)
-                + (attempt == 0 || repairable.first?.actionID != nil ? ""
-                    : try continuation(recovery.records.filter { record in repairUnits.contains { $0.source == record.source } }))
-            let system = PromptTemplates.meetingNotesRepairSystem(language: job.language)
-            guard let repairTokens = try await outputRoom(system: system, prompt: userPrompt, context: [],
-                                                          tokens: allowance, job: job) else { throw inputRoomExceeded() }
-            let stage = attempt == 0 ? "repair-\(job.number)" : "continue-repair-\(job.number)"
-            let raw = try await request(engine: job.engine, system: system, prompt: userPrompt, context: [],
-                schema: MeetingNotesEvidence.schema(units: repairUnits, speakers: Array(job.evidence.speakers.keys),
-                    template: job.template, maximumNotes: noteLimit, maximumActions: actionLimit,
-                    actionTexts: repairable.allSatisfy { $0.actionID != nil } ? repairable.compactMap(\.text) : nil),
-                tokens: repairTokens, stage: stage, contextTokens: job.contextTokens, budget: job.budget)
-            let started = ProcessInfo.processInfo.systemUptime
-            let fixed = job.evidence.validate(raw.content, units: repairUnits, template: job.template,
-                meetingID: job.meetingID, maximumNotes: noteLimit, maximumActions: actionLimit)
-            await recordValidation(fixed, stage: stage, truncated: raw.truncated, budget: job.budget)
-            let repairSources = Set(repairUnits.map(\.source))
-            if fixed.rejected.contains(where: { repairSources.isDisjoint(with: $0.sources) }) {
-                recovery.terminalFailure = "The summary provider returned missing or invalid evidence IDs during repair. Source-linked partial notes were saved. Choose a different summary model or provider before retrying."
-                try checkpoint()
-                throw TextEngineError.badResponse(recovery.terminalFailure!)
-            }
-            let ownershipRepair = repairable.first?.actionID != nil
-            if ownershipRepair {
-                acceptOwnershipRepairs(fixed, requested: repairable, job: job, complete: fixed.complete && !raw.truncated,
-                                       part: &part, recovery: &recovery)
-                recovery.dropSettledOwnershipRepairs()
-            } else {
-                accept(fixed)
-            }
-            if fixed.complete && !raw.truncated {
-                // Unsupported records may be omitted after a complete repair;
-                // independently validated facts never depend on their survival.
-                if !ownershipRepair {
-                    recovery.pending.removeAll { repairable.contains($0) }
+        // Ownership repairs run first. A task whose latest repair answered in
+        // full but still could not bind it to one undertaking stays visible
+        // as owner-unclear, like a wrong-owner claim: the same evidence fails
+        // every retry, so holding the part open would fail the meeting each
+        // time. Records queued behind ownership repairs then get their own
+        // two repairs. A settled task near the user's own commitment covers
+        // it: the task stays visible, and one spoken on this Mac's microphone
+        // is marked as likely the user's.
+        let ownershipReasons: Set<String> = ["missing_ownership_evidence", "ambiguous_ownership_evidence", "ownership_quote_not_found"]
+        for phase in 0..<2 {
+            var answeredOwnership = Set<String>()
+            var repairedOwnership = false
+            var previousRepairTokens = 0
+            for attempt in 0..<2 where !recovery.pending.isEmpty {
+                let repairable = repairBatch(recovery.pending, units: job.units)
+                guard !repairable.isEmpty else { break } // Never repair an invented source using unrelated evidence.
+                let repairUnits = repairEvidence(repairable, units: job.units)
+                let noteLimit = repairable.filter { $0.kind == "notes" }.count
+                let actionLimit = repairable.filter { $0.kind == "actions" }.count
+                let desired = min(4_096, max(minimum, recovery.repairTokenFloor ?? 0, attempt == 0
+                    ? min(2_048, 512 + noteLimit * 128 + actionLimit * 384) : previousRepairTokens * 2))
+                let allowance = try await job.budget.allowance(remainingParts: job.remainingParts, desired: desired, minimum: minimum)
+                if attempt > 0, recovery.repairTokenFloor != nil, allowance <= previousRepairTokens { break }
+                let userPrompt = try repairPrompt(repairable, units: repairUnits, roster: job.evidence.roster,
+                    noteLimit: noteLimit, actionLimit: actionLimit)
+                    + (attempt == 0 || repairable.first?.actionID != nil ? ""
+                        : try continuation(recovery.records.filter { record in repairUnits.contains { $0.source == record.source } }))
+                let system = PromptTemplates.meetingNotesRepairSystem(language: job.language)
+                guard let repairTokens = try await outputRoom(system: system, prompt: userPrompt, context: [],
+                                                              tokens: allowance, job: job) else { throw inputRoomExceeded() }
+                let stage = attempt == 0 ? "repair-\(job.number)" : "continue-repair-\(job.number)"
+                let raw = try await request(engine: job.engine, system: system, prompt: userPrompt, context: [],
+                    schema: MeetingNotesEvidence.schema(units: repairUnits, speakers: Array(job.evidence.speakers.keys),
+                        template: job.template, maximumNotes: noteLimit, maximumActions: actionLimit,
+                        actionTexts: repairable.allSatisfy { $0.actionID != nil } ? repairable.compactMap(\.text) : nil),
+                    tokens: repairTokens, stage: stage, contextTokens: job.contextTokens, budget: job.budget)
+                let started = ProcessInfo.processInfo.systemUptime
+                let fixed = job.evidence.validate(raw.content, units: repairUnits, template: job.template,
+                    meetingID: job.meetingID, maximumNotes: noteLimit, maximumActions: actionLimit)
+                await recordValidation(fixed, stage: stage, truncated: raw.truncated, budget: job.budget)
+                let repairSources = Set(repairUnits.map(\.source))
+                if fixed.rejected.contains(where: { repairSources.isDisjoint(with: $0.sources) }) {
+                    recovery.terminalFailure = "The summary provider returned missing or invalid evidence IDs during repair. Source-linked partial notes were saved. Choose a different summary model or provider before retrying."
+                    try checkpoint()
+                    throw TextEngineError.badResponse(recovery.terminalFailure!)
                 }
-                recovery.repairTokenFloor = nil
-            } else if raw.truncated {
-                recovery.repairTokenFloor = min(4_096, repairTokens * 2)
+                let ownershipRepair = repairable.first?.actionID != nil
+                if ownershipRepair {
+                    repairedOwnership = true
+                    acceptOwnershipRepairs(fixed, requested: repairable, job: job, complete: fixed.complete && !raw.truncated,
+                                           part: &part, recovery: &recovery)
+                    // Ownership repairs keep each task's text fixed, so the text
+                    // identifies the task across replacement IDs.
+                    let texts = repairable.compactMap { $0.text.map(OutcomeTextSimilarity.normalized) }
+                    if fixed.complete && !raw.truncated { answeredOwnership.formUnion(texts) } else { answeredOwnership.subtract(texts) }
+                } else {
+                    accept(fixed)
+                }
+                if fixed.complete && !raw.truncated {
+                    // Unsupported records may be omitted after a complete repair;
+                    // independently validated facts never depend on their survival.
+                    if !ownershipRepair {
+                        recovery.pending.removeAll { repairable.contains($0) }
+                    }
+                    recovery.repairTokenFloor = nil
+                } else if raw.truncated {
+                    recovery.repairTokenFloor = min(4_096, repairTokens * 2)
+                }
+                queueMissingCommitments(part, job: job, recovery: &recovery)
+                previousRepairTokens = repairTokens
+                try checkpoint()
+                await job.budget.recordPhase("validation", seconds: ProcessInfo.processInfo.systemUptime - started)
+                if raw.truncated && repairTokens >= 4_096 { break }
+                if !fixed.complete && !raw.truncated && fixed.hasMore != true { break }
             }
-            queueMissingCommitments(part, job: job, recovery: &recovery)
-            previousRepairTokens = repairTokens
+            var settled = Set(recovery.settledOwnership ?? [])
+            recovery.pending.removeAll { rejection in
+                guard let actionID = rejection.actionID, let text = rejection.text, ownershipReasons.contains(rejection.reason),
+                      answeredOwnership.contains(OutcomeTextSimilarity.normalized(text)),
+                      part.outcomes.actionItems.contains(where: { $0.id == actionID && $0.ownershipIsUnclear }) else { return false }
+                settled.insert(OutcomeTextSimilarity.normalized(text))
+                return true
+            }
+            if !settled.isEmpty { recovery.settledOwnership = settled.sorted() }
+            guard phase == 0, repairedOwnership, !recovery.pending.isEmpty,
+                  !recovery.pending.contains(where: { $0.actionID != nil }) else { break }
             try checkpoint()
-            await job.budget.recordPhase("validation", seconds: ProcessInfo.processInfo.systemUptime - started)
-            if raw.truncated && repairTokens >= 4_096 { break }
-            if !fixed.complete && !raw.truncated && fixed.hasMore != true { break }
         }
-        part.complete = recovery.scanComplete && recovery.pending.isEmpty
-            && missingCommitments(part, job: job, settled: recovery.settledOwnership).isEmpty
+        part.complete = recovery.scanComplete && recovery.pending.isEmpty && missingCommitments(part, job: job, recovery: recovery).isEmpty
         try checkpoint()
     }
 
@@ -295,8 +305,6 @@ extension MeetingNotesGenerator {
                 if complete && terminal {
                     part.outcomes.actionItems.removeAll { $0.id == actionID }
                     recovery.pending.remove(at: index)
-                } else if complete {
-                    recovery.noteOwnershipRepair(text, repeated: false)
                 }
                 continue
             }
@@ -306,7 +314,6 @@ extension MeetingNotesGenerator {
             recovery.records += fixed.records.filter { $0.kind == "actions" && matches($0.text) }
             if let rejection = fixed.rejected.first(where: { $0.actionID == action.id }) {
                 recovery.pending[index] = rejection
-                if complete { recovery.noteOwnershipRepair(text, repeated: rejection.reason == request.reason) }
             } else if complete {
                 recovery.pending.remove(at: index)
             } else {
@@ -320,31 +327,21 @@ extension MeetingNotesGenerator {
     /// never establishes ownership or merges different task descriptions.
     private static func queueMissingCommitments(_ part: Part, job: PartJob, recovery: inout Recovery) {
         guard recovery.scanComplete else { return }
-        let settled = recovery.settledOwnership
-        for source in missingCommitments(part, job: job, settled: settled) {
+        let compact = Dictionary(uniqueKeysWithValues: job.evidence.transcript.summaryCitationSources.map { ($0.value, $0.key) })
+        for source in missingCommitments(part, job: job, recovery: recovery) {
             let missing = MeetingNotesEvidence.Rejection(sources: [source], kind: "actions", reason: "missing_user_commitment")
             let nearby = Set(repairEvidence([missing], units: job.units).map(\.source))
             if recovery.pending.contains(where: { $0.kind == "actions" && !nearby.isDisjoint(with: $0.sources) }) { continue }
-            let candidates = nearbyTasks(source, part: part, job: job)
-            let open = candidates.filter { !settled.contains(OutcomeTextSimilarity.normalized($0.action.text)) }
-            if open.count == 1, let candidate = open.first {
-                recovery.pending.append(.init(sources: [candidate.anchor], kind: "actions", reason: "missing_ownership_evidence",
-                                              text: candidate.action.text, actionID: candidate.action.id))
+            let candidates = part.outcomes.unresolvedActionItems.filter { action in
+                action.citations.first.flatMap { compact[$0.segmentID] }.map { nearby.contains($0) } == true
+            }
+            if candidates.count == 1, let action = candidates.first,
+               let anchor = action.citations.first.flatMap({ compact[$0.segmentID] }) {
+                recovery.pending.append(.init(sources: [anchor], kind: "actions", reason: "missing_ownership_evidence",
+                                              text: action.text, actionID: action.id))
             } else if candidates.isEmpty {
                 recovery.pending.append(missing)
             }
-        }
-    }
-
-    /// Unresolved tasks anchored within a commitment's repair neighborhood.
-    private static func nearbyTasks(_ source: String, part: Part, job: PartJob)
-        -> [(action: MeetingOutcomes.ActionItem, anchor: String)] {
-        let compact = Dictionary(uniqueKeysWithValues: job.evidence.transcript.summaryCitationSources.map { ($0.value, $0.key) })
-        let missing = MeetingNotesEvidence.Rejection(sources: [source], kind: "actions", reason: "missing_user_commitment")
-        let nearby = Set(repairEvidence([missing], units: job.units).map(\.source))
-        return part.outcomes.unresolvedActionItems.compactMap { action in
-            guard let anchor = action.citations.first.flatMap({ compact[$0.segmentID] }), nearby.contains(anchor) else { return nil }
-            return (action, anchor)
         }
     }
 
@@ -388,19 +385,23 @@ extension MeetingNotesGenerator {
         .badResponse("Notes continuation cannot fit the model's input allowance. Source-linked progress was saved.")
     }
 
-    /// User commitments not yet cited by a user task. A commitment whose
-    /// nearby tasks all used their ownership re-reads is answered by those
-    /// unclear-owner tasks rather than blocking the part on every retry.
-    private static func missingCommitments(_ part: Part, job: PartJob, settled: Set<String> = []) -> [String] {
+    /// The user's undertakings that no user task cites. A settled task citing
+    /// the same speaker near the undertaking covers it: the repairs already
+    /// tried to bind that task to the user and could not.
+    private static func missingCommitments(_ part: Part, job: PartJob, recovery: Recovery) -> [String] {
         let cited = Set(part.outcomes.userActionItems.flatMap { $0.citations.map(\.segmentID) })
-        let missing = job.units.filter { unit in
-            unit.isUserCommitment && job.evidence.transcript.summaryCitationSources[unit.source].map { !cited.contains($0) } == true
-        }.map(\.source)
-        guard !settled.isEmpty else { return missing }
-        return missing.filter { source in
-            let tasks = nearbyTasks(source, part: part, job: job)
-            return tasks.isEmpty || !tasks.allSatisfy { settled.contains(OutcomeTextSimilarity.normalized($0.action.text)) }
+        let settled = Set(recovery.settledOwnership ?? [])
+        let compact = Dictionary(uniqueKeysWithValues: job.evidence.transcript.summaryCitationSources.map { ($0.value, $0.key) })
+        var settledSources = Set<String>()
+        for action in part.outcomes.unresolvedActionItems where settled.contains(OutcomeTextSimilarity.normalized(action.text)) {
+            settledSources.formUnion(action.citations.compactMap { compact[$0.segmentID] })
         }
+        return job.units.filter { unit in
+            guard unit.isUserCommitment,
+                  job.evidence.transcript.summaryCitationSources[unit.source].map({ !cited.contains($0) }) == true else { return false }
+            let missing = MeetingNotesEvidence.Rejection(sources: [unit.source], kind: "actions", reason: "missing_user_commitment")
+            return !repairEvidence([missing], units: job.units).contains { $0.speaker == unit.speaker && settledSources.contains($0.source) }
+        }.map(\.source)
     }
 
     private static func legacyRecovery(_ part: Part, transcript: Transcript) -> Recovery {

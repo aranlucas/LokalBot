@@ -23,7 +23,7 @@ enum GenerationBudgetPreset: String, Codable, CaseIterable, Identifiable, Sendab
     var detail: String {
         switch self {
         case .conservative: "Half the normal time and tokens. Long meetings may need a second pass."
-        case .standard: "Balanced limits that fit most meetings in one pass."
+        case .standard: "Balanced limits that grow with meeting length, so most meetings finish in one pass."
         case .generous: "Three times the normal limits for very long meetings or slower servers."
         case .unlimited: "Runs until finished, with a 6-hour safety stop."
         }
@@ -34,9 +34,9 @@ enum GenerationBudgetPreset: String, Codable, CaseIterable, Identifiable, Sendab
         case .conservative:
             .init(seconds: 300, requests: 6, inputTokens: 125_000, outputTokens: 12_288)
         case .standard:
-            .init()
+            .init(scalesWithParts: true)
         case .generous:
-            .init(seconds: 1_800, requests: 36, inputTokens: 750_000, outputTokens: 73_728)
+            .init(seconds: 1_800, requests: 36, inputTokens: 750_000, outputTokens: 73_728, scalesWithParts: true)
         case .unlimited:
             // Finite on purpose: run() races a Task.sleep deadline and
             // allowance() converts seconds * 35 to Int, and a stalled server
@@ -54,7 +54,13 @@ actor MeetingGenerationBudget {
         var requests: Int = 12
         var inputTokens: Int = 250_000
         var outputTokens: Int = 24_576
+        /// Treat these limits as covering `partsPerBudget` meeting parts and
+        /// grow them for longer meetings. Otherwise a long meeting spends the
+        /// whole allowance before its last parts get their repairs.
+        var scalesWithParts = false
     }
+
+    static let partsPerBudget = 4
 
     struct Exhausted: LocalizedError {
         var errorDescription: String? {
@@ -85,10 +91,14 @@ actor MeetingGenerationBudget {
     private var model: String?
     private var transcriptRevision: String?
     private var plannedParts: Int?
+    private var scale = 1.0
 
     init(limits: Limits = Limits()) { self.limits = limits }
 
-    var remainingSeconds: Double { max(0, limits.seconds - elapsed) }
+    var remainingSeconds: Double { max(0, limits.seconds * scale - elapsed) }
+    private var requestLimit: Int { Int((Double(limits.requests) * scale).rounded(.up)) }
+    private var inputTokenLimit: Int { Int((Double(limits.inputTokens) * scale).rounded(.up)) }
+    private var outputTokenLimit: Int { Int((Double(limits.outputTokens) * scale).rounded(.up)) }
     private var elapsed: Double { ProcessInfo.processInfo.systemUptime - started }
 
     func allowance(remainingParts: Int, desired: Int = 4_096, minimum: Int = 512) throws -> Int {
@@ -97,19 +107,19 @@ actor MeetingGenerationBudget {
         // reserving one possible repair per part. Very long meetings continue
         // from verified checkpoints instead of starving every part with a tiny
         // allowance divided across work that cannot fit the request limit.
-        let processableParts = max(1, (limits.requests - requests + 1) / 2)
+        let processableParts = max(1, (requestLimit - requests + 1) / 2)
         let parts = min(max(1, remainingParts), processableParts)
-        let available = min(desired, (limits.outputTokens - outputTokens) / parts,
+        let available = min(desired, (outputTokenLimit - outputTokens) / parts,
                             Int(remainingSeconds * 35 / Double(parts)))
-        guard requests < limits.requests, available >= max(512, minimum) else { throw Exhausted() }
+        guard requests < requestLimit, available >= max(512, minimum) else { throw Exhausted() }
         return available
     }
 
     func reserve(input: Int, output: Int) throws -> Reservation {
         try Task.checkCancellation()
-        guard remainingSeconds > 0, requests < limits.requests,
-              inputTokens + input <= limits.inputTokens,
-              outputTokens + output <= limits.outputTokens else { throw Exhausted() }
+        guard remainingSeconds > 0, requests < requestLimit,
+              inputTokens + input <= inputTokenLimit,
+              outputTokens + output <= outputTokenLimit else { throw Exhausted() }
         requests += 1
         inputTokens += input
         outputTokens += output
@@ -135,6 +145,7 @@ actor MeetingGenerationBudget {
         self.model = model
         self.transcriptRevision = transcriptRevision
         plannedParts = parts
+        if limits.scalesWithParts { scale = max(1, Double(parts) / Double(Self.partsPerBudget)) }
     }
 
     struct ValidationTelemetry: Codable {
@@ -152,13 +163,16 @@ actor MeetingGenerationBudget {
     /// URLSession and the inference lease both respond to task cancellation.
     /// Structured concurrency waits for their cleanup before another job starts.
     func run<T>(_ operation: @escaping () async throws -> T) async throws -> T {
-        let seconds = remainingSeconds
-        return try await Self.$current.withValue(self) {
+        try await Self.$current.withValue(self) {
             try await withThrowingTaskGroup(of: T.self) { group in
                 group.addTask { try await operation() }
                 group.addTask {
-                    try await Task.sleep(for: .seconds(seconds))
-                    throw Exhausted()
+                    // Re-read the deadline: planning a long meeting extends it.
+                    while true {
+                        let seconds = await self.remainingSeconds
+                        guard seconds > 0 else { throw Exhausted() }
+                        try await Task.sleep(for: .seconds(min(seconds, 1)))
+                    }
                 }
                 defer { group.cancelAll() }
                 guard let result = try await group.next() else { throw CancellationError() }

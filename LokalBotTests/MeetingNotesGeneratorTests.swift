@@ -280,7 +280,7 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertTrue(calls[1].prompt.contains("Send the measurements"))
     }
 
-    func testRepeatedOwnershipRepairCannotSubstituteAnotherTaskAndKeepsTheOwnerUnclear() async throws {
+    func testRepeatedOwnershipRepairCannotSubstituteAnotherTaskOrClaimOwnership() async throws {
         var transcript = transcript
         transcript.segments[0].text = "I'll prepare the policy, and you will send the measurements."
         transcript.segments[1].text = "I will prepare the policy."
@@ -298,70 +298,112 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         let result = try await generate(script, transcript: transcript)
         let calls = await script.recorded()
         XCTAssertEqual(calls.count, 3, "Only two targeted repairs are allowed per part")
+        // Repeated ambiguous evidence leaves the task visible with an unclear
+        // owner instead of failing the meeting on every retry.
         XCTAssertEqual(result.outcomes.actionItems.map(\.text), ["Send the measurements"])
         XCTAssertEqual(result.outcomes.actionItems[0].attribution?.rejectionReason, .ambiguousQuote)
-        XCTAssertNil(result.outcomes.actionItems[0].owner)
+        XCTAssertTrue(result.outcomes.actionItems[0].ownershipIsUnclear)
         XCTAssertTrue(result.outcomes.userActionItems.isEmpty)
     }
 
-    func testIdenticalOwnershipRejectionSettlesWithoutASecondRepair() async throws {
+    /// A task between two other participants whose only evidence names both
+    /// actors, so no quote can bind it to one undertaking.
+    private func unbindableTask() -> (Transcript, [String: Any]) {
         var transcript = transcript
-        transcript.segments[0].text = "I'll prepare the policy, and you will send the measurements."
-        transcript.segments[1].text = "I will prepare the policy."
-        var original = action(owner: "unknown")
-        original["text"] = "Send the measurements"
-        original["quote"] = "I'll prepare the policy"
-        let script = Script([.text(try response(actions: [original])), .text(try response(actions: [original]))])
-        let result = try await generate(script, transcript: transcript)
-        let calls = await script.recorded()
-        XCTAssertEqual(calls.count, 2, "A temperature-zero re-read that repeats its rejection is not sent again")
-        XCTAssertEqual(result.outcomes.actionItems.map(\.text), ["Send the measurements"])
-        XCTAssertNil(result.outcomes.actionItems[0].owner)
+        transcript.segments[0] = .init(start: 0, end: 5, speaker: "them",
+                                       text: "I'll prepare the policy, and you will send the measurements.")
+        var task = action(owner: "unknown")
+        task["text"] = "Send the measurements"
+        task["quote"] = "I'll prepare the policy"
+        return (transcript, task)
     }
 
-    func testInterruptedOwnershipRepairResumesWithoutRepeatingSpentAttempts() async throws {
-        var transcript = transcript
-        transcript.segments[0].text = "I'll prepare the policy, and you will send the measurements."
-        transcript.segments[1].text = "I will prepare the policy."
-        var original = action(owner: "unknown")
-        original["text"] = "Send the measurements"
-        original["quote"] = "I'll prepare the policy"
-        var unrelated = action("s2", owner: "source")
-        unrelated["text"] = "Prepare the policy"
-        unrelated["quote"] = transcript.segments[1].text
+    func testTruncatedOwnershipRepairStaysPartialUntilAResumeAnswersInFull() async throws {
+        let (transcript, task) = unbindableTask()
         let output = try folder()
-        let first = Script([.text(try response(actions: [original])), .text(try response(actions: [unrelated]))])
+        let first = Script([.text(try response(actions: [task])), .text(try response(actions: [task])), .truncated("")])
         do {
-            _ = try await generate(first, transcript: transcript, folder: output,
-                                   budget: MeetingGenerationBudget(limits: .init(requests: 2)))
-            XCTFail("the second re-read must wait for the next run")
-        } catch is MeetingGenerationBudget.Exhausted {} catch { XCTFail("unexpected error \(error)") }
-        let resumed = Script([.text(try response(actions: [unrelated]))])
+            _ = try await generate(first, transcript: transcript, folder: output)
+            XCTFail("A truncated final repair must remain partial")
+        } catch is MeetingNotesGenerator.Incomplete {} catch { XCTFail("unexpected error \(error)") }
+        let initialCalls = await first.recorded()
+        XCTAssertEqual(initialCalls.count, 3)
+        let resumed = Script([.text(try response(actions: [task])), .text(try response(actions: [task]))])
         let result = try await generate(resumed, transcript: transcript, folder: output)
         let calls = await resumed.recorded()
-        XCTAssertEqual(calls.count, 1, "A retry spends only the re-read the first run did not use")
+        XCTAssertEqual(calls.count, 2, "Summarize again repairs only the pending task")
         XCTAssertEqual(result.outcomes.actionItems.map(\.text), ["Send the measurements"])
-        XCTAssertNil(result.outcomes.actionItems[0].owner)
+        XCTAssertTrue(result.outcomes.actionItems[0].ownershipIsUnclear)
     }
 
-    func testUserCommitmentNearASettledTaskDoesNotBlockTheNotes() async throws {
+    func testRecordsQueuedBehindAnUnbindableOwnerStillGetRepaired() async throws {
+        let (transcript, task) = unbindableTask()
+        let script = Script([
+            .text(try response(notes: [note("s2", "Needs repair", section: "Wrong")], actions: [task])),
+            .text(try response(actions: [task])),
+            .text(try response(actions: [task])),
+            .text(try response(notes: [note("s2", "Documentation needs review.")])),
+        ])
+        let result = try await generate(script, transcript: transcript)
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 4)
+        XCTAssertTrue(calls[3].prompt.contains("s2|"))
+        XCTAssertTrue(calls[3].prompt.contains(#""reason":"invalid_note""#))
+        XCTAssertFalse(calls[3].prompt.contains(#""reason":"ambiguous_ownership_evidence""#))
+        XCTAssertEqual(result.claims.count, 1)
+        XCTAssertTrue(result.outcomes.actionItems[0].ownershipIsUnclear)
+    }
+
+    func testUsersUnquotableCommitmentStaysVisibleAsLikelyTheirsAndCompletes() async throws {
+        var transcript = transcript
+        transcript.segments = [
+            .init(start: 0, end: 5, speaker: "them", text: "Can someone look at the pull request?"),
+            .init(start: 5, end: 10, speaker: "me", text: "I still have to review the change.",
+                  attribution: .init(source: .microphone, identity: .user, method: .confirmation)),
+        ]
+        var task = action("s2", owner: "source")
+        task["text"] = "Review the change"
+        task["quote"] = "I will review it"
+        let script = Script([
+            .text(try response(actions: [task])), .text(try response(actions: [task])), .text(try response(actions: [task])),
+        ])
+        let result = try await generate(script, transcript: transcript)
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 3, "Two targeted repairs, then the task keeps its unclear owner")
+        XCTAssertTrue(calls[1].prompt.contains("ownership_quote_not_found"))
+        let item = try XCTUnwrap(result.outcomes.actionItems.first)
+        XCTAssertTrue(item.ownershipIsUnclear)
+        XCTAssertTrue(item.isLikelyUserAction, "Spoken on this Mac's microphone, so likely the user's")
+    }
+
+    func testRecordsQueuedBehindASuccessfulOwnershipRepairStillGetRepaired() async throws {
         let obligation = "I think I still have to review the change."
         var transcript = transcript
         transcript.segments = [
             .init(start: 0, end: 5, speaker: "me", text: "I have been doing reviews."),
             .init(start: 5, end: 10, speaker: "me", text: obligation),
+            .init(start: 10, end: 15, speaker: "them", text: "The documentation needs another review."),
         ]
         var original = action(owner: "unknown")
         original["text"] = "Review the remaining change"
         original["basis"] = "unclear"
         original["context"] = ["s2"]
-        let script = Script([.text(try response(actions: [original])), .text(try response(actions: [original]))])
+        var repaired = original
+        repaired["source"] = "s2"
+        repaired["context"] = ["s1"]
+        repaired["quote"] = obligation
+        let script = Script([
+            .text(try response(notes: [note("s3", "Needs repair", section: "Wrong")], actions: [original])),
+            .text(try response(actions: [original])),
+            .text(try response(actions: [repaired])),
+            .text(try response(notes: [note("s3", "The documentation needs another review.")])),
+        ])
         let result = try await generate(script, transcript: transcript)
         let calls = await script.recorded()
-        XCTAssertEqual(calls.count, 2)
-        XCTAssertFalse(calls[1].prompt.contains(#""reason":"missing_user_commitment""#))
-        XCTAssertEqual(result.outcomes.actionItems.map(\.text), ["Review the remaining change"])
-        XCTAssertTrue(result.outcomes.userActionItems.isEmpty, "Two re-reads could not ground the user's ownership")
+        XCTAssertEqual(calls.count, 4, "Two ownership repairs, then the queued note gets its own")
+        XCTAssertTrue(calls[3].prompt.contains(#""reason":"invalid_note""#))
+        XCTAssertEqual(result.claims.count, 1)
+        XCTAssertEqual(result.outcomes.userActionItems.first?.attribution?.quote, obligation)
     }
 
     func testRepairFailureSavesEarlierValidRecordsWithoutReplacingFinalArtifacts() async throws {
@@ -1010,6 +1052,33 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertEqual(overview.map(\.segmentID), ["segment-7", "segment-6", "segment-0"])
         let withoutOutcomes = MeetingNotesGenerator.overviewClaims(Array(claims.prefix(6)), outcomes: MeetingOutcomes())
         XCTAssertEqual(withoutOutcomes.map(\.segmentID), ["segment-0", "segment-3", "segment-5"])
+    }
+
+    func testDefaultBudgetGrowsWithLongMeetingsButConservativeDoesNot() async throws {
+        let standard = MeetingGenerationBudget(limits: GenerationBudgetPreset.standard.limits)
+        await standard.recordPlan(model: "fixture", transcriptRevision: "revision", parts: 8)
+        for _ in 0..<24 { _ = try await standard.reserve(input: 1, output: 1) }
+        do {
+            _ = try await standard.reserve(input: 1, output: 1)
+            XCTFail("Eight parts double the twelve default requests")
+        } catch is MeetingGenerationBudget.Exhausted {}
+        let conservative = MeetingGenerationBudget(limits: GenerationBudgetPreset.conservative.limits)
+        await conservative.recordPlan(model: "fixture", transcriptRevision: "revision", parts: 8)
+        for _ in 0..<6 { _ = try await conservative.reserve(input: 1, output: 1) }
+        do {
+            _ = try await conservative.reserve(input: 1, output: 1)
+            XCTFail("Conservative keeps its fixed limit")
+        } catch is MeetingGenerationBudget.Exhausted {}
+    }
+
+    func testPlanningALongMeetingExtendsTheDeadline() async throws {
+        let budget = MeetingGenerationBudget(limits: .init(seconds: 1, scalesWithParts: true))
+        let value = try await budget.run {
+            await budget.recordPlan(model: "fixture", transcriptRevision: "revision", parts: 16)
+            try await Task.sleep(for: .milliseconds(1_500))
+            return 1
+        }
+        XCTAssertEqual(value, 1)
     }
 
     func testMetricsKeepSeparateAttemptsAndOnlyRefundKnownUnusedOutput() async throws {

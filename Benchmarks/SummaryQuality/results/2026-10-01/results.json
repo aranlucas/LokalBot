@@ -1,0 +1,986 @@
+{
+ "tau": 0.7691857218742371,
+ "rows": {
+  "refbefore": [
+   {
+    "meeting": "ES2004a",
+    "complete": true,
+    "requests": 2,
+    "seconds": 14.937406541663222,
+    "rouge1": 0.33478260869565213,
+    "rouge2": 0.03930131004366813,
+    "rougeLsum": 0.30869565217391304,
+    "items": 14,
+    "actions": 0,
+    "decisions": 0,
+    "owner_unclear": 0,
+    "ami_decisions": 0,
+    "abstract_covered": [
+     0.42857142857142855,
+     7
+    ],
+    "actions_covered": [
+     0.0,
+     1
+    ],
+    "supported": [
+     0.2857142857142857,
+     14
+    ],
+    "wer": [
+     0.0,
+     2640
+    ],
+    "reference_summary_kept": 0.6
+   },
+   {
+    "meeting": "ES2004b",
+    "complete": false,
+    "requests": 2,
+    "seconds": 6.911928416666342,
+    "rouge1": 0.4041353383458647,
+    "rouge2": 0.07344632768361582,
+    "rougeLsum": 0.3834586466165414,
+    "items": 34,
+    "actions": 4,
+    "decisions": 0,
+    "owner_unclear": 4,
+    "ami_decisions": 4,
+    "abstract_covered": [
+     0.4444444444444444,
+     9
+    ],
+    "decisions_covered": [
+     0.0,
+     4
+    ],
+    "actions_covered": [
+     0.0,
+     1
+    ],
+    "supported": [
+     0.14705882352941177,
+     34
+    ],
+    "wer": [
+     0.0,
+     6736
+    ],
+    "reference_summary_kept": 0.6111111111111112
+   },
+   {
+    "meeting": "ES2004c",
+    "complete": true,
+    "requests": 7,
+    "seconds": 56.939705708340625,
+    "rouge1": 0.3812566560170394,
+    "rouge2": 0.08110992529348987,
+    "rougeLsum": 0.34717784877529284,
+    "items": 34,
+    "actions": 3,
+    "decisions": 2,
+    "owner_unclear": 3,
+    "ami_decisions": 1,
+    "abstract_covered": [
+     0.1111111111111111,
+     9
+    ],
+    "decisions_covered": [
+     0.0,
+     1
+    ],
+    "supported": [
+     0.058823529411764705,
+     34
+    ],
+    "wer": [
+     0.0,
+     6992
+    ],
+    "reference_summary_kept": 0.7297297297297297
+   },
+   {
+    "meeting": "ES2004d",
+    "complete": true,
+    "requests": 5,
+    "seconds": 43.082071083335904,
+    "rouge1": 0.4146825396825397,
+    "rouge2": 0.08349900596421471,
+    "rougeLsum": 0.3888888888888889,
+    "items": 34,
+    "actions": 5,
+    "decisions": 0,
+    "owner_unclear": 5,
+    "ami_decisions": 6,
+    "abstract_covered": [
+     0.36363636363636365,
+     11
+    ],
+    "decisions_covered": [
+     0.0,
+     6
+    ],
+    "actions_covered": [
+     0.5,
+     2
+    ],
+    "supported": [
+     0.2647058823529412,
+     34
+    ],
+    "wer": [
+     0.0,
+     6189
+    ],
+    "reference_summary_kept": 0.7241379310344828
+   },
+   {
+    "meeting": "IS1009a",
+    "complete": true,
+    "requests": 1,
+    "seconds": 33.820925249994616,
+    "rouge1": 0.47010309278350515,
+    "rouge2": 0.16563146997929606,
+    "rougeLsum": 0.44536082474226807,
+    "items": 12,
+    "actions": 1,
+    "decisions": 0,
+    "owner_unclear": 1,
+    "ami_decisions": 4,
+    "abstract_covered": [
+     0.3,
+     10
+    ],
+    "decisions_covered": [
+     0.0,
+     4
+    ],
+    "actions_covered": [
+     0.0,
+     3
+    ],
+    "supported": [
+     0.5,
+     12
+    ],
+    "wer": [
+     0.0,
+     1920
+    ],
+    "reference_summary_kept": 0.8888888888888888
+   },
+   {
+    "meeting": "IS1009b",
+    "complete": false,
+    "requests": 5,
+    "seconds": 80.53116354165832,
+    "rouge1": 0.3877118644067797,
+    "rouge2": 0.08067940552016983,
+    "rougeLsum": 0.36016949152542377,
+    "items": 32,
+    "actions": 5,
+    "decisions": 0,
+    "owner_unclear": 4,
+    "ami_decisions": 4,
+    "abstract_covered": [
+     0.5,
+     8
+    ],
+    "decisions_covered": [
+     0.0,
+     4
+    ],
+    "actions_covered": [
+     0.0,
+     1
+    ],
+    "supported": [
+     0.1875,
+     32
+    ],
+    "wer": [
+     0.0,
+     5892
+    ],
+    "reference_summary_kept": 0.8125
+   },
+   {
+    "meeting": "IS1009c",
+    "complete": true,
+    "requests": 4,
+    "seconds": 31.24479095832794,
+    "rouge1": 0.48586118251928023,
+    "rouge2": 0.12371134020618557,
+    "rougeLsum": 0.4524421593830334,
+    "items": 27,
+    "actions": 4,
+    "decisions": 2,
+    "owner_unclear": 4,
+    "ami_decisions": 3,
+    "abstract_covered": [
+     0.2,
+     10
+    ],
+    "decisions_covered": [
+     0.0,
+     3
+    ],
+    "actions_covered": [
+     0.5,
+     4
+    ],
+    "supported": [
+     0.37037037037037035,
+     27
+    ],
+    "wer": [
+     0.0,
+     4121
+    ],
+    "reference_summary_kept": 0.5882352941176471
+   },
+   {
+    "meeting": "IS1009d",
+    "complete": false,
+    "requests": 6,
+    "seconds": 73.52813470833644,
+    "rouge1": 0.42886178861788615,
+    "rouge2": 0.12219959266802442,
+    "rougeLsum": 0.40243902439024387,
+    "items": 31,
+    "actions": 5,
+    "decisions": 0,
+    "owner_unclear": 5,
+    "ami_decisions": 9,
+    "abstract_covered": [
+     0.5555555555555556,
+     9
+    ],
+    "decisions_covered": [
+     0.0,
+     9
+    ],
+    "actions_covered": [
+     0.0,
+     1
+    ],
+    "supported": [
+     0.3225806451612903,
+     31
+    ],
+    "wer": [
+     0.0,
+     4469
+    ],
+    "reference_summary_kept": 0.6153846153846154
+   },
+   {
+    "meeting": "TS3003a",
+    "complete": false,
+    "requests": 2,
+    "seconds": 6.714410000000498,
+    "rouge1": 0.42600896860986553,
+    "rouge2": 0.12162162162162163,
+    "rougeLsum": 0.3856502242152466,
+    "items": 15,
+    "actions": 3,
+    "decisions": 0,
+    "owner_unclear": 3,
+    "ami_decisions": 6,
+    "abstract_covered": [
+     0.6,
+     5
+    ],
+    "decisions_covered": [
+     0.0,
+     6
+    ],
+    "actions_covered": [
+     0.0,
+     1
+    ],
+    "supported": [
+     0.3333333333333333,
+     15
+    ],
+    "wer": [
+     0.0,
+     2504
+    ],
+    "reference_summary_kept": 0.8235294117647058
+   },
+   {
+    "meeting": "TS3003b",
+    "complete": false,
+    "requests": 5,
+    "seconds": 47.352463166665984,
+    "rouge1": 0.5331724969843185,
+    "rouge2": 0.1717049576783555,
+    "rougeLsum": 0.51145958986731,
+    "items": 27,
+    "actions": 5,
+    "decisions": 3,
+    "owner_unclear": 5,
+    "ami_decisions": 11,
+    "abstract_covered": [
+     1.0,
+     5
+    ],
+    "decisions_covered": [
+     0.0,
+     11
+    ],
+    "actions_covered": [
+     0.0,
+     2
+    ],
+    "supported": [
+     0.48148148148148145,
+     27
+    ],
+    "wer": [
+     0.0,
+     4608
+    ],
+    "reference_summary_kept": 0.6785714285714286
+   },
+   {
+    "meeting": "TS3003c",
+    "complete": false,
+    "requests": 6,
+    "seconds": 37.390219999986584,
+    "rouge1": 0.39018404907975457,
+    "rouge2": 0.0910209102091021,
+    "rougeLsum": 0.3656441717791411,
+    "items": 25,
+    "actions": 2,
+    "decisions": 2,
+    "owner_unclear": 2,
+    "ami_decisions": 6,
+    "abstract_covered": [
+     0.6,
+     5
+    ],
+    "decisions_covered": [
+     0.0,
+     6
+    ],
+    "actions_covered": [
+     0.0,
+     3
+    ],
+    "supported": [
+     0.16,
+     25
+    ],
+    "wer": [
+     0.0,
+     4226
+    ],
+    "reference_summary_kept": 0.6785714285714286
+   },
+   {
+    "meeting": "TS3003d",
+    "complete": true,
+    "requests": 5,
+    "seconds": 40.958432708343025,
+    "rouge1": 0.45681381957773515,
+    "rouge2": 0.09423076923076923,
+    "rougeLsum": 0.4452975047984645,
+    "items": 32,
+    "actions": 3,
+    "decisions": 0,
+    "owner_unclear": 2,
+    "ami_decisions": 8,
+    "abstract_covered": [
+     0.5454545454545454,
+     11
+    ],
+    "decisions_covered": [
+     0.0,
+     8
+    ],
+    "actions_covered": [
+     0.0,
+     1
+    ],
+    "supported": [
+     0.3125,
+     32
+    ],
+    "wer": [
+     0.0,
+     5112
+    ],
+    "reference_summary_kept": 0.6333333333333333
+   }
+  ],
+  "reffix": [
+   {
+    "meeting": "ES2004a",
+    "complete": true,
+    "requests": 3,
+    "seconds": 22.10744199999317,
+    "rouge1": 0.3666121112929624,
+    "rouge2": 0.08538587848932677,
+    "rougeLsum": 0.353518821603928,
+    "items": 20,
+    "actions": 1,
+    "decisions": 0,
+    "owner_unclear": 1,
+    "ami_decisions": 0,
+    "abstract_covered": [
+     0.5714285714285714,
+     7
+    ],
+    "actions_covered": [
+     0.0,
+     1
+    ],
+    "supported": [
+     0.2,
+     20
+    ]
+   },
+   {
+    "meeting": "ES2004b",
+    "complete": true,
+    "requests": 10,
+    "seconds": 60.36861620834679,
+    "rouge1": 0.4086444007858546,
+    "rouge2": 0.07874015748031496,
+    "rougeLsum": 0.37328094302554027,
+    "items": 36,
+    "actions": 5,
+    "decisions": 0,
+    "owner_unclear": 5,
+    "ami_decisions": 4,
+    "abstract_covered": [
+     0.1111111111111111,
+     9
+    ],
+    "decisions_covered": [
+     0.0,
+     4
+    ],
+    "actions_covered": [
+     0.0,
+     1
+    ],
+    "supported": [
+     0.05555555555555555,
+     36
+    ]
+   },
+   {
+    "meeting": "ES2004c",
+    "complete": true,
+    "requests": 7,
+    "seconds": 53.285868999999366,
+    "rouge1": 0.3502824858757062,
+    "rouge2": 0.0830188679245283,
+    "rougeLsum": 0.3333333333333333,
+    "items": 37,
+    "actions": 4,
+    "decisions": 2,
+    "owner_unclear": 4,
+    "ami_decisions": 1,
+    "abstract_covered": [
+     0.3333333333333333,
+     9
+    ],
+    "decisions_covered": [
+     0.0,
+     1
+    ],
+    "supported": [
+     0.1891891891891892,
+     37
+    ]
+   },
+   {
+    "meeting": "ES2004d",
+    "complete": true,
+    "requests": 5,
+    "seconds": 40.953114249990904,
+    "rouge1": 0.37119675456389456,
+    "rouge2": 0.07317073170731708,
+    "rougeLsum": 0.3448275862068965,
+    "items": 29,
+    "actions": 3,
+    "decisions": 0,
+    "owner_unclear": 2,
+    "ami_decisions": 6,
+    "abstract_covered": [
+     0.2727272727272727,
+     11
+    ],
+    "decisions_covered": [
+     0.0,
+     6
+    ],
+    "actions_covered": [
+     0.5,
+     2
+    ],
+    "supported": [
+     0.20689655172413793,
+     29
+    ]
+   },
+   {
+    "meeting": "IS1009a",
+    "complete": true,
+    "requests": 2,
+    "seconds": 16.56388516665902,
+    "rouge1": 0.45833333333333337,
+    "rouge2": 0.13807531380753138,
+    "rougeLsum": 0.4083333333333333,
+    "items": 9,
+    "actions": 0,
+    "decisions": 1,
+    "owner_unclear": 0,
+    "ami_decisions": 4,
+    "abstract_covered": [
+     0.4,
+     10
+    ],
+    "decisions_covered": [
+     0.0,
+     4
+    ],
+    "actions_covered": [
+     0.0,
+     3
+    ],
+    "supported": [
+     0.7777777777777778,
+     9
+    ]
+   },
+   {
+    "meeting": "IS1009b",
+    "complete": true,
+    "requests": 7,
+    "seconds": 66.93207699999039,
+    "rouge1": 0.34897959183673466,
+    "rouge2": 0.049079754601226995,
+    "rougeLsum": 0.33469387755102037,
+    "items": 32,
+    "actions": 5,
+    "decisions": 1,
+    "owner_unclear": 5,
+    "ami_decisions": 4,
+    "abstract_covered": [
+     0.375,
+     8
+    ],
+    "decisions_covered": [
+     0.25,
+     4
+    ],
+    "actions_covered": [
+     0.0,
+     1
+    ],
+    "supported": [
+     0.125,
+     32
+    ]
+   },
+   {
+    "meeting": "IS1009c",
+    "complete": true,
+    "requests": 4,
+    "seconds": 25.18561841666815,
+    "rouge1": 0.5014749262536874,
+    "rouge2": 0.1390532544378698,
+    "rougeLsum": 0.46607669616519176,
+    "items": 17,
+    "actions": 1,
+    "decisions": 0,
+    "owner_unclear": 1,
+    "ami_decisions": 3,
+    "abstract_covered": [
+     0.2,
+     10
+    ],
+    "decisions_covered": [
+     0.0,
+     3
+    ],
+    "actions_covered": [
+     0.25,
+     4
+    ],
+    "supported": [
+     0.5294117647058824,
+     17
+    ]
+   },
+   {
+    "meeting": "IS1009d",
+    "complete": true,
+    "requests": 7,
+    "seconds": 67.91861999999674,
+    "rouge1": 0.4331983805668016,
+    "rouge2": 0.1075050709939148,
+    "rougeLsum": 0.4048582995951417,
+    "items": 39,
+    "actions": 5,
+    "decisions": 0,
+    "owner_unclear": 5,
+    "ami_decisions": 9,
+    "abstract_covered": [
+     0.4444444444444444,
+     9
+    ],
+    "decisions_covered": [
+     0.0,
+     9
+    ],
+    "actions_covered": [
+     0.0,
+     1
+    ],
+    "supported": [
+     0.41025641025641024,
+     39
+    ]
+   },
+   {
+    "meeting": "TS3003a",
+    "complete": true,
+    "requests": 5,
+    "seconds": 24.944195874995785,
+    "rouge1": 0.41295546558704455,
+    "rouge2": 0.1056910569105691,
+    "rougeLsum": 0.3765182186234818,
+    "items": 17,
+    "actions": 1,
+    "decisions": 0,
+    "owner_unclear": 1,
+    "ami_decisions": 6,
+    "abstract_covered": [
+     0.4,
+     5
+    ],
+    "decisions_covered": [
+     0.0,
+     6
+    ],
+    "actions_covered": [
+     0.0,
+     1
+    ],
+    "supported": [
+     0.29411764705882354,
+     17
+    ]
+   },
+   {
+    "meeting": "TS3003b",
+    "complete": true,
+    "requests": 3,
+    "seconds": 35.356930458321585,
+    "rouge1": 0.5377574370709383,
+    "rouge2": 0.1834862385321101,
+    "rougeLsum": 0.5148741418764302,
+    "items": 28,
+    "actions": 4,
+    "decisions": 0,
+    "owner_unclear": 3,
+    "ami_decisions": 11,
+    "abstract_covered": [
+     0.8,
+     5
+    ],
+    "decisions_covered": [
+     0.0,
+     11
+    ],
+    "actions_covered": [
+     1.0,
+     2
+    ],
+    "supported": [
+     0.4642857142857143,
+     28
+    ]
+   },
+   {
+    "meeting": "TS3003c",
+    "complete": true,
+    "requests": 4,
+    "seconds": 35.00057429166918,
+    "rouge1": 0.42380261248185774,
+    "rouge2": 0.07860262008733625,
+    "rougeLsum": 0.397677793904209,
+    "items": 28,
+    "actions": 4,
+    "decisions": 0,
+    "owner_unclear": 4,
+    "ami_decisions": 6,
+    "abstract_covered": [
+     0.8,
+     5
+    ],
+    "decisions_covered": [
+     0.0,
+     6
+    ],
+    "actions_covered": [
+     0.3333333333333333,
+     3
+    ],
+    "supported": [
+     0.32142857142857145,
+     28
+    ]
+   },
+   {
+    "meeting": "TS3003d",
+    "complete": true,
+    "requests": 5,
+    "seconds": 51.101011041668244,
+    "rouge1": 0.47952047952047944,
+    "rouge2": 0.12012012012012013,
+    "rougeLsum": 0.4595404595404595,
+    "items": 30,
+    "actions": 5,
+    "decisions": 0,
+    "owner_unclear": 3,
+    "ami_decisions": 8,
+    "abstract_covered": [
+     0.45454545454545453,
+     11
+    ],
+    "decisions_covered": [
+     0.0,
+     8
+    ],
+    "actions_covered": [
+     1.0,
+     1
+    ],
+    "supported": [
+     0.4666666666666667,
+     30
+    ]
+   }
+  ],
+  "newbefore": [
+   {
+    "meeting": "ES2004a",
+    "complete": false,
+    "requests": 3,
+    "seconds": 37.245879458336276,
+    "rouge1": 0.31284916201117313,
+    "rouge2": 0.05607476635514018,
+    "rougeLsum": 0.29050279329608936,
+    "items": 16,
+    "actions": 4,
+    "decisions": 0,
+    "owner_unclear": 4,
+    "ami_decisions": 0,
+    "abstract_covered": [
+     0.42857142857142855,
+     7
+    ],
+    "actions_covered": [
+     0.0,
+     1
+    ],
+    "supported": [
+     0.3125,
+     16
+    ],
+    "wer": [
+     0.17234848484848486,
+     2640
+    ],
+    "reference_summary_kept": 0.6
+   },
+   {
+    "meeting": "IS1009a",
+    "complete": true,
+    "requests": 1,
+    "seconds": 10.043118041663547,
+    "rouge1": 0.40174672489082974,
+    "rouge2": 0.12280701754385967,
+    "rougeLsum": 0.3755458515283843,
+    "items": 8,
+    "actions": 0,
+    "decisions": 0,
+    "owner_unclear": 0,
+    "ami_decisions": 4,
+    "abstract_covered": [
+     0.3,
+     10
+    ],
+    "decisions_covered": [
+     0.0,
+     4
+    ],
+    "actions_covered": [
+     0.0,
+     3
+    ],
+    "supported": [
+     0.625,
+     8
+    ],
+    "wer": [
+     0.18854166666666666,
+     1920
+    ],
+    "reference_summary_kept": 0.7777777777777778
+   },
+   {
+    "meeting": "IS1009c",
+    "complete": false,
+    "requests": 6,
+    "seconds": 42.75314625000465,
+    "rouge1": 0.44955300127713915,
+    "rouge2": 0.08962868117797695,
+    "rougeLsum": 0.4112388250319285,
+    "items": 25,
+    "actions": 5,
+    "decisions": 1,
+    "owner_unclear": 5,
+    "ami_decisions": 3,
+    "abstract_covered": [
+     0.2,
+     10
+    ],
+    "decisions_covered": [
+     0.0,
+     3
+    ],
+    "actions_covered": [
+     0.25,
+     4
+    ],
+    "supported": [
+     0.28,
+     25
+    ],
+    "wer": [
+     0.09900509585052172,
+     4121
+    ],
+    "reference_summary_kept": 0.6470588235294118
+   }
+  ],
+  "newfix": [
+   {
+    "meeting": "ES2004a",
+    "complete": true,
+    "requests": 1,
+    "seconds": 12.700901749994955,
+    "rouge1": 0.31446540880503143,
+    "rouge2": 0.05473684210526316,
+    "rougeLsum": 0.2851153039832285,
+    "items": 12,
+    "actions": 0,
+    "decisions": 0,
+    "owner_unclear": 0,
+    "ami_decisions": 0,
+    "abstract_covered": [
+     0.2857142857142857,
+     7
+    ],
+    "actions_covered": [
+     0.0,
+     1
+    ],
+    "supported": [
+     0.25,
+     12
+    ],
+    "wer": [
+     0.17234848484848486,
+     2640
+    ],
+    "reference_summary_kept": 0.5
+   },
+   {
+    "meeting": "IS1009a",
+    "complete": true,
+    "requests": 1,
+    "seconds": 10.542560041663819,
+    "rouge1": 0.4794007490636705,
+    "rouge2": 0.15413533834586468,
+    "rougeLsum": 0.4644194756554307,
+    "items": 10,
+    "actions": 0,
+    "decisions": 0,
+    "owner_unclear": 0,
+    "ami_decisions": 4,
+    "abstract_covered": [
+     0.2,
+     10
+    ],
+    "decisions_covered": [
+     0.0,
+     4
+    ],
+    "actions_covered": [
+     0.0,
+     3
+    ],
+    "supported": [
+     0.4,
+     10
+    ],
+    "wer": [
+     0.18854166666666666,
+     1920
+    ],
+    "reference_summary_kept": 0.7777777777777778
+   },
+   {
+    "meeting": "IS1009c",
+    "complete": true,
+    "requests": 5,
+    "seconds": 27.144875708327163,
+    "rouge1": 0.440046565774156,
+    "rouge2": 0.09801633605600933,
+    "rougeLsum": 0.3981373690337602,
+    "items": 20,
+    "actions": 1,
+    "decisions": 2,
+    "owner_unclear": 1,
+    "ami_decisions": 3,
+    "abstract_covered": [
+     0.4,
+     10
+    ],
+    "decisions_covered": [
+     0.3333333333333333,
+     3
+    ],
+    "actions_covered": [
+     0.25,
+     4
+    ],
+    "supported": [
+     0.6,
+     20
+    ],
+    "wer": [
+     0.09900509585052172,
+     4121
+    ],
+    "reference_summary_kept": 0.7058823529411765
+   }
+  ]
+ },
+ "conditions": {
+  "refbefore": "AMI manual transcript, notes by master 4b81891 (before the fix)",
+  "reffix": "AMI manual transcript, notes with the fix, fresh run",
+  "newbefore": "Mix-Headset transcribed by PR 129 (2c1530d), notes by its build (before the fix)",
+  "newfix": "same transcripts, notes with the fix, fresh run"
+ },
+ "reference": "reffix"
+}
