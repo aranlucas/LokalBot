@@ -4,13 +4,22 @@
 Recorded answers replay in order per purpose; a catch-all per purpose repeats
 the last recorded usable answer, so a day with more segments than the
 recording still gets valid responses.
+
+With --real-asr, notes repairs also get an answer. The recorded notes answer
+quotes the golden transcripts exactly, so real Parakeet wording (for example
+"eviction policy" for "eviction-policy") sends ownership to a repair that was
+never recorded. The repair answers like a model that finds nothing to fix.
+Golden runs keep no repair rule, so an unexpected repair still fails loudly.
 """
 import json
 from pathlib import Path
 import sys
 
 
-def build(recordings_root, model):
+EMPTY_REPAIR = json.dumps({"notes": [], "actions": [], "has_more": False})
+
+
+def build(recordings_root, model, real_asr=False):
     root = Path(recordings_root)
     markers = json.loads((root / "purpose-markers.json").read_text())
     folder = root / model.replace("/", "__")
@@ -28,8 +37,11 @@ def build(recordings_root, model):
                 last[purpose] = call["content"]
     for purpose, content in last.items():
         rules.append({"match": {"systemIncludes": markers[purpose]}, "behaviour": {"kind": "reply", "content": content}})
+    if real_asr:
+        rules.append({"match": {"systemIncludes": markers["notesRepair"]},
+                      "behaviour": {"kind": "reply", "content": EMPTY_REPAIR}})
     return rules
 
 
 if __name__ == "__main__":
-    print(json.dumps({"rules": build(sys.argv[1], sys.argv[2])}))
+    print(json.dumps({"rules": build(sys.argv[1], sys.argv[2], real_asr="--real-asr" in sys.argv[3:])}))

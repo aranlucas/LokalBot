@@ -25,6 +25,18 @@ class ScenarioTests(unittest.TestCase):
         catch_alls = {r["match"]["systemIncludes"] for r in rules if "nth" not in r["match"]}
         self.assertTrue({markers["digestFocus"], markers["digestAggregate"], markers["notes"]} <= catch_alls)
 
+    def test_only_real_asr_answers_notes_repairs(self):
+        # Nightly 2026-10-01: real Parakeet wording missed a recorded quote,
+        # the app asked for a repair, and the stub had no rule (HTTP 500).
+        root = SOURCE / "LokalBotTests/Fixtures/model-recordings"
+        marker = json.loads((root / "purpose-markers.json").read_text())["notesRepair"]
+        golden = scenario.build(root, "z-ai/glm-5.3-flash")
+        self.assertFalse(any(r["match"]["systemIncludes"] == marker for r in golden))
+        real = [r for r in scenario.build(root, "z-ai/glm-5.3-flash", real_asr=True)
+                if r["match"]["systemIncludes"] == marker]
+        self.assertEqual(len(real), 1)
+        self.assertEqual(json.loads(real[0]["behaviour"]["content"]), {"notes": [], "actions": [], "has_more": False})
+
 
 class AssertionTests(unittest.TestCase):
     def test_health_assertions(self):
@@ -45,6 +57,37 @@ class AssertionTests(unittest.TestCase):
             self.assertFalse(assertions.has_action_owned_by_me(Path(folder)))
             outcomes.write_text(json.dumps({"actionItems": [{"text": "Draft", "owner": "Me", "isForUser": True}]}))
             self.assertTrue(assertions.has_action_owned_by_me(Path(folder)))
+
+    def test_finished_notes_accept_any_owner(self):
+        with tempfile.TemporaryDirectory() as folder:
+            self.assertFalse(assertions.has_finished_notes(Path(folder)))
+            outcomes = Path(folder, "outcomes.json")
+            outcomes.write_text(json.dumps({"actionItems": []}))
+            self.assertFalse(assertions.has_finished_notes(Path(folder)))
+            outcomes.write_text(json.dumps({"actionItems": [{"text": "Draft", "isForUser": False}]}))
+            self.assertTrue(assertions.has_finished_notes(Path(folder)))
+
+    def test_word_error_rate_ignores_case_punctuation_and_hyphens(self):
+        golden = SOURCE / "LokalBotTests/Fixtures/day-in-the-life/golden-transcripts/design-review"
+        with tempfile.TemporaryDirectory() as folder:
+            heard = [
+                {"start": 0, "text": "let's lock the caching layer, I propose Redis for the pub sub support"},
+                {"start": 7, "text": "Agreed on Redis. Open question: do we need cluster mode from day one?"},
+                {"start": 16, "text": "I'll draft the eviction policy doc by Thursday"},
+                {"start": 22, "text": "Please benchmark failover latency before we commit to a cluster."},
+                {"start": 30, "text": "Fair. I'll borrow the load harness from the search team for that."},
+            ]
+            Path(folder, "transcript.json").write_text(json.dumps({"segments": heard}))
+            self.assertEqual(assertions.transcript_word_error_rate(Path(folder), golden), 0)
+            heard[3]["text"] = "Please benchmark fail over latency before we commit."
+            Path(folder, "transcript.json").write_text(json.dumps({"segments": heard}))
+            rate = assertions.transcript_word_error_rate(Path(folder), golden)
+            self.assertGreater(rate, 0)
+            self.assertLess(rate, 0.25)
+
+    def test_word_error_rate_counts_every_edit(self):
+        self.assertEqual(assertions.word_error_rate(["a", "b", "c", "d"], ["a", "x", "c"]), 0.5)
+        self.assertEqual(assertions.word_error_rate(["a"], []), 1)
 
 
 if __name__ == "__main__":
