@@ -354,6 +354,36 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertTrue(result.outcomes.actionItems[0].ownershipIsUnclear)
     }
 
+    func testRecordsQueuedBehindASuccessfulOwnershipRepairStillGetRepaired() async throws {
+        let obligation = "I think I still have to review the change."
+        var transcript = transcript
+        transcript.segments = [
+            .init(start: 0, end: 5, speaker: "me", text: "I have been doing reviews."),
+            .init(start: 5, end: 10, speaker: "me", text: obligation),
+            .init(start: 10, end: 15, speaker: "them", text: "The documentation needs another review."),
+        ]
+        var original = action(owner: "unknown")
+        original["text"] = "Review the remaining change"
+        original["basis"] = "unclear"
+        original["context"] = ["s2"]
+        var repaired = original
+        repaired["source"] = "s2"
+        repaired["context"] = ["s1"]
+        repaired["quote"] = obligation
+        let script = Script([
+            .text(try response(notes: [note("s3", "Needs repair", section: "Wrong")], actions: [original])),
+            .text(try response(actions: [original])),
+            .text(try response(actions: [repaired])),
+            .text(try response(notes: [note("s3", "The documentation needs another review.")])),
+        ])
+        let result = try await generate(script, transcript: transcript)
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 4, "Two ownership repairs, then the queued note gets its own")
+        XCTAssertTrue(calls[3].prompt.contains(#""reason":"invalid_note""#))
+        XCTAssertEqual(result.claims.count, 1)
+        XCTAssertEqual(result.outcomes.userActionItems.first?.attribution?.quote, obligation)
+    }
+
     func testRepairFailureSavesEarlierValidRecordsWithoutReplacingFinalArtifacts() async throws {
         let output = try folder()
         try Data("Previous complete summary".utf8).write(to: output.appendingPathComponent("summary.md"))

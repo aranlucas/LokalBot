@@ -188,11 +188,13 @@ extension MeetingNotesGenerator {
         // full but still could not bind it to one undertaking stays visible
         // as owner-unclear, like a wrong-owner claim: the same evidence fails
         // every retry, so holding the part open would fail the meeting each
-        // time. Records queued behind it then get their own two repairs. The
-        // user's own commitments stay strict: a part missing one stays open.
+        // time. Records queued behind ownership repairs then get their own
+        // two repairs. The user's own commitments stay strict: a part missing
+        // one stays open.
         let ownershipReasons: Set<String> = ["missing_ownership_evidence", "ambiguous_ownership_evidence", "ownership_quote_not_found"]
         for phase in 0..<2 {
             var answeredOwnership = Set<String>()
+            var repairedOwnership = false
             var previousRepairTokens = 0
             for attempt in 0..<2 where !recovery.pending.isEmpty {
                 let repairable = repairBatch(recovery.pending, units: job.units)
@@ -228,6 +230,7 @@ extension MeetingNotesGenerator {
                 }
                 let ownershipRepair = repairable.first?.actionID != nil
                 if ownershipRepair {
+                    repairedOwnership = true
                     acceptOwnershipRepairs(fixed, requested: repairable, job: job, complete: fixed.complete && !raw.truncated,
                                            part: &part, recovery: &recovery)
                     // Ownership repairs keep each task's text fixed, so the text
@@ -254,7 +257,6 @@ extension MeetingNotesGenerator {
                 if raw.truncated && repairTokens >= 4_096 { break }
                 if !fixed.complete && !raw.truncated && fixed.hasMore != true { break }
             }
-            let queued = recovery.pending.count
             if missingCommitments(part, job: job).isEmpty {
                 recovery.pending.removeAll { rejection in
                     guard let actionID = rejection.actionID, let text = rejection.text, ownershipReasons.contains(rejection.reason),
@@ -262,7 +264,7 @@ extension MeetingNotesGenerator {
                     return part.outcomes.actionItems.contains { $0.id == actionID && $0.ownershipIsUnclear }
                 }
             }
-            guard phase == 0, recovery.pending.count < queued,
+            guard phase == 0, repairedOwnership, !recovery.pending.isEmpty,
                   !recovery.pending.contains(where: { $0.actionID != nil }) else { break }
             try checkpoint()
         }
