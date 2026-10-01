@@ -1331,4 +1331,12 @@ extension DayDigestEvidenceTests {
                                                calendar: calendar)
         XCTAssertEqual(evidence.summarySegments().count, 1, "a 30-minute session is one model call")
     }
+
+    func testAggregationRoomGrowsWithCandidatesUpToTheRetryBudget() {
+        XCTAssertEqual(DayDigestOverviewGenerator.aggregationTokens(candidates: 3), 1_600)
+        XCTAssertEqual(DayDigestOverviewGenerator.aggregationTokens(candidates: 8), 1_600)
+        XCTAssertEqual(DayDigestOverviewGenerator.aggregationTokens(candidates: 16), 2_800)
+        XCTAssertEqual(DayDigestOverviewGenerator.aggregationTokens(candidates: 40),
+                       DayDigestOverviewGenerator.aggregationRetryTokens)
+    }
 }

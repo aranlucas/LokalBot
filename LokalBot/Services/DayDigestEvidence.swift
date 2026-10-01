@@ -1371,7 +1371,7 @@ enum DayDigestOverviewGenerator {
                     prompt: aggregationPrompt,
                     schema: digestSchema,
                         options: TextGenerationOptions(
-                            maxTokens: aggregationTokens,
+                            maxTokens: aggregationTokens(candidates: selectedBlocks.count),
                             reasoningBudgetTokens: 512,
                             temperature: 0.2))
                 } catch TextEngineError.outputTruncated {
@@ -1421,6 +1421,13 @@ enum DayDigestOverviewGenerator {
     static let focusRetryTokens = 4_096
     static let aggregationTokens = 1_600
     static let aggregationRetryTokens = 3_200
+
+    /// The first aggregation pass gets room for each candidate beyond eight
+    /// (about 150 tokens per task), now that a long day can produce up to 16.
+    /// A fixed 1,600 tokens was truncated on the first 16-segment day.
+    static func aggregationTokens(candidates: Int) -> Int {
+        min(aggregationRetryTokens, aggregationTokens + max(0, candidates - 8) * 150)
+    }
 
     /// Remote providers intermittently answer 429/5xx or drop the connection.
     /// Replay that one request after the shared policy delay instead of
