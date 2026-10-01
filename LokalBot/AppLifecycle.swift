@@ -373,6 +373,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 window.makeMain()
                 window.orderFrontRegardless()
                 NSApp.activate(ignoringOtherApps: true)
+                Self.focusQuickRecallField(in: window)
+                Self.raiseCaptureDensity(of: window)
                 // Sidebar vibrancy redraws asynchronously after key-state
                 // changes. A full second prevents the active material from
                 // being captured between its mask and compositing passes.
@@ -411,6 +413,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 window.makeMain()
                 window.orderFrontRegardless()
                 NSApp.activate(ignoringOtherApps: true)
+                Self.focusQuickRecallField(in: window)
+                Self.raiseCaptureDensity(of: window)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                     Self.writeWindowCapture(window, to: capturePath)
                     NSApp.terminate(nil)
@@ -452,19 +456,69 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// LOKALBOT_CAPTURE_SCALE, clamped to 1...4. README captures default to 2x.
+    private static var captureScale: CGFloat {
+        let requested = Double(ProcessInfo.processInfo.environment["LOKALBOT_CAPTURE_SCALE"] ?? "") ?? 2
+        return CGFloat(min(max(requested, 1), 4))
+    }
+
+    /// Quick Recall opens with its search field focused. Re-keying the window
+    /// for a capture can hand focus to the first key view, the clear button,
+    /// which then draws a focus ring, so return focus to the field.
+    @MainActor
+    private static func focusQuickRecallField(in window: NSWindow) {
+        guard ProcessInfo.processInfo.environment["LOKALBOT_UI_TEST_WINDOW"] == "quick-recall",
+              let content = window.contentView else { return }
+        func editableField(in view: NSView) -> NSTextField? {
+            if let field = view as? NSTextField, field.isEditable { return field }
+            return view.subviews.lazy.compactMap(editableField).first
+        }
+        guard let field = editableField(in: content), window.makeFirstResponder(field) else { return }
+        // Focusing selects the query; a person typing it has the caret at the end.
+        field.currentEditor()?.selectedRange = NSRange(location: (field.stringValue as NSString).length, length: 0)
+    }
+
+    /// `cacheDisplay` copies each layer's backing store, which AppKit sizes for
+    /// the display's backing scale. Above that scale it would only enlarge the
+    /// 2x pixels, so first redraw the layers that draw their own content (text,
+    /// shapes) at the requested density. Layers whose contents are assigned,
+    /// such as icons and thumbnails, are left as they are.
+    @MainActor
+    private static func raiseCaptureDensity(of window: NSWindow) {
+        let scale = captureScale
+        guard scale > window.backingScaleFactor,
+              let root = (window.contentView?.superview ?? window.contentView)?.layer else { return }
+        func overrides(_ type: AnyClass, _ base: AnyClass, _ selector: Selector) -> Bool {
+            class_getMethodImplementation(type, selector) != class_getMethodImplementation(base, selector)
+        }
+        func drawsOwnContent(_ layer: CALayer) -> Bool {
+            if overrides(type(of: layer), CALayer.self, #selector(CALayer.draw(in:))) { return true }
+            guard let view = layer.delegate as? NSView else { return false }
+            return overrides(type(of: view), NSView.self, #selector(NSView.draw(_:)))
+        }
+        func raise(_ layer: CALayer) {
+            if drawsOwnContent(layer) {
+                layer.contentsScale = scale
+                layer.setNeedsDisplay()
+                layer.displayIfNeeded()
+            }
+            layer.sublayers?.forEach(raise)
+        }
+        // Outside AppKit's display pass no drawing appearance is current, and
+        // controls would redraw in their default colors.
+        window.effectiveAppearance.performAsCurrentDrawingAppearance { raise(root) }
+    }
+
     /// Render the window's frame view (titlebar + content) into a configurable
     /// high-density PNG via `cacheDisplay`, independent of the display's
-    /// backing scale. README captures default to 2x; video experiments can ask
-    /// for up to 4x through LOKALBOT_CAPTURE_SCALE.
+    /// backing scale. README captures default to 2x; website and video
+    /// captures can ask for up to 4x through LOKALBOT_CAPTURE_SCALE.
     @MainActor
     private static func writeWindowCapture(_ window: NSWindow?, to path: String) {
         guard let window, let content = window.contentView else { return }
         let view: NSView = content.superview ?? content
         let bounds = view.bounds
-        let requestedScale = Double(
-            ProcessInfo.processInfo.environment["LOKALBOT_CAPTURE_SCALE"] ?? ""
-        ) ?? 2
-        let scale = CGFloat(min(max(requestedScale, 1), 4))
+        let scale = captureScale
         guard bounds.width > 0, bounds.height > 0,
               let rep = NSBitmapImageRep(bitmapDataPlanes: nil,
                                          pixelsWide: Int(bounds.width * scale),
