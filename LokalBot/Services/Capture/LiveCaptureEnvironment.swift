@@ -4,13 +4,58 @@ import CoreGraphics
 import Foundation
 import ScreenCaptureKit
 
+/// `RunningApp` values for NSWorkspace's application objects, read once per
+/// process. NSWorkspace hands back the same object for a running process, but
+/// each property read on it is a synchronous LaunchServices round trip. The
+/// detector mapped all ~200 apps twice per 2-second tick on the main thread,
+/// which a live profile on 2026-10-01 showed as 40–70 ms stalls every tick.
+/// Objects are retained while cached, so an identifier is never reused.
+final class RunningApplicationCache: @unchecked Sendable {
+    static let shared = RunningApplicationCache()
+
+    private let lock = NSLock()
+    private var entries: [ObjectIdentifier: (app: NSRunningApplication, value: RunningApp)] = [:]
+    private let makeValue: (NSRunningApplication) -> RunningApp
+
+    init(makeValue: @escaping (NSRunningApplication) -> RunningApp = RunningApp.init) {
+        self.makeValue = makeValue
+    }
+
+    func values(for apps: [NSRunningApplication]) -> [RunningApp] {
+        lock.withLock {
+            var next: [ObjectIdentifier: (app: NSRunningApplication, value: RunningApp)] = [:]
+            next.reserveCapacity(apps.count)
+            var values: [RunningApp] = []
+            values.reserveCapacity(apps.count)
+            for app in apps {
+                let key = ObjectIdentifier(app)
+                let value = entries[key]?.value ?? makeValue(app)
+                next[key] = (app, value)
+                values.append(value)
+            }
+            entries = next
+            return values
+        }
+    }
+
+    func value(for app: NSRunningApplication) -> RunningApp {
+        lock.withLock {
+            let key = ObjectIdentifier(app)
+            if let cached = entries[key] { return cached.value }
+            let value = makeValue(app)
+            entries[key] = (app, value)
+            return value
+        }
+    }
+}
+
 struct LiveWorkspaceSource: WorkspaceSource {
     func frontmostApplication() -> RunningApp? {
-        NSWorkspace.shared.frontmostApplication.map(RunningApp.init)
+        NSWorkspace.shared.frontmostApplication.map(RunningApplicationCache.shared.value(for:))
     }
 
     func runningApplications() -> [RunningApp] {
-        NSWorkspace.shared.runningApplications.map(RunningApp.init)
+        RunningApplicationCache.shared.values(for: NSWorkspace.shared.runningApplications)
     }
 
     func isRunning(processID: pid_t) -> Bool {

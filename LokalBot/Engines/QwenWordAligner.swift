@@ -103,6 +103,7 @@ actor QwenWordAligner {
     private func unload() async {
         guard activeUses == 0, !(await loading.isRunning) else { return }
         model = nil
+        MLXMemoryRelease.releaseCachedBuffers(after: "qwen-aligner")
         await ModelRuntimeRegistry.shared.unregister(id: Self.runtimeID)
     }
 
