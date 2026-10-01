@@ -139,7 +139,7 @@ jobs:
         with:
           path: ~/Library/Application Support/FluidAudio
           key: parakeet-${{ runner.os }}-v1
-      # The workday asserts each meeting's word error rate against the golden
+      # The workday asserts the day's word error rate against the golden
       # transcripts, so a failure here is the Parakeet drift signal. A failed
       # run keeps its library (logs, transcripts, outcomes) for the artifact.
       - name: Real-ASR workday

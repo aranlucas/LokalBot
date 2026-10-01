@@ -89,6 +89,35 @@ class AssertionTests(unittest.TestCase):
         self.assertEqual(assertions.word_error_rate(["a", "b", "c", "d"], ["a", "x", "c"]), 0.5)
         self.assertEqual(assertions.word_error_rate(["a"], []), 1)
 
+    def test_a_split_or_joined_compound_is_not_an_edit(self):
+        self.assertEqual(assertions.word_edits(["cleanup", "tomorrow"], ["clean", "up", "tomorrow"]), 0)
+        self.assertEqual(assertions.word_edits(["clean", "up", "tomorrow"], ["cleanup", "tomorrow"]), 0)
+        self.assertEqual(assertions.word_edits(["pair", "on"], ["pare", "on"]), 1)
+        self.assertEqual(assertions.word_edits(["clean", "up"], ["cleanups"]), 2)
+
+    def test_day_rate_pools_meetings_so_one_short_meeting_cannot_decide_the_run(self):
+        # Nightly 2026-10-01: Parakeet heard the 14-word sprint planning as
+        # "...i'll pare on the tombstone clean up tomorrow" (21.4% per meeting
+        # before compounds were ignored) and the design review exactly.
+        fixtures = SOURCE / "LokalBotTests/Fixtures/day-in-the-life/golden-transcripts"
+        heard = {
+            "design-review": json.loads((fixtures / "design-review/mic.json").read_text())["segments"]
+            + json.loads((fixtures / "design-review/system.json").read_text())["segments"],
+            "sprint-planning": [
+                {"start": 0, "text": "Sprint goal is the search index rebuild."},
+                {"start": 121, "text": "I'll pare on the tombstone clean up tomorrow."},
+            ],
+        }
+        with tempfile.TemporaryDirectory() as root:
+            meetings = []
+            for name, segments in heard.items():
+                folder = Path(root, name)
+                folder.mkdir()
+                (folder / "transcript.json").write_text(json.dumps({"segments": segments}))
+                meetings.append((folder, fixtures / name))
+            self.assertAlmostEqual(assertions.transcript_word_error_rate(*meetings[1]), 1 / 14)
+            self.assertAlmostEqual(assertions.day_word_error_rate(meetings), 1 / 70)
+
 
 if __name__ == "__main__":
     unittest.main()

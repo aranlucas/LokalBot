@@ -11,9 +11,10 @@ BUN="${LOKALBOT_TEST_BUN:-$(command -v bun || true)}"
 [[ -x "$BIN" ]] || { echo "no app binary at $BIN"; exit 2; }
 [[ -x "$BUN" ]] || { echo "Bun is required (LOKALBOT_TEST_BUN)"; exit 2; }
 REAL_ASR=0; [[ "${1:-}" == "--real-asr" ]] && REAL_ASR=1
-# Real Parakeet word error rate allowed against the golden transcripts, after
-# case, punctuation, and hyphens are ignored.
-MAX_WER="${LOKALBOT_DAY_MAX_WER:-0.25}"
+# Real Parakeet word error rate allowed across the day's meetings against the
+# golden transcripts, ignoring case, punctuation, hyphens, and split or joined
+# compounds. 2026-10-01 measured 1 edit in 70 words ("pare" for "pair").
+MAX_WER="${LOKALBOT_DAY_MAX_WER:-0.10}"
 
 # CI points LOKALBOT_DAY_ROOT at a folder it uploads when the run fails.
 LIB=$(mktemp -d "${LOKALBOT_DAY_ROOT:-/tmp}/lokalbot-day.XXXXXX")
@@ -72,14 +73,16 @@ done
 if [[ $REAL_ASR -eq 1 ]]; then
   # The recorded notes answer quotes the golden wording, so ownership is only
   # asserted on golden runs. Here the drift signal is the word error rate.
+  meetings=()
   for folder in "$DESIGN" "$SPRINT"; do
-    name=$(basename "$folder"); golden="$ROOT_DIR/LokalBotTests/Fixtures/day-in-the-life/golden-transcripts/${name#*-}"
-    if rate=$(python3 "$ROOT_DIR/Scripts/day-in-the-life/assertions.py" wer "$folder" "$golden" "$MAX_WER"); then
-      pass "$name word error rate $rate"
-    else
-      fail "$name word error rate ${rate:-unavailable} exceeds $MAX_WER"
-    fi
+    name=$(basename "$folder")
+    meetings+=("$folder" "$ROOT_DIR/LokalBotTests/Fixtures/day-in-the-life/golden-transcripts/${name#*-}")
   done
+  if rate=$(python3 "$ROOT_DIR/Scripts/day-in-the-life/assertions.py" wer-day "$MAX_WER" "${meetings[@]}"); then
+    pass "day word error rate $rate"
+  else
+    fail "day word error rate ${rate:-unavailable} exceeds $MAX_WER"
+  fi
   python3 "$ROOT_DIR/Scripts/day-in-the-life/assertions.py" finished-notes "$DESIGN" \
     && pass "design review notes finished" || fail "design review notes did not finish"
 else
