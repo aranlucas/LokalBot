@@ -44,14 +44,19 @@ final class TranscriptionVocabularyTests: XCTestCase {
                                   attendees: [("Jelena Marković", "jelena@example.com"),
                                               (nil, "ana.petrovic@example.com")])
         var memory = DreamMemory(updatedAt: Date())
-        memory.activeProjects = [.init(name: "Orion Launch", status: "blocked", lastActiveDay: "2026-05-27")]
+        memory.activeProjects = [
+            .init(name: "Orion Launch", status: "blocked", lastActiveDay: "2026-05-27", pinned: true),
+            .init(name: "Ave vault accounting and compliance", status: "active", lastActiveDay: "2026-05-27"),
+        ]
 
         let terms = TranscriptionVocabulary.terms(TranscriptionVocabulary.sources(
             for: current, library: [prior, unrelated, current], root: root, memory: memory))
 
         XCTAssertEqual(terms.first, "Jelena Marković")
         XCTAssertTrue(terms.contains("Dragan Ilić"))
-        XCTAssertTrue(terms.contains("Orion Launch"))
+        XCTAssertTrue(terms.contains("Orion Launch"), "a project the person pinned is vocabulary")
+        XCTAssertFalse(terms.contains("Ave vault accounting and compliance"),
+                       "an unpinned model label must not bias the next transcript")
         XCTAssertTrue(terms.contains("Acme"))
         XCTAssertFalse(terms.contains("Should Not Appear"))
         XCTAssertFalse(terms.contains { $0.contains("@") || $0.localizedCaseInsensitiveContains("petrovic") })

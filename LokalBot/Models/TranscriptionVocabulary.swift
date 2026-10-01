@@ -88,7 +88,7 @@ enum TranscriptionVocabulary {
             sources.appliedSpeakerNames += transcript.speakerAliases.values.sorted()
         }
         if let memory {
-            sources.projectNames = memory.activeProjects.map(\.name)
+            sources.projectNames = Self.endorsedProjectNames(memory)
         }
         sources.titleTerms = titleTerms(meeting.calendarTitle ?? meeting.title)
         return sources
@@ -111,11 +111,19 @@ enum TranscriptionVocabulary {
         sources.attendeeNames = counts.values.sorted {
             $0.count == $1.count ? $0.last > $1.last : $0.count > $1.count
         }.map(\.name)
-        sources.projectNames = memory?.activeProjects.map(\.name) ?? []
+        sources.projectNames = memory.map(Self.endorsedProjectNames) ?? []
         return sources
     }
 
     // MARK: - Persistence
+
+    /// Only projects the person pinned. Unpinned Dream projects are model
+    /// labels, often built from earlier mishearings ("Ave vault accounting and
+    /// compliance"); as speech-model vocabulary they biased the next
+    /// transcript toward the same errors.
+    static func endorsedProjectNames(_ memory: DreamMemory) -> [String] {
+        memory.activeProjects.filter(\.pinned).map(\.name)
+    }
 
     static func load(from folder: URL) -> Record? {
         guard let data = try? Data(contentsOf: folder.appendingPathComponent(fileName)) else { return nil }
