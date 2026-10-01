@@ -1750,7 +1750,14 @@ final class AppState: ObservableObject {
         dayDigest.reconsiderEvidence(for: days)
         dailyMemoryExportScheduler.reconsider(days: days)
         memoryRoutines.reconsiderEvidence()
-        invalidateDreams(affectedDays: days, affectedMeetingIDs: meetingIDs)
+        // Meetings feed later days' comparison windows; screen, activity, and
+        // coding-agent evidence is read only for its own day. Treating a
+        // screen change as a meeting change made every retention pass
+        // discard two weeks of Dream reports.
+        let activityOnly = meetingIDs.isEmpty
+        invalidateDreams(affectedDays: days, affectedMeetingIDs: meetingIDs,
+                         comparisonWindowDays: activityOnly ? 1 : DreamCompiler.comparisonWindowDays,
+                         activityOnly: activityOnly)
     }
 
     func withPrimaryEvidenceChange<T>(on days: [Date], _ mutation: () throws -> T) throws -> T {
@@ -1774,12 +1781,20 @@ final class AppState: ObservableObject {
         // a model. Reopen consumers after the journal and provenance are saved.
         dailyMemoryExportScheduler.reconsider(day: day)
         memoryRoutines.reconsiderEvidence()
-        invalidateDreams(affectedDays: [day], comparisonWindowDays: 1)
+        // A dream only reads finished days' digests. Today's digest is
+        // refreshed many times a day and no report depends on it yet; a past
+        // day's regenerated digest revokes exactly that day's report.
+        let calendar = Calendar.current
+        guard calendar.startOfDay(for: day) < calendar.startOfDay(for: Date()) else { return }
+        invalidateDreams(affectedDays: [day], comparisonWindowDays: 1, activityOnly: true,
+                         sourceDayKeys: [DreamDay.key(for: day, calendar: calendar)])
     }
 
     private func invalidateDreams(
         affectedDays: [Date], affectedMeetingIDs: Set<UUID> = [],
-        comparisonWindowDays: Int = DreamCompiler.comparisonWindowDays
+        comparisonWindowDays: Int = DreamCompiler.comparisonWindowDays,
+        activityOnly: Bool = false,
+        sourceDayKeys: Set<String>? = nil
     ) {
         let calendar = Calendar.current
         let affectedKeys = DreamEvidenceInvalidation.dayKeys(
@@ -1788,15 +1803,18 @@ final class AppState: ObservableObject {
         var invalidatedKeys = affectedKeys
         do {
             invalidatedKeys = try dreamStore.invalidateEvidence(
-                affectedDayKeys: DreamEvidenceInvalidation.sourceDayKeys(for: affectedDays),
+                affectedDayKeys: sourceDayKeys ?? DreamEvidenceInvalidation.sourceDayKeys(for: affectedDays),
                 affectedMeetingIDs: affectedMeetingIDs,
-                reportDayKeys: affectedKeys)
+                reportDayKeys: affectedKeys,
+                activityOnly: activityOnly)
         } catch {
             lastError = "Could not retract changed evidence from Dream memory: " + error.localizedDescription
         }
         refreshDreamMemory()
         latestDreamReport = dreamStore.latestReport()
-        dreaming.reconsiderReports(invalidating: invalidatedKeys, cancellingInFlight: true)
+        // An in-flight dream is checked against its own sources when it
+        // commits, so only a change to the day being dreamed stops it early.
+        dreaming.reconsiderReports(invalidating: invalidatedKeys, cancellingInFlight: false)
     }
 
     func applyTrackingSetting() {

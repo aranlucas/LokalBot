@@ -15,6 +15,10 @@ import Foundation
 final class DreamScheduler: ObservableObject {
     /// Yesterday plus the six days before it.
     nonisolated static let catchUpDays = 7
+    /// Automatic runs that hit a rate limit or dropped connection are retried
+    /// after the failure backoff; the evidence-only brief is written only
+    /// once this many consecutive attempts for the same day have failed.
+    nonisolated static let transientAttemptsBeforeFallback = 3
 
     struct Configuration: Equatable, Sendable {
         var enabled: Bool
@@ -37,6 +41,8 @@ final class DreamScheduler: ObservableObject {
         let dayKey: String
         let calendar: Calendar
         var isAutomatic: Bool = false
+        /// Consecutive transient failures already seen for this day.
+        var transientFailures: Int = 0
     }
 
     typealias Dream = @MainActor (_ target: Target) async throws -> Void
@@ -67,6 +73,7 @@ final class DreamScheduler: ObservableObject {
     private var scanCursorDayKey: String?
     private var scanCalendar: Calendar?
     private var generation = 0
+    private var transientFailures: [String: Int] = [:]
 
     init(now: @escaping () -> Date = Date.init) {
         fixedCalendar = nil
@@ -208,7 +215,8 @@ final class DreamScheduler: ObservableObject {
     private func start(target: Target, advancesScanCursor: Bool) {
         guard let dream else { return }
         let target = Target(day: target.day, dayKey: target.dayKey,
-                            calendar: target.calendar, isAutomatic: advancesScanCursor)
+                            calendar: target.calendar, isAutomatic: advancesScanCursor,
+                            transientFailures: transientFailures[target.dayKey] ?? 0)
         let runGeneration = generation
         isDreaming = true
         activeDayKey = target.dayKey
@@ -221,6 +229,7 @@ final class DreamScheduler: ObservableObject {
                 guard !Task.isCancelled, generation == runGeneration else { return }
                 lastDreamedAt = now()
                 lastFailure = nil
+                transientFailures[target.dayKey] = nil
                 if advancesScanCursor,
                    let next = target.calendar.date(byAdding: .day, value: 1, to: target.day) {
                     scanCalendar = target.calendar
@@ -228,6 +237,11 @@ final class DreamScheduler: ObservableObject {
                 }
                 continueCatchUp = advancesScanCursor
             } catch is CancellationError {
+            } catch is DreamService.Deferred {
+                // Retried after the usual backoff; not surfaced as an error.
+                guard generation == runGeneration else { return }
+                lastFailure = now()
+                transientFailures[target.dayKey, default: 0] += 1
             } catch {
                 guard generation == runGeneration else { return }
                 lastFailure = now()

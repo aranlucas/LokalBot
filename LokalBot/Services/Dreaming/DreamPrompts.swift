@@ -181,14 +181,17 @@ enum DreamPrompts {
               let data = json.data(using: .utf8),
               let payload = try? JSONDecoder().decode(Payload.self, from: data),
               let narrative = cleaned(payload.narrative, cap: 1_200),
-              let attention = cleanedList(payload.attention),
-              let repeatedWork = cleanedList(payload.repeatedWork),
-              let suggestedChecks = cleanedList(payload.suggestedChecks),
-              let frictions = cleanedList(payload.frictions),
-              let topActions = cleanedList(payload.topActions),
               let recurringPatterns = cleanedList(payload.recurringPatterns) else {
             return nil
         }
+        // Report sections are advice, not memory: a blank bullet carries no
+        // claim, so drop it instead of discarding the whole night's work.
+        // Memory lists stay strict because they replace stored entries.
+        let attention = reportList(payload.attention)
+        let repeatedWork = reportList(payload.repeatedWork)
+        let suggestedChecks = reportList(payload.suggestedChecks)
+        let frictions = reportList(payload.frictions)
+        let topActions = reportList(payload.topActions)
 
         var projects: [DreamMemoryUpdate.Project] = []
         for project in payload.activeProjects {
@@ -295,6 +298,10 @@ enum DreamPrompts {
             ids.append(id)
         }
         return (texts, ids)
+    }
+
+    private static func reportList(_ values: [String]) -> [String] {
+        values.compactMap { cleaned($0) }
     }
 
     private static func cleanedList(_ values: [String]) -> [String]? {

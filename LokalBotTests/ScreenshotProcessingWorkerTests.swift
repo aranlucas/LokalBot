@@ -41,6 +41,29 @@ final class ScreenshotProcessingWorkerTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
     }
 
+    /// Every relaunch used to run a full retention pass, and each pass
+    /// revoked derived journals and Dream reports. The last pass now survives
+    /// a relaunch, so the daily bound holds across restarts.
+    func testRetentionScheduleSurvivesRelaunch() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("retention-\(UUID())")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let marker = root.appendingPathComponent(ScreenshotRetentionSchedule.markerFileName)
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+
+        var first = ScreenshotRetentionSchedule.load(markerURL: marker)
+        XCTAssertTrue(first.shouldPrune(at: start), "a library with no recorded pass prunes")
+
+        var relaunched = ScreenshotRetentionSchedule.load(markerURL: marker)
+        XCTAssertEqual(relaunched.lastPrune, start)
+        XCTAssertFalse(relaunched.shouldPrune(at: start.addingTimeInterval(3_600)))
+        XCTAssertTrue(relaunched.shouldPrune(at: start.addingTimeInterval(3_600), force: true))
+
+        var nextDay = ScreenshotRetentionSchedule.load(markerURL: marker)
+        XCTAssertFalse(nextDay.shouldPrune(at: start.addingTimeInterval(86_399)))
+        XCTAssertTrue(nextDay.shouldPrune(at: start.addingTimeInterval(3_600 + 86_400)))
+    }
+
     func testRetentionScheduleRunsDailyAndRespondsToPrivacyChanges() {
         var schedule = ScreenshotRetentionSchedule()
         let start = Date(timeIntervalSince1970: 1_700_000_000)

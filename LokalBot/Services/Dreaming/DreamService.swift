@@ -42,7 +42,6 @@ struct DreamService {
         }
 
         let memory = try store.loadMemory() ?? DreamMemory(updatedAt: now())
-        guard try store.evidenceRevision() == revision else { throw CancellationError() }
         // A missing/corrupt historical report may need regeneration after
         // later days have already advanced durable memory. Rebuild that report
         // from its own evidence, but never replay an older synthesis over newer
@@ -72,12 +71,8 @@ struct DreamService {
             do {
                 let selection = try await makeEngine()
                 try Task.checkCancellation()
-                guard try store.evidenceRevision() == revision else { throw CancellationError() }
-                let output = try await selection.engine.generate(
-                    system: DreamPrompts.system,
-                    prompt: DreamPrompts.prompt(evidence: evidence),
-                    context: DreamPrompts.context(evidence: evidence, memory: contextMemory),
-                    schema: DreamPrompts.schema)
+                let output = try await Self.generateSynthesis(
+                    engine: selection.engine, evidence: evidence, memory: contextMemory)
                 try Task.checkCancellation()
                 if let synthesis = DreamPrompts.parse(output) {
                     provenance = contextMemory.provenance(adding: evidence.sources, revision: revision)
@@ -102,11 +97,21 @@ struct DreamService {
                 }
             } catch is CancellationError {
                 throw CancellationError()
+            } catch let error as TextEngineError
+                        where error.isRetryable && target.isAutomatic
+                            && target.transientFailures < DreamScheduler.transientAttemptsBeforeFallback - 1 {
+                // A rate limit or dropped connection is not a broken backend.
+                // Leave the day undreamed so the scheduler retries after its
+                // backoff instead of keeping an evidence-only brief for good.
+                lokalbotLog("dreaming: deferred after transient error day=\(target.dayKey) "
+                    + "attempt=\(target.transientFailures + 1) error=\(error.localizedDescription)")
+                throw Deferred(underlying: error)
             } catch {
                 // Engine unavailable (no model prepared, server down, remote origin
-                // unapproved…). Still deliver the morning surface — evidence only,
-                // memory untouched — and mark the day done so the scheduler doesn't
-                // hammer a broken backend all night. "Dream now" can redo the day.
+                // unapproved…) or still failing after retries. Still deliver the
+                // morning surface — evidence only, memory untouched — and mark the
+                // day done so the scheduler doesn't hammer a broken backend all
+                // night. "Dream now" can redo the day.
                 lokalbotLog("dreaming: engine unavailable, writing evidence-only brief error=\(error.localizedDescription)")
                 report = DreamCompiler.fallbackReport(
                     from: evidence, generatedAt: now(),
@@ -127,6 +132,44 @@ struct DreamService {
             try store.saveGenerated(report: report, memory: nil, basedOnRevision: revision)
         }
         return report
+    }
+
+    /// Output allowance for the retrospective plus memory update. Visible
+    /// replies run about 1–2K tokens; without a cap a reasoning model on a
+    /// remote server spent 4–27K hidden tokens and up to eight minutes per day.
+    static let maxOutputTokens = 4_096
+    static let reasoningBudgetTokens = 1_024
+    static let truncationRetryOutputTokens = 6_144
+
+    /// The model ran out of room: retry once with thinking off and more room
+    /// for the visible JSON, as the day digest does.
+    static func generateSynthesis(engine: TextEngine, evidence: DreamEvidence,
+                                  memory: DreamMemory) async throws -> String {
+        let prompt = DreamPrompts.prompt(evidence: evidence)
+        let context = DreamPrompts.context(evidence: evidence, memory: memory)
+        do {
+            return try await engine.generate(
+                system: DreamPrompts.system, prompt: prompt, context: context,
+                schema: DreamPrompts.schema,
+                options: TextGenerationOptions(maxTokens: maxOutputTokens,
+                                               reasoningBudgetTokens: reasoningBudgetTokens,
+                                               temperature: 0.2))
+        } catch TextEngineError.outputTruncated {
+            lokalbotLog("dreaming: reply hit the output limit, retrying without reasoning")
+            return try await engine.generate(
+                system: DreamPrompts.system, prompt: prompt, context: context,
+                schema: DreamPrompts.schema,
+                options: TextGenerationOptions(maxTokens: truncationRetryOutputTokens,
+                                               reasoningBudgetTokens: 0,
+                                               temperature: 0))
+        }
+    }
+
+    /// A transient failure the scheduler retries after its backoff, quietly:
+    /// it is not a user-facing error and the day stays undreamed.
+    struct Deferred: LocalizedError {
+        let underlying: Error
+        var errorDescription: String? { underlying.localizedDescription }
     }
 
     private enum TargetError: LocalizedError {
