@@ -200,12 +200,16 @@ jobs:
           TEST_RUNNER_LOKALBOT_SCALE_LIBRARY="$RUNNER_TEMP/large" xcodebuild test-without-building \
             -xctestrun "${runs[0]}" -destination 'platform=macOS' -derivedDataPath .build/dd \
             -only-testing:LokalBotTests/ScaleTests
+      # Each check is independent: a slow sweep must not hide a concurrency
+      # failure, so later steps run after an earlier one fails.
       - name: Digest while activity is written
+        if: ${{ !cancelled() }}
         run: |
           export LOKALBOT_TEST_BUN="$(bash Scripts/ci/fetch-bun.sh | tail -1)"
           export LOKALBOT_APP="$PWD/.build/dd/Build/Products/Debug/LokalBot.app"
           bash Scripts/scale/digest-while-writing.sh
       - name: Two copies on one library
+        if: ${{ !cancelled() }}
         run: |
           export LOKALBOT_APP="$PWD/.build/dd/Build/Products/Debug/LokalBot.app"
           bash Scripts/scale/two-instances.sh
