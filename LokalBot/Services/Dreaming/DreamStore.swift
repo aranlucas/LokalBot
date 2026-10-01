@@ -52,6 +52,9 @@ struct DreamStore {
     private struct PendingInvalidation: Codable {
         var id: UUID = UUID()
         var days: Set<String> = []
+        /// Days whose screen, activity, coding-agent, or digest evidence
+        /// changed without touching a meeting. Absent in older intents.
+        var activityDays: Set<String>?
         var meetings: Set<UUID> = []
         var reports: Set<String> = []
         var awaitingSourceMutation = false
@@ -64,6 +67,8 @@ struct DreamStore {
         var revision: UInt64 = 0
         var invalidatedDays: [String: UInt64] = [:]
         var invalidatedMeetings: [String: UInt64]?
+        /// Activity-only changes; see `DreamEvidenceProvenance.isInvalidated`.
+        var invalidatedActivityDays: [String: UInt64]?
     }
 
     var root: URL
@@ -100,8 +105,12 @@ struct DreamStore {
                 // after storage becomes writable; never silently drop a failed
                 // revocation just because the next changed source is different.
                 let pending = Self.pendingInvalidations[rootKey] ?? PendingInvalidation()
+                // Recovery treats activity-only days as day-wide: conservative.
                 try invalidateEvidence(
-                    affectedDayKeys: durable.reduce(into: pending.days) { $0.formUnion($1.days) },
+                    affectedDayKeys: durable.reduce(into: pending.days.union(pending.activityDays ?? [])) {
+                        $0.formUnion($1.days)
+                        $0.formUnion($1.activityDays ?? [])
+                    },
                     affectedMeetingIDs: durable.reduce(into: pending.meetings) { $0.formUnion($1.meetings) },
                     reportDayKeys: durable.reduce(into: pending.reports) { $0.formUnion($1.reports) })
             }
@@ -184,12 +193,17 @@ struct DreamStore {
     @discardableResult
     func invalidateEvidence(affectedDayKeys: Set<String>, affectedMeetingIDs: Set<UUID> = [],
                             reportDayKeys: Set<String>,
+                            activityOnly: Bool = false,
                             at date: Date = Date()) throws -> Set<String> {
         guard !affectedDayKeys.isEmpty || !affectedMeetingIDs.isEmpty else { return [] }
         Self.mutationLock.lock()
         defer { Self.mutationLock.unlock() }
         var pending = Self.pendingInvalidations[rootKey] ?? PendingInvalidation()
-        pending.days.formUnion(affectedDayKeys)
+        if activityOnly && affectedMeetingIDs.isEmpty {
+            pending.activityDays = (pending.activityDays ?? []).union(affectedDayKeys)
+        } else {
+            pending.days.formUnion(affectedDayKeys)
+        }
         pending.meetings.formUnion(affectedMeetingIDs)
         pending.reports.formUnion(reportDayKeys)
         do {
@@ -199,11 +213,15 @@ struct DreamStore {
                 Self.blockedRoots.remove(rootKey)
                 var intents = try pendingIntents()
                 for index in intents.indices {
-                    let matchesCompletedMutation = intents[index].days.isSubset(of: affectedDayKeys)
+                    let intentDays = intents[index].days.union(intents[index].activityDays ?? [])
+                    let matchesCompletedMutation = intentDays.isSubset(of: affectedDayKeys)
                         && intents[index].meetings.isSubset(of: affectedMeetingIDs)
                     if !intents[index].awaitingSourceMutation || matchesCompletedMutation {
                         intents[index].awaitingSourceMutation = false
                         pending.days.formUnion(intents[index].days)
+                        if let activity = intents[index].activityDays {
+                            pending.activityDays = (pending.activityDays ?? []).union(activity)
+                        }
                         pending.meetings.formUnion(intents[index].meetings)
                         pending.reports.formUnion(intents[index].reports)
                     }
@@ -216,6 +234,11 @@ struct DreamStore {
                 guard state.revision < UInt64.max else { throw DreamStoreError.evidenceRetractionIncomplete }
                 state.revision += 1
                 for day in pending.days { state.invalidatedDays[day] = state.revision }
+                if let activityDays = pending.activityDays, !activityDays.isEmpty {
+                    var activity = state.invalidatedActivityDays ?? [:]
+                    for day in activityDays { activity[day] = state.revision }
+                    state.invalidatedActivityDays = activity
+                }
                 var meetings = state.invalidatedMeetings ?? [:]
                 for id in pending.meetings { meetings[id.uuidString] = state.revision }
                 state.invalidatedMeetings = meetings
@@ -272,11 +295,15 @@ struct DreamStore {
     /// durable barrier until the matching post-write invalidateEvidence call.
     /// A prepared intent is never consumed by a background inference retry.
     func prepareEvidenceInvalidation(affectedDayKeys: Set<String>, affectedMeetingIDs: Set<UUID> = [],
-                                     reportDayKeys: Set<String> = [], protectedByMutationLock: Bool = false) throws {
+                                     reportDayKeys: Set<String> = [], activityOnly: Bool = false,
+                                     protectedByMutationLock: Bool = false) throws {
         guard !affectedDayKeys.isEmpty || !affectedMeetingIDs.isEmpty else { return }
         try withLock {
             var intents = try pendingIntents()
-            intents.append(PendingInvalidation(days: affectedDayKeys, meetings: affectedMeetingIDs,
+            let activity = activityOnly && affectedMeetingIDs.isEmpty
+            intents.append(PendingInvalidation(days: activity ? [] : affectedDayKeys,
+                                               activityDays: activity ? affectedDayKeys : nil,
+                                               meetings: affectedMeetingIDs,
                                                reports: reportDayKeys, awaitingSourceMutation: true,
                                                ownerProcessID: getpid(), protectedByMutationLock: protectedByMutationLock))
             try write(intents, to: pendingInvalidationURL)
@@ -287,13 +314,15 @@ struct DreamStore {
     /// lock. A cleanup failure leaves the source untouched; a successful source
     /// mutation must not be reported as failed by a later Dream storage error.
     func withEvidenceMutation<T>(affectedDayKeys: Set<String>, affectedMeetingIDs: Set<UUID> = [],
-                                 reportDayKeys: Set<String> = [], _ mutation: () throws -> T) throws -> T {
+                                 reportDayKeys: Set<String> = [], activityOnly: Bool = false,
+                                 _ mutation: () throws -> T) throws -> T {
         try withLock {
             try prepareEvidenceInvalidation(affectedDayKeys: affectedDayKeys,
                                             affectedMeetingIDs: affectedMeetingIDs, reportDayKeys: reportDayKeys,
-                                            protectedByMutationLock: true)
+                                            activityOnly: activityOnly, protectedByMutationLock: true)
             try invalidateEvidence(affectedDayKeys: affectedDayKeys,
-                                   affectedMeetingIDs: affectedMeetingIDs, reportDayKeys: reportDayKeys)
+                                   affectedMeetingIDs: affectedMeetingIDs, reportDayKeys: reportDayKeys,
+                                   activityOnly: activityOnly)
             // The advanced revision rejects older generations. No new one can
             // acquire its revision until this lock releases after the source
             // write, including nested mutations and partial source failures.
@@ -344,13 +373,26 @@ struct DreamStore {
         }
     }
 
-    /// No await can occur between the revision check and the complete commit.
+    /// No await can occur between the staleness check and the complete commit.
     /// Even a model or headless caller that ignores task cancellation cannot
     /// put a snapshot taken before source revocation back into the store.
+    ///
+    /// Only the sources this dream read decide whether it is stale: a change
+    /// to another day's evidence while the model ran no longer discards the
+    /// run. Memory written here is retracted against the current state, so a
+    /// revocation committed during generation still removes its facts. A
+    /// report without provenance falls back to the store-wide revision.
     func saveGenerated(report: DreamReport, memory: DreamMemory?, basedOnRevision revision: UInt64) throws {
         try withLock {
             try requireAvailableEvidence()
-            guard try evidenceState().revision == revision else { throw CancellationError() }
+            let state = try evidenceState()
+            if let provenance = report.evidenceProvenance {
+                guard provenance.revision <= revision, !isInvalidated(provenance, by: state) else {
+                    throw CancellationError()
+                }
+            } else {
+                guard state.revision == revision else { throw CancellationError() }
+            }
             if let memory { try save(memory) }
             try save(report)
         }
@@ -383,12 +425,14 @@ struct DreamStore {
                 url: url, found: memory.version, supported: DreamMemory.currentVersion)
         }
         return memory.retractingEvidence(invalidations: state.invalidatedDays, revision: state.revision,
-                                         meetingInvalidations: state.invalidatedMeetings ?? [:])
+                                         meetingInvalidations: state.invalidatedMeetings ?? [:],
+                                         activityInvalidations: state.invalidatedActivityDays ?? [:])
     }
 
     private func writeMemory(_ memory: DreamMemory, state: EvidenceState) throws {
         var memory = memory.retractingEvidence(invalidations: state.invalidatedDays, revision: state.revision,
-                                               meetingInvalidations: state.invalidatedMeetings ?? [:])
+                                               meetingInvalidations: state.invalidatedMeetings ?? [:],
+                                               activityInvalidations: state.invalidatedActivityDays ?? [:])
         memory.version = DreamMemory.currentVersion
         try write(memory, to: memoryDirectory.appendingPathComponent("\(Self.memoryFileName).json", isDirectory: false))
         try writeMarkdown(memory.markdown(),
@@ -399,7 +443,8 @@ struct DreamStore {
         guard state.revision > 0 else { return false }
         guard let provenance else { return true }
         return provenance.isInvalidated(by: state.invalidatedDays, currentRevision: state.revision,
-                                        meetingRevisions: state.invalidatedMeetings ?? [:])
+                                        meetingRevisions: state.invalidatedMeetings ?? [:],
+                                        activityRevisions: state.invalidatedActivityDays ?? [:])
     }
 
     private func withLock<T>(_ body: () throws -> T) throws -> T {

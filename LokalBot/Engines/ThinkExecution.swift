@@ -96,7 +96,11 @@ final class ThinkExecution {
             if model.isEmpty {
                 model = await OllamaEngine.listModels(baseURL: url).first ?? ""
             }
-            return OllamaEngine(baseURL: url, model: model)
+            return GatedTextEngine(
+                base: OllamaEngine(baseURL: url, model: model),
+                origin: RemoteInferenceGate.origin(for: url),
+                priority: priority,
+                purpose: purpose)
 
         case .openAICompatible:
             guard let url = URL(string: settings.openAIBaseURL) else {
@@ -105,12 +109,20 @@ final class ThinkExecution {
             try InferenceEndpointPolicy.validate(
                 url,
                 approvedOrigins: settings.approvedRemoteInferenceOrigins)
-            return OpenAICompatibleEngine(
+            let engine = OpenAICompatibleEngine(
                 baseURL: url,
                 model: settings.openAIModel,
                 apiKey: includingCredentials ? settings.openAIAPIKey : nil,
                 chatDialect: .inferred(from: url),
                 openRouterDataPolicy: settings.openRouterDataPolicy)
+            // External servers share one gate per origin so scheduled work
+            // cannot crowd out meeting notes or chat, and a rate limit pauses
+            // every caller instead of each replaying a second later.
+            return GatedTextEngine(
+                base: engine,
+                origin: RemoteInferenceGate.origin(for: url),
+                priority: priority,
+                purpose: purpose)
         }
     }
 

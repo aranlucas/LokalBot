@@ -106,6 +106,8 @@ final class DayDigestLifecycle: ObservableObject {
     ) {
         self.init(
             storageRoot: storage.rootURL,
+            // The app settles evidence for 20 s before a fresh automatic run.
+            scheduler: DayDigestScheduler(evidenceSettleDelay: 20),
             blocks: { activityStore.blocks(on: $0) },
             screenContexts: { activityStore.screenContexts(on: $0) },
             codingAgentBursts: { activityStore.codingAgentBursts(on: $0) },

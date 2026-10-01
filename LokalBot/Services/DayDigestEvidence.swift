@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 /// One retained, privacy-scrubbed screen-context record used by the day digest.
@@ -43,6 +44,61 @@ enum DayDigestMeetingArtifacts {
             let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
             return attributes?[.modificationDate] as? Date
         }.max()
+    }
+}
+
+/// Answers to day-digest prompts already asked today, keyed by the exact
+/// prompt. A digest is regenerated whenever a meeting finishes or evidence
+/// settles; without this every run re-asked the model about every segment,
+/// including morning segments whose evidence had not changed (16 full runs on
+/// 2026-10-01). In memory only, bounded, and purged with a day's journal when
+/// evidence is deleted or corrected, so no derived text outlives its source.
+final class DayDigestSegmentCache: @unchecked Sendable {
+    static let shared = DayDigestSegmentCache()
+
+    private let lock = NSLock()
+    private var entries: [String: [String: String]] = [:]
+    private var dayOrder: [String] = []
+    let maximumDays: Int
+    let maximumEntriesPerDay: Int
+
+    init(maximumDays: Int = 8, maximumEntriesPerDay: Int = 64) {
+        self.maximumDays = maximumDays
+        self.maximumEntriesPerDay = maximumEntriesPerDay
+    }
+
+    static func key(engine: TextEngine, system: String, prompt: String) -> String {
+        let material = [engine.checkpointIdentity, system, prompt].joined(separator: "\u{1f}")
+        return SHA256.hash(data: Data(material.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+
+    func output(day: String, key: String) -> String? {
+        lock.withLock { entries[day]?[key] }
+    }
+
+    func store(_ output: String, day: String, key: String) {
+        lock.withLock {
+            var dayEntries = entries[day] ?? [:]
+            if dayEntries[key] == nil, dayEntries.count >= maximumEntriesPerDay { dayEntries.removeAll() }
+            dayEntries[key] = output
+            entries[day] = dayEntries
+            dayOrder.removeAll { $0 == day }
+            dayOrder.append(day)
+            while dayOrder.count > maximumDays {
+                entries[dayOrder.removeFirst()] = nil
+            }
+        }
+    }
+
+    func purge(days: Set<String>) {
+        lock.withLock {
+            for day in days { entries[day] = nil }
+            dayOrder.removeAll { days.contains($0) }
+        }
+    }
+
+    var cachedDays: Set<String> {
+        lock.withLock { Set(entries.keys) }
     }
 }
 
@@ -161,7 +217,8 @@ struct DayDigestEvidence: Equatable, Sendable {
     func summarySegments(
         maxCharacters: Int = 12_000,
         inactivityGap: TimeInterval = 10 * 60,
-        maxSegments: Int = 8
+        maxSegments: Int = 16,
+        targetSegmentDuration: TimeInterval = 60 * 60
     ) -> [DayDigestSummarySegment] {
         guard maxCharacters > 0, maxSegments > 0 else { return [] }
         let events = summaryEvents()
@@ -177,9 +234,9 @@ struct DayDigestEvidence: Equatable, Sendable {
             }
         }
 
-        // More than eight isolated sessions are rare, but merging the shortest
-        // adjacent pair preserves every event without letting a few brief
-        // interruptions consume most of the bounded UI.
+        // More isolated sessions than the day's limit are rare, but merging the
+        // shortest adjacent pair preserves every event without letting a few
+        // brief interruptions consume most of the bounded UI.
         while sessions.count > maxSegments {
             var smallestIndex = 0
             var smallestDuration = coveredDuration(
@@ -198,10 +255,21 @@ struct DayDigestEvidence: Equatable, Sendable {
                 contentsOf: sessions.remove(at: smallestIndex + 1))
         }
 
+        // Each segment shows a bounded sample of its events, so a session gets
+        // one segment per `targetSegmentDuration` of active time (never more
+        // than it has events). A fixed eight-segment plan gave a six-hour,
+        // 809-event block the same sample budget as a one-event session.
+        // Short days no longer split into extra calls just to reach a quota.
+        var needs: [Int] = []
+        for session in sessions {
+            let hours = Int(ceil(coveredDuration(of: session) / max(60, targetSegmentDuration)))
+            needs.append(min(session.count, max(1, hours)))
+        }
+        let budget = max(sessions.count, min(maxSegments, needs.reduce(0, +)))
         var allocations = Array(repeating: 1, count: sessions.count)
-        while allocations.reduce(0, +) < maxSegments {
+        while allocations.reduce(0, +) < budget {
             let candidates = sessions.indices.filter {
-                allocations[$0] < sessions[$0].count
+                allocations[$0] < needs[$0]
             }
             guard let index = candidates.max(by: { lhs, rhs in
                 sessionWeight(sessions[lhs]) / Double(allocations[lhs])
@@ -1043,6 +1111,7 @@ enum DayDigestOverviewGenerator {
         customPrompt: String,
         calendar: Calendar = .current,
         progress: DayDigestProgressHandler? = nil,
+        segmentCache: DayDigestSegmentCache? = nil,
         sleep: @escaping @Sendable (TimeInterval) async throws -> Void = {
             try await Task.sleep(for: .seconds($0))
         }
@@ -1059,6 +1128,7 @@ enum DayDigestOverviewGenerator {
                 context: dateContext, schema: schema, options: options, sleep: sleep)
         }
         let segments = evidence.summarySegments()
+        let cacheDay = DreamDay.key(for: evidence.day, calendar: calendar)
         let trackedSeconds = segments.reduce(0) { $0 + $1.activeDuration }
         var coveredSeconds: TimeInterval = 0
         guard !segments.isEmpty else {
@@ -1083,13 +1153,32 @@ enum DayDigestOverviewGenerator {
             try Task.checkCancellation()
             await progress?(DayDigestProgress(completedSegments: index, totalSegments: segments.count))
             let startedAt = Date()
+            // The prompt depends only on the segment's own evidence, so an
+            // unchanged segment can reuse its earlier answer.
             let focusPrompt = """
-                Extract a substantive-work candidate from evidence segment \(index + 1) of \(segments.count).
+                Extract a substantive-work candidate from this evidence segment.
                 Decide eligibility from the work content, not from time spent or app usage.
                 Allowed screen source IDs: \(segment.sourceIDs)
 
                 \(segment.evidence)
                 """
+            let cacheKey = DayDigestSegmentCache.key(
+                engine: engine, system: PromptTemplates.dayDigestFocusSystem, prompt: focusPrompt)
+            if let cached = segmentCache?.output(day: cacheDay, key: cacheKey),
+               let parsed = parseFocus(cached, segment: segment) {
+                if let block = parsed.block {
+                    coveredSeconds += segment.activeDuration
+                    if parsed.isSubstantive {
+                        substantiveBlocks.append(block)
+                    } else {
+                        fallbackBlocks.append(block)
+                    }
+                }
+                lokalbotLog(
+                    "day digest segment index=\(index + 1)/\(segments.count) "
+                        + "events=\(segment.eventCount) reused=true usable=\(parsed.block != nil)")
+                continue segmentLoop
+            }
             var attempts = 1
             var output: String
             do {
@@ -1189,6 +1278,9 @@ enum DayDigestOverviewGenerator {
                 }
             }
             if parsed == nil { degraded = true }
+            // A cancelled run is answering for evidence that just changed or
+            // was deleted; never keep its answer.
+            if parsed != nil, !Task.isCancelled { segmentCache?.store(output, day: cacheDay, key: cacheKey) }
             if let parsed, let block = parsed.block {
                 coveredSeconds += segment.activeDuration
                 if parsed.isSubstantive {
@@ -1265,33 +1357,41 @@ enum DayDigestOverviewGenerator {
                 \(candidatesHeading)
                 \(material)
                 """
+            let aggregationKey = DayDigestSegmentCache.key(engine: engine, system: system, prompt: aggregationPrompt)
             let output: String
-            do {
-                output = try await request(
-                    "task aggregation",
+            if let cached = segmentCache?.output(day: cacheDay, key: aggregationKey),
+               parseDigest(cached) != nil {
+                output = cached
+                lokalbotLog("day digest task aggregation reused=true")
+            } else {
+                do {
+                    output = try await request(
+                        "task aggregation",
                     system: system,
                     prompt: aggregationPrompt,
                     schema: digestSchema,
-                    options: TextGenerationOptions(
-                        maxTokens: aggregationTokens,
-                        reasoningBudgetTokens: 512,
-                        temperature: 0.2))
-            } catch TextEngineError.outputTruncated {
-                let retryStartedAt = Date()
-                output = try await request(
-                    "task aggregation retry",
-                    system: system,
-                    prompt: digestRetryPrompt + "\n\n" + aggregationPrompt,
-                    schema: digestSchema,
-                    options: TextGenerationOptions(
-                        maxTokens: aggregationRetryTokens,
-                        reasoningBudgetTokens: 0,
-                        temperature: 0))
-                lokalbotLog(
-                    "day digest task aggregation retry reason=output-limit elapsed="
-                        + String(format: "%.2fs", Date().timeIntervalSince(retryStartedAt)))
+                        options: TextGenerationOptions(
+                            maxTokens: aggregationTokens(candidates: selectedBlocks.count),
+                            reasoningBudgetTokens: 512,
+                            temperature: 0.2))
+                } catch TextEngineError.outputTruncated {
+                    let retryStartedAt = Date()
+                    output = try await request(
+                        "task aggregation retry",
+                        system: system,
+                        prompt: digestRetryPrompt + "\n\n" + aggregationPrompt,
+                        schema: digestSchema,
+                        options: TextGenerationOptions(
+                            maxTokens: aggregationRetryTokens,
+                            reasoningBudgetTokens: 0,
+                            temperature: 0))
+                    lokalbotLog(
+                        "day digest task aggregation retry reason=output-limit elapsed="
+                            + String(format: "%.2fs", Date().timeIntervalSince(retryStartedAt)))
+                }
             }
             digest = parseDigest(output)
+            if digest != nil, !Task.isCancelled { segmentCache?.store(output, day: cacheDay, key: aggregationKey) }
         } catch is CancellationError {
             throw CancellationError()
         } catch {
@@ -1322,6 +1422,13 @@ enum DayDigestOverviewGenerator {
     static let aggregationTokens = 1_600
     static let aggregationRetryTokens = 3_200
 
+    /// The first aggregation pass gets room for each candidate beyond eight
+    /// (about 150 tokens per task), now that a long day can produce up to 16.
+    /// A fixed 1,600 tokens was truncated on the first 16-segment day.
+    static func aggregationTokens(candidates: Int) -> Int {
+        min(aggregationRetryTokens, aggregationTokens + max(0, candidates - 8) * 150)
+    }
+
     /// Remote providers intermittently answer 429/5xx or drop the connection.
     /// Replay that one request after the shared policy delay instead of
     /// losing the rest of the day. Managed local engines already relaunch and
@@ -1343,7 +1450,7 @@ enum DayDigestOverviewGenerator {
         } catch is CancellationError {
             throw CancellationError()
         } catch {
-            guard !(engine is LeasedTextEngine),
+            guard !engine.handlesTransientRetries,
                   let delay = TextEngineRetryPolicy.delay(for: error, attempt: 0) else {
                 throw error
             }

@@ -1241,3 +1241,102 @@ final class DayDigestEvidenceTests: XCTestCase {
         haystack.components(separatedBy: needle).count - 1
     }
 }
+
+// MARK: - Reruns and segment sizing (2026-10-01 regressions)
+
+extension DayDigestEvidenceTests {
+    /// The digest ran 16 times on 2026-10-01 and re-asked the model about
+    /// every segment each time, including morning segments whose evidence had
+    /// not changed.
+    func testRerunReusesUnchangedSegmentAndAggregationAnswers() async throws {
+        let cache = DayDigestSegmentCache()
+        let recorder = GenerationRecorder()
+        let engine = StructuredDigestEngine(recorder: recorder)
+        let morning = [block(1, 8, "Morning implementation"), block(2, 13, "Midday investigation")]
+        let first = DayDigestEvidence.build(day: day, blocks: morning, screenContexts: [], meetings: [],
+                                            calendar: calendar)
+        _ = try await DayDigestOverviewGenerator.generateResult(
+            evidence: first, engine: engine, customPrompt: "", calendar: calendar, segmentCache: cache)
+        let afterFirst = await recorder.calls.count
+        XCTAssertEqual(afterFirst, 3, "two segments and one aggregation")
+
+        _ = try await DayDigestOverviewGenerator.generateResult(
+            evidence: first, engine: engine, customPrompt: "", calendar: calendar, segmentCache: cache)
+        let afterRepeat = await recorder.calls.count
+        XCTAssertEqual(afterRepeat, afterFirst, "unchanged evidence asks the model nothing")
+
+        let evening = DayDigestEvidence.build(
+            day: day, blocks: morning + [block(3, 19, "Evening verification")], screenContexts: [],
+            meetings: [], calendar: calendar)
+        _ = try await DayDigestOverviewGenerator.generateResult(
+            evidence: evening, engine: engine, customPrompt: "", calendar: calendar, segmentCache: cache)
+        let calls = await recorder.calls
+        XCTAssertEqual(calls.dropFirst(afterRepeat).filter(\.isFocus).count, 1,
+                       "only the new evening segment is extracted")
+        XCTAssertEqual(calls.dropFirst(afterRepeat).filter { !$0.isFocus }.count, 1)
+    }
+
+    func testPurgedDayIsAskedAgain() async throws {
+        let cache = DayDigestSegmentCache()
+        let recorder = GenerationRecorder()
+        let engine = StructuredDigestEngine(recorder: recorder)
+        let evidence = DayDigestEvidence.build(
+            day: day, blocks: [block(1, 8, "Morning implementation")], screenContexts: [], meetings: [],
+            calendar: calendar)
+        _ = try await DayDigestOverviewGenerator.generateResult(
+            evidence: evidence, engine: engine, customPrompt: "", calendar: calendar, segmentCache: cache)
+        XCTAssertEqual(cache.cachedDays, [DreamDay.key(for: day, calendar: calendar)])
+
+        cache.purge(days: [DreamDay.key(for: day, calendar: calendar)])
+        XCTAssertTrue(cache.cachedDays.isEmpty, "deleted evidence leaves no derived answer behind")
+        _ = try await DayDigestOverviewGenerator.generateResult(
+            evidence: evidence, engine: engine, customPrompt: "", calendar: calendar, segmentCache: cache)
+        let calls = await recorder.calls
+        XCTAssertEqual(calls.filter(\.isFocus).count, 2)
+    }
+
+    /// On 2026-10-01 a fragmented day used all eight segments on separate
+    /// sessions, so the six-hour main block (809 events) was squeezed into a
+    /// single segment's sample budget and then judged not substantive.
+    func testLongSessionGetsSegmentsInProportionToItsActiveTime() {
+        var blocks: [ActivityBlock] = []
+        for index in 0..<36 {
+            let start = time(9).addingTimeInterval(TimeInterval(index) * 600)
+            blocks.append(ActivityBlock(id: Int64(index + 1), app: "Xcode", title: "Main work \(index)",
+                                        start: start, end: start.addingTimeInterval(600)))
+        }
+        for index in 0..<7 {
+            blocks.append(block(Int64(100 + index), startHour: 16 + index / 2, startMinute: (index % 2) * 30,
+                                endHour: 16 + index / 2, endMinute: (index % 2) * 30 + 5,
+                                title: "Brief task \(index)", app: "Safari"))
+        }
+        let evidence = DayDigestEvidence.build(day: day, blocks: blocks, screenContexts: [], meetings: [],
+                                               calendar: calendar)
+
+        let segments = evidence.summarySegments()
+
+        let mainSegments = segments.filter { $0.start < time(15) }
+        XCTAssertEqual(mainSegments.count, 6, "one segment per hour of the six-hour block")
+        XCTAssertEqual(segments.count - mainSegments.count, 7, "brief sessions keep their own segment")
+    }
+
+    func testShortDayIsNotSplitToFillAQuota() {
+        var blocks: [ActivityBlock] = []
+        for index in 0..<10 {
+            let start = time(9).addingTimeInterval(TimeInterval(index) * 180)
+            blocks.append(ActivityBlock(id: Int64(index + 1), app: "Xcode", title: "Quick fix \(index)",
+                                        start: start, end: start.addingTimeInterval(180)))
+        }
+        let evidence = DayDigestEvidence.build(day: day, blocks: blocks, screenContexts: [], meetings: [],
+                                               calendar: calendar)
+        XCTAssertEqual(evidence.summarySegments().count, 1, "a 30-minute session is one model call")
+    }
+
+    func testAggregationRoomGrowsWithCandidatesUpToTheRetryBudget() {
+        XCTAssertEqual(DayDigestOverviewGenerator.aggregationTokens(candidates: 3), 1_600)
+        XCTAssertEqual(DayDigestOverviewGenerator.aggregationTokens(candidates: 8), 1_600)
+        XCTAssertEqual(DayDigestOverviewGenerator.aggregationTokens(candidates: 16), 2_800)
+        XCTAssertEqual(DayDigestOverviewGenerator.aggregationTokens(candidates: 40),
+                       DayDigestOverviewGenerator.aggregationRetryTokens)
+    }
+}

@@ -69,10 +69,10 @@ final class SystemAudioRecorder {
         ioQueue = writerQueue
         self.makeTap = makeTap
     }
-    /// The tap callback borrows from this fixed pool with a non-blocking lock.
-    /// It never allocates an AVAudioPCMBuffer or waits for the writer queue.
-    private let bufferPoolLock = NSLock()
-    private var bufferPool: [AVAudioPCMBuffer] = []
+    /// The tap callback borrows from this fixed lock-free pool. It never
+    /// allocates an AVAudioPCMBuffer or waits for the writer queue. Set before
+    /// the first tap starts and cleared after the last one stops.
+    private var bufferRing: RealtimeBufferRing?
     private let dropLock = NSLock()
 
     /// Captured app's PID, so we can detect the process terminating and
@@ -247,7 +247,8 @@ final class SystemAudioRecorder {
                 return
             }
             guard Self.copyBufferList(inInputData, into: copy) else {
-                self.returnBuffer(copy)
+                // Only the writer queue returns buffers to the ring.
+                self.ioQueue.async { self.returnBuffer(copy) }
                 self.noteDroppedBuffer()
                 return
             }
@@ -357,9 +358,7 @@ final class SystemAudioRecorder {
         dropLock.lock()
         droppedBufferCount = 0
         dropLock.unlock()
-        bufferPoolLock.lock()
-        bufferPool.removeAll(keepingCapacity: false)
-        bufferPoolLock.unlock()
+        bufferRing = nil
     }
 
     /// Commit missing meeting time only when a tap actually delivers a buffer.
@@ -411,26 +410,21 @@ final class SystemAudioRecorder {
             }
             prepared.append(buffer)
         }
-        bufferPoolLock.lock()
-        bufferPool = prepared
-        bufferPoolLock.unlock()
+        bufferRing = RealtimeBufferRing(buffers: prepared)
     }
 
-    /// Runs on Core Audio's real-time callback. `try()` makes saturation a
-    /// dropped-buffer event instead of priority-inverting on a contended lock.
+    /// Runs on Core Audio's real-time callback. Nothing here blocks: an empty
+    /// ring (the writer is far behind) is a dropped-buffer event.
     private func borrowBuffer(frameLength: AVAudioFrameCount) -> AVAudioPCMBuffer? {
         guard frameLength <= Self.pooledBufferFrameCapacity,
-              bufferPoolLock.try() else { return nil }
-        defer { bufferPoolLock.unlock() }
-        guard let buffer = bufferPool.popLast() else { return nil }
+              let buffer = bufferRing?.borrow() else { return nil }
         buffer.frameLength = frameLength
         return buffer
     }
 
+    /// Writer queue only.
     private func returnBuffer(_ buffer: AVAudioPCMBuffer) {
-        bufferPoolLock.lock()
-        bufferPool.append(buffer)
-        bufferPoolLock.unlock()
+        bufferRing?.giveBack(buffer)
     }
 
     private static func formatsCompatible(_ lhs: AVAudioFormat, _ rhs: AVAudioFormat) -> Bool {

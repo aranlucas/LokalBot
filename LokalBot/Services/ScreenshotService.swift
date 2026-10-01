@@ -80,8 +80,28 @@ struct ScreenCapturePolicy {
 /// tests; the service owns only the lightweight timer that asks it periodically.
 struct ScreenshotRetentionSchedule {
     static let pruneInterval: TimeInterval = 86_400
+    static let markerFileName = ".screen-retention-last-pass"
 
     private(set) var lastPrune: Date?
+    /// Where the last pass is remembered. Without it every launch ran a
+    /// library-wide pass on the main actor and revoked derived journals and
+    /// Dream reports again, however recently the previous pass had run. Nil
+    /// keeps the schedule in memory.
+    private(set) var markerURL: URL?
+
+    init(lastPrune: Date? = nil, markerURL: URL? = nil) {
+        self.lastPrune = lastPrune
+        self.markerURL = markerURL
+    }
+
+    /// The schedule for a library, resuming from its last recorded pass.
+    static func load(markerURL: URL) -> ScreenshotRetentionSchedule {
+        let text = try? String(contentsOf: markerURL, encoding: .utf8)
+        let last = text.flatMap {
+            try? Date($0.trimmingCharacters(in: .whitespacesAndNewlines), strategy: .iso8601)
+        }
+        return ScreenshotRetentionSchedule(lastPrune: last, markerURL: markerURL)
+    }
 
     mutating func shouldPrune(at now: Date, force: Bool = false) -> Bool {
         if !force, let lastPrune {
@@ -89,6 +109,10 @@ struct ScreenshotRetentionSchedule {
             guard elapsed < 0 || elapsed >= Self.pruneInterval else { return false }
         }
         lastPrune = now
+        if let markerURL {
+            // Best effort: a failed write only means the next launch prunes again.
+            try? Data(now.formatted(.iso8601).utf8).write(to: markerURL, options: .atomic)
+        }
         return true
     }
 
@@ -636,6 +660,8 @@ final class ScreenshotService: ObservableObject {
         self.isHighPriorityInteractionActive = isHighPriorityInteractionActive
         self.now = now
         self.settings = settings
+        retentionSchedule = .load(markerURL: storage.rootURL.appendingPathComponent(
+            ScreenshotRetentionSchedule.markerFileName, isDirectory: false))
     }
 
     func start() {

@@ -365,6 +365,77 @@ final class DayDigestSchedulerTests: XCTestCase {
         scheduler.stop()
     }
 
+    /// Every finished meeting cleared the failure backoff on 2026-10-01, so a
+    /// rate-limited provider was asked for the whole digest again at once.
+    @MainActor
+    func testEvidenceChangeKeepsTheFailureBackoff() async throws {
+        var current = try date("2026-07-21T18:00:00Z")
+        let scheduler = DayDigestScheduler(calendar: calendar, now: { current })
+        var calls = 0
+        scheduler.configure(
+            .init(enabled: true, hour: 18),
+            digestModifiedAt: { _ in nil },
+            latestEvidenceAt: { _ in current },
+            canRun: { true },
+            generate: { _ in
+                calls += 1
+                if calls == 1 {
+                    throw TextEngineError.httpStatus(code: 429, detail: "Provider returned error", retryAfter: nil)
+                }
+                return .completed
+            },
+            onError: { _ in })
+        try await waitUntil { calls == 1 }
+        try await Task.sleep(for: .milliseconds(50))
+
+        scheduler.reconsiderEvidence()
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(calls, 1, "a finished meeting must not bypass the rate-limit backoff")
+
+        current = current.addingTimeInterval(DayDigestScheduler.failureBackoff + 1)
+        scheduler.tick()
+        try await waitUntil { calls == 2 }
+        scheduler.stop()
+    }
+
+    @MainActor
+    func testEvidenceChangeSettlesBeforeAFreshRun() async throws {
+        var current = try date("2026-07-21T18:00:00Z")
+        let scheduler = DayDigestScheduler(calendar: calendar, now: { current }, evidenceSettleDelay: 20)
+        var calls = 0
+        scheduler.configure(
+            .init(enabled: true, hour: 18),
+            digestModifiedAt: { _ in nil },
+            latestEvidenceAt: { _ in current },
+            canRun: { true },
+            generate: { _ in
+                calls += 1
+                return .completed
+            },
+            onError: { _ in XCTFail("no error expected") })
+        try await waitUntil { calls == 1 }
+        try await Task.sleep(for: .milliseconds(50))
+
+        scheduler.reconsiderEvidence()
+        scheduler.tick()
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertEqual(calls, 1, "notes, outcomes, and the search index settle first")
+
+        current = current.addingTimeInterval(21)
+        scheduler.tick()
+        try await waitUntil { calls == 2 }
+        scheduler.stop()
+    }
+
+    @MainActor
+    private func waitUntil(_ condition: () -> Bool) async throws {
+        for _ in 0..<500 {
+            if condition() { return }
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        XCTFail("condition never became true")
+    }
+
     // MARK: - Custom prompt folding
 
     func testEmptyCustomPromptKeepsTheBaseDigestPrompt() {

@@ -8,6 +8,9 @@ extension DreamStore {
                                        meetingIDs: Set(meetings.map(\.id)), mutation)
     }
 
+    /// Screen, activity, and coding-agent evidence is read only for the
+    /// dreamed day itself, never through another day's comparison window, so
+    /// it revokes that day's reports and leaves meeting-derived facts alone.
     func withScreenEvidenceMutation<T>(on dates: [Date], _ mutation: () throws -> T) throws -> T {
         try withSourceEvidenceMutation(on: dates, meetingIDs: [], mutation)
     }
@@ -17,11 +20,14 @@ extension DreamStore {
     ) throws -> T {
         guard !dates.isEmpty || !meetingIDs.isEmpty else { return try mutation() }
         let calendar = Calendar.current
+        let activityOnly = meetingIDs.isEmpty
         let reportKeys = DreamEvidenceInvalidation.dayKeys(
-            affectedDays: dates, through: Date(), calendar: calendar)
+            affectedDays: dates, through: Date(), calendar: calendar,
+            comparisonWindowDays: activityOnly ? 1 : DreamCompiler.comparisonWindowDays)
         return try withEvidenceMutation(
             affectedDayKeys: DreamEvidenceInvalidation.sourceDayKeys(for: dates),
-            affectedMeetingIDs: meetingIDs, reportDayKeys: reportKeys, mutation)
+            affectedMeetingIDs: meetingIDs, reportDayKeys: reportKeys,
+            activityOnly: activityOnly, mutation)
     }
 }
 

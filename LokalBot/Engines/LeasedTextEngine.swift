@@ -14,6 +14,7 @@ struct LeasedTextEngine: TextEngine {
     var displayName: String { base.displayName }
     var accountsForGenerationRequests: Bool { base.accountsForGenerationRequests }
     var minimumStructuredOutputTokens: Int { base.minimumStructuredOutputTokens }
+    var handlesTransientRetries: Bool { true }
 
     func tokenCount(_ text: String) async throws -> Int? {
         try await withLease { try await base.tokenCount(text) }

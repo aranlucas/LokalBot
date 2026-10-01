@@ -94,14 +94,23 @@ struct DreamEvidenceProvenance: Codable, Equatable, Sendable {
     /// which consumed it must also be retracted on the next evidence change.
     var includesUnattributedContext: Bool = false
 
+    /// `revisions` are day-wide changes that may have touched any source on
+    /// that day. `activityRevisions` are screen, activity, coding-agent, or
+    /// digest changes that never alter a meeting; they leave meeting sources
+    /// (which are tracked by identity) untouched.
     func isInvalidated(by revisions: [String: UInt64], currentRevision: UInt64,
-                       meetingRevisions: [String: UInt64] = [:]) -> Bool {
+                       meetingRevisions: [String: UInt64] = [:],
+                       activityRevisions: [String: UInt64] = [:]) -> Bool {
         if includesUnattributedContext || sources.isEmpty {
             return revision < currentRevision
         }
-        return sources.contains {
-            (revisions[$0.dayKey] ?? 0) > revision
-                || ($0.kind == .meeting && (meetingRevisions[$0.id.uppercased()] ?? 0) > revision)
+        return sources.contains { source in
+            var dayRevision = revisions[source.dayKey] ?? 0
+            if source.kind != .meeting {
+                dayRevision = max(dayRevision, activityRevisions[source.dayKey] ?? 0)
+            }
+            return dayRevision > revision
+                || (source.kind == .meeting && (meetingRevisions[source.id.uppercased()] ?? 0) > revision)
         }
     }
 }
@@ -431,12 +440,14 @@ struct DreamMemory: Codable, Equatable, Sendable {
     /// cannot safely be attributed to an unaffected source, so the first
     /// evidence mutation removes it instead of guessing from its display text.
     func retractingEvidence(invalidations: [String: UInt64], revision: UInt64,
-                            meetingInvalidations: [String: UInt64] = [:]) -> DreamMemory {
+                            meetingInvalidations: [String: UInt64] = [:],
+                            activityInvalidations: [String: UInt64] = [:]) -> DreamMemory {
         guard revision > 0 else { return self }
         func keep(_ provenance: DreamEvidenceProvenance?) -> Bool {
             guard let provenance else { return false }
             return !provenance.isInvalidated(by: invalidations, currentRevision: revision,
-                                            meetingRevisions: meetingInvalidations)
+                                            meetingRevisions: meetingInvalidations,
+                                            activityRevisions: activityInvalidations)
         }
         var memory = self
         memory.activeProjects.removeAll { !keep($0.provenance) }

@@ -94,6 +94,7 @@ final class AudioSourceMonitor: ObservableObject {
     private static let candidateTimeout: TimeInterval = 20.0
 
     private var pollTimer: Timer?
+    private var pollTask: Task<Void, Never>?
     /// AudioObjectIDs already running output the last time we polled. A new
     /// detection fires only on a not-running → running transition.
     private var knownActiveObjectIDs: Set<AudioObjectID> = []
@@ -110,6 +111,8 @@ final class AudioSourceMonitor: ObservableObject {
     func stop() {
         pollTimer?.invalidate()
         pollTimer = nil
+        pollTask?.cancel()
+        pollTask = nil
         candidateExpiryTask?.cancel()
         candidateExpiryTask = nil
     }
@@ -138,9 +141,24 @@ final class AudioSourceMonitor: ObservableObject {
         knownActiveObjectIDs = Set(processes.filter(\.isRunningOutput).map(\.objectID))
     }
 
+    /// The Core Audio query reads several properties of every audio process
+    /// from coreaudiod and LaunchServices; it ran on the main thread every
+    /// three seconds. It now runs on a utility thread and only the result is
+    /// applied here.
     private func poll() {
-        guard !isRecordingActive else { return }
-        let processes = MeetingDetector.currentAudioProcesses()
+        guard !isRecordingActive, pollTask == nil else { return }
+        pollTask = Task { [weak self] in
+            let processes = await Task.detached(priority: .utility) {
+                MeetingDetector.currentAudioProcesses()
+            }.value
+            guard let self else { return }
+            self.pollTask = nil
+            guard !self.isRecordingActive else { return }
+            self.apply(processes)
+        }
+    }
+
+    private func apply(_ processes: [AudioProcess]) {
         let active = processes.filter(\.isRunningOutput)
         let activeIDs = Set(active.map(\.objectID))
 

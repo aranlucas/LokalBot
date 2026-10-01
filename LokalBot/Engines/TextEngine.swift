@@ -11,6 +11,10 @@ protocol TextEngine {
     /// Output space required by a provider whose reasoning cannot be disabled.
     /// Callers reserve it inside their existing job/context limits.
     var minimumStructuredOutputTokens: Int { get }
+    /// True when the engine already replays transient failures (rate limits,
+    /// dropped connections) itself. Callers must then not add a replay of
+    /// their own, or one failure would be retried twice over.
+    var handlesTransientRetries: Bool { get }
     /// Nil means this provider has no supported tokenizer endpoint.
     func tokenCount(_ text: String) async throws -> Int?
     func generate(system: String, prompt: String, context: [String]) async throws -> String
@@ -127,6 +131,12 @@ enum TextEngineError: LocalizedError, Sendable {
     var retryAfter: TimeInterval? {
         guard case .httpStatus(_, _, let retryAfter) = self else { return nil }
         return retryAfter
+    }
+
+    /// The server (or a provider behind a router) is rate limiting this key.
+    var isRateLimit: Bool {
+        guard case .httpStatus(let code, _, _) = self else { return false }
+        return code == 429
     }
 
     static func fromHTTPResponse(_ response: HTTPURLResponse?, data: Data) -> TextEngineError {
@@ -339,6 +349,7 @@ extension TextEngine {
     var checkpointIdentity: String { displayName }
     var accountsForGenerationRequests: Bool { false }
     var minimumStructuredOutputTokens: Int { 512 }
+    var handlesTransientRetries: Bool { false }
     func tokenCount(_ text: String) async throws -> Int? { nil }
     /// Backends without an output-budget control keep their existing behavior.
     func generate(system: String, prompt: String, context: [String],

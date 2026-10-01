@@ -72,8 +72,14 @@ final class ThinkExecutionTests: XCTestCase {
         settings.approvedRemoteInferenceOrigins = ["https://openrouter.ai"]
         settings.openRouterDataPolicy = .accountPolicy
 
-        let engine = try await execution.makeTextEngine(settings, includingCredentials: false)
-        let openRouterEngine = try XCTUnwrap(engine as? OpenAICompatibleEngine)
+        let engine = try await execution.makeTextEngine(
+            settings, includingCredentials: false, priority: .pipeline, purpose: "meeting notes")
+        // External servers are wrapped in the shared per-origin request gate.
+        let gated = try XCTUnwrap(engine as? GatedTextEngine)
+        XCTAssertEqual(gated.origin, "https://openrouter.ai")
+        XCTAssertEqual(gated.priority, .pipeline)
+        XCTAssertTrue(engine.handlesTransientRetries)
+        let openRouterEngine = try XCTUnwrap(gated.base as? OpenAICompatibleEngine)
 
         XCTAssertEqual(openRouterEngine.chatDialect, .openRouter)
         XCTAssertEqual(openRouterEngine.openRouterDataPolicy, .accountPolicy)

@@ -217,7 +217,7 @@ final class RecordingController: ObservableObject {
     @Published private(set) var captureWarnings: [String] = []
     @Published private(set) var callObservationUnavailable = false
     private var healthReport = RecordingHealthReport()
-    private var notifiedCaptureWarnings: Set<String> = []
+    private var captureNotifications = CaptureWarningNotifications()
     private var lastDiskCheckAt: Date?
     private var lastHealthReportAt: Date?
     private var diskWarning: String?
@@ -535,7 +535,7 @@ final class RecordingController: ObservableObject {
                     })
                 try storage.saveMeta(meeting)
                 healthReport = RecordingHealthReport()
-                notifiedCaptureWarnings = []
+                captureNotifications = CaptureWarningNotifications()
                 captureWarnings = []
                 callObservationUnavailable = false
                 lastDiskCheckAt = nil
@@ -1053,11 +1053,12 @@ final class RecordingController: ObservableObject {
             elapsed: elapsed, now: time)
         if elapsed >= 5, !messages.isEmpty { healthReport.hadMissingAudio = true }
         if mic.writeError != nil || system.writeError != nil { healthReport.hadWriteFailure = true }
-        if mic.droppedBufferCount > 0 || system.droppedBufferCount > 0 {
-            messages.append("Audio buffers were dropped while saving. Some audio may be missing.")
+        if RecordingHealthReport.dropsAreNoticeable(microphone: mic.droppedBufferCount,
+                                                    system: system.droppedBufferCount) {
+            messages.append(CaptureWarningNotifications.droppedBuffersWarning)
         }
         if callObservationUnavailable {
-            messages.append("Call status is unavailable. Recording continues; use Stop when finished.")
+            messages.append(CaptureWarningNotifications.callStatusUnavailableWarning)
         }
         for (source, error) in [("Microphone", mic.writeError), ("System audio", system.writeError)] {
             if let error { messages.append("\(source) saving needs attention: \(error)") }
@@ -1071,7 +1072,7 @@ final class RecordingController: ObservableObject {
         if let diskWarning { messages.append(diskWarning) }
         captureWarnings = messages
         if elapsed >= 5, isInteractive() {
-            for message in messages where notifiedCaptureWarnings.insert(message).inserted {
+            for message in captureNotifications.due(messages, elapsed: elapsed) {
                 RecordingNotifier.shared.captureNeedsAttention(message)
             }
         }

@@ -148,6 +148,10 @@ final class ProcessingPipeline: ObservableObject {
             think: ModelReadinessSnapshot.thinkReady)
     }
 
+    /// Seconds of detected speech in a track; nil when voice activity
+    /// detection is unavailable (the track is then transcribed anyway).
+    private let speechSeconds: @Sendable (URL) async -> Double?
+
     static func transcriptionEngine(for config: AppSettings) -> TranscriptionEngine {
 #if LOKALBOT_TEST_HOOKS
         if let directory = TestHooks.goldenTranscriptsDirectory {
@@ -224,7 +228,11 @@ final class ProcessingPipeline: ObservableObject {
              try await ModelDownloadManager.shared.ensureAvailable(entry, storage: storage)
          },
          automationReadiness: AutomationReadiness = .live,
-         transcriptionStarted: ((Meeting.ID) async -> Void)? = nil) {
+         transcriptionStarted: ((Meeting.ID) async -> Void)? = nil,
+         speechSeconds: @escaping @Sendable (URL) async -> Double? = {
+             await SpeechActivity.shared.speechSeconds(in: $0)
+         }) {
+        self.speechSeconds = speechSeconds
         self.storage = storage
         self.jobStore = jobStore
         self.speakerIdentity = speakerIdentity
@@ -639,8 +647,26 @@ final class ProcessingPipeline: ObservableObject {
                                              config: config, reuseSaved: resumed)
                 }.value
                 stages[meeting.id] = .transcribing
-                let batch = try await transcribeTracks(meeting: meeting, folder: folder, engine: engine,
+                let batch: TranscribedTracks
+                do {
+                    batch = try await transcribeTracks(meeting: meeting, folder: folder, engine: engine,
                                                        config: config, prompt: prompt)
+                } catch PipelineError.noSpeech {
+                    // Nothing was said: an empty transcript is the finished
+                    // result. Failing instead kept silent recordings in the
+                    // failed list and re-ran the speech model on every launch.
+                    try requireCommitPermission(for: meeting.id)
+                    try notifyArtifactsWillChange(for: meeting, notified: &notifiedArtifactsWillChange)
+                    try write(Transcript(segments: [], engine: engine.displayName), for: meeting)
+                    clearCheckpoints(in: folder)
+                    if let jobStore, !jobStore.markCompleted(meetingID: meeting.id) {
+                        throw PipelineError.transcriptionPhasePersistence
+                    }
+                    stages[meeting.id] = nil
+                    lokalbotLog("pipeline finished without speech meeting=\(meeting.id)")
+                    onArtifactsWritten?(meeting)
+                    return
+                }
                 var transcript = meeting.contentRange?.applying(to: batch.transcript) ?? batch.transcript
                 // Lexical similarity only marks uncertainty. Removing a full
                 // duplicate additionally requires matching waveform evidence.
@@ -975,6 +1001,7 @@ final class ProcessingPipeline: ObservableObject {
         var voiceSamples: [SpeakerVoiceSample] = []
         var acousticTurns: [SpeakerAudioTurn] = []
         var trackError: Error?
+        var speechlessTracks = 0
         let audioRevision = try await Task.detached(priority: .utility) {
             try MeetingSpeakerIdentityService.recordingRevision(folder: folder)
         }.value
@@ -1029,6 +1056,8 @@ final class ProcessingPipeline: ObservableObject {
                 }
             } catch is CancellationError {
                 throw CancellationError()
+            } catch is NoSpeechInTrack {
+                speechlessTracks += 1
             } catch {
                 // Keep going: the other track may still succeed, and its
                 // checkpoint means only this track is redone on retry.
@@ -1038,7 +1067,7 @@ final class ProcessingPipeline: ObservableObject {
         }
         if let trackError { throw trackError }
         guard !tracks.isEmpty else {
-            throw PipelineError.noAudio
+            throw speechlessTracks > 0 ? PipelineError.noSpeech : PipelineError.noAudio
         }
         let merged = Transcript.merged(tracks)
         return TranscribedTracks(transcript: merged, turns: acousticTurns, samples: voiceSamples)
@@ -1071,9 +1100,9 @@ final class ProcessingPipeline: ObservableObject {
         // whole call) — feeding silence to the ASR model can hallucinate words.
         // Conservative: only skip on a confident "nothing here"; VAD errors
         // return nil and we transcribe anyway, never dropping real audio.
-        if let speech = await SpeechActivity.shared.speechSeconds(in: url), speech < 0.5 {
+        if let speech = await speechSeconds(url), speech < 0.5 {
             lokalbotLog("transcription track skipped track=\(name) reason=no-speech")
-            return nil
+            throw NoSpeechInTrack()
         }
 
         let started = Date()
@@ -1097,6 +1126,9 @@ final class ProcessingPipeline: ObservableObject {
             "transcription track done track=\(name) engine=\(engine.displayName) duration=\(Self.formatSeconds(duration)) elapsed=\(Self.formatSeconds(elapsed)) rtfx=\(Self.formatMultiplier(rtfx)) segments=\(transcript.segments.count)")
         return transcript
     }
+
+    /// A track whose voice activity detection found no speech at all.
+    private struct NoSpeechInTrack: Error {}
 
     private static func formatSeconds(_ seconds: TimeInterval) -> String {
         String(format: "%.2fs", seconds)
@@ -1155,7 +1187,8 @@ final class ProcessingPipeline: ObservableObject {
         let started = Date()
         stages[meeting.id] = .preparingSummaryModel
         let preparing = ProcessInfo.processInfo.systemUptime
-        let engine = try await thinkExecution.makeTextEngine(config)
+        let engine = try await thinkExecution.makeTextEngine(
+            config, priority: .pipeline, purpose: "meeting notes")
         // After the engine checked the server's approval; only the model id is sent.
         let contextTokens = await MeetingSummaryGenerator.contextTokenLimit(for: config, catalog: .shared)
         await budget.recordPhase("modelPreparation", seconds: ProcessInfo.processInfo.systemUptime - preparing)
@@ -1265,14 +1298,16 @@ final class ProcessingPipeline: ObservableObject {
             evidence: evidence,
             engine: engine,
             customPrompt: customPrompt,
-            progress: progress)
+            progress: progress,
+            segmentCache: .shared)
     }
 
     enum PipelineError: LocalizedError {
-        case noAudio, noTranscript, transcriptionPhasePersistence
+        case noAudio, noSpeech, noTranscript, transcriptionPhasePersistence
         var errorDescription: String? {
             switch self {
             case .noAudio: "No audio tracks found in the meeting folder."
+            case .noSpeech: "No speech was detected in this recording."
             case .noTranscript: "No transcript yet — transcribe the meeting first."
             case .transcriptionPhasePersistence:
                 "The transcript was saved, but its durable processing phase could not be recorded."

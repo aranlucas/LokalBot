@@ -179,7 +179,11 @@ actor QwenASREngine: TranscriptionEngine {
 
     private func unload() async {
         guard activeUses == 0, !(await preparation.isRunning) else { return }
+        // The package's unload frees the weights and restores the MLX cache
+        // limit it lowered at load; then return the buffer pool itself.
+        model?.unload()
         model = nil
+        MLXMemoryRelease.releaseCachedBuffers(after: "qwen-asr")
         await ModelRuntimeRegistry.shared.unregister(
             id: variant == .accuracy ? "transcription:qwen-1.7b" : "transcription:qwen-0.6b"
         )

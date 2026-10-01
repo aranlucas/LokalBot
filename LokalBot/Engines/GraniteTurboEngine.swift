@@ -131,6 +131,7 @@ actor GraniteTurboEngine: TranscriptionEngine {
     private func unload() async {
         guard activeUses == 0, !(await preparation.isRunning) else { return }
         model = nil
+        MLXMemoryRelease.releaseCachedBuffers(after: "granite-turbo")
         await ModelRuntimeRegistry.shared.unregister(id: Self.runtimeID)
     }
 
