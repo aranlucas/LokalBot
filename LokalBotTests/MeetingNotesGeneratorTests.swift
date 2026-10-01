@@ -78,10 +78,10 @@ final class MeetingNotesGeneratorTests: XCTestCase {
     }
     private func generate(_ script: Script, transcript: Transcript? = nil, folder: URL? = nil,
                           contextTokens: Int = 32_768,
-                          minimumOutputTokens: Int = 512,
+                          minimumOutputTokens: Int = 512, engine: Engine? = nil,
                           budget: MeetingGenerationBudget = MeetingGenerationBudget()) async throws -> MeetingNotesGenerator.Result {
         try await MeetingNotesGenerator.generate(transcript: transcript ?? self.transcript,
-            engine: Engine(script: script, minimumStructuredOutputTokens: minimumOutputTokens),
+            engine: engine ?? Engine(script: script, minimumStructuredOutputTokens: minimumOutputTokens),
             template: .meeting, language: .matchTranscript, context: [], contextTokens: contextTokens,
             meetingID: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!, folder: try folder ?? self.folder(), budget: budget)
     }
@@ -280,7 +280,7 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertTrue(calls[1].prompt.contains("Send the measurements"))
     }
 
-    func testRepeatedOwnershipRepairCannotSubstituteAnotherTaskOrClaimCompletion() async throws {
+    func testRepeatedOwnershipRepairCannotSubstituteAnotherTaskAndKeepsTheOwnerUnclear() async throws {
         var transcript = transcript
         transcript.segments[0].text = "I'll prepare the policy, and you will send the measurements."
         transcript.segments[1].text = "I will prepare the policy."
@@ -295,18 +295,73 @@ final class MeetingNotesGeneratorTests: XCTestCase {
             .text(try response(actions: [unrelated])),
             .text(try response(actions: [original])),
         ])
-        let output = try folder()
-        do {
-            _ = try await generate(script, transcript: transcript, folder: output)
-            XCTFail("Repeated ambiguous evidence must remain partial")
-        } catch is MeetingNotesGenerator.Incomplete {}
+        let result = try await generate(script, transcript: transcript)
         let calls = await script.recorded()
         XCTAssertEqual(calls.count, 3, "Only two targeted repairs are allowed per part")
-        let saved = try JSONDecoder().decode(MeetingOutcomes.self,
-            from: Data(contentsOf: output.appendingPathComponent("outcomes.partial.json")))
-        XCTAssertEqual(saved.actionItems.map(\.text), ["Send the measurements"])
-        XCTAssertEqual(saved.actionItems[0].attribution?.rejectionReason, .ambiguousQuote)
-        XCTAssertTrue(saved.userActionItems.isEmpty)
+        XCTAssertEqual(result.outcomes.actionItems.map(\.text), ["Send the measurements"])
+        XCTAssertEqual(result.outcomes.actionItems[0].attribution?.rejectionReason, .ambiguousQuote)
+        XCTAssertNil(result.outcomes.actionItems[0].owner)
+        XCTAssertTrue(result.outcomes.userActionItems.isEmpty)
+    }
+
+    func testIdenticalOwnershipRejectionSettlesWithoutASecondRepair() async throws {
+        var transcript = transcript
+        transcript.segments[0].text = "I'll prepare the policy, and you will send the measurements."
+        transcript.segments[1].text = "I will prepare the policy."
+        var original = action(owner: "unknown")
+        original["text"] = "Send the measurements"
+        original["quote"] = "I'll prepare the policy"
+        let script = Script([.text(try response(actions: [original])), .text(try response(actions: [original]))])
+        let result = try await generate(script, transcript: transcript)
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 2, "A temperature-zero re-read that repeats its rejection is not sent again")
+        XCTAssertEqual(result.outcomes.actionItems.map(\.text), ["Send the measurements"])
+        XCTAssertNil(result.outcomes.actionItems[0].owner)
+    }
+
+    func testInterruptedOwnershipRepairResumesWithoutRepeatingSpentAttempts() async throws {
+        var transcript = transcript
+        transcript.segments[0].text = "I'll prepare the policy, and you will send the measurements."
+        transcript.segments[1].text = "I will prepare the policy."
+        var original = action(owner: "unknown")
+        original["text"] = "Send the measurements"
+        original["quote"] = "I'll prepare the policy"
+        var unrelated = action("s2", owner: "source")
+        unrelated["text"] = "Prepare the policy"
+        unrelated["quote"] = transcript.segments[1].text
+        let output = try folder()
+        let first = Script([.text(try response(actions: [original])), .text(try response(actions: [unrelated]))])
+        do {
+            _ = try await generate(first, transcript: transcript, folder: output,
+                                   budget: MeetingGenerationBudget(limits: .init(requests: 2)))
+            XCTFail("the second re-read must wait for the next run")
+        } catch is MeetingGenerationBudget.Exhausted {} catch { XCTFail("unexpected error \(error)") }
+        let resumed = Script([.text(try response(actions: [unrelated]))])
+        let result = try await generate(resumed, transcript: transcript, folder: output)
+        let calls = await resumed.recorded()
+        XCTAssertEqual(calls.count, 1, "A retry spends only the re-read the first run did not use")
+        XCTAssertEqual(result.outcomes.actionItems.map(\.text), ["Send the measurements"])
+        XCTAssertNil(result.outcomes.actionItems[0].owner)
+    }
+
+    func testUserCommitmentNearASettledTaskDoesNotBlockTheNotes() async throws {
+        let obligation = "I think I still have to review the change."
+        var transcript = transcript
+        transcript.segments = [
+            .init(start: 0, end: 5, speaker: "me", text: "I have been doing reviews."),
+            .init(start: 5, end: 10, speaker: "me", text: obligation),
+        ]
+        var original = action(owner: "unknown")
+        original["text"] = "Review the remaining change"
+        original["basis"] = "unclear"
+        original["context"] = ["s2"]
+        let script = Script([.text(try response(actions: [original])), .text(try response(actions: [original]))])
+        let result = try await generate(script, transcript: transcript)
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 2)
+        XCTAssertFalse(calls[1].prompt.contains(#""reason":"missing_user_commitment""#))
+        XCTAssertEqual(result.outcomes.actionItems.map(\.text), ["Review the remaining change"])
+        XCTAssertTrue(result.outcomes.userActionItems.isEmpty, "Two re-reads could not ground the user's ownership")
     }
 
     func testRepairFailureSavesEarlierValidRecordsWithoutReplacingFinalArtifacts() async throws {
@@ -513,6 +568,71 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertTrue(calls[0].prompt.contains("Accepted fact 3."))
         XCTAssertEqual(result.claims.count, 3)
         XCTAssertEqual(result.outcomes.userActionItems.count, 1)
+    }
+
+    /// Escaped bug: without a provider tokenizer, parts are packed to a byte
+    /// ceiling beside a full output reservation. The continuation ledger then
+    /// pushed the page over that reservation, and every retry failed before
+    /// sending a request.
+    func testContinuationOfAPartPackedToTheContextLimitShrinksItsOutput() async throws {
+        let (script, chunks, system, _) = try await packedContinuationScript(noteLength: 120, notes: 10)
+        let result = try await generate(script, transcript: longTranscript(segments: 120), contextTokens: 16_384,
+                                        engine: Engine(script: script, hasTokenizer: false))
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, chunks.count + 1)
+        let page = calls[1].prompt
+        XCTAssertTrue(page.contains("Previously accepted records:"))
+        XCTAssertFalse(page.contains("omitted for space"), "the whole ledger fits once the output shrinks")
+        let input = (system + "\n\n" + page).utf8.count + 1_536
+        XCTAssertGreaterThan(input + 4_096, 16_384, "the page must not fit beside the full planned output reservation")
+        let output = try XCTUnwrap(calls[1].options.maxTokens)
+        XCTAssertLessThan(output, try XCTUnwrap(calls[0].options.maxTokens))
+        XCTAssertGreaterThanOrEqual(output, 512)
+        XCTAssertLessThanOrEqual(input + output, 16_384)
+        XCTAssertEqual(result.claims.count, 10 + chunks.count - 1)
+    }
+
+    func testOverlongContinuationLedgerKeepsItsNewestRecords() async throws {
+        let (script, chunks, system, texts) = try await packedContinuationScript(noteLength: 260, notes: 12)
+        _ = try await generate(script, transcript: longTranscript(segments: 120), contextTokens: 16_384,
+                               engine: Engine(script: script, hasTokenizer: false, minimumStructuredOutputTokens: 2_048))
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, chunks.count + 1)
+        let page = calls[1].prompt
+        XCTAssertTrue(page.contains("omitted for space"))
+        XCTAssertTrue(page.contains(try XCTUnwrap(texts.last)))
+        XCTAssertFalse(page.contains(try XCTUnwrap(texts.first)))
+        let output = try XCTUnwrap(calls[1].options.maxTokens)
+        XCTAssertGreaterThanOrEqual(output, 2_048)
+        let input = (system + "\n\n" + page).utf8.count + 1_536
+        XCTAssertLessThanOrEqual(input + output, 16_384)
+    }
+
+    /// First part pages once with `notes` long records; every other part
+    /// answers in one page. Chunks use the byte bound of a tokenizer-less
+    /// provider at a 16K context, as an unknown OpenRouter model does.
+    private func packedContinuationScript(noteLength: Int, notes count: Int) async throws
+        -> (Script, [[MeetingNotesEvidence.Unit]], String, [String]) {
+        let evidence = MeetingNotesEvidence(transcript: longTranscript(segments: 120))
+        let system = MeetingNotesGenerator.systemPrompt(template: .meeting, language: .matchTranscript)
+        let chunks = try await MeetingNotesGenerator.makeChunks(evidence: evidence,
+            engine: Engine(script: Script([]), hasTokenizer: false), system: system, context: [], contextTokens: 16_384)
+        XCTAssertGreaterThan(chunks.count, 1)
+        let first = chunks[0]
+        let filler = String(repeating: "release planning detail ", count: 20)
+        var texts: [String] = []
+        var notes: [[String: Any]] = []
+        for index in 0..<count {
+            let text = String("Accepted fact \(index): \(filler)".prefix(noteLength))
+            texts.append(text)
+            notes.append(note(first[index % first.count].source, text))
+        }
+        var replies: [Script.Reply] = [.text(try response(notes: notes, more: true)), .text(try response())]
+        for (index, chunk) in chunks.dropFirst().enumerated() {
+            let source = try XCTUnwrap(chunk.last).source
+            replies.append(.text(try response(notes: [note(source, "Tail fact \(index).")])))
+        }
+        return (Script(replies), chunks, system, texts)
     }
 
     func testReasoningRepairHasHeadroomAndOneLargerRetry() async throws {
@@ -1009,8 +1129,8 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertLessThan(unlimited.seconds * 35, Double(Int.max))
     }
 
-    private func longTranscript() -> Transcript {
-        Transcript(segments: (0..<60).map { index in
+    private func longTranscript(segments: Int = 60) -> Transcript {
+        Transcript(segments: (0..<segments).map { index in
             .init(start: Double(index * 5), end: Double(index * 5 + 5), speaker: "them",
                   text: "I will finish task \(index). " + String(repeating: "The dependency needs review. ", count: 6))
         }, engine: "fixture")

@@ -9,6 +9,28 @@ extension MeetingNotesGenerator {
         var repairTokenFloor: Int?
         var terminalFailure: String?
         var noProgressAttempts: Int?
+        /// Complete ownership re-reads per task (normalized text). A task that
+        /// used its re-reads keeps an unclear owner; retries never repeat them.
+        var ownershipRepairs: [String: Int]?
+
+        var settledOwnership: Set<String> { Set((ownershipRepairs ?? [:]).filter { $0.value >= 2 }.keys) }
+
+        mutating func dropSettledOwnershipRepairs() {
+            let settled = settledOwnership
+            pending.removeAll { rejection in
+                rejection.actionID != nil
+                    && rejection.text.map { settled.contains(OutcomeTextSimilarity.normalized($0)) } == true
+            }
+        }
+
+        /// Repeating a rejection answers the re-read: temperature-zero
+        /// requests are deterministic, so the second identical one is skipped.
+        mutating func noteOwnershipRepair(_ text: String, repeated: Bool) {
+            let key = OutcomeTextSimilarity.normalized(text)
+            var repairs = ownershipRepairs ?? [:]
+            repairs[key] = repeated ? 2 : repairs[key, default: 0] + 1
+            ownershipRepairs = repairs
+        }
     }
 
     struct PartJob {
@@ -88,13 +110,11 @@ extension MeetingNotesGenerator {
         for _ in 0..<3 where !recovery.scanComplete {
             try Task.checkCancellation()
             let allowance = try await job.budget.allowance(remainingParts: job.remainingParts, minimum: minimum)
-            let maximumNotes = min(12, max(3, allowance / 200))
-            let maximumActions = min(10, max(2, allowance / 350))
             let stage = recovery.nextPage == 0 ? "extract-\(job.number)" : "continue-\(job.number)-\(recovery.nextPage)"
-            var userPrompt = prompt(units: job.units, roster: job.evidence.roster)
-                + (recovery.nextPage == 0 ? "" : try continuation(recovery.records))
+            let evidenceRows = prompt(units: job.units, roster: job.evidence.roster)
+            var retryInstruction = ""
             if extractionRecoveryRetryPending {
-                userPrompt += "\nThe previous extraction did not pass all source-link checks. Re-read only these supplied evidence rows. "
+                retryInstruction = "\nThe previous extraction did not pass all source-link checks. Re-read only these supplied evidence rows. "
                     + "Return the exact top-level keys notes, actions, and has_more. Every note and action must "
                     + "copy one source ID from these rows and include all required fields. Omit an optional record "
                     + "rather than guessing or emitting a source-less object. If no grounded record remains, return "
@@ -102,11 +122,14 @@ extension MeetingNotesGenerator {
                 extractionRecoveryRetryPending = false
             }
             let system = systemPrompt(template: job.template, language: job.language)
-            try await requireInputRoom(system: system, prompt: userPrompt, context: job.context, tokens: allowance, job: job)
+            let (userPrompt, tokens) = try await fittedPage(rows: evidenceRows, suffix: retryInstruction,
+                ledger: recovery.nextPage == 0 ? nil : recovery.records, system: system, allowance: allowance, job: job)
+            let maximumNotes = min(12, max(3, tokens / 200))
+            let maximumActions = min(10, max(2, tokens / 350))
             let raw = try await request(engine: job.engine, system: system, prompt: userPrompt, context: job.context,
                 schema: MeetingNotesEvidence.schema(units: job.units, speakers: Array(job.evidence.speakers.keys),
                     template: job.template, maximumNotes: maximumNotes, maximumActions: maximumActions),
-                tokens: allowance, stage: stage, contextTokens: job.contextTokens, budget: job.budget)
+                tokens: tokens, stage: stage, contextTokens: job.contextTokens, budget: job.budget)
             let started = ProcessInfo.processInfo.systemUptime
             var validated = job.evidence.validate(raw.content, units: job.units, template: job.template,
                 meetingID: job.meetingID, maximumNotes: maximumNotes, maximumActions: maximumActions)
@@ -179,6 +202,7 @@ extension MeetingNotesGenerator {
 
         let terminalReasons: Set<String> = ["unsupported_commitment", "conversation_management", "status_not_task", "empty_outcome"]
         recovery.pending.removeAll { terminalReasons.contains($0.reason) }
+        recovery.dropSettledOwnershipRepairs()
         queueMissingCommitments(part, job: job, recovery: &recovery)
         try checkpoint()
 
@@ -191,14 +215,15 @@ extension MeetingNotesGenerator {
             let actionLimit = repairable.filter { $0.kind == "actions" }.count
             let desired = min(4_096, max(minimum, recovery.repairTokenFloor ?? 0, attempt == 0
                 ? min(2_048, 512 + noteLimit * 128 + actionLimit * 384) : previousRepairTokens * 2))
-            let repairTokens = try await job.budget.allowance(remainingParts: job.remainingParts, desired: desired, minimum: minimum)
-            if attempt > 0, recovery.repairTokenFloor != nil, repairTokens <= previousRepairTokens { break }
+            let allowance = try await job.budget.allowance(remainingParts: job.remainingParts, desired: desired, minimum: minimum)
+            if attempt > 0, recovery.repairTokenFloor != nil, allowance <= previousRepairTokens { break }
             let userPrompt = try repairPrompt(repairable, units: repairUnits, roster: job.evidence.roster,
                 noteLimit: noteLimit, actionLimit: actionLimit)
                 + (attempt == 0 || repairable.first?.actionID != nil ? ""
                     : try continuation(recovery.records.filter { record in repairUnits.contains { $0.source == record.source } }))
             let system = PromptTemplates.meetingNotesRepairSystem(language: job.language)
-            try await requireInputRoom(system: system, prompt: userPrompt, context: [], tokens: repairTokens, job: job)
+            guard let repairTokens = try await outputRoom(system: system, prompt: userPrompt, context: [],
+                                                          tokens: allowance, job: job) else { throw inputRoomExceeded() }
             let stage = attempt == 0 ? "repair-\(job.number)" : "continue-repair-\(job.number)"
             let raw = try await request(engine: job.engine, system: system, prompt: userPrompt, context: [],
                 schema: MeetingNotesEvidence.schema(units: repairUnits, speakers: Array(job.evidence.speakers.keys),
@@ -219,6 +244,7 @@ extension MeetingNotesGenerator {
             if ownershipRepair {
                 acceptOwnershipRepairs(fixed, requested: repairable, job: job, complete: fixed.complete && !raw.truncated,
                                        part: &part, recovery: &recovery)
+                recovery.dropSettledOwnershipRepairs()
             } else {
                 accept(fixed)
             }
@@ -239,7 +265,8 @@ extension MeetingNotesGenerator {
             if raw.truncated && repairTokens >= 4_096 { break }
             if !fixed.complete && !raw.truncated && fixed.hasMore != true { break }
         }
-        part.complete = recovery.scanComplete && recovery.pending.isEmpty && missingCommitments(part, job: job).isEmpty
+        part.complete = recovery.scanComplete && recovery.pending.isEmpty
+            && missingCommitments(part, job: job, settled: recovery.settledOwnership).isEmpty
         try checkpoint()
     }
 
@@ -268,6 +295,8 @@ extension MeetingNotesGenerator {
                 if complete && terminal {
                     part.outcomes.actionItems.removeAll { $0.id == actionID }
                     recovery.pending.remove(at: index)
+                } else if complete {
+                    recovery.noteOwnershipRepair(text, repeated: false)
                 }
                 continue
             }
@@ -277,6 +306,7 @@ extension MeetingNotesGenerator {
             recovery.records += fixed.records.filter { $0.kind == "actions" && matches($0.text) }
             if let rejection = fixed.rejected.first(where: { $0.actionID == action.id }) {
                 recovery.pending[index] = rejection
+                if complete { recovery.noteOwnershipRepair(text, repeated: rejection.reason == request.reason) }
             } else if complete {
                 recovery.pending.remove(at: index)
             } else {
@@ -290,46 +320,87 @@ extension MeetingNotesGenerator {
     /// never establishes ownership or merges different task descriptions.
     private static func queueMissingCommitments(_ part: Part, job: PartJob, recovery: inout Recovery) {
         guard recovery.scanComplete else { return }
-        let compact = Dictionary(uniqueKeysWithValues: job.evidence.transcript.summaryCitationSources.map { ($0.value, $0.key) })
-        for source in missingCommitments(part, job: job) {
+        let settled = recovery.settledOwnership
+        for source in missingCommitments(part, job: job, settled: settled) {
             let missing = MeetingNotesEvidence.Rejection(sources: [source], kind: "actions", reason: "missing_user_commitment")
             let nearby = Set(repairEvidence([missing], units: job.units).map(\.source))
             if recovery.pending.contains(where: { $0.kind == "actions" && !nearby.isDisjoint(with: $0.sources) }) { continue }
-            let candidates = part.outcomes.unresolvedActionItems.filter { action in
-                action.citations.first.flatMap { compact[$0.segmentID] }.map { nearby.contains($0) } == true
-            }
-            if candidates.count == 1, let action = candidates.first,
-               let anchor = action.citations.first.flatMap({ compact[$0.segmentID] }) {
-                recovery.pending.append(.init(sources: [anchor], kind: "actions", reason: "missing_ownership_evidence",
-                                              text: action.text, actionID: action.id))
+            let candidates = nearbyTasks(source, part: part, job: job)
+            let open = candidates.filter { !settled.contains(OutcomeTextSimilarity.normalized($0.action.text)) }
+            if open.count == 1, let candidate = open.first {
+                recovery.pending.append(.init(sources: [candidate.anchor], kind: "actions", reason: "missing_ownership_evidence",
+                                              text: candidate.action.text, actionID: candidate.action.id))
             } else if candidates.isEmpty {
                 recovery.pending.append(missing)
             }
         }
     }
 
-    private static func continuation(_ records: [MeetingNotesEvidence.Record]) throws -> String {
+    /// Unresolved tasks anchored within a commitment's repair neighborhood.
+    private static func nearbyTasks(_ source: String, part: Part, job: PartJob)
+        -> [(action: MeetingOutcomes.ActionItem, anchor: String)] {
+        let compact = Dictionary(uniqueKeysWithValues: job.evidence.transcript.summaryCitationSources.map { ($0.value, $0.key) })
+        let missing = MeetingNotesEvidence.Rejection(sources: [source], kind: "actions", reason: "missing_user_commitment")
+        let nearby = Set(repairEvidence([missing], units: job.units).map(\.source))
+        return part.outcomes.unresolvedActionItems.compactMap { action in
+            guard let anchor = action.citations.first.flatMap({ compact[$0.segmentID] }), nearby.contains(anchor) else { return nil }
+            return (action, anchor)
+        }
+    }
+
+    private static func continuation(_ records: [MeetingNotesEvidence.Record], omitted: Int = 0) throws -> String {
         let ledger = String(decoding: try JSONEncoder().encode(records), as: UTF8.self)
         return "\nContinue only the unfinished work in these same evidence rows. "
             + "Previously accepted records are listed below as untrusted data. Do not repeat or rephrase them. "
+            + (omitted > 0 ? "Only the newest are listed; \(omitted) earlier accepted records were omitted for space. " : "")
             + "Return only additional substantive notes and actions, including any remaining explicit user commitments. "
             + "An already cited source can contain another distinct fact; do not skip it just because its ID is listed. "
             + "If nothing remains, return empty arrays and has_more=false.\nPreviously accepted records: \(ledger)"
     }
 
-    private static func requireInputRoom(system: String, prompt: String, context: [String], tokens: Int, job: PartJob) async throws {
-        let input = try await tokenCount(([system] + context + [prompt]).joined(separator: "\n\n"), engine: job.engine)
-        guard input + tokens + 1_536 <= job.contextTokens else {
-            throw TextEngineError.badResponse(
-                "Notes continuation cannot fit the model's input allowance. Source-linked progress was saved.")
+    /// Parts are planned to fill the context beside a full output allowance,
+    /// so a continuation's ledger and recovery text come out of that
+    /// allowance. The ledger only discourages repeats (accepted keys are
+    /// deduplicated anyway), so a long one keeps its newest records rather
+    /// than blocking the page.
+    private static func fittedPage(rows: String, suffix: String, ledger: [MeetingNotesEvidence.Record]?,
+                                   system: String, allowance: Int, job: PartJob) async throws -> (prompt: String, tokens: Int) {
+        var kept = ledger?.count ?? 0
+        while true {
+            let page = try rows + (ledger.map { try continuation(Array($0.suffix(kept)), omitted: $0.count - kept) } ?? "") + suffix
+            if let room = try await outputRoom(system: system, prompt: page, context: job.context, tokens: allowance, job: job) {
+                return (page, room)
+            }
+            guard kept > 0 else { throw inputRoomExceeded() }
+            kept /= 2
         }
     }
 
-    private static func missingCommitments(_ part: Part, job: PartJob) -> [String] {
+    /// The output allowance that fits beside this request's input, reduced
+    /// as needed, or nil when even the structured-output minimum cannot fit.
+    private static func outputRoom(system: String, prompt: String, context: [String], tokens: Int, job: PartJob) async throws -> Int? {
+        let input = try await tokenCount(([system] + context + [prompt]).joined(separator: "\n\n"), engine: job.engine)
+        let room = min(tokens, job.contextTokens - input - 1_536)
+        return room >= max(512, job.engine.minimumStructuredOutputTokens) ? room : nil
+    }
+
+    private static func inputRoomExceeded() -> TextEngineError {
+        .badResponse("Notes continuation cannot fit the model's input allowance. Source-linked progress was saved.")
+    }
+
+    /// User commitments not yet cited by a user task. A commitment whose
+    /// nearby tasks all used their ownership re-reads is answered by those
+    /// unclear-owner tasks rather than blocking the part on every retry.
+    private static func missingCommitments(_ part: Part, job: PartJob, settled: Set<String> = []) -> [String] {
         let cited = Set(part.outcomes.userActionItems.flatMap { $0.citations.map(\.segmentID) })
-        return job.units.filter { unit in
+        let missing = job.units.filter { unit in
             unit.isUserCommitment && job.evidence.transcript.summaryCitationSources[unit.source].map { !cited.contains($0) } == true
         }.map(\.source)
+        guard !settled.isEmpty else { return missing }
+        return missing.filter { source in
+            let tasks = nearbyTasks(source, part: part, job: job)
+            return tasks.isEmpty || !tasks.allSatisfy { settled.contains(OutcomeTextSimilarity.normalized($0.action.text)) }
+        }
     }
 
     private static func legacyRecovery(_ part: Part, transcript: Transcript) -> Recovery {
