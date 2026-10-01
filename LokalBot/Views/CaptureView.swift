@@ -321,7 +321,7 @@ struct TimelineContentView: View {
                         .accessibilityIdentifier("timeline.evidencePane")
                         .splitPaneAccessibilityLabel("Timeline day")
                         ScrollView {
-                            TimelineSessionsSection(model: model, onOpenContext: {})
+                            TimelineOverviewAndSessions(model: model, onOpenContext: {})
                                 .padding(16)
                         }
                         .frame(minWidth: WorkspaceMetric.timelineRailMinWidth,
@@ -533,9 +533,9 @@ private struct TimelineWorkspaceHeader: View {
 
 // MARK: - Day sessions
 
-/// The day's digest with its open actions, and Day Overview at the bottom.
-/// Narrow layouts also place the work sessions here; wide layouts keep them
-/// in the trailing rail.
+/// The day's digest with its open actions. Narrow layouts also place Day
+/// Overview and the work sessions here; wide layouts keep them in the
+/// trailing rail.
 struct CaptureDayView: View {
     @EnvironmentObject var app: AppState
     @ObservedObject var model: CaptureModel
@@ -555,14 +555,25 @@ struct CaptureDayView: View {
                 }, limit: 3)
 
                 if includesSessions {
-                    TimelineSessionsSection(model: model, onOpenContext: onOpenContext)
+                    TimelineOverviewAndSessions(model: model, onOpenContext: onOpenContext)
                 }
-
-                DayActivityOverview(model: model)
-                    .accessibilityIdentifier("capture.dayOverview")
             }
             .padding(LBTokens.Metric.detailPadding)
             .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+    }
+}
+
+/// Day Overview above the work sessions, so the day's totals lead the list.
+struct TimelineOverviewAndSessions: View {
+    @ObservedObject var model: CaptureModel
+    let onOpenContext: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: LBTokens.Metric.sectionSpacing) {
+            DayActivityOverview(model: model)
+                .accessibilityIdentifier("capture.dayOverview")
+            TimelineSessionsSection(model: model, onOpenContext: onOpenContext)
         }
     }
 }

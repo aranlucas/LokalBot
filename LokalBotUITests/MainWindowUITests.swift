@@ -367,12 +367,11 @@ final class MainWindowUITests: XCTestCase {
                        "the day digest shows until something is selected")
         XCTAssertFalse(identified("timeline.context.toggle").exists,
                        "there are no details to open before a selection")
-        let needsAttention = textWithContent("Needs Attention").firstMatch
-        XCTAssertTrue(needsAttention.waitForExistence(timeout: 6))
+        XCTAssertTrue(textWithContent("Needs Attention").firstMatch.waitForExistence(timeout: 6))
         XCTAssertLessThan(
-            needsAttention.frame.minY,
             identified("capture.dayOverview").frame.minY,
-            "Day overview belongs below the digest")
+            identified("timeline.workSessions").frame.minY,
+            "Day overview belongs above the work sessions")
         XCTAssertTrue(identified("timeline.dayDigest.generate").waitForExistence(timeout: 5),
                       "day-digest action should remain directly visible")
         XCTAssertTrue(identified("timeline.dayDigest.actions").exists,
@@ -391,12 +390,11 @@ final class MainWindowUITests: XCTestCase {
                       "human-facing focus summary is missing")
         XCTAssertFalse(textWithContent("User updated the Timeline UI").firstMatch.exists,
                        "model bookkeeping subject leaked into the focus summary")
-        // Day Overview closes the digest column. Its heading can be visible
+        // Day Overview opens the sessions rail. Its heading can be visible
         // while the lazy app legend below it is not built yet, so scroll the
-        // column until the legend itself is on screen.
+        // rail until the legend itself is on screen.
         let appLegendEntry = textWithContent("Xcode").firstMatch
-        UITestHarness.scrollTo(appLegendEntry, in: app,
-                               within: identified("timeline.evidencePane"))
+        scrollTimelineDay(to: appLegendEntry)
         XCTAssertTrue(appLegendEntry.waitForExistence(timeout: 4),
                       "seeded activity app 'Xcode' missing from Timeline")
         XCTAssertFalse(textWithContent("screen:4242").firstMatch.exists,
@@ -458,8 +456,9 @@ final class MainWindowUITests: XCTestCase {
         let back = app.buttons["Back to day"].firstMatch
         XCTAssertTrue(back.waitForExistence(timeout: 3))
         back.click()
-        XCTAssertTrue(app.descendants(matching: .any)["capture.dayOverview"]
-            .waitForExistence(timeout: 3))
+        let sessionPreview = app.descendants(matching: .any)["timeline.sessionPreview"]
+        XCTAssertTrue(UITestHarness.waitUntil { !sessionPreview.exists },
+                      "Back did not return to the day")
         closeTimelineContext()
 
         let meeting = app.buttons["capture.meeting.\(fixture.designReview.id.uuidString)"]
@@ -1255,8 +1254,8 @@ final class MainWindowUITests: XCTestCase {
         XCTAssertFalse(identified("ask.retrieval").exists)
     }
 
-    /// Work sessions and raw capture follow Day Overview, the digest and
-    /// Needs Attention, so they can start below the fold of the day page.
+    /// Narrow layouts place Day Overview, work sessions and raw capture after
+    /// the digest and Needs Attention, so they can start below the fold.
     private func scrollTimelineDay(to element: XCUIElement) {
         let rail = app.scrollViews["timeline.sessionRail"]
         UITestHarness.scrollTo(element, in: app, within: rail.exists ? rail : nil)
