@@ -78,10 +78,10 @@ final class MeetingNotesGeneratorTests: XCTestCase {
     }
     private func generate(_ script: Script, transcript: Transcript? = nil, folder: URL? = nil,
                           contextTokens: Int = 32_768,
-                          minimumOutputTokens: Int = 512,
+                          minimumOutputTokens: Int = 512, engine: Engine? = nil,
                           budget: MeetingGenerationBudget = MeetingGenerationBudget()) async throws -> MeetingNotesGenerator.Result {
         try await MeetingNotesGenerator.generate(transcript: transcript ?? self.transcript,
-            engine: Engine(script: script, minimumStructuredOutputTokens: minimumOutputTokens),
+            engine: engine ?? Engine(script: script, minimumStructuredOutputTokens: minimumOutputTokens),
             template: .meeting, language: .matchTranscript, context: [], contextTokens: contextTokens,
             meetingID: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!, folder: try folder ?? self.folder(), budget: budget)
     }
@@ -612,6 +612,71 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertEqual(result.outcomes.userActionItems.count, 1)
     }
 
+    /// Escaped bug: without a provider tokenizer, parts are packed to a byte
+    /// ceiling beside a full output reservation. The continuation ledger then
+    /// pushed the page over that reservation, and every retry failed before
+    /// sending a request.
+    func testContinuationOfAPartPackedToTheContextLimitShrinksItsOutput() async throws {
+        let (script, chunks, system, _) = try await packedContinuationScript(noteLength: 120, notes: 10)
+        let result = try await generate(script, transcript: longTranscript(segments: 120), contextTokens: 16_384,
+                                        engine: Engine(script: script, hasTokenizer: false))
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, chunks.count + 1)
+        let page = calls[1].prompt
+        XCTAssertTrue(page.contains("Previously accepted records:"))
+        XCTAssertFalse(page.contains("omitted for space"), "the whole ledger fits once the output shrinks")
+        let input = (system + "\n\n" + page).utf8.count + 1_536
+        XCTAssertGreaterThan(input + 4_096, 16_384, "the page must not fit beside the full planned output reservation")
+        let output = try XCTUnwrap(calls[1].options.maxTokens)
+        XCTAssertLessThan(output, try XCTUnwrap(calls[0].options.maxTokens))
+        XCTAssertGreaterThanOrEqual(output, 512)
+        XCTAssertLessThanOrEqual(input + output, 16_384)
+        XCTAssertEqual(result.claims.count, 10 + chunks.count - 1)
+    }
+
+    func testOverlongContinuationLedgerKeepsItsNewestRecords() async throws {
+        let (script, chunks, system, texts) = try await packedContinuationScript(noteLength: 260, notes: 12)
+        _ = try await generate(script, transcript: longTranscript(segments: 120), contextTokens: 16_384,
+                               engine: Engine(script: script, hasTokenizer: false, minimumStructuredOutputTokens: 2_048))
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, chunks.count + 1)
+        let page = calls[1].prompt
+        XCTAssertTrue(page.contains("omitted for space"))
+        XCTAssertTrue(page.contains(try XCTUnwrap(texts.last)))
+        XCTAssertFalse(page.contains(try XCTUnwrap(texts.first)))
+        let output = try XCTUnwrap(calls[1].options.maxTokens)
+        XCTAssertGreaterThanOrEqual(output, 2_048)
+        let input = (system + "\n\n" + page).utf8.count + 1_536
+        XCTAssertLessThanOrEqual(input + output, 16_384)
+    }
+
+    /// First part pages once with `notes` long records; every other part
+    /// answers in one page. Chunks use the byte bound of a tokenizer-less
+    /// provider at a 16K context, as an unknown OpenRouter model does.
+    private func packedContinuationScript(noteLength: Int, notes count: Int) async throws
+        -> (Script, [[MeetingNotesEvidence.Unit]], String, [String]) {
+        let evidence = MeetingNotesEvidence(transcript: longTranscript(segments: 120))
+        let system = MeetingNotesGenerator.systemPrompt(template: .meeting, language: .matchTranscript)
+        let chunks = try await MeetingNotesGenerator.makeChunks(evidence: evidence,
+            engine: Engine(script: Script([]), hasTokenizer: false), system: system, context: [], contextTokens: 16_384)
+        XCTAssertGreaterThan(chunks.count, 1)
+        let first = chunks[0]
+        let filler = String(repeating: "release planning detail ", count: 20)
+        var texts: [String] = []
+        var notes: [[String: Any]] = []
+        for index in 0..<count {
+            let text = String("Accepted fact \(index): \(filler)".prefix(noteLength))
+            texts.append(text)
+            notes.append(note(first[index % first.count].source, text))
+        }
+        var replies: [Script.Reply] = [.text(try response(notes: notes, more: true)), .text(try response())]
+        for (index, chunk) in chunks.dropFirst().enumerated() {
+            let source = try XCTUnwrap(chunk.last).source
+            replies.append(.text(try response(notes: [note(source, "Tail fact \(index).")])))
+        }
+        return (Script(replies), chunks, system, texts)
+    }
+
     func testReasoningRepairHasHeadroomAndOneLargerRetry() async throws {
         let script = Script([
             .text(try response(notes: [note(), note("s2", "Needs repair", section: "Wrong")], actions: [action()])),
@@ -1031,9 +1096,10 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         }
     }
 
-    func testVerifiedWindowLetsAContinuationThatBytesRefusedAt16KRun() async throws {
+    func testVerifiedWindowKeepsTheFullOutputForAContinuationThat16KShrinks() async throws {
         let system = MeetingNotesGenerator.systemPrompt(template: .meeting, language: .matchTranscript)
-        // One part that fits 16K, leaving less room than its own ledger needs.
+        // One part that fits 16K, leaving less room than its own ledger needs
+        // beside the full output allowance.
         var transcript = Transcript(segments: [], engine: "fixture")
         while true {
             let evidence = MeetingNotesEvidence(transcript: transcript)
@@ -1046,27 +1112,24 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         let notes = (1...12).map { index in
             note("s\(index)", "Rollout step \(index) was reviewed. " + String(repeating: "The documentation needs an update. ", count: 6))
         }
-        func run(contextTokens: Int) async throws -> (Result<MeetingNotesGenerator.Result, Error>, Int) {
+        func run(contextTokens: Int) async throws -> (MeetingNotesGenerator.Result, [Script.Call]) {
             let script = Script([.text(try response(notes: notes, more: true)), .text(try response())])
-            let result: Result<MeetingNotesGenerator.Result, Error>
-            do {
-                result = .success(try await MeetingNotesGenerator.generate(transcript: transcript,
-                    engine: Engine(script: script, hasTokenizer: false), template: .meeting,
-                    language: .matchTranscript, context: [], contextTokens: contextTokens,
-                    meetingID: UUID(), folder: try folder()))
-            } catch {
-                result = .failure(error)
-            }
-            return (result, await script.recorded().count)
+            let result = try await MeetingNotesGenerator.generate(transcript: transcript,
+                engine: Engine(script: script, hasTokenizer: false), template: .meeting,
+                language: .matchTranscript, context: [], contextTokens: contextTokens,
+                meetingID: UUID(), folder: try folder())
+            return (result, await script.recorded())
         }
-        let (refused, refusedCalls) = try await run(contextTokens: 16_384)
-        XCTAssertEqual(refusedCalls, 1, "the 16K byte bound refuses the continuation before sending it")
-        guard case .failure(let error) = refused else { return XCTFail("expected the continuation to be refused") }
-        XCTAssertTrue(error.localizedDescription.contains("cannot fit"), "\(error)")
+        let (tight, tightCalls) = try await run(contextTokens: 16_384)
+        XCTAssertEqual(tightCalls.count, 2, "the 16K byte bound shrinks the continuation's output instead of refusing it")
+        XCTAssertEqual(tight.claims.count, 12)
         let window = MeetingSummaryGenerator.contextTokenLimit(for: openRouterConfig("qwen/qwen3.8-flash"))
         let (completed, calls) = try await run(contextTokens: window)
-        XCTAssertEqual(calls, 2)
-        XCTAssertEqual(try completed.get().claims.count, 12)
+        XCTAssertEqual(calls.count, 2)
+        XCTAssertEqual(completed.claims.count, 12)
+        let shrunk = try XCTUnwrap(tightCalls[1].options.maxTokens)
+        let full = try XCTUnwrap(calls[1].options.maxTokens)
+        XCTAssertLessThan(shrunk, full, "the verified window keeps the full output allowance")
     }
 
     func testOverviewPrioritizesLaterCommitmentAndDecisionOverIntroductoryFacts() {
@@ -1246,8 +1309,8 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         }, engine: "fixture")
     }
 
-    private func longTranscript() -> Transcript {
-        Transcript(segments: (0..<60).map { index in
+    private func longTranscript(segments: Int = 60) -> Transcript {
+        Transcript(segments: (0..<segments).map { index in
             .init(start: Double(index * 5), end: Double(index * 5 + 5), speaker: "them",
                   text: "I will finish task \(index). " + String(repeating: "The dependency needs review. ", count: 6))
         }, engine: "fixture")
