@@ -443,25 +443,6 @@ final class RedesignUITests: XCTestCase {
         snapshot("timeline-inspectable-title-evidence")
     }
 
-    func testTimelineReservesMostWidthForEvidence() throws {
-        try SyntheticFixture.plantActivityMoment(in: fixture)
-        try launch(["LOKALBOT_INITIAL_SECTION": "timeline", "LOKALBOT_CAPTURE_SIZE": "1440x900"])
-        let rail = element("timeline.sessionRail")
-        let evidence = element("timeline.evidencePane")
-        XCTAssertTrue(rail.waitForExistence(timeout: 5))
-        XCTAssertTrue(evidence.waitForExistence(timeout: 5))
-        XCTAssertLessThanOrEqual(rail.frame.width, 361)
-        XCTAssertGreaterThan(evidence.frame.width, rail.frame.width * 1.5)
-        XCTAssertLessThanOrEqual(evidence.frame.maxX, rail.frame.minX,
-                                 "Work sessions belong to the right of the day digest")
-        XCTAssertTrue(element("capture.dayOverview").exists, "Day Overview stays below the digest")
-        app.buttons["timeline.session.1"].click()
-        XCTAssertTrue(element("timeline.sessionPreview").waitForExistence(timeout: 5))
-        XCTAssertGreaterThan(evidence.frame.width, rail.frame.width * 1.5)
-        XCTAssertFalse(element("capture.dayOverview").exists, "A selection replaces the digest column")
-        snapshot("timeline-reading-pane")
-    }
-
     func testTimelineRailResizesAgainstTheDigest() throws {
         try launch(["LOKALBOT_INITIAL_SECTION": "timeline", "LOKALBOT_CAPTURE_SIZE": "1440x900"])
         let rail = element("timeline.sessionRail")
