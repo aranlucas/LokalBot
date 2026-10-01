@@ -46,8 +46,10 @@ def ami(meeting):
     out = {}
     for part in ['abstract', 'actions', 'decisions', 'problems']:
         block = re.search(rf'<{part}[^>]*>(.*?)</{part}>', text, re.S)
-        out[part] = [re.sub(r'\s+', ' ', s).strip()
+        sentences = [re.sub(r'\s+', ' ', s).strip()
                      for s in re.findall(r'<sentence[^>]*>(.*?)</sentence>', block.group(1), re.S)] if block else []
+        # Annotators write "NA." for a meeting without, say, decisions.
+        out[part] = [s for s in sentences if not re.fullmatch(r'(?i)n/?a\.?|none\.?', s)]
     return out
 
 
