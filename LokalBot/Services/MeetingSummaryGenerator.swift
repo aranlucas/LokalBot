@@ -6,8 +6,9 @@ enum MeetingSummaryGenerator {
     static let conservativeExternalContextTokens = 16_384
 
     /// The smallest context window OpenRouter advertised across every endpoint
-    /// of these models on 1 October 2026 (`/api/v1/models/<id>/endpoints`).
-    /// Exact ids only: variants such as `:free` route to other endpoints.
+    /// of these models on 1 October 2026 (`/api/v1/models/<id>/endpoints`),
+    /// used when the live lookup has never answered. Exact ids only: variants
+    /// such as `:free` route to other endpoints.
     /// The window is a guard, not a part size. Parts still target the planner's
     /// 6,000 estimated tokens, which UTF-8 bytes bound far below these windows
     /// even for punctuation-heavy or non-Latin text, so a larger window only
@@ -31,6 +32,18 @@ enum MeetingSummaryGenerator {
             return verified
         }
         return contextTokenLimit(for: config.summarizerBackend)
+    }
+
+    /// The window OpenRouter publishes for the selected model wins, including
+    /// one smaller than 16K; otherwise the verified table, then 16K.
+    static func contextTokenLimit(for config: AppSettings, catalog: OpenRouterModelCatalog) async -> Int {
+        if config.summarizerBackend == .openAICompatible,
+           let url = URL(string: config.openAIBaseURL),
+           let published = await catalog.contextTokens(model: config.openAIModel, baseURL: url,
+                                                       approvedOrigins: config.approvedRemoteInferenceOrigins) {
+            return published
+        }
+        return contextTokenLimit(for: config)
     }
 
     static func removeCheckpoint(in folder: URL) {
