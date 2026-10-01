@@ -71,4 +71,12 @@ if __name__ == "__main__":
     if mode == "wer":
         rate = transcript_word_error_rate(target, sys.argv[3])
         print(f"{rate:.1%}")
+        if rate:
+            # Synthetic meetings only: show the words so drift can be read
+            # from the log without the artifact.
+            for label, path, key in (("expected", Path(sys.argv[3]), None), ("heard", Path(target), "transcript.json")):
+                segments = []
+                for track in ([path / key] if key else sorted(path.glob("*.json"))):
+                    segments += json.loads(track.read_text())["segments"]
+                print(f"    {label}: {' '.join(spoken_words(segments))}", file=sys.stderr)
         sys.exit(0 if rate <= float(sys.argv[4]) else 1)
