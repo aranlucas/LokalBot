@@ -11,6 +11,7 @@ struct PermissionRow: View {
     /// reads the rationale at its own larger body size.
     var prominentRationale = false
     @ObservedObject private var permissions = PermissionManager.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var actionButtonFrame = CGRect.zero
 
     var body: some View {
@@ -18,6 +19,7 @@ struct PermissionRow: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: granted ? "checkmark.circle.fill" : "exclamationmark.circle")
                 .foregroundStyle(granted ? .green : .orange)
+                .contentTransition(.symbolEffect(.replace))
             VStack(alignment: .leading, spacing: 2) {
                 Text(permission.title)
                 if prominentRationale {
@@ -38,5 +40,7 @@ struct PermissionRow: View {
                 .help(permission.guidanceHint)
             }
         }
+        // Grants arrive from polling while the user is in System Settings.
+        .animation(WorkspaceMotion.animation(.milestone, reduceMotion: reduceMotion), value: granted)
     }
 }

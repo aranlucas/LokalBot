@@ -6,6 +6,7 @@ import SwiftUI
 /// Dismissed once and remembered via `@AppStorage`.
 struct GettingStartedCard: View {
     @EnvironmentObject var app: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("lokalbotv3.gettingStartedDismissed") private var dismissed = false
 
     // First-checklist-item state: front-load the transcription model download
@@ -159,6 +160,8 @@ struct GettingStartedCard: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: done == true ? "checkmark.circle.fill" : "circle")
                 .foregroundStyle(done == true ? Color.green : Brand.teal)
+                .contentTransition(.symbolEffect(.replace))
+                .animation(WorkspaceMotion.animation(.milestone, reduceMotion: reduceMotion), value: done)
                 .padding(.top, 2)
             content().font(.scaled(.callout))
         }

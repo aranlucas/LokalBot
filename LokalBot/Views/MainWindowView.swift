@@ -7,6 +7,7 @@ struct MainWindowView: View {
     @EnvironmentObject var app: AppState
     @Environment(\.openWindow) private var openWindow
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Native sidebar toggle and restored visibility share the same binding.
     @SceneStorage("workspace.sidebar.visible") private var sidebarVisible = true
     @State private var pendingDelete: Set<Meeting.ID>?
@@ -77,9 +78,16 @@ struct MainWindowView: View {
                             }
                             .font(AppFont.scaled(.body))
                             .padding(12).background(.bar)
+                            .transition(WorkspaceMotion.bottomEdgeTransition(reduceMotion: reduceMotion))
                         }
                     }
                 }
+                // Model code sets this feedback, so animate on its values: the
+                // bar enters from the bottom edge while the workspace above
+                // yields its space in the same motion.
+                .animation(bottomFeedbackAnimation, value: app.lastError)
+                .animation(bottomFeedbackAnimation, value: app.micRecoveryNeeded)
+                .animation(bottomFeedbackAnimation, value: app.outcomeIndex.statusUndo.isEmpty)
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel("Workspace content")
                 .splitPaneAccessibilityLabel("Workspace content")
@@ -97,9 +105,15 @@ struct MainWindowView: View {
                     PermissionManager.shared.openSettings(for: .microphone)
                     app.micRecoveryNeeded = false
                 }) { app.micRecoveryNeeded = false }
+                .transition(WorkspaceMotion.bottomEdgeTransition(reduceMotion: reduceMotion))
         } else if let error = app.lastError {
             ErrorToast(message: error) { app.lastError = nil }
+                .transition(WorkspaceMotion.bottomEdgeTransition(reduceMotion: reduceMotion))
         }
+    }
+
+    private var bottomFeedbackAnimation: Animation? {
+        WorkspaceMotion.animation(.drawer, reduceMotion: reduceMotion)
     }
 
     @ViewBuilder private var workspace: some View {

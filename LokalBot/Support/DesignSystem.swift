@@ -166,6 +166,9 @@ enum WorkspaceMotionKind {
     case disclosure
     case drawer
     case autoScroll
+    /// Rare setup moments: a permission granted, a model ready, an
+    /// onboarding step. Infrequent enough to afford a little spring.
+    case milestone
 }
 
 enum WorkspaceMotion {
@@ -176,6 +179,7 @@ enum WorkspaceMotion {
         case .disclosure: return .easeInOut(duration: 0.16)
         case .drawer: return .easeOut(duration: 0.18)
         case .autoScroll: return .easeOut(duration: 0.15)
+        case .milestone: return .snappy(duration: 0.25)
         }
     }
 
@@ -185,6 +189,20 @@ enum WorkspaceMotion {
 
     static func drawerTransition(reduceMotion: Bool) -> AnyTransition {
         reduceMotion ? .opacity : .move(edge: .trailing).combined(with: .opacity)
+    }
+
+    /// Feedback pinned to the window's bottom edge enters and leaves through
+    /// that same edge.
+    static func bottomEdgeTransition(reduceMotion: Bool) -> AnyTransition {
+        reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity)
+    }
+
+    /// Paged setup steps arrive a short distance from the direction of travel.
+    static func stepTransition(forward: Bool, reduceMotion: Bool) -> AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        return .asymmetric(
+            insertion: .opacity.combined(with: .offset(x: forward ? 24 : -24)),
+            removal: .opacity)
     }
 }
 

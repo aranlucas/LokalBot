@@ -228,6 +228,7 @@ private struct ConversationDateDivider: View {
 
 private struct EditorialTurn: View {
     @EnvironmentObject var app: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let message: ChatMessage
     @ObservedObject var model: ChatViewModel
     let startsQuestion: Bool
@@ -485,6 +486,7 @@ private struct EditorialTurn: View {
                 } label: {
                     Label(copied ? "Copied" : "Copy",
                           systemImage: copied ? "checkmark" : "doc.on.doc")
+                        .contentTransition(.symbolEffect(.replace))
                 }
                 .disabled(copied)
                 .help("Copy this answer")
@@ -531,10 +533,11 @@ private struct EditorialTurn: View {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         guard pasteboard.setString(text, forType: .string) else { return }
-        copied = true
+        let animation = WorkspaceMotion.animation(.selection, reduceMotion: reduceMotion)
+        withAnimation(animation) { copied = true }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.5))
-            copied = false
+            withAnimation(animation) { copied = false }
         }
     }
 
