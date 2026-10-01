@@ -962,17 +962,111 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(second, 3_000)
     }
 
-    func testKnownGLMContextPolicyDoesNotRaiseUnknownServerLimits() {
-        var config = AppSettings()
-        config.summarizerBackend = .openAICompatible
-        config.openAIBaseURL = "https://openrouter.ai/api/v1"
-        config.openAIModel = "z-ai/glm-5.3-flash"
-        XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), 32_768)
-        config.openAIBaseURL = "http://localhost:1234/v1"
-        XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), 16_384)
-        config.openAIBaseURL = "https://openrouter.ai/api/v1"
+    func testVerifiedOpenRouterContextPolicyDoesNotRaiseUnknownServerLimits() {
+        var config = openRouterConfig("z-ai/glm-5.3-flash")
+        XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), 262_144)
+        config.openAIModel = "z-ai/glm-5.3"
+        XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), 262_144)
+        config.openAIModel = "qwen/qwen3.8-flash"
+        XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), 1_000_000)
+        config.openAIModel = "qwen/qwen3.8-flash:free"
+        XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), 16_384,
+                       "a variant routes to other endpoints than the verified id")
         config.openAIModel = "unknown/model"
         XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), 16_384)
+        config.openAIModel = "qwen/qwen3.8-flash"
+        config.openAIBaseURL = "http://localhost:1234/v1"
+        XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), 16_384)
+        config = openRouterConfig("qwen/qwen3.8-flash")
+        config.summarizerBackend = .ollama
+        XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), 16_384)
+    }
+
+    func testVerifiedWindowHalvesAThirtyMinuteMeetingsPartsAndKeepsTheByteBound() async throws {
+        let transcript = thirtyMinuteTranscript()
+        let evidence = MeetingNotesEvidence(transcript: transcript)
+        let engine = Engine(script: Script([]), hasTokenizer: false)
+        let system = MeetingNotesGenerator.systemPrompt(template: .meeting, language: .matchTranscript)
+        let window = MeetingSummaryGenerator.contextTokenLimit(for: openRouterConfig("qwen/qwen3.8-flash"))
+        let conservative = try await MeetingNotesGenerator.makeChunks(evidence: evidence, engine: engine,
+            system: system, context: [], contextTokens: 16_384)
+        let verified = try await MeetingNotesGenerator.makeChunks(evidence: evidence, engine: engine,
+            system: system, context: [], contextTokens: window)
+        // Each part carries about twice the evidence; the tail part may be short.
+        XCTAssertLessThanOrEqual(verified.count, conservative.count / 2 + 1,
+                                 "planned \(verified.count) parts against \(conservative.count) at 16K")
+        XCTAssertEqual(Set(verified.flatMap { $0.map(\.source) }), Set(evidence.units.map(\.source)))
+        XCTAssertEqual(verified.last?.last?.source, evidence.units.last?.source)
+        for chunk in verified {
+            let bytes = (system + "\n\n" + MeetingNotesGenerator.prompt(units: chunk, roster: evidence.roster)).utf8.count
+            // Even at one token per byte a part stays inside the smallest
+            // verified window with the existing output and envelope headroom.
+            XCTAssertLessThanOrEqual(bytes, 18_000)
+            XCTAssertLessThanOrEqual(bytes + 4_096 + 1_536, 32_768)
+        }
+    }
+
+    func testWindowsAbove32KPlanTheSamePartsSoExistingCheckpointsSurvive() async throws {
+        let multilingual = Transcript(segments: (0..<240).map { index in
+            .init(start: Double(index), end: Double(index + 1), speaker: index.isMultiple(of: 3) ? "me" : "them",
+                  text: String(repeating: "计划审查会议 Преглед документације !?123=", count: 8))
+        }, engine: "fixture")
+        let engine = Engine(script: Script([]), hasTokenizer: false)
+        let system = MeetingNotesGenerator.systemPrompt(template: .meeting, language: .matchTranscript)
+        for transcript in [thirtyMinuteTranscript(), multilingual] {
+            let evidence = MeetingNotesEvidence(transcript: transcript)
+            var plans: [[[String]]] = []
+            for window in [32_768, 262_144, 1_000_000] {
+                let chunks = try await MeetingNotesGenerator.makeChunks(evidence: evidence, engine: engine,
+                    system: system, context: [], contextTokens: window)
+                plans.append(chunks.map { $0.map(\.source) })
+                for chunk in chunks {
+                    let text = system + "\n\n" + MeetingNotesGenerator.prompt(units: chunk, roster: evidence.roster)
+                    XCTAssertLessThanOrEqual(text.utf8.count + 4_096 + 1_536, 32_768)
+                }
+            }
+            XCTAssertGreaterThan(plans[0].count, 1)
+            XCTAssertEqual(plans[1], plans[0], "GLM's 32K plan must not change with its verified window")
+            XCTAssertEqual(plans[2], plans[0])
+        }
+    }
+
+    func testVerifiedWindowLetsAContinuationThatBytesRefusedAt16KRun() async throws {
+        let system = MeetingNotesGenerator.systemPrompt(template: .meeting, language: .matchTranscript)
+        // One part that fits 16K, leaving less room than its own ledger needs.
+        var transcript = Transcript(segments: [], engine: "fixture")
+        while true {
+            let evidence = MeetingNotesEvidence(transcript: transcript)
+            if (system + "\n\n" + MeetingNotesGenerator.prompt(units: evidence.units, roster: evidence.roster))
+                .utf8.count >= 8_500 { break }
+            let index = transcript.segments.count
+            transcript.segments.append(.init(start: Double(index * 5), end: Double(index * 5 + 5), speaker: "them",
+                text: "The team reviewed rollout step \(index) and the documentation it needs."))
+        }
+        let notes = (1...12).map { index in
+            note("s\(index)", "Rollout step \(index) was reviewed. " + String(repeating: "The documentation needs an update. ", count: 6))
+        }
+        func run(contextTokens: Int) async throws -> (Result<MeetingNotesGenerator.Result, Error>, Int) {
+            let script = Script([.text(try response(notes: notes, more: true)), .text(try response())])
+            let result: Result<MeetingNotesGenerator.Result, Error>
+            do {
+                result = .success(try await MeetingNotesGenerator.generate(transcript: transcript,
+                    engine: Engine(script: script, hasTokenizer: false), template: .meeting,
+                    language: .matchTranscript, context: [], contextTokens: contextTokens,
+                    meetingID: UUID(), folder: try folder()))
+            } catch {
+                result = .failure(error)
+            }
+            return (result, await script.recorded().count)
+        }
+        let (refused, refusedCalls) = try await run(contextTokens: 16_384)
+        XCTAssertEqual(refusedCalls, 1, "the 16K byte bound refuses the continuation before sending it")
+        guard case .failure(let error) = refused else { return XCTFail("expected the continuation to be refused") }
+        XCTAssertTrue(error.localizedDescription.contains("cannot fit"), "\(error)")
+        let window = MeetingSummaryGenerator.contextTokenLimit(for: openRouterConfig("qwen/qwen3.8-flash"))
+        let (completed, calls) = try await run(contextTokens: window)
+        XCTAssertEqual(calls, 2)
+        XCTAssertEqual(try completed.get().claims.count, 12)
     }
 
     func testOverviewPrioritizesLaterCommitmentAndDecisionOverIntroductoryFacts() {
@@ -1131,6 +1225,25 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         let unlimited = GenerationBudgetPreset.unlimited.limits
         XCTAssertTrue(unlimited.seconds.isFinite)
         XCTAssertLessThan(unlimited.seconds * 35, Double(Int.max))
+    }
+
+    private func openRouterConfig(_ model: String) -> AppSettings {
+        var config = AppSettings()
+        config.summarizerBackend = .openAICompatible
+        config.openAIBaseURL = "https://openrouter.ai/api/v1"
+        config.openAIModel = model
+        return config
+    }
+
+    /// About 6,000 words over 30 minutes from two speakers. Their wording
+    /// differs so neither turn reads as the other's echo.
+    private func thirtyMinuteTranscript() -> Transcript {
+        Transcript(segments: (0..<360).map { index in
+            .init(start: Double(index * 5), end: Double(index * 5 + 5), speaker: index.isMultiple(of: 2) ? "me" : "them",
+                  text: index.isMultiple(of: 2)
+                    ? "I can take the dashboard review for item \(index) and send the notes to the platform team by Thursday."
+                    : "Item \(index) still depends on the billing migration, so finance wants a decision before the release.")
+        }, engine: "fixture")
     }
 
     private func longTranscript() -> Transcript {

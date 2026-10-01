@@ -1,6 +1,6 @@
 # LokalBot Privacy Policy
 
-Effective: September 30, 2026
+Effective: October 1, 2026
 
 LokalBot is a local-first macOS application. It has no LokalBot account,
 analytics service, advertising SDK, or telemetry backend. The project does not
@@ -162,6 +162,10 @@ The app may make these outbound connections:
   origin; Agent inference rejects redirects entirely. Configure the final
   endpoint URL when a server redirects. The operator of that server controls
   its privacy terms.
+  Before writing meeting notes with an approved OpenRouter origin, LokalBot
+  also reads the selected model's published endpoint list from that origin to
+  learn its context window. That request carries only the model id, with no
+  API key or content, and the answer is kept in local preferences.
   Meeting notes sent to an approved server can include the calendar title,
   invited participants' names, titles of documents on screen during the call,
   and, when enabled, the invitation agenda; each has its own setting.
