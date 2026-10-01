@@ -107,6 +107,23 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertGreaterThan(observed1, 0)
     }
 
+    /// The built-in Qwen3.5 4B copied cited source IDs into `due`, and the
+    /// notes rendered "due s268" (2026-10-01).
+    func testSourceIDInDueIsNotADueDate() async throws {
+        var leaked = action()
+        leaked["due"] = "s268"
+        let script = Script([.text(try response(notes: [note()], actions: [leaked]))])
+        let result = try await generate(script)
+        XCTAssertEqual(result.outcomes.userActionItems.count, 1)
+        XCTAssertNil(result.outcomes.userActionItems[0].due)
+        XCTAssertFalse(result.body.contains("s268"))
+
+        XCTAssertEqual(MeetingNotesEvidence.spokenDue(" (s12) ", sourceIDs: []), "")
+        XCTAssertEqual(MeetingNotesEvidence.spokenDue("s3", sourceIDs: ["s3"]), "")
+        XCTAssertEqual(MeetingNotesEvidence.spokenDue("Saturday", sourceIDs: ["s3"]), "Saturday")
+        XCTAssertEqual(MeetingNotesEvidence.spokenDue("sprint 12", sourceIDs: []), "sprint 12")
+    }
+
     func testRepairKeepsValidRecordsAndOnlySendsRejectedSources() async throws {
         var transcript = transcript
         transcript.segments += (3..<12).map { index in

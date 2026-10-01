@@ -193,7 +193,7 @@ struct MeetingNotesEvidence {
                 return abs(index - primaryIndex) <= 8
             }) else { reject(item, "distant_action_context", kind: "actions"); continue }
             guard let rawText = item["text"] as? String, !normalized(rawText).isEmpty, rawText.count <= 280,
-                  let due = item["due"] as? String, due.count <= 80,
+                  let rawDue = item["due"] as? String, rawDue.count <= 80,
                   let owner = item["owner"] as? String,
                   ["source", "unknown"].contains(owner) || speakers[owner] != nil,
                   let claimedBasis = item["basis"] as? String,
@@ -201,6 +201,7 @@ struct MeetingNotesEvidence {
                   let importance = item["importance"] as? Int, (1...5).contains(importance) else {
                 reject(item, "invalid_action", kind: "actions"); continue
             }
+            let due = Self.spokenDue(rawDue, sourceIDs: Set(visible.keys))
             let quote = (item["quote"] as? String).map { raw -> String in
                 var value = normalized(raw)
                 // Some providers wrap a copied clause in quotation marks.
@@ -330,6 +331,18 @@ struct MeetingNotesEvidence {
             return roster[key]?.identity == .user ? key : nil
         }
         return nil
+    }
+
+    /// The due date as spoken, or "" when there is none. The built-in
+    /// Qwen3.5 4B sometimes copied a cited source ID ("s268") into `due`,
+    /// which rendered as "due s268".
+    static func spokenDue(_ raw: String, sourceIDs: Set<String>) -> String {
+        let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let bare = value.trimmingCharacters(in: CharacterSet(charactersIn: "[]()"))
+        if sourceIDs.contains(bare) || bare.range(of: #"^[sS]\d+$"#, options: .regularExpression) != nil {
+            return ""
+        }
+        return value
     }
 
     private func normalized(_ text: String) -> String {
