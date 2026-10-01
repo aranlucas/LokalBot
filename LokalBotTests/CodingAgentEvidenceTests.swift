@@ -302,9 +302,12 @@ final class CodingAgentEvidenceTests: XCTestCase {
 
     // MARK: - Settings and scanning
 
-    func testSettingsDefaultOffAndRoundTrip() throws {
-        XCTAssertFalse(AppSettings().codingAgentEvidenceEnabled)
-        XCTAssertTrue(AppSettings().enabledCodingAgents.isEmpty)
+    func testSettingsDefaultOnAndRoundTrip() throws {
+        XCTAssertTrue(AppSettings().codingAgentEvidenceEnabled)
+        XCTAssertEqual(AppSettings().enabledCodingAgents, [.claudeCode, .codex])
+        var off = AppSettings()
+        off.codingAgentEvidenceEnabled = false
+        XCTAssertTrue(off.enabledCodingAgents.isEmpty)
 
         var settings = AppSettings()
         settings.codingAgentEvidenceEnabled = true

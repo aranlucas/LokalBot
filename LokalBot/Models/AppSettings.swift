@@ -244,9 +244,10 @@ struct AppSettings: Codable, Equatable {
 
     // MARK: - Coding agent sessions
 
-    /// Read local Claude Code and Codex transcripts into day evidence. Off by
-    /// default: transcripts hold requests and reports about private work.
-    var codingAgentEvidenceEnabled: Bool = false
+    /// Read local Claude Code and Codex transcripts into day evidence. On by
+    /// default: much of the day's work runs in agents the screen never sees.
+    /// Reading stays local; folder exclusions and deletion live in Settings.
+    var codingAgentEvidenceEnabled: Bool = true
     var codingAgentReadsClaudeCode: Bool = true
     var codingAgentReadsCodex: Bool = true
     /// Comma-separated folders whose sessions are never read.

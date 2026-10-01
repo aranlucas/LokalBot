@@ -24,7 +24,8 @@ LokalBot can store the following under its Application Support directory:
   voice profiles;
 - saved screen moments, optional unencrypted daily-memory exports, and optional
   routine drafts at folders you choose;
-- opt-in records of local coding-agent sessions (Claude Code and Codex);
+- records of local coding-agent sessions (Claude Code and Codex), on by
+  default;
 - opt-in Agent Mode sessions and the agent runtime; and
 - preferences, diagnostic logs, and encryption keys.
 
@@ -39,22 +40,22 @@ app names and duration totals remain. Saved moments remain until you unsave or d
 audio is deleted after transcription by default. You can delete an individual
 meeting in the app or remove the entire LokalBot Application Support directory.
 
-**Read coding agent sessions** is off by default. When you turn it on, LokalBot
-reads Claude Code session files under `~/.claude/projects`, Codex session files
-under `~/.codex/sessions` and `~/.codex/archived_sessions`, and Codex's
-`session_index.jsonl` for session titles. It never opens the agents'
-credentials, settings, or databases, and never changes their files. From each
-session it keeps your requests, the agent's final report, the project folder
-name and branch, changed file names, and actions parsed from commands the
-agent ran: commit messages, pull request titles and links, merges, releases,
-pushes, and test runs. Tool output, command output, file contents, reasoning,
-and instructions the agents inject are not kept, and detected credentials are
-redacted. Subagent sessions and sessions in folders you exclude are skipped.
-Sessions that read LokalBot's library through its CLI or MCP keep no reply
-text. Work is saved after ten quiet minutes, joins the day digest, and follows
-the screen-text retention above. Turning the setting off stops reading and
-keeps saved records; **Delete saved agent sessions** removes them and
-withdraws unedited journals that used them.
+**Read coding agent sessions** is on by default and can be turned off in
+Settings → Day Memory. While it is on, LokalBot reads Claude Code session files
+under `~/.claude/projects`, Codex session files under `~/.codex/sessions` and
+`~/.codex/archived_sessions`, and Codex's `session_index.jsonl` for session
+titles. It never opens the agents' credentials, settings, or databases, and
+never changes their files. From each session it keeps your requests, the
+agent's final report, the project folder name and branch, changed file names,
+and actions parsed from commands the agent ran: commit messages, pull request
+titles and links, merges, releases, pushes, and test runs. Tool output, command
+output, file contents, reasoning, and instructions the agents inject are not
+kept, and detected credentials are redacted. Subagent sessions and sessions in
+folders you exclude are skipped. Sessions that read LokalBot's library through
+its CLI or MCP keep no reply text. Work is saved after ten quiet minutes, joins
+the day digest, and follows the screen-text retention above. Turning the
+setting off stops reading and keeps saved records; **Delete saved agent
+sessions** removes them and withdraws unedited journals that used them.
 
 Library health reports stay in the library's `diagnostics/health` folder on
 this Mac. Development builds check the previous day each morning; released
