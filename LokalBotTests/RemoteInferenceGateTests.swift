@@ -20,22 +20,33 @@ final class RemoteInferenceGateTests: XCTestCase {
         XCTAssertEqual(queue.admit(now: 0), [dream])
     }
 
-    func testWaitersStartInPriorityOrderThenArrivalOrder() {
+    func testProcessingWaitersStartInPriorityOrderThenArrivalOrder() {
         var queue = RemoteRequestQueue(limits: .init(maximumConcurrent: 1, maximumBackground: 1))
-        let brief = UUID(), notes = UUID(), chat = UUID(), laterNotes = UUID()
+        let brief = UUID(), notes = UUID(), laterNotes = UUID()
         queue.enqueue(id: brief, priority: .background)
         queue.enqueue(id: notes, priority: .pipeline)
-        queue.enqueue(id: chat, priority: .interactive)
         queue.enqueue(id: laterNotes, priority: .pipeline)
 
         var started: [UUID] = []
-        for _ in 0..<4 {
+        for _ in 0..<3 {
             let admitted = queue.admit(now: 0)
             XCTAssertEqual(admitted.count, 1)
             started += admitted
             queue.finish(id: admitted[0], rateLimited: false, retryAfter: nil, now: 0)
         }
-        XCTAssertEqual(started, [chat, notes, laterNotes, brief])
+        XCTAssertEqual(started, [notes, laterNotes, brief])
+    }
+
+    func testChatIsNeverQueuedBehindProcessing() {
+        var queue = RemoteRequestQueue(limits: .init(maximumConcurrent: 1, maximumBackground: 1))
+        let notes = UUID(), digest = UUID(), chat = UUID()
+        queue.enqueue(id: notes, priority: .pipeline)
+        queue.enqueue(id: digest, priority: .background)
+        XCTAssertEqual(queue.admit(now: 0), [notes])
+
+        queue.enqueue(id: chat, priority: .interactive)
+        XCTAssertEqual(queue.admit(now: 0), [chat], "the person waiting on an answer starts at once")
+        XCTAssertEqual(queue.waiters.map(\.id), [digest])
     }
 
     func testRateLimitPausesTheWholeOriginUntilRetryAfter() {
@@ -104,7 +115,7 @@ final class RemoteInferenceGateTests: XCTestCase {
     func testCancelledWaiterLeavesTheQueue() async throws {
         let gate = RemoteInferenceGate(limits: .init(maximumConcurrent: 1, maximumBackground: 1))
         let origin = "https://provider.example"
-        let held = try await gate.acquire(origin: origin, priority: .interactive)
+        let held = try await gate.acquire(origin: origin, priority: .pipeline)
         let waiting = Task { try await gate.acquire(origin: origin, priority: .background) }
         try await waitUntil { await gate.snapshot(origin: origin).waiting == 1 }
         waiting.cancel()

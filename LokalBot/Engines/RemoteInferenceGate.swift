@@ -5,10 +5,12 @@ import Foundation
 /// admission policy unit-testable the same way `LeaseBook` is.
 ///
 /// Policy:
-/// - at most `maximumConcurrent` requests are in flight;
+/// - processing work (meeting notes, digests, Dream, briefs) runs at most
+///   `maximumConcurrent` requests at once;
 /// - background work may hold at most `maximumBackground` of them, so meeting
-///   notes, chat, and agents always find a slot that scheduled digests or
-///   Dream cannot take;
+///   notes always find a slot that scheduled digests or Dream cannot take;
+/// - someone waiting on the answer (chat, dictation, an agent) is never queued
+///   behind processing work;
 /// - waiters are admitted in priority order, first come first served within a
 ///   priority, and a blocked background waiter never holds back a waiter that
 ///   could start;
@@ -41,6 +43,10 @@ struct RemoteRequestQueue {
         inFlight.values.filter { $0 == .background }.count
     }
 
+    var processingInFlight: Int {
+        inFlight.values.filter { $0 >= .pipeline }.count
+    }
+
     mutating func enqueue(id: UUID, priority: InferencePriority) {
         waiters.append(Waiter(id: id, priority: priority, order: nextOrder))
         nextOrder &+= 1
@@ -59,9 +65,11 @@ struct RemoteRequestQueue {
             (lhs.priority.rawValue, lhs.order) < (rhs.priority.rawValue, rhs.order)
         }
         for waiter in ordered {
-            guard inFlight.count < limits.maximumConcurrent else { break }
-            if waiter.priority == .background, backgroundInFlight >= limits.maximumBackground {
-                continue
+            if waiter.priority >= .pipeline {
+                guard processingInFlight < limits.maximumConcurrent else { break }
+                if waiter.priority == .background, backgroundInFlight >= limits.maximumBackground {
+                    continue
+                }
             }
             inFlight[waiter.id] = waiter.priority
             admitted.append(waiter.id)

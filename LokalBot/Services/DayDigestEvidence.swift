@@ -47,10 +47,6 @@ enum DayDigestMeetingArtifacts {
     }
 }
 
-/// One deterministic slice of the day that receives a substantive-work
-/// eligibility pass. Character pressure may split a long active session, while
-/// a real idle gap always starts a new slice. Metadata-only slices stay in the
-/// lossless journal without becoming visible summary items.
 /// Answers to day-digest prompts already asked today, keyed by the exact
 /// prompt. A digest is regenerated whenever a meeting finishes or evidence
 /// settles; without this every run re-asked the model about every segment,
@@ -106,6 +102,10 @@ final class DayDigestSegmentCache: @unchecked Sendable {
     }
 }
 
+/// One deterministic slice of the day that receives a substantive-work
+/// eligibility pass. Character pressure may split a long active session, while
+/// a real idle gap always starts a new slice. Metadata-only slices stay in the
+/// lossless journal without becoming visible summary items.
 struct DayDigestSummarySegment: Equatable, Sendable {
     var start: Date
     var end: Date
