@@ -47,4 +47,32 @@ final class RunningApplicationCacheTests: XCTestCase {
         XCTAssertEqual(reads.count, apps.count * 2 - 1,
                        "an app that left the list is read again when it reappears")
     }
+
+    /// NSWorkspace returns fresh objects for processes without a bundle id on
+    /// every call, so the list itself is kept until an app launches or quits.
+    func testListIsReusedUntilInvalidatedOrStale() throws {
+        let reads = Reads()
+        var clock: TimeInterval = 100
+        let cache = RunningApplicationCache(uptime: { clock })
+        let apps = NSWorkspace.shared.runningApplications
+        try XCTSkipIf(apps.isEmpty, "no running applications visible to the test host")
+        let read: () -> [NSRunningApplication] = {
+            reads.add()
+            return apps
+        }
+
+        _ = cache.runningApplications(read)
+        _ = cache.runningApplications(read)
+        clock += RunningApplicationCache.maximumAge - 1
+        _ = cache.runningApplications(read)
+        XCTAssertEqual(reads.count, 1, "detector ticks reuse the list")
+
+        cache.invalidate()
+        _ = cache.runningApplications(read)
+        XCTAssertEqual(reads.count, 2, "a launch or quit refreshes it")
+
+        clock += RunningApplicationCache.maximumAge
+        _ = cache.runningApplications(read)
+        XCTAssertEqual(reads.count, 3, "a stale list is refreshed")
+    }
 }
