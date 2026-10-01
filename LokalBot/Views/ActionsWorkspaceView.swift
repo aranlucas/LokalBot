@@ -4,6 +4,7 @@ import SwiftUI
 /// the Today preview stays deliberately small. Corrections never alter evidence.
 struct ActionsWorkspaceView: View {
     @EnvironmentObject private var app: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @SceneStorage("actions.query") private var query = ""
     @SceneStorage("actions.status") private var status = "open"
     @SceneStorage("actions.due") private var dueFilter = "all"
@@ -136,6 +137,9 @@ struct ActionsWorkspaceView: View {
                             Image(systemName: reference.status == .done ? "checkmark.circle.fill" : "circle")
                                 .font(.system(size: LBTokens.Metric.actionToggleSize))
                                 .foregroundStyle(reference.status == .done ? Brand.teal : .secondary)
+                                .contentTransition(.symbolEffect(.replace))
+                                .animation(WorkspaceMotion.animation(.selection, reduceMotion: reduceMotion),
+                                           value: reference.status)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(reference.status == .done ? "Reopen action" : "Complete action")

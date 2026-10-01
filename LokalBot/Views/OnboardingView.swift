@@ -19,8 +19,12 @@ struct OnboardingView: View {
     var mode: Mode = .welcome
     @EnvironmentObject private var app: AppState
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject private var permissions = PermissionManager.shared
     @State private var step: Step = .capture
+    /// Direction of the last step change, so the incoming page arrives from
+    /// the side the user is moving toward.
+    @State private var forward = true
     @State private var draft = CaptureSetupDraft(settings: AppSettings())
     @State private var initialGrants: [AppPermission: Bool] = [:]
     @State private var includeAutocomplete = false
@@ -62,14 +66,21 @@ struct OnboardingView: View {
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 28).padding(.top, 24).padding(.bottom, 8)
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    switch step {
-                    case .capture: captureChoices
-                    case .permissions: permissionChoices
-                    case .models: modelChoices
-                    case .review: review
+                // The ZStack lets the outgoing and incoming pages overlap
+                // while they cross instead of stacking vertically.
+                ZStack(alignment: .topLeading) {
+                    VStack(alignment: .leading, spacing: 20) {
+                        switch step {
+                        case .capture: captureChoices
+                        case .permissions: permissionChoices
+                        case .models: modelChoices
+                        case .review: review
+                        }
                     }
-                }.padding(24).frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(24).frame(maxWidth: .infinity, alignment: .leading)
+                    .id(step)
+                    .transition(WorkspaceMotion.stepTransition(forward: forward, reduceMotion: reduceMotion))
+                }
             }
             Divider()
             HStack {
@@ -78,7 +89,7 @@ struct OnboardingView: View {
                 }
                 Spacer()
                 if mode == .welcome {
-                    Button("Back") { step = Step(rawValue: step.rawValue - 1) ?? .capture }
+                    Button("Back") { go(to: Step(rawValue: step.rawValue - 1) ?? .capture) }
                         .disabled(step == .capture)
                 }
                 if mode == .permissions {
@@ -91,7 +102,7 @@ struct OnboardingView: View {
                     }.primaryActionButton().accessibilityIdentifier("onboarding.finish")
                 } else {
                     Button(step == .permissions ? "Continue with Current Access" : "Continue") {
-                        step = Step(rawValue: step.rawValue + 1) ?? .review
+                        go(to: Step(rawValue: step.rawValue + 1) ?? .review)
                     }.primaryActionButton().keyboardShortcut(.defaultAction)
                 }
             }.padding(24)
@@ -106,6 +117,13 @@ struct OnboardingView: View {
             if mode == .permissions { step = .permissions }
         }
         .onDisappear { permissions.stopPolling(); PermissionGuidanceController.shared.dismiss() }
+    }
+
+    private func go(to next: Step) {
+        withAnimation(WorkspaceMotion.animation(.milestone, reduceMotion: reduceMotion)) {
+            forward = next.rawValue > step.rawValue
+            step = next
+        }
     }
 
     private var captureChoices: some View {

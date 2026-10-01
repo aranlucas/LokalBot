@@ -62,6 +62,7 @@ struct NeedsAttentionSection: View {
 
 struct ActionThreadRow: View {
     @EnvironmentObject var app: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let thread: ActionThread
     @State private var showingSources = false
     @State private var showingStatusConfirmation = false
@@ -76,6 +77,7 @@ struct ActionThreadRow: View {
                       ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: LBTokens.Metric.actionToggleSize))
                     .foregroundStyle(thread.status == .done ? Brand.teal : .secondary)
+                    .contentTransition(.symbolEffect(.replace))
             }
             .buttonStyle(.plain)
             .accessibilityLabel(thread.status == .done ? "Reopen action thread" : "Mark action thread done")
@@ -216,7 +218,12 @@ struct ActionThreadRow: View {
     }
 
     private func apply(_ status: OutcomeStatus) {
-        if app.outcomeIndex.setStatus(status, thread: thread) {
+        // A completed thread leaves open-only lists; animate the change so
+        // the rows below close the gap and Undo arrives in the same motion.
+        let updated = withAnimation(WorkspaceMotion.animation(.selection, reduceMotion: reduceMotion)) {
+            app.outcomeIndex.setStatus(status, thread: thread)
+        }
+        if updated {
             app.lastError = nil
         } else {
             app.lastError = "Could not update this action thread. "

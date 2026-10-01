@@ -42,6 +42,7 @@ struct ModelPreparationView: View {
     let presentation: ModelPreparationPresentation
     var style: Style = .standard
     var action: (() -> Void)?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         switch style {
@@ -52,10 +53,18 @@ struct ModelPreparationView: View {
         }
     }
 
+    /// Ready or failed usually lands while the user watches a first download.
+    private var stateIcon: some View {
+        Image(systemName: iconName)
+            .foregroundStyle(tint)
+            .contentTransition(.symbolEffect(.replace))
+            .animation(WorkspaceMotion.animation(.milestone, reduceMotion: reduceMotion),
+                       value: presentation.state)
+    }
+
     private var standardBody: some View {
         HStack(alignment: .center, spacing: 8) {
-            Image(systemName: iconName)
-                .foregroundStyle(tint)
+            stateIcon
             VStack(alignment: .leading, spacing: 1) {
                 Text(presentation.title)
                     .font(style == .compact ? .scaled(.caption) : .scaled(.callout))
@@ -74,9 +83,8 @@ struct ModelPreparationView: View {
     private var hudBody: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 7) {
-                Image(systemName: iconName)
+                stateIcon
                     .font(.scaled(.caption))
-                    .foregroundStyle(tint)
                 Text(presentation.title)
                     .font(.scaled(.callout).weight(.semibold))
                     .lineLimit(1)
