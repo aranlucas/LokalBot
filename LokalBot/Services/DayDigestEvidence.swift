@@ -1343,7 +1343,7 @@ enum DayDigestOverviewGenerator {
         } catch is CancellationError {
             throw CancellationError()
         } catch {
-            guard !(engine is LeasedTextEngine),
+            guard !engine.handlesTransientRetries,
                   let delay = TextEngineRetryPolicy.delay(for: error, attempt: 0) else {
                 throw error
             }

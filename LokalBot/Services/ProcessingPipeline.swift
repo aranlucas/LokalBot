@@ -1155,7 +1155,8 @@ final class ProcessingPipeline: ObservableObject {
         let started = Date()
         stages[meeting.id] = .preparingSummaryModel
         let preparing = ProcessInfo.processInfo.systemUptime
-        let engine = try await thinkExecution.makeTextEngine(config)
+        let engine = try await thinkExecution.makeTextEngine(
+            config, priority: .pipeline, purpose: "meeting notes")
         // After the engine checked the server's approval; only the model id is sent.
         let contextTokens = await MeetingSummaryGenerator.contextTokenLimit(for: config, catalog: .shared)
         await budget.recordPhase("modelPreparation", seconds: ProcessInfo.processInfo.systemUptime - preparing)

@@ -9,8 +9,11 @@ enum InferencePriority: Int, Comparable, CaseIterable, Sendable {
     case interactive = 0
     /// An agent is waiting (Agent Mode session, external ask_library).
     case agent = 1
-    /// Pipeline work nobody is watching (summaries, digests, embeddings).
-    case background = 2
+    /// Processing the person will open next: notes for a meeting that just
+    /// ended or that they asked to summarize. Ahead of scheduled work.
+    case pipeline = 2
+    /// Scheduled work nobody is waiting for (digests, Dream, briefs, embeddings).
+    case background = 3
 
     static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
 
@@ -18,6 +21,7 @@ enum InferencePriority: Int, Comparable, CaseIterable, Sendable {
         switch self {
         case .interactive: "interactive"
         case .agent: "agent"
+        case .pipeline: "pipeline"
         case .background: "background"
         }
     }

@@ -181,6 +181,7 @@ enum ChatPrompt {
 
     static func inferencePrivacy(for engine: TextEngine) -> String {
         if let leased = engine as? LeasedTextEngine { return inferencePrivacy(for: leased.base) }
+        if let gated = engine as? GatedTextEngine { return inferencePrivacy(for: gated.base) }
         if engine is AppleIntelligenceEngine { return "This response uses an on-device model." }
         let url = (engine as? OpenAICompatibleEngine)?.baseURL ?? (engine as? OllamaEngine)?.baseURL
         guard let url else { return "The inference location is unspecified; do not claim that all processing stays on this Mac." }

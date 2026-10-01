@@ -271,9 +271,9 @@ enum MeetingNotesGenerator {
                         }
                         return ("", true)
                     }
-                    // Managed local engines already reacquire once. External
-                    // transient failures get one replay charged to this job.
-                    if !(engine is LeasedTextEngine),
+                    // Managed and gated engines replay transient failures
+                    // themselves. Any other engine gets one replay charged to this job.
+                    if !engine.handlesTransientRetries,
                        let delay = TextEngineRetryPolicy.delay(for: error, attempt: attempt) {
                         let waiting = ProcessInfo.processInfo.systemUptime
                         try await Task.sleep(for: .seconds(delay))
