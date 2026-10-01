@@ -280,7 +280,7 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertTrue(calls[1].prompt.contains("Send the measurements"))
     }
 
-    func testRepeatedOwnershipRepairCannotSubstituteAnotherTaskOrClaimCompletion() async throws {
+    func testRepeatedOwnershipRepairCannotSubstituteAnotherTaskOrClaimOwnership() async throws {
         var transcript = transcript
         transcript.segments[0].text = "I'll prepare the policy, and you will send the measurements."
         transcript.segments[1].text = "I will prepare the policy."
@@ -295,18 +295,63 @@ final class MeetingNotesGeneratorTests: XCTestCase {
             .text(try response(actions: [unrelated])),
             .text(try response(actions: [original])),
         ])
-        let output = try folder()
-        do {
-            _ = try await generate(script, transcript: transcript, folder: output)
-            XCTFail("Repeated ambiguous evidence must remain partial")
-        } catch is MeetingNotesGenerator.Incomplete {}
+        let result = try await generate(script, transcript: transcript)
         let calls = await script.recorded()
         XCTAssertEqual(calls.count, 3, "Only two targeted repairs are allowed per part")
-        let saved = try JSONDecoder().decode(MeetingOutcomes.self,
-            from: Data(contentsOf: output.appendingPathComponent("outcomes.partial.json")))
-        XCTAssertEqual(saved.actionItems.map(\.text), ["Send the measurements"])
-        XCTAssertEqual(saved.actionItems[0].attribution?.rejectionReason, .ambiguousQuote)
-        XCTAssertTrue(saved.userActionItems.isEmpty)
+        // Repeated ambiguous evidence leaves the task visible with an unclear
+        // owner instead of failing the meeting on every retry.
+        XCTAssertEqual(result.outcomes.actionItems.map(\.text), ["Send the measurements"])
+        XCTAssertEqual(result.outcomes.actionItems[0].attribution?.rejectionReason, .ambiguousQuote)
+        XCTAssertTrue(result.outcomes.actionItems[0].ownershipIsUnclear)
+        XCTAssertTrue(result.outcomes.userActionItems.isEmpty)
+    }
+
+    /// A task between two other participants whose only evidence names both
+    /// actors, so no quote can bind it to one undertaking.
+    private func unbindableTask() -> (Transcript, [String: Any]) {
+        var transcript = transcript
+        transcript.segments[0] = .init(start: 0, end: 5, speaker: "them",
+                                       text: "I'll prepare the policy, and you will send the measurements.")
+        var task = action(owner: "unknown")
+        task["text"] = "Send the measurements"
+        task["quote"] = "I'll prepare the policy"
+        return (transcript, task)
+    }
+
+    func testTruncatedOwnershipRepairStaysPartialUntilAResumeAnswersInFull() async throws {
+        let (transcript, task) = unbindableTask()
+        let output = try folder()
+        let first = Script([.text(try response(actions: [task])), .text(try response(actions: [task])), .truncated("")])
+        do {
+            _ = try await generate(first, transcript: transcript, folder: output)
+            XCTFail("A truncated final repair must remain partial")
+        } catch is MeetingNotesGenerator.Incomplete {} catch { XCTFail("unexpected error \(error)") }
+        let initialCalls = await first.recorded()
+        XCTAssertEqual(initialCalls.count, 3)
+        let resumed = Script([.text(try response(actions: [task])), .text(try response(actions: [task]))])
+        let result = try await generate(resumed, transcript: transcript, folder: output)
+        let calls = await resumed.recorded()
+        XCTAssertEqual(calls.count, 2, "Summarize again repairs only the pending task")
+        XCTAssertEqual(result.outcomes.actionItems.map(\.text), ["Send the measurements"])
+        XCTAssertTrue(result.outcomes.actionItems[0].ownershipIsUnclear)
+    }
+
+    func testRecordsQueuedBehindAnUnbindableOwnerStillGetRepaired() async throws {
+        let (transcript, task) = unbindableTask()
+        let script = Script([
+            .text(try response(notes: [note("s2", "Needs repair", section: "Wrong")], actions: [task])),
+            .text(try response(actions: [task])),
+            .text(try response(actions: [task])),
+            .text(try response(notes: [note("s2", "Documentation needs review.")])),
+        ])
+        let result = try await generate(script, transcript: transcript)
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 4)
+        XCTAssertTrue(calls[3].prompt.contains("s2|"))
+        XCTAssertTrue(calls[3].prompt.contains(#""reason":"invalid_note""#))
+        XCTAssertFalse(calls[3].prompt.contains(#""reason":"ambiguous_ownership_evidence""#))
+        XCTAssertEqual(result.claims.count, 1)
+        XCTAssertTrue(result.outcomes.actionItems[0].ownershipIsUnclear)
     }
 
     func testRepairFailureSavesEarlierValidRecordsWithoutReplacingFinalArtifacts() async throws {
