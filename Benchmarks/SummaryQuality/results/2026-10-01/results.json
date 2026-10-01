@@ -1,5 +1,5 @@
 {
- "tau": 0.7684667706489563,
+ "tau": 0.7691857218742371,
  "rows": {
   "refbefore": [
    {
@@ -7,21 +7,17 @@
     "complete": true,
     "requests": 2,
     "seconds": 14.937406541663222,
-    "rouge1": 0.3340563991323211,
-    "rouge2": 0.0392156862745098,
-    "rougeLsum": 0.3080260303687636,
+    "rouge1": 0.33478260869565213,
+    "rouge2": 0.03930131004366813,
+    "rougeLsum": 0.30869565217391304,
     "items": 14,
     "actions": 0,
     "decisions": 0,
     "owner_unclear": 0,
-    "ami_decisions": 1,
+    "ami_decisions": 0,
     "abstract_covered": [
      0.42857142857142855,
      7
-    ],
-    "decisions_covered": [
-     0.0,
-     1
     ],
     "actions_covered": [
      0.0,
@@ -222,7 +218,7 @@
     "owner_unclear": 4,
     "ami_decisions": 3,
     "abstract_covered": [
-     0.3,
+     0.2,
      10
     ],
     "decisions_covered": [
@@ -241,7 +237,7 @@
      0.0,
      4121
     ],
-    "reference_summary_kept": 0.6470588235294118
+    "reference_summary_kept": 0.5882352941176471
    },
    {
     "meeting": "IS1009d",
@@ -276,7 +272,7 @@
      0.0,
      4469
     ],
-    "reference_summary_kept": 0.6410256410256411
+    "reference_summary_kept": 0.6153846153846154
    },
    {
     "meeting": "TS3003a",
@@ -425,21 +421,17 @@
     "complete": true,
     "requests": 3,
     "seconds": 22.10744199999317,
-    "rouge1": 0.36601307189542487,
-    "rouge2": 0.08524590163934427,
-    "rougeLsum": 0.35294117647058826,
+    "rouge1": 0.3666121112929624,
+    "rouge2": 0.08538587848932677,
+    "rougeLsum": 0.353518821603928,
     "items": 20,
     "actions": 1,
     "decisions": 0,
     "owner_unclear": 1,
-    "ami_decisions": 1,
+    "ami_decisions": 0,
     "abstract_covered": [
      0.5714285714285714,
      7
-    ],
-    "decisions_covered": [
-     0.0,
-     1
     ],
     "actions_covered": [
      0.0,
@@ -502,7 +494,7 @@
      1
     ],
     "supported": [
-     0.21621621621621623,
+     0.1891891891891892,
      37
     ]
    },
@@ -640,7 +632,7 @@
     "owner_unclear": 5,
     "ami_decisions": 9,
     "abstract_covered": [
-     0.5555555555555556,
+     0.4444444444444444,
      9
     ],
     "decisions_covered": [
@@ -652,7 +644,7 @@
      1
     ],
     "supported": [
-     0.4358974358974359,
+     0.41025641025641024,
      39
     ]
    },
@@ -783,21 +775,17 @@
     "complete": false,
     "requests": 3,
     "seconds": 37.245879458336276,
-    "rouge1": 0.3122676579925651,
-    "rouge2": 0.05597014925373135,
-    "rougeLsum": 0.2899628252788104,
+    "rouge1": 0.31284916201117313,
+    "rouge2": 0.05607476635514018,
+    "rougeLsum": 0.29050279329608936,
     "items": 16,
     "actions": 4,
     "decisions": 0,
     "owner_unclear": 4,
-    "ami_decisions": 1,
+    "ami_decisions": 0,
     "abstract_covered": [
      0.42857142857142855,
      7
-    ],
-    "decisions_covered": [
-     0.0,
-     1
     ],
     "actions_covered": [
      0.0,
@@ -890,21 +878,17 @@
     "complete": true,
     "requests": 1,
     "seconds": 12.700901749994955,
-    "rouge1": 0.3138075313807531,
-    "rouge2": 0.0546218487394958,
-    "rougeLsum": 0.28451882845188287,
+    "rouge1": 0.31446540880503143,
+    "rouge2": 0.05473684210526316,
+    "rougeLsum": 0.2851153039832285,
     "items": 12,
     "actions": 0,
     "decisions": 0,
     "owner_unclear": 0,
-    "ami_decisions": 1,
+    "ami_decisions": 0,
     "abstract_covered": [
      0.2857142857142857,
      7
-    ],
-    "decisions_covered": [
-     0.0,
-     1
     ],
     "actions_covered": [
      0.0,
@@ -994,9 +978,9 @@
  },
  "conditions": {
   "refbefore": "AMI manual transcript, notes by master 4b81891 (before the fix)",
-  "reffix": "AMI manual transcript, notes by 5eb7281 (with the fix), fresh run",
+  "reffix": "AMI manual transcript, notes with the fix, fresh run",
   "newbefore": "Mix-Headset transcribed by PR 129 (2c1530d), notes by its build (before the fix)",
-  "newfix": "same transcripts, notes by 5eb7281 (with the fix), fresh run"
+  "newfix": "same transcripts, notes with the fix, fresh run"
  },
  "reference": "reffix"
 }
