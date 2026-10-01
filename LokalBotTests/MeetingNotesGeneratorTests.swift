@@ -989,6 +989,33 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertEqual(withoutOutcomes.map(\.segmentID), ["segment-0", "segment-3", "segment-5"])
     }
 
+    func testDefaultBudgetGrowsWithLongMeetingsButConservativeDoesNot() async throws {
+        let standard = MeetingGenerationBudget(limits: GenerationBudgetPreset.standard.limits)
+        await standard.recordPlan(model: "fixture", transcriptRevision: "revision", parts: 8)
+        for _ in 0..<24 { _ = try await standard.reserve(input: 1, output: 1) }
+        do {
+            _ = try await standard.reserve(input: 1, output: 1)
+            XCTFail("Eight parts double the twelve default requests")
+        } catch is MeetingGenerationBudget.Exhausted {}
+        let conservative = MeetingGenerationBudget(limits: GenerationBudgetPreset.conservative.limits)
+        await conservative.recordPlan(model: "fixture", transcriptRevision: "revision", parts: 8)
+        for _ in 0..<6 { _ = try await conservative.reserve(input: 1, output: 1) }
+        do {
+            _ = try await conservative.reserve(input: 1, output: 1)
+            XCTFail("Conservative keeps its fixed limit")
+        } catch is MeetingGenerationBudget.Exhausted {}
+    }
+
+    func testPlanningALongMeetingExtendsTheDeadline() async throws {
+        let budget = MeetingGenerationBudget(limits: .init(seconds: 1, scalesWithParts: true))
+        let value = try await budget.run {
+            await budget.recordPlan(model: "fixture", transcriptRevision: "revision", parts: 16)
+            try await Task.sleep(for: .milliseconds(1_500))
+            return 1
+        }
+        XCTAssertEqual(value, 1)
+    }
+
     func testMetricsKeepSeparateAttemptsAndOnlyRefundKnownUnusedOutput() async throws {
         let folder = try folder()
         let first = MeetingGenerationBudget(limits: .init(outputTokens: 4_096))
