@@ -81,8 +81,10 @@ struct QuickRecallRowModel: Identifiable {
             destination: .meeting(hit))
     }
 
-    /// Saved matches lead the Screens group. Use their own matching capture,
-    /// even when another capture is the group's primary search result.
+    /// Saved keyword matches lead the Screens group. Use their own matching
+    /// capture, even when another capture is the group's primary search result.
+    /// A saved capture related only by meaning keeps its ranked place, so it
+    /// cannot bury a capture that contains the searched words.
     static func screens(
         groups: [ScreenRecallGroup],
         savedMoments: [ActivityStore.SavedMoment],
@@ -93,8 +95,10 @@ struct QuickRecallRowModel: Identifiable {
         }
         let hits = Dictionary(groups.flatMap(\.matches).map { ($0.snapshotID, $0) },
                               uniquingKeysWith: { first, _ in first })
+        let savedByID = Dictionary(savedMoments.map { ($0.snapshotID, $0) },
+                                   uniquingKeysWith: { first, _ in first })
         let savedRows = savedMoments.compactMap { moment -> Self? in
-            guard let hit = hits[moment.snapshotID] else { return nil }
+            guard let hit = hits[moment.snapshotID], !hit.isSemantic else { return nil }
             return saved(moment, hit: hit)
         }
         let savedIDs = Set(savedRows.compactMap(\.snapshotID))
@@ -102,6 +106,7 @@ struct QuickRecallRowModel: Identifiable {
             // A saved capture already represents this source group.
             guard !group.matches.contains(where: { savedIDs.contains($0.snapshotID) }),
                   let hit = group.matches.first else { return nil }
+            if let moment = savedByID[hit.snapshotID] { return saved(moment, hit: hit) }
             let title = hit.windowTitle.isEmpty ? hit.app : hit.windowTitle
             return .screen(
                 snapshotID: hit.snapshotID, appName: hit.app, title: title,

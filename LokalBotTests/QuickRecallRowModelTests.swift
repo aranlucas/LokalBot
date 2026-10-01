@@ -19,6 +19,24 @@ final class QuickRecallRowModelTests: XCTestCase {
         XCTAssertFalse(rows[1].isSaved)
     }
 
+    /// Searching "onboarding" in the demo library listed the saved Slack
+    /// moment, related only by meaning, above the one capture with the word.
+    func testSemanticOnlySavedCaptureKeepsItsRankBelowTheKeywordMatch() {
+        var related = hit(3, snippet: "Redis failover benchmark is booked for Thursday")
+        related.isSemantic = true
+        let rows = QuickRecallRowModel.screens(
+            groups: [
+                ScreenRecallGroup(id: "notion", matches: [hit(4, snippet: "Q3 priorities, «onboarding» first")]),
+                ScreenRecallGroup(id: "slack", matches: [related]),
+            ],
+            savedMoments: [saved(3)], hasQuery: true)
+
+        XCTAssertEqual(rows.map(\.snapshotID), [4, 3])
+        XCTAssertFalse(rows[0].isSaved)
+        XCTAssertTrue(rows[1].isSaved)
+        XCTAssertEqual(rows[1].title, "Benchmark decision")
+    }
+
     func testQueryDoesNotIncludeSavedMomentsOutsideSearchMatches() {
         let rows = QuickRecallRowModel.screens(
             groups: [ScreenRecallGroup(id: "match", matches: [hit(1, snippet: "«Redis» review")])],
