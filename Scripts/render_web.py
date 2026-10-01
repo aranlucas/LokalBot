@@ -181,6 +181,12 @@ def render_more_links(page: dict) -> str:
     )
 
 
+def verified(page: dict) -> str:
+    """When this page's competitor details were last checked."""
+
+    return page.get("verified", VERIFIED)
+
+
 def guide_by_slug(slug: str) -> dict:
     try:
         return next(guide for guide in GUIDES if guide["slug"] == slug)
@@ -257,7 +263,7 @@ def comparison_structured_data(page: dict) -> str:
                 "headline": page["h1"],
                 "description": page["description"],
                 "datePublished": page["published"],
-                "dateModified": VERIFIED,
+                "dateModified": verified(page),
                 "mainEntityOfPage": url,
                 "image": OG_IMAGE,
                 "author": ORGANIZATION,
@@ -282,7 +288,7 @@ def comparison_structured_data(page: dict) -> str:
 
 def guides_index_updated() -> str:
     return max(
-        [VERIFIED]
+        [verified(page) for page in PAGES]
         + [guide.get("updated", GUIDES_PUBLISHED) for guide in GUIDES]
         + [reference["updated"] for reference in REFERENCES]
     )
@@ -364,7 +370,7 @@ def render_sitemap() -> str:
         *((guide["slug"], guide.get("updated", GUIDES_PUBLISHED)) for guide in GUIDES),
         *((reference["slug"], reference["updated"]) for reference in REFERENCES),
         *((path, updated) for path, updated in STATIC_PAGES.items() if path),
-        *((page["slug"], VERIFIED) for page in PAGES),
+        *((page["slug"], verified(page)) for page in PAGES),
     ]
     entries = [
         "  <url>\n"
@@ -391,9 +397,9 @@ def render_page(template: str, page: dict, footer: str) -> str:
         "{{STRUCTURED_DATA}}": comparison_structured_data(page),
         "{{H1}}": page["h1"],
         "{{LEAD}}": page["lead"],
-        "{{VERIFIED_DATE}}": VERIFIED,
-        "{{VERIFIED_LABEL}}": long_date(VERIFIED),
-        "{{VERIFIED_MONTH}}": month_year(VERIFIED),
+        "{{VERIFIED_DATE}}": verified(page),
+        "{{VERIFIED_LABEL}}": long_date(verified(page)),
+        "{{VERIFIED_MONTH}}": month_year(verified(page)),
         "{{COMPETITOR_COLUMN}}": page["competitor_column"],
         "{{TABLE_ROWS}}": render_table_rows(page["table_rows"]),
         "{{COMPETITOR_PICK_TITLE}}": page["competitor_pick_title"],

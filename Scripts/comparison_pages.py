@@ -12,8 +12,10 @@ tuples. Each page's "h1" doubles as its link text in the other pages'
 Compare column; the PAGES order sets the order of those links.
 
 VERIFIED is the date every page's competitor details were last checked. It
-feeds the "Last verified" line, the disclaimer's month, and dateModified in
-the structured data, so bump it only after re-checking all pages.
+feeds the "Last verified" line, the disclaimer's month, dateModified in the
+structured data, and the sitemap's lastmod, so bump it only after re-checking
+all pages. A page checked on its own date sets "verified"; drop that key when
+VERIFIED catches up.
 """
 
 VERIFIED = "2026-09-24"
@@ -228,6 +230,57 @@ PAGES = [
         "disclaimer": "Hyprnote, anarlog, and Char are trademarks of their owners; LokalBot is not affiliated with or endorsed by them. Details are based on their public repository and sites",
     },
     {
+        "slug": "lokalbot-vs-meetily",
+        "title": "LokalBot vs Meetily: open-source local meeting notes compared",
+        "description": "Compare Meetily and LokalBot, two open-source meeting notetakers that run locally: what's free, speaker separation, meeting detection, scope, and platforms.",
+        "og_title": "LokalBot vs Meetily — two open-source local notetakers",
+        "og_description": "Both transcribe and summarize on your device. They differ on what's free, scope beyond meetings, license, and platforms.",
+        "h1": "LokalBot vs Meetily",
+        "competitor_name": "Meetily",
+        "competitor_column": "Meetily",
+        "published": "2026-10-01",
+        "verified": "2026-10-01",
+        "lead": "Meetily is one of the most popular open-source meeting notetakers, with a large community behind it. Like LokalBot, it records your microphone and system audio without a bot, transcribes on your device, and can write summaries with a built-in local model. Its free Community Edition is MIT-licensed and runs on macOS and Windows. A paid Pro edition, built on a separate codebase, adds speaker separation, meeting detection, and AI-tool connections. LokalBot ships every feature in one free GPLv3 app, and covers more of your workday than meetings.",
+        "table_rows": [
+            ("Meeting capture", f"{CHECK}Bot-free microphone + system audio; detects meetings and, on a fresh install, asks before recording", f"{CHECK}Bot-free microphone + system audio; automatic meeting detection is Pro only"),
+            ("Transcription", f"{CHECK}{LB_ASR}", f"{CHECK}On your device — Whisper or Parakeet"),
+            ("Summaries", f"{CHECK}llama.cpp built in — works with no keys and no setup", f"{CHECK}Built-in Qwen 3.5 models, Ollama, or your own Claude, OpenAI, Groq, or OpenRouter key"),
+            ("Speaker separation", f"{CHECK}On your Mac, on by default", "Pro only"),
+            ("Ask across meetings", f"{CHECK}Cited answers that link back to the transcript and audio", "Not yet — listed as coming soon for Pro"),
+            ("Connect AI tools", LB_AGENTS, "Pro only — MCP, webhooks, and a CLI"),
+            ("Transcribe existing files", f"{CROSS}No — LokalBot transcribes what it records", f"{CHECK}Imports audio and video files, and can re-transcribe them"),
+            ("Usage analytics", "None — no analytics service or telemetry", "Optional; off by default on new installs"),
+            ("System-wide dictation", LB_DICTATION, NO),
+            ("Day timeline", LB_TIMELINE, NO),
+            ("Writing autocomplete", LB_COTYPING, NO),
+            ("License", "GPLv3 — every feature in one open codebase", "Community: MIT · Pro: a separate commercial codebase"),
+            ("Price", "Free", "Community free · Pro $10 per user/mo, billed annually · Enterprise custom"),
+            ("Platforms", LB_PLATFORM, "macOS on Apple Silicon and Windows; Linux builds from source"),
+        ],
+        "competitor_pick_title": "Pick Meetily if&hellip;",
+        "competitor_pick_sub": "A popular open-source notetaker with a big community.",
+        "competitor_pick_items": [
+            "You need the same notetaker on Windows, or want to build it for Linux",
+            "You want to transcribe audio files you already have",
+            "You prefer the MIT license, or want a paid tier with vendor support",
+            "Your team wants a self-hosted Enterprise deployment",
+        ],
+        "lokal_pick_sub": "Every feature free, and more than meetings.",
+        "lokal_pick_items": [
+            "You want speaker separation, meeting detection, and cited answers without a paid tier",
+            "You want dictation, a day timeline, and autocomplete in the same app",
+            "You want AI tools to read your library through a free, read-only MCP server",
+            "Copyleft matters: GPLv3 keeps every fork's improvements open",
+        ],
+        "faq": [
+            ("Isn't Meetily also free and open source?", "Its Community Edition is, under the MIT license, and it does the core job well: bot-free capture, on-device transcription, and local summaries. Speaker separation, automatic meeting detection, advanced exports, and MCP access are in Meetily Pro, a paid edition built on a separate codebase. LokalBot has one codebase, and everything in it is free."),
+            ("Do they use the same models?", 'Partly. Both can transcribe with Parakeet or Whisper, and both offer Qwen 3.5 for local summaries. LokalBot defaults to Qwen3-ASR for transcription and also offers Granite Speech; the <a href="benchmarks">benchmarks page</a> compares several of these models on the same test set.'),
+            ("Which one runs on Windows?", "Meetily. LokalBot is a native Mac app for Apple Silicon and macOS 15 or later, built around macOS audio capture, Accessibility, and on-device models. If you work on Windows, Meetily is the better fit."),
+        ],
+        "cta_title": "Every feature, free, on your Mac.",
+        "disclaimer": "Meetily is a trademark of its owner; LokalBot is not affiliated with or endorsed by it. Details are based on its public site, pricing, and repository",
+    },
+    {
         "slug": "lokalbot-vs-macwhisper",
         "title": "LokalBot vs MacWhisper: local transcription on Mac compared",
         "description": "Compare MacWhisper's file transcription and dictation with LokalBot's free, open-source Mac app for bot-free meeting notes, dictation, and day recall.",
@@ -318,6 +371,58 @@ PAGES = [
         ],
         "cta_title": "Speak anywhere. Stays on your Mac.",
         "disclaimer": "Superwhisper is a trademark of its owner; LokalBot is not affiliated with or endorsed by it. Details are based on public pages and pricing",
+    },
+    {
+        "slug": "lokalbot-vs-wispr-flow",
+        "title": "LokalBot vs Wispr Flow: local dictation and meeting notes",
+        "description": "Compare Wispr Flow's cloud dictation and Notetaker with LokalBot, a free, open-source Mac app whose dictation and meeting notes run on your Mac.",
+        "og_title": "LokalBot vs Wispr Flow — dictation and meeting notes compared",
+        "og_description": "Wispr Flow transcribes in the cloud across Mac, Windows, and phones. LokalBot keeps dictation and meeting notes on your Mac, free and open source.",
+        "h1": "LokalBot vs Wispr Flow",
+        "competitor_name": "Wispr Flow",
+        "competitor_column": "Wispr Flow",
+        "published": "2026-10-01",
+        "verified": "2026-10-01",
+        "lead": "Wispr Flow is one of the most popular dictation apps: speak in any app and it writes polished text, on Mac, Windows, iPhone, and Android. In August 2026 it added Notetaker, which records meetings without a bot and answers questions across your meeting history. Both run in Wispr's cloud, under an account. LokalBot does the same two jobs on your Mac by default, adds a day timeline and autocomplete, and is free and open source.",
+        "table_rows": [
+            ("Where speech runs", LB_ASR, "Wispr's cloud; there is no on-device mode"),
+            ("Works offline", f"{CHECK}After a one-time model download", "Needs a connection"),
+            ("Account required", f"{CROSS}None", f"{CHECK}Yes"),
+            ("Dictation", f"{CHECK}Hold or toggle ⌥ Space, live transcript pill, pastes at the cursor", f"{CHECK}Deeper: AI cleanup, personal dictionary, snippets, per-app styles, and command mode"),
+            ("Meeting capture", f"{CHECK}Bot-free microphone + system audio; detects meetings and, on a fresh install, asks before recording", f"{CHECK}Bot-free Notetaker for Zoom, Meet, Teams, Slack huddles, and more"),
+            ("Ask across meetings", f"{CHECK}Cited answers from a local model that link back to the transcript and audio", f"{CHECK}Answers across your meeting history, linked to the moment they came from"),
+            ("Where meetings are kept", "On your Mac — audio, transcripts, and notes", "Transcripts in Wispr's cloud for cross-device sync, with configurable retention"),
+            ("Transcription languages", "52 languages and dialects with the default model; 99 with Whisper", "Dictation: 100+ · Notetaker: 21"),
+            ("Connect AI tools", LB_AGENTS, "MCP for Claude, ChatGPT, and Gemini"),
+            ("Compliance", "No LokalBot server ever holds your dictation or meetings", "SOC 2 Type II, ISO 27001, and HIPAA-ready plans"),
+            ("Day timeline", LB_TIMELINE, NO),
+            ("Writing autocomplete", LB_COTYPING, f"{CROSS}No — AI edits what you dictate instead"),
+            ("Source code", "Open source, GPLv3", "Proprietary"),
+            ("Price", "Free — dictation and meeting notes included, nothing gated", "Free: 2,000 dictated words a week and a weekly meeting cap · Pro $15/mo, or $12/mo billed annually · Growth $23/mo, or $18/mo billed annually · Enterprise custom"),
+            ("Platforms", LB_PLATFORM, "Dictation: Mac, Windows, iOS, and Android · Notetaker: Mac and Windows"),
+        ],
+        "competitor_pick_title": "Pick Wispr Flow if&hellip;",
+        "competitor_pick_sub": "The dictation specialist, now with meeting notes.",
+        "competitor_pick_items": [
+            "Dictation is how you write most of the day, and you want AI cleanup, snippets, and per-app styles",
+            "You dictate on your phone or a Windows PC too",
+            "You want meeting notes synced across devices, or imported from Granola or Otter",
+            "Your company needs SOC 2, ISO 27001, HIPAA, and SSO from a vendor",
+        ],
+        "lokal_pick_sub": "Dictation and meeting notes that stay on your Mac.",
+        "lokal_pick_items": [
+            "Your words and meetings can't go to a third-party cloud — clients, patients, sources",
+            "You want it to work offline, with no account and no word caps",
+            "You want a day timeline and autocomplete in the same app",
+            "You want source code you — or your security team — can read",
+        ],
+        "faq": [
+            ("Does Wispr Flow have an offline or on-device mode?", "No. Wispr's data-controls page says transcription always happens in its cloud, for both dictation and Notetaker. LokalBot transcribes dictation and meetings on your Mac after a one-time model download, and keeps working without a connection."),
+            ("Is LokalBot's dictation as good as Wispr Flow's?", "For plain speech-to-text, test both on your own voice. Wispr Flow goes further on editing: it removes filler words, learns your vocabulary, and adapts its style to each app. LokalBot's dictation is simpler — hold ⌥ Space, speak, and it types — and it uses the same local speech model as your meetings."),
+            ("Can I use both?", "Yes. They use different shortcuts, and LokalBot is free. Some people keep Wispr Flow for heavy dictation and use LokalBot for meetings they'd rather not upload, a searchable day timeline, and autocomplete."),
+        ],
+        "cta_title": "Dictation and meeting notes, on your Mac.",
+        "disclaimer": "Wispr Flow is a trademark of its owner; LokalBot is not affiliated with or endorsed by it. Details are based on public pages and pricing",
     },
     {
         "slug": "lokalbot-vs-screenpipe",

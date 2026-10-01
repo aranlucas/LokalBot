@@ -3,24 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LokalBot vs Fireflies.ai: meeting notes without the bot</title>
-  <meta name="description" content="Compare Fireflies.ai's cloud meeting notetaker with LokalBot's bot-free, on-device meeting notes for Mac. Free, open source, and no account required." />
+  <title>LokalBot vs Meetily: open-source local meeting notes compared</title>
+  <meta name="description" content="Compare Meetily and LokalBot, two open-source meeting notetakers that run locally: what's free, speaker separation, meeting detection, scope, and platforms." />
   <meta name="color-scheme" content="light dark" />
   <meta name="theme-color" content="#f4f7f7" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#0b1119" media="(prefers-color-scheme: dark)" />
 
-  <link rel="canonical" href="https://www.lokalbot.com/lokalbot-vs-fireflies" />
+  <link rel="canonical" href="https://www.lokalbot.com/lokalbot-vs-meetily" />
   <meta property="og:type" content="article" />
   <meta property="og:site_name" content="LokalBot" />
-  <meta property="og:url" content="https://www.lokalbot.com/lokalbot-vs-fireflies" />
-  <meta property="og:title" content="LokalBot vs Fireflies.ai — meeting notes without the bot" />
-  <meta property="og:description" content="Fireflies is built for team call libraries in the cloud. LokalBot keeps bot-free meeting notes on your Mac. Free and open source." />
+  <meta property="og:url" content="https://www.lokalbot.com/lokalbot-vs-meetily" />
+  <meta property="og:title" content="LokalBot vs Meetily — two open-source local notetakers" />
+  <meta property="og:description" content="Both transcribe and summarize on your device. They differ on what's free, scope beyond meetings, license, and platforms." />
   <meta property="og:image" content="https://www.lokalbot.com/assets/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="LokalBot vs Fireflies.ai — meeting notes without the bot" />
-  <meta name="twitter:description" content="Fireflies is built for team call libraries in the cloud. LokalBot keeps bot-free meeting notes on your Mac. Free and open source." />
+  <meta name="twitter:title" content="LokalBot vs Meetily — two open-source local notetakers" />
+  <meta name="twitter:description" content="Both transcribe and summarize on your device. They differ on what's free, scope beyond meetings, license, and platforms." />
   <meta name="twitter:image" content="https://www.lokalbot.com/assets/og-image.png" />
 
   <link rel="icon" href="assets/lokalbot-icon.svg" type="image/svg+xml" />
@@ -28,7 +28,7 @@
 
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="icons.css" />
-  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Article","headline":"LokalBot vs Fireflies","description":"Compare Fireflies.ai's cloud meeting notetaker with LokalBot's bot-free, on-device meeting notes for Mac. Free, open source, and no account required.","datePublished":"2026-09-24","dateModified":"2026-09-24","mainEntityOfPage":"https://www.lokalbot.com/lokalbot-vs-fireflies","image":"https://www.lokalbot.com/assets/og-image.png","author":{"@type":"Organization","@id":"https://www.lokalbot.com/#organization","name":"LokalBot project","url":"https://www.lokalbot.com/"},"publisher":{"@type":"Organization","@id":"https://www.lokalbot.com/#organization","name":"LokalBot project","url":"https://www.lokalbot.com/"},"about":[{"@type":"SoftwareApplication","@id":"https://www.lokalbot.com/#software","name":"LokalBot","url":"https://www.lokalbot.com/","applicationCategory":"BusinessApplication","operatingSystem":"macOS 15+"},{"@type":"SoftwareApplication","name":"Fireflies.ai"}]},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.lokalbot.com/"},{"@type":"ListItem","position":2,"name":"Guides","item":"https://www.lokalbot.com/guides"},{"@type":"ListItem","position":3,"name":"LokalBot vs Fireflies","item":"https://www.lokalbot.com/lokalbot-vs-fireflies"}]},{"@type":"FAQPage","@id":"https://www.lokalbot.com/lokalbot-vs-fireflies#faq","mainEntity":[{"@type":"Question","name":"Why not use Fireflies without the bot?","acceptedAnswer":{"@type":"Answer","text":"You can capture without the bot through Fireflies' Chrome extension, but the recording is still processed and stored in Fireflies' cloud under your account. LokalBot keeps the audio, transcript, and summary on your Mac."}},{"@type":"Question","name":"Can LokalBot push notes into my CRM?","acceptedAnswer":{"@type":"Answer","text":"Not directly. LokalBot exports meetings as Markdown, can write a daily memory note to a folder, and exposes a read-only CLI and MCP server so local tools and agents can read your library. Anything beyond that is up to you."}},{"@type":"Question","name":"Will people on the call know LokalBot is recording?","acceptedAnswer":{"@type":"Answer","text":"No — nothing appears in the call, which is why you need to tell participants yourself. On a fresh install, LokalBot asks through a notification before it records a detected meeting."}}]}]}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Article","headline":"LokalBot vs Meetily","description":"Compare Meetily and LokalBot, two open-source meeting notetakers that run locally: what's free, speaker separation, meeting detection, scope, and platforms.","datePublished":"2026-10-01","dateModified":"2026-10-01","mainEntityOfPage":"https://www.lokalbot.com/lokalbot-vs-meetily","image":"https://www.lokalbot.com/assets/og-image.png","author":{"@type":"Organization","@id":"https://www.lokalbot.com/#organization","name":"LokalBot project","url":"https://www.lokalbot.com/"},"publisher":{"@type":"Organization","@id":"https://www.lokalbot.com/#organization","name":"LokalBot project","url":"https://www.lokalbot.com/"},"about":[{"@type":"SoftwareApplication","@id":"https://www.lokalbot.com/#software","name":"LokalBot","url":"https://www.lokalbot.com/","applicationCategory":"BusinessApplication","operatingSystem":"macOS 15+"},{"@type":"SoftwareApplication","name":"Meetily"}]},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://www.lokalbot.com/"},{"@type":"ListItem","position":2,"name":"Guides","item":"https://www.lokalbot.com/guides"},{"@type":"ListItem","position":3,"name":"LokalBot vs Meetily","item":"https://www.lokalbot.com/lokalbot-vs-meetily"}]},{"@type":"FAQPage","@id":"https://www.lokalbot.com/lokalbot-vs-meetily#faq","mainEntity":[{"@type":"Question","name":"Isn't Meetily also free and open source?","acceptedAnswer":{"@type":"Answer","text":"Its Community Edition is, under the MIT license, and it does the core job well: bot-free capture, on-device transcription, and local summaries. Speaker separation, automatic meeting detection, advanced exports, and MCP access are in Meetily Pro, a paid edition built on a separate codebase. LokalBot has one codebase, and everything in it is free."}},{"@type":"Question","name":"Do they use the same models?","acceptedAnswer":{"@type":"Answer","text":"Partly. Both can transcribe with Parakeet or Whisper, and both offer Qwen 3.5 for local summaries. LokalBot defaults to Qwen3-ASR for transcription and also offers Granite Speech; the benchmarks page compares several of these models on the same test set."}},{"@type":"Question","name":"Which one runs on Windows?","acceptedAnswer":{"@type":"Answer","text":"Meetily. LokalBot is a native Mac app for Apple Silicon and macOS 15 or later, built around macOS audio capture, Accessibility, and on-device models. If you work on Windows, Meetily is the better fit."}}]}]}</script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -72,11 +72,11 @@
     <!-- ─────────────────────── HEAD ─────────────────────── -->
     <section class="section compare-head">
       <header class="section__head reveal">
-        <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><a href="guides">Guides</a><span aria-hidden="true">/</span><span>LokalBot vs Fireflies</span></nav>
+        <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><a href="guides">Guides</a><span aria-hidden="true">/</span><span>LokalBot vs Meetily</span></nav>
         <p class="eyebrow">Compare</p>
-        <h1 class="section__title">LokalBot vs Fireflies</h1>
-        <p class="section__lead">Fireflies is built for teams: its notetaker joins your calls, transcribes in more than 100 languages, and pushes notes into CRMs and project tools. If your company runs on a shared call library, it's a strong choice. LokalBot is for the opposite need — notes that stay on your Mac. It captures the call from your Mac's audio with no bot, and runs transcription and summaries locally.</p>
-        <p class="compare-updated">Last verified <time datetime="2026-09-24">September 24, 2026</time> · spot something outdated? <a href="https://github.com/stevyhacker/lokalbot/issues" target="_blank" rel="noopener">Open an issue</a>.</p>
+        <h1 class="section__title">LokalBot vs Meetily</h1>
+        <p class="section__lead">Meetily is one of the most popular open-source meeting notetakers, with a large community behind it. Like LokalBot, it records your microphone and system audio without a bot, transcribes on your device, and can write summaries with a built-in local model. Its free Community Edition is MIT-licensed and runs on macOS and Windows. A paid Pro edition, built on a separate codebase, adds speaker separation, meeting detection, and AI-tool connections. LokalBot ships every feature in one free GPLv3 app, and covers more of your workday than meetings.</p>
+        <p class="compare-updated">Last verified <time datetime="2026-10-01">October 1, 2026</time> · spot something outdated? <a href="https://github.com/stevyhacker/lokalbot/issues" target="_blank" rel="noopener">Open an issue</a>.</p>
       </header>
     </section>
 
@@ -92,49 +92,49 @@
             <tr>
               <th scope="col">Feature</th>
               <th scope="col">LokalBot</th>
-              <th scope="col">Fireflies.ai</th>
+              <th scope="col">Meetily</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <th scope="row">How it captures a meeting</th>
-              <td><i class="ph ph-check" aria-hidden="true"></i>Mic + system audio on your Mac — nothing joins the call</td>
-              <td>A notetaker joins Zoom, Google Meet, Teams, and more; the Chrome extension can capture without it</td>
+              <th scope="row">Meeting capture</th>
+              <td><i class="ph ph-check" aria-hidden="true"></i>Bot-free microphone + system audio; detects meetings and, on a fresh install, asks before recording</td>
+              <td><i class="ph ph-check" aria-hidden="true"></i>Bot-free microphone + system audio; automatic meeting detection is Pro only</td>
             </tr>
             <tr>
-              <th scope="row">Where transcription runs</th>
-              <td>On your Mac — Qwen3-ASR by default, with Parakeet, Granite Speech, and Whisper as alternatives</td>
-              <td>Fireflies' cloud</td>
+              <th scope="row">Transcription</th>
+              <td><i class="ph ph-check" aria-hidden="true"></i>On your Mac — Qwen3-ASR by default, with Parakeet, Granite Speech, and Whisper as alternatives</td>
+              <td><i class="ph ph-check" aria-hidden="true"></i>On your device — Whisper or Parakeet</td>
             </tr>
             <tr>
-              <th scope="row">Account required</th>
-              <td><i class="ph ph-x" aria-hidden="true"></i>None</td>
-              <td><i class="ph ph-check" aria-hidden="true"></i>Yes</td>
+              <th scope="row">Summaries</th>
+              <td><i class="ph ph-check" aria-hidden="true"></i>llama.cpp built in — works with no keys and no setup</td>
+              <td><i class="ph ph-check" aria-hidden="true"></i>Built-in Qwen 3.5 models, Ollama, or your own Claude, OpenAI, Groq, or OpenRouter key</td>
             </tr>
             <tr>
-              <th scope="row">Works offline</th>
-              <td><i class="ph ph-check" aria-hidden="true"></i>After a one-time model download</td>
-              <td>Needs a connection</td>
+              <th scope="row">Speaker separation</th>
+              <td><i class="ph ph-check" aria-hidden="true"></i>On your Mac, on by default</td>
+              <td>Pro only</td>
             </tr>
             <tr>
-              <th scope="row">Transcription languages</th>
-              <td>52 languages and dialects with the default model; 99 with Whisper</td>
-              <td>100+</td>
+              <th scope="row">Ask across meetings</th>
+              <td><i class="ph ph-check" aria-hidden="true"></i>Cited answers that link back to the transcript and audio</td>
+              <td>Not yet — listed as coming soon for Pro</td>
             </tr>
             <tr>
-              <th scope="row">Storage</th>
-              <td>Limited only by your disk</td>
-              <td>Free: 400 minutes per team · Pro: 8,000 minutes per seat · Business and up: unlimited</td>
+              <th scope="row">Connect AI tools</th>
+              <td>Read-only CLI and MCP server, off until you enable Agent Access</td>
+              <td>Pro only — MCP, webhooks, and a CLI</td>
             </tr>
             <tr>
-              <th scope="row">Integrations</th>
-              <td>Markdown export, a daily memory note, and a read-only CLI and MCP server</td>
-              <td>CRMs, project tools, and an API</td>
+              <th scope="row">Transcribe existing files</th>
+              <td><i class="ph ph-x" aria-hidden="true"></i>No — LokalBot transcribes what it records</td>
+              <td><i class="ph ph-check" aria-hidden="true"></i>Imports audio and video files, and can re-transcribe them</td>
             </tr>
             <tr>
-              <th scope="row">Compliance</th>
-              <td>No LokalBot server ever holds your meetings</td>
-              <td>HIPAA compliance and private storage on Enterprise</td>
+              <th scope="row">Usage analytics</th>
+              <td>None — no analytics service or telemetry</td>
+              <td>Optional; off by default on new installs</td>
             </tr>
             <tr>
               <th scope="row">System-wide dictation</th>
@@ -147,19 +147,24 @@
               <td><i class="ph ph-x" aria-hidden="true"></i>No</td>
             </tr>
             <tr>
-              <th scope="row">Source code</th>
-              <td>Open source, GPLv3</td>
-              <td>Proprietary</td>
+              <th scope="row">Writing autocomplete</th>
+              <td><i class="ph ph-check" aria-hidden="true"></i>Cotyping, in almost any app</td>
+              <td><i class="ph ph-x" aria-hidden="true"></i>No</td>
+            </tr>
+            <tr>
+              <th scope="row">License</th>
+              <td>GPLv3 — every feature in one open codebase</td>
+              <td>Community: MIT · Pro: a separate commercial codebase</td>
             </tr>
             <tr>
               <th scope="row">Price</th>
               <td>Free</td>
-              <td>Free · Pro $10/seat/mo annually ($18 monthly) · Business $19 ($29 monthly) · Enterprise $39, annual only</td>
+              <td>Community free · Pro $10 per user/mo, billed annually · Enterprise custom</td>
             </tr>
             <tr>
               <th scope="row">Platforms</th>
               <td>macOS 15+ on Apple Silicon</td>
-              <td>Web, desktop, iOS, Android, and a Chrome extension</td>
+              <td>macOS on Apple Silicon and Windows; Linux builds from source</td>
             </tr>
           </tbody>
         </table>
@@ -174,23 +179,23 @@
       </header>
       <div class="pick-grid">
         <article class="pick reveal">
-          <h3>Pick Fireflies if&hellip;</h3>
-          <p>A team call library with a lot of plumbing.</p>
+          <h3>Pick Meetily if&hellip;</h3>
+          <p>A popular open-source notetaker with a big community.</p>
           <ul class="checklist">
-            <li><i class="ph ph-check" aria-hidden="true"></i> You want every sales or support call logged to your CRM automatically</li>
-            <li><i class="ph ph-check" aria-hidden="true"></i> Your calls span 100+ languages</li>
-            <li><i class="ph ph-check" aria-hidden="true"></i> You need SSO, audit logs, and admin roles for a large team</li>
-            <li><i class="ph ph-check" aria-hidden="true"></i> You work across Windows, the web, and your phone</li>
+            <li><i class="ph ph-check" aria-hidden="true"></i> You need the same notetaker on Windows, or want to build it for Linux</li>
+            <li><i class="ph ph-check" aria-hidden="true"></i> You want to transcribe audio files you already have</li>
+            <li><i class="ph ph-check" aria-hidden="true"></i> You prefer the MIT license, or want a paid tier with vendor support</li>
+            <li><i class="ph ph-check" aria-hidden="true"></i> Your team wants a self-hosted Enterprise deployment</li>
           </ul>
         </article>
         <article class="pick pick--lokal reveal">
           <h3>Pick LokalBot if&hellip;</h3>
-          <p>For the calls you'd rather not upload.</p>
+          <p>Every feature free, and more than meetings.</p>
           <ul class="checklist">
-            <li><i class="ph ph-check" aria-hidden="true"></i> Your calls involve clients, patients, or sources whose words can't go to a third-party cloud</li>
-            <li><i class="ph ph-check" aria-hidden="true"></i> No bot means no &ldquo;who invited the notetaker?&rdquo; moment</li>
-            <li><i class="ph ph-check" aria-hidden="true"></i> Free forever — no seats, no storage minutes</li>
-            <li><i class="ph ph-check" aria-hidden="true"></i> Dictation, a day timeline, and autocomplete come in the same app</li>
+            <li><i class="ph ph-check" aria-hidden="true"></i> You want speaker separation, meeting detection, and cited answers without a paid tier</li>
+            <li><i class="ph ph-check" aria-hidden="true"></i> You want dictation, a day timeline, and autocomplete in the same app</li>
+            <li><i class="ph ph-check" aria-hidden="true"></i> You want AI tools to read your library through a free, read-only MCP server</li>
+            <li><i class="ph ph-check" aria-hidden="true"></i> Copyleft matters: GPLv3 keeps every fork's improvements open</li>
           </ul>
         </article>
       </div>
@@ -204,16 +209,16 @@
       </header>
       <div class="faq__list reveal">
         <details class="qa">
-          <summary>Why not use Fireflies without the bot?<i class="ph ph-plus" aria-hidden="true"></i></summary>
-          <p>You can capture without the bot through Fireflies' Chrome extension, but the recording is still processed and stored in Fireflies' cloud under your account. LokalBot keeps the audio, transcript, and summary on your Mac.</p>
+          <summary>Isn't Meetily also free and open source?<i class="ph ph-plus" aria-hidden="true"></i></summary>
+          <p>Its Community Edition is, under the MIT license, and it does the core job well: bot-free capture, on-device transcription, and local summaries. Speaker separation, automatic meeting detection, advanced exports, and MCP access are in Meetily Pro, a paid edition built on a separate codebase. LokalBot has one codebase, and everything in it is free.</p>
         </details>
         <details class="qa">
-          <summary>Can LokalBot push notes into my CRM?<i class="ph ph-plus" aria-hidden="true"></i></summary>
-          <p>Not directly. LokalBot exports meetings as Markdown, can write a daily memory note to a folder, and exposes a read-only CLI and MCP server so local tools and agents can read your library. Anything beyond that is up to you.</p>
+          <summary>Do they use the same models?<i class="ph ph-plus" aria-hidden="true"></i></summary>
+          <p>Partly. Both can transcribe with Parakeet or Whisper, and both offer Qwen 3.5 for local summaries. LokalBot defaults to Qwen3-ASR for transcription and also offers Granite Speech; the <a href="benchmarks">benchmarks page</a> compares several of these models on the same test set.</p>
         </details>
         <details class="qa">
-          <summary>Will people on the call know LokalBot is recording?<i class="ph ph-plus" aria-hidden="true"></i></summary>
-          <p>No — nothing appears in the call, which is why you need to tell participants yourself. On a fresh install, LokalBot asks through a notification before it records a detected meeting.</p>
+          <summary>Which one runs on Windows?<i class="ph ph-plus" aria-hidden="true"></i></summary>
+          <p>Meetily. LokalBot is a native Mac app for Apple Silicon and macOS 15 or later, built around macOS audio capture, Accessibility, and on-device models. If you work on Windows, Meetily is the better fit.</p>
         </details>
       </div>
     </section>
@@ -223,7 +228,7 @@
       <div class="download__panel reveal">
         <img class="download__icon" src="assets/lokalbot-icon.svg" alt="" width="80" height="80" />
         <p class="eyebrow">Download</p>
-        <h2 class="section__title">Meeting notes that stay on your Mac.</h2>
+        <h2 class="section__title">Every feature, free, on your Mac.</h2>
         <p class="section__lead">Free and open source. Models download on first use; built-in inference then works offline.</p>
         <a class="btn btn--primary btn--lg" href="https://github.com/stevyhacker/lokalbot/releases" target="_blank" rel="noopener">
           <i class="ph ph-download-simple" aria-hidden="true"></i>
@@ -238,15 +243,15 @@
       <nav class="compare-more" aria-label="More comparisons">
         <a href="lokalbot-vs-granola">LokalBot vs Granola</a>
         <a href="lokalbot-vs-otter">LokalBot vs Otter</a>
+        <a href="lokalbot-vs-fireflies">LokalBot vs Fireflies</a>
         <a href="lokalbot-vs-hyprnote">LokalBot vs Hyprnote</a>
-        <a href="lokalbot-vs-meetily">LokalBot vs Meetily</a>
         <a href="lokalbot-vs-macwhisper">LokalBot vs MacWhisper</a>
         <a href="lokalbot-vs-superwhisper">LokalBot vs Superwhisper</a>
         <a href="lokalbot-vs-wispr-flow">LokalBot vs Wispr Flow</a>
         <a href="lokalbot-vs-screenpipe">LokalBot vs Screenpipe</a>
         <a href="lokalbot-vs-rewind">LokalBot vs Rewind</a>
       </nav>
-      <p class="compare-disclaimer">Fireflies and Fireflies.ai are trademarks of their owner; LokalBot is not affiliated with or endorsed by it. Details are based on public pages and pricing as of September 2026 and may change — if something here is wrong or out of date, <a href="https://github.com/stevyhacker/lokalbot/issues" target="_blank" rel="noopener">open an issue</a> and we'll fix it.</p>
+      <p class="compare-disclaimer">Meetily is a trademark of its owner; LokalBot is not affiliated with or endorsed by it. Details are based on its public site, pricing, and repository as of October 2026 and may change — if something here is wrong or out of date, <a href="https://github.com/stevyhacker/lokalbot/issues" target="_blank" rel="noopener">open an issue</a> and we'll fix it.</p>
     </section>
   </main>
 
