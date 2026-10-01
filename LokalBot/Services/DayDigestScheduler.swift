@@ -78,9 +78,18 @@ final class DayDigestScheduler {
     /// select it again before its durable marker is observed.
     private var justFinishedDay: Date?
 
-    init(calendar: Calendar = .current, now: @escaping () -> Date = Date.init) {
+    /// Quiet period after an evidence change before a fresh run starts, so a
+    /// meeting finishing (notes, outcomes, search index) produces one rerun
+    /// instead of a start-cancel-start burst.
+    private let evidenceSettleDelay: TimeInterval
+    private var settleUntil: Date?
+    private var settleTimer: Timer?
+
+    init(calendar: Calendar = .current, now: @escaping () -> Date = Date.init,
+         evidenceSettleDelay: TimeInterval = 0) {
         self.calendar = calendar
         self.now = now
+        self.evidenceSettleDelay = evidenceSettleDelay
     }
 
     func configure(
@@ -120,6 +129,9 @@ final class DayDigestScheduler {
         generation &+= 1
         timer?.invalidate()
         timer = nil
+        settleTimer?.invalidate()
+        settleTimer = nil
+        settleUntil = nil
         generateTask?.cancel()
         generateTask = nil
         resetScan()
@@ -127,13 +139,25 @@ final class DayDigestScheduler {
 
     /// Primary evidence changed while the scheduler may have been awaiting a
     /// model. Cancel that snapshot-bound run and let policy choose a fresh one.
+    ///
+    /// A recent model failure keeps its backoff: on 2026-10-01 every finished
+    /// meeting cleared it, so a rate-limited provider was asked again at once.
     func reconsiderEvidence() {
         generation &+= 1
         generateTask?.cancel()
         generateTask = nil
-        lastFailure = nil
         resetScan()
-        tick()
+        guard evidenceSettleDelay > 0 else {
+            tick()
+            return
+        }
+        settleUntil = now().addingTimeInterval(evidenceSettleDelay)
+        settleTimer?.invalidate()
+        let timer = Timer(timeInterval: evidenceSettleDelay, repeats: false) { [weak self] _ in
+            Task { @MainActor in self?.tick() }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+        settleTimer = timer
     }
 
     private func resetScan() {
@@ -144,6 +168,8 @@ final class DayDigestScheduler {
     }
 
     func tick() {
+        if let settleUntil, now() < settleUntil { return }
+        settleUntil = nil
         guard generateTask == nil,
               let configuration,
               configuration.enabled,

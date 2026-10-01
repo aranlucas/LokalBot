@@ -1762,6 +1762,7 @@ final class AppState: ObservableObject {
 
     func withPrimaryEvidenceChange<T>(on days: [Date], _ mutation: () throws -> T) throws -> T {
         defer { primaryEvidenceDidChange(on: days) }
+        purgeDigestSegmentAnswers(for: days)
         return try dreamStore.withScreenEvidenceMutation(on: days) {
             try dayDigest.retractGeneratedJournals(for: days)
             return try mutation()
@@ -1770,10 +1771,17 @@ final class AppState: ObservableObject {
 
     private func withPrimaryEvidenceChange<T>(for meetings: [Meeting], _ mutation: () throws -> T) throws -> T {
         defer { primaryEvidenceDidChange(for: meetings) }
+        purgeDigestSegmentAnswers(for: meetings.map(\.startedAt))
         return try dreamStore.withMeetingEvidenceMutation(for: meetings) {
             try dayDigest.retractGeneratedJournals(for: meetings.map(\.startedAt))
             return try mutation()
         }
+    }
+
+    /// Deleted or corrected evidence must not survive in reused digest answers.
+    private func purgeDigestSegmentAnswers(for days: [Date]) {
+        let calendar = Calendar.current
+        DayDigestSegmentCache.shared.purge(days: Set(days.map { DreamDay.key(for: $0, calendar: calendar) }))
     }
 
     private func dayDigestDidChange(on day: Date) {

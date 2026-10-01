@@ -1266,7 +1266,8 @@ final class ProcessingPipeline: ObservableObject {
             evidence: evidence,
             engine: engine,
             customPrompt: customPrompt,
-            progress: progress)
+            progress: progress,
+            segmentCache: .shared)
     }
 
     enum PipelineError: LocalizedError {
