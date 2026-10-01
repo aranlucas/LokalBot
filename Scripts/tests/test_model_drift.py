@@ -31,14 +31,51 @@ class ModelDriftTests(unittest.TestCase):
 
     def test_each_signal_is_reported(self):
         with tempfile.TemporaryDirectory() as old, tempfile.TemporaryDirectory() as new:
-            self.write(old, "m/x", "digest-day", [call(latency=1000)])
+            self.write(old, "m/x", "digest-day", [call(latency=1000) for _ in range(5)])
             self.write(new, "m/x", "digest-day", [
-                call(reasoning=1500), call(content="not json"), call(latency=5000), call(finish="length")])
+                call(reasoning=1500), call(content="not json"), call(latency=5000), call(), call(finish="length")])
             messages = " ".join(drift.compare(Path(old), Path(new)))
             self.assertIn("truncated", messages)
             self.assertIn("reasoning", messages)
             self.assertIn("not valid JSON", messages)
             self.assertIn("latency", messages)
+
+    def test_one_slow_call_is_not_latency_drift(self):
+        # Nightly 2026-10-01: a single GLM notes call took 4287 ms against
+        # 1843 ms recorded, while the same model's recordings span 1-46 s.
+        with tempfile.TemporaryDirectory() as old, tempfile.TemporaryDirectory() as new:
+            self.write(old, "m/x", "notes-design-review", [call(latency=1843)])
+            self.write(new, "m/x", "notes-design-review", [call(latency=4287)])
+            self.assertEqual(drift.compare(Path(old), Path(new)), [])
+
+    def test_latency_pools_every_case_of_a_model(self):
+        with tempfile.TemporaryDirectory() as old, tempfile.TemporaryDirectory() as new:
+            for case in ["digest-day", "ask-answer"]:
+                self.write(old, "m/x", case, [call(latency=1000) for _ in range(3)])
+                self.write(new, "m/x", case, [call(latency=3000) for _ in range(3)])
+            messages = drift.compare(Path(old), Path(new))
+            self.assertEqual(messages, ["m/x: p95 latency 3000 ms vs 1000 ms committed across 6 calls"])
+
+    def test_an_emptied_list_is_reported(self):
+        # Nightly 2026-10-01: GLM answered the unchanged notes prompt with
+        # actions but `"notes": []`; the recording had five notes.
+        note = {"section": "Key points", "text": "Fact.", "source": "s1"}
+        action = {"text": "Task", "source": "s2"}
+        recorded = json.dumps({"notes": [note] * 5, "actions": [action] * 2, "has_more": False})
+        fresh = json.dumps({"notes": [], "actions": [action] * 2, "has_more": False})
+        with tempfile.TemporaryDirectory() as old, tempfile.TemporaryDirectory() as new:
+            self.write(old, "m/x", "notes-design-review", [call("notes", recorded)])
+            self.write(new, "m/x", "notes-design-review", [call("notes", fresh)])
+            self.assertEqual(drift.compare(Path(old), Path(new)),
+                             ["m/x notes-design-review call 1 (notes): `notes` is empty; the committed answer had 5"])
+
+    def test_a_truncated_answer_is_not_compared_for_emptied_lists(self):
+        recorded = json.dumps({"notes": [{"text": "Fact."}], "actions": []})
+        with tempfile.TemporaryDirectory() as old, tempfile.TemporaryDirectory() as new:
+            self.write(old, "m/x", "notes-design-review", [call("notes", recorded)])
+            self.write(new, "m/x", "notes-design-review", [call("notes", '{"notes": []', finish="length")])
+            messages = " ".join(drift.compare(Path(old), Path(new)))
+            self.assertNotIn("is empty", messages)
 
     def test_missing_committed_recording_is_a_bootstrap_not_drift(self):
         with tempfile.TemporaryDirectory() as old, tempfile.TemporaryDirectory() as new:
