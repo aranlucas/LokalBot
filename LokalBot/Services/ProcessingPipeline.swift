@@ -1156,6 +1156,8 @@ final class ProcessingPipeline: ObservableObject {
         stages[meeting.id] = .preparingSummaryModel
         let preparing = ProcessInfo.processInfo.systemUptime
         let engine = try await thinkExecution.makeTextEngine(config)
+        // After the engine checked the server's approval; only the model id is sent.
+        let contextTokens = await MeetingSummaryGenerator.contextTokenLimit(for: config, catalog: .shared)
         await budget.recordPhase("modelPreparation", seconds: ProcessInfo.processInfo.systemUptime - preparing)
         stages[meeting.id] = .summarizing
         let wordCount = transcript.languageDetectionText
@@ -1176,7 +1178,7 @@ final class ProcessingPipeline: ObservableObject {
         var generated = try await MeetingNotesGenerator.generate(
             transcript: transcript, engine: engine, template: config.noteTemplate,
             language: language, context: noteContext,
-            contextTokens: MeetingSummaryGenerator.contextTokenLimit(for: config),
+            contextTokens: contextTokens,
             meetingID: meeting.id, folder: meeting.folderURL(in: storage), budget: budget)
 
         let date = meeting.startedAt.formatted(date: .long, time: .shortened)
