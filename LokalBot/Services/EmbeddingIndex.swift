@@ -127,6 +127,11 @@ enum ScreenSearchRanker {
                 semanticRank: semanticRank)
         }.sorted { lhs, rhs in
             if lhs.score != rhs.score { return lhs.score > rhs.score }
+            // Prefer lexical evidence only for equal fused relevance, never
+            // ahead of a higher-ranked semantic-only capture.
+            let lhsLexical = lhs.keywordRank != nil
+            let rhsLexical = rhs.keywordRank != nil
+            if lhsLexical != rhsLexical { return lhsLexical }
             let lhsBest = min(lhs.keywordRank ?? .max, lhs.semanticRank ?? .max)
             let rhsBest = min(rhs.keywordRank ?? .max, rhs.semanticRank ?? .max)
             if lhsBest != rhsBest { return lhsBest < rhsBest }
@@ -180,6 +185,11 @@ final class EmbeddingIndex {
         Instruct: Retrieve relevant OCR text captured from the user's screen.
         Query:
         """
+    /// Harrier scores unrelated OCR at about 0.44 (0.49 with window chrome),
+    /// so the 0.35 floor set for Qwen3 Embedding admitted nearly every
+    /// capture. 0.45 still keeps every relevant English and BCS fixture
+    /// passage. Recalibrate whenever the embedding model changes.
+    nonisolated static let screenSimilarityFloor: Float = 0.45
     nonisolated static let transcriptChunkTargetCharacters = 500
     /// Preserve the existing chunk shape for normal ASR output while keeping a
     /// single pathological segment safely below the embedder's 2K context.
@@ -889,7 +899,7 @@ final class EmbeddingIndex {
         best.reserveCapacity(limit)
         for candidate in candidates {
             let score = cosine(candidate.vector, queryVector: queryVector)
-            guard score > 0.35 else { continue }
+            guard score > screenSimilarityFloor else { continue }
             let hit = ScreenHit(
                 snapshotID: candidate.snapshotID,
                 ts: candidate.ts,

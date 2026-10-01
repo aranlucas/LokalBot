@@ -410,6 +410,48 @@ final class ActivityStoreTests: XCTestCase {
         XCTAssertGreaterThan(ranked[0].score, ranked[1].score)
     }
 
+    func testFusionPrefersKeywordMatchOverSemanticOnlyHitAtEqualRank() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let keyword = [
+            ActivityStore.OCRHit(
+                snapshotID: 10, ts: now, app: "Notion", snippet: "onboarding first"),
+        ]
+        let semantic = [
+            EmbeddingIndex.ScreenHit(
+                snapshotID: 3, ts: now, app: "Slack", text: "failover benchmark", score: 0.6),
+        ]
+
+        let ranked = ScreenSearchRanker.fuse(
+            keyword: keyword, semantic: semantic, limit: 2)
+
+        XCTAssertEqual(ranked.map(\.snapshotID), [10, 3])
+        XCTAssertEqual(ranked[0].score, ranked[1].score)
+    }
+
+    /// Harrier scores unrelated screen text above the old 0.35 floor, so that
+    /// floor let every capture into semantic results.
+    func testSemanticScreenRankingDropsCapturesBelowTheHarrierFloor() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let vectorData: ([Float]) -> Data = { values in
+            values.withUnsafeBufferPointer { buffer in
+                Data(bytes: buffer.baseAddress!, count: buffer.count * MemoryLayout<Float>.stride)
+            }
+        }
+        let candidates = [
+            EmbeddingIndex.ScreenCandidate(
+                snapshotID: 1, ts: now, app: "Terminal", text: "unrelated",
+                vector: vectorData([0.40, 0.92])),
+            EmbeddingIndex.ScreenCandidate(
+                snapshotID: 2, ts: now, app: "Notion", text: "related",
+                vector: vectorData([0.55, 0.84])),
+        ]
+
+        let ranked = EmbeddingIndex.rankScreen(
+            candidates, against: [1, 0], limit: 10)
+
+        XCTAssertEqual(ranked.map(\.snapshotID), [2])
+    }
+
     func testSemanticScreenRankingUsesCosineAndDeterministicTieBreaks() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let vectorData: ([Float]) -> Data = { values in
