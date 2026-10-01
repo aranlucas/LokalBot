@@ -78,6 +78,8 @@ enum MeetingNotesGenerator {
                            context: [String], contextTokens: Int) async throws -> [[MeetingNotesEvidence.Unit]] {
         guard !evidence.units.isEmpty else { return [] }
         let contextCeiling = contextTokens - 4_096 - 1_536
+        // Without a tokenizer the 6,000-token target admits about 18 KB, so
+        // any window above ~24K plans identical parts (and keeps checkpoints).
         let planningCeiling = min(6_000, contextCeiling)
         let fixed = ([system] + context).joined(separator: "\n\n") + "\n\n"
         var chunks: [[MeetingNotesEvidence.Unit]] = []
