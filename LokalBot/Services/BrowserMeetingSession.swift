@@ -389,7 +389,7 @@ enum BrowserMeetingSession {
         guard AXIsProcessTrusted() else { issue = .accessibilityUntrusted; return nil }
         let app = AXUIElementCreateApplication(processID)
         AXUIElementSetMessagingTimeout(app, 0.012)
-        AXUIElementSetAttributeValue(app, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
+        primeWebAccessibility(app, processID: processID)
         let expected = expectedURL.flatMap { meetURL($0.absoluteString) }
         guard expectedURL == nil || expected != nil else { return nil }
         guard let windows = value(app, kAXWindowsAttribute) as? [AXUIElement] else {
@@ -462,6 +462,46 @@ enum BrowserMeetingSession {
             return calls.count == 1 ? calls.first : nil
         }
         return matches.count == 1 ? matches.first : nil
+    }
+
+    private final class PrimedProcesses: @unchecked Sendable {
+        private let lock = NSLock()
+        private var processes: Set<pid_t> = []
+
+        func contains(_ pid: pid_t) -> Bool { lock.withLock { processes.contains(pid) } }
+        func insert(_ pid: pid_t) { _ = lock.withLock { processes.insert(pid) } }
+    }
+    private static let primedProcesses = PrimedProcesses()
+
+    /// Chromium and Firefox expose page content to accessibility clients only
+    /// once asked. Ask once per browser process. Chromium honours
+    /// `AXManualAccessibility`, the switch meant for assistive tools that are
+    /// not screen readers (cotyping already uses it). `AXEnhancedUserInterface`
+    /// also puts the whole app into VoiceOver mode, which slows Chrome and
+    /// breaks window-manager animations, and it used to be set on every
+    /// 2-second poll; only Firefox still needs it. Safari exposes its pages.
+    static func webAccessibilityPrimingAttribute(bundleID: String?) -> String? {
+        switch bundleID {
+        case "org.mozilla.firefox": "AXEnhancedUserInterface"
+        case "com.apple.Safari", nil: nil
+        default: "AXManualAccessibility"
+        }
+    }
+
+    private static func primeWebAccessibility(_ app: AXUIElement, processID: pid_t) {
+        guard !primedProcesses.contains(processID) else { return }
+        let bundleID = NSRunningApplication(processIdentifier: processID)?.bundleIdentifier
+        guard let attribute = webAccessibilityPrimingAttribute(bundleID: bundleID) else {
+            primedProcesses.insert(processID)
+            return
+        }
+        switch AXUIElementSetAttributeValue(app, attribute as CFString, kCFBooleanTrue) {
+        case .success, .attributeUnsupported:
+            primedProcesses.insert(processID)
+        default:
+            // A busy browser timed out; ask again on the next poll.
+            break
+        }
     }
 
     private static func value(_ element: AXUIElement, _ attribute: String) -> CFTypeRef? {

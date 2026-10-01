@@ -52,10 +52,10 @@ struct AudioRecoverySilenceCommitGate: Equatable {
 }
 
 final class MicAudioBufferPool: @unchecked Sendable {
-    private let lock = NSLock()
     private let format: AVAudioFormat
     private let frameCapacity: AVAudioFrameCount
-    private var buffers: [AVAudioPCMBuffer]
+    /// Borrowed on the real-time thread, returned on the writer queue.
+    private let ring: RealtimeBufferRing
 
     init?(
         format: AVAudioFormat,
@@ -74,29 +74,25 @@ final class MicAudioBufferPool: @unchecked Sendable {
         }
         self.format = format
         self.frameCapacity = frameCapacity
-        buffers = prepared
+        ring = RealtimeBufferRing(buffers: prepared)
     }
 
+    /// Real-time thread only.
     func borrow(for source: AVAudioPCMBuffer) -> AVAudioPCMBuffer? {
         guard source.frameLength <= frameCapacity,
               isCompatible(with: source.format),
-              lock.try() else { return nil }
-        defer { lock.unlock() }
-        guard let buffer = buffers.popLast() else { return nil }
+              let buffer = ring.borrow() else { return nil }
         buffer.frameLength = source.frameLength
         return buffer
     }
 
+    /// Writer queue only.
     func returnBuffer(_ buffer: AVAudioPCMBuffer) {
-        lock.lock()
-        buffers.append(buffer)
-        lock.unlock()
+        ring.giveBack(buffer)
     }
 
     var availableBufferCount: Int {
-        lock.lock()
-        defer { lock.unlock() }
-        return buffers.count
+        ring.availableCount
     }
 
     func isCompatible(with candidate: AVAudioFormat) -> Bool {
