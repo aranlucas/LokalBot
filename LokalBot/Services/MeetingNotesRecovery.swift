@@ -9,6 +9,9 @@ extension MeetingNotesGenerator {
         var repairTokenFloor: Int?
         var terminalFailure: String?
         var noProgressAttempts: Int?
+        /// Tasks (normalized text) whose ownership repairs answered in full
+        /// but could not bind them; they stay visible as owner-unclear.
+        var settledOwnership: [String]?
     }
 
     struct PartJob {
@@ -189,8 +192,9 @@ extension MeetingNotesGenerator {
         // as owner-unclear, like a wrong-owner claim: the same evidence fails
         // every retry, so holding the part open would fail the meeting each
         // time. Records queued behind ownership repairs then get their own
-        // two repairs. The user's own commitments stay strict: a part missing
-        // one stays open.
+        // two repairs. A settled task near the user's own commitment covers
+        // it: the task stays visible, and one spoken on this Mac's microphone
+        // is marked as likely the user's.
         let ownershipReasons: Set<String> = ["missing_ownership_evidence", "ambiguous_ownership_evidence", "ownership_quote_not_found"]
         for phase in 0..<2 {
             var answeredOwnership = Set<String>()
@@ -257,18 +261,20 @@ extension MeetingNotesGenerator {
                 if raw.truncated && repairTokens >= 4_096 { break }
                 if !fixed.complete && !raw.truncated && fixed.hasMore != true { break }
             }
-            if missingCommitments(part, job: job).isEmpty {
-                recovery.pending.removeAll { rejection in
-                    guard let actionID = rejection.actionID, let text = rejection.text, ownershipReasons.contains(rejection.reason),
-                          answeredOwnership.contains(OutcomeTextSimilarity.normalized(text)) else { return false }
-                    return part.outcomes.actionItems.contains { $0.id == actionID && $0.ownershipIsUnclear }
-                }
+            var settled = Set(recovery.settledOwnership ?? [])
+            recovery.pending.removeAll { rejection in
+                guard let actionID = rejection.actionID, let text = rejection.text, ownershipReasons.contains(rejection.reason),
+                      answeredOwnership.contains(OutcomeTextSimilarity.normalized(text)),
+                      part.outcomes.actionItems.contains(where: { $0.id == actionID && $0.ownershipIsUnclear }) else { return false }
+                settled.insert(OutcomeTextSimilarity.normalized(text))
+                return true
             }
+            if !settled.isEmpty { recovery.settledOwnership = settled.sorted() }
             guard phase == 0, repairedOwnership, !recovery.pending.isEmpty,
                   !recovery.pending.contains(where: { $0.actionID != nil }) else { break }
             try checkpoint()
         }
-        part.complete = recovery.scanComplete && recovery.pending.isEmpty && missingCommitments(part, job: job).isEmpty
+        part.complete = recovery.scanComplete && recovery.pending.isEmpty && missingCommitments(part, job: job, recovery: recovery).isEmpty
         try checkpoint()
     }
 
@@ -320,7 +326,7 @@ extension MeetingNotesGenerator {
     private static func queueMissingCommitments(_ part: Part, job: PartJob, recovery: inout Recovery) {
         guard recovery.scanComplete else { return }
         let compact = Dictionary(uniqueKeysWithValues: job.evidence.transcript.summaryCitationSources.map { ($0.value, $0.key) })
-        for source in missingCommitments(part, job: job) {
+        for source in missingCommitments(part, job: job, recovery: recovery) {
             let missing = MeetingNotesEvidence.Rejection(sources: [source], kind: "actions", reason: "missing_user_commitment")
             let nearby = Set(repairEvidence([missing], units: job.units).map(\.source))
             if recovery.pending.contains(where: { $0.kind == "actions" && !nearby.isDisjoint(with: $0.sources) }) { continue }
@@ -354,10 +360,22 @@ extension MeetingNotesGenerator {
         }
     }
 
-    private static func missingCommitments(_ part: Part, job: PartJob) -> [String] {
+    /// The user's undertakings that no user task cites. A settled task citing
+    /// the same speaker near the undertaking covers it: the repairs already
+    /// tried to bind that task to the user and could not.
+    private static func missingCommitments(_ part: Part, job: PartJob, recovery: Recovery) -> [String] {
         let cited = Set(part.outcomes.userActionItems.flatMap { $0.citations.map(\.segmentID) })
+        let settled = Set(recovery.settledOwnership ?? [])
+        let compact = Dictionary(uniqueKeysWithValues: job.evidence.transcript.summaryCitationSources.map { ($0.value, $0.key) })
+        var settledSources = Set<String>()
+        for action in part.outcomes.unresolvedActionItems where settled.contains(OutcomeTextSimilarity.normalized(action.text)) {
+            settledSources.formUnion(action.citations.compactMap { compact[$0.segmentID] })
+        }
         return job.units.filter { unit in
-            unit.isUserCommitment && job.evidence.transcript.summaryCitationSources[unit.source].map { !cited.contains($0) } == true
+            guard unit.isUserCommitment,
+                  job.evidence.transcript.summaryCitationSources[unit.source].map({ !cited.contains($0) }) == true else { return false }
+            let missing = MeetingNotesEvidence.Rejection(sources: [unit.source], kind: "actions", reason: "missing_user_commitment")
+            return !repairEvidence([missing], units: job.units).contains { $0.speaker == unit.speaker && settledSources.contains($0.source) }
         }.map(\.source)
     }
 

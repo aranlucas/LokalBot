@@ -354,6 +354,28 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertTrue(result.outcomes.actionItems[0].ownershipIsUnclear)
     }
 
+    func testUsersUnquotableCommitmentStaysVisibleAsLikelyTheirsAndCompletes() async throws {
+        var transcript = transcript
+        transcript.segments = [
+            .init(start: 0, end: 5, speaker: "them", text: "Can someone look at the pull request?"),
+            .init(start: 5, end: 10, speaker: "me", text: "I still have to review the change.",
+                  attribution: .init(source: .microphone, identity: .user, method: .confirmation)),
+        ]
+        var task = action("s2", owner: "source")
+        task["text"] = "Review the change"
+        task["quote"] = "I will review it"
+        let script = Script([
+            .text(try response(actions: [task])), .text(try response(actions: [task])), .text(try response(actions: [task])),
+        ])
+        let result = try await generate(script, transcript: transcript)
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 3, "Two targeted repairs, then the task keeps its unclear owner")
+        XCTAssertTrue(calls[1].prompt.contains("ownership_quote_not_found"))
+        let item = try XCTUnwrap(result.outcomes.actionItems.first)
+        XCTAssertTrue(item.ownershipIsUnclear)
+        XCTAssertTrue(item.isLikelyUserAction, "Spoken on this Mac's microphone, so likely the user's")
+    }
+
     func testRecordsQueuedBehindASuccessfulOwnershipRepairStillGetRepaired() async throws {
         let obligation = "I think I still have to review the change."
         var transcript = transcript
