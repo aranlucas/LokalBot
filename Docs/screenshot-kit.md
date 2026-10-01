@@ -25,7 +25,10 @@ separate reviewed workflow described in `Docs/demo-film-kit.md`.
 
 - **Window:** 1400×880 pt, rendered at 2× (2800×1760 content plus title bar).
 - **Meeting list:** capped at 400 pt so the outcome inspector remains readable.
-- **Quick Recall:** 660×480 pt, also at 2×.
+- **Quick Recall:** 660×480 pt, also at 2×. The website's Quick Recall images
+  use `LOKALBOT_CAPTURE_SCALE=4`; above the display's 2× the host redraws text
+  and shapes at the requested density, while icons and thumbnails keep their
+  2× pixels.
 - **Appearance:** light, pinned by the capture host rather than inherited from the
   current macOS appearance. Set `LOKALBOT_CAPTURE_APPEARANCE=dark` for a dark set.
 - **Content:** English synthetic meetings, outcomes, work sessions, chats, and
