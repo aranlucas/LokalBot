@@ -11,8 +11,12 @@ BUN="${LOKALBOT_TEST_BUN:-$(command -v bun || true)}"
 [[ -x "$BIN" ]] || { echo "no app binary at $BIN"; exit 2; }
 [[ -x "$BUN" ]] || { echo "Bun is required (LOKALBOT_TEST_BUN)"; exit 2; }
 REAL_ASR=0; [[ "${1:-}" == "--real-asr" ]] && REAL_ASR=1
+# Real Parakeet word error rate allowed against the golden transcripts, after
+# case, punctuation, and hyphens are ignored.
+MAX_WER="${LOKALBOT_DAY_MAX_WER:-0.25}"
 
-LIB=$(mktemp -d /tmp/lokalbot-day.XXXXXX)
+# CI points LOKALBOT_DAY_ROOT at a folder it uploads when the run fails.
+LIB=$(mktemp -d "${LOKALBOT_DAY_ROOT:-/tmp}/lokalbot-day.XXXXXX")
 SUITE="me.dotenv.LokalBot.day-in-the-life.$$"
 DAY=$(date -v-1d +%Y-%m-%d)
 FAILED=0
@@ -38,8 +42,9 @@ for _ in $(seq 1 100); do
   sleep 0.1
 done
 [[ -n "$PORT" ]] || { echo "stub did not start"; FAILED=1; exit 1; }
+scenario_flags=(); [[ $REAL_ASR -eq 1 ]] && scenario_flags=(--real-asr)
 python3 "$ROOT_DIR/Scripts/day-in-the-life/scenario.py" "$ROOT_DIR/LokalBotTests/Fixtures/model-recordings" \
-  z-ai/glm-5.3-flash > "$LIB/scenario.json"
+  z-ai/glm-5.3-flash ${scenario_flags[@]+"${scenario_flags[@]}"} > "$LIB/scenario.json"
 curl -fsS -X POST --data @"$LIB/scenario.json" "http://127.0.0.1:$PORT/__scenario" >/dev/null
 
 # Semantic search and multi-speaker diarization would start or download local
@@ -64,8 +69,23 @@ for folder in "$DESIGN" "$SPRINT"; do
   fi
   [[ -f "$folder/transcript.json" ]] || fail "no transcript for $(basename "$folder")"
 done
-python3 "$ROOT_DIR/Scripts/day-in-the-life/assertions.py" owned-action "$DESIGN" \
-  && pass "design review has an action owned by me" || fail "no action owned by me in the design review"
+if [[ $REAL_ASR -eq 1 ]]; then
+  # The recorded notes answer quotes the golden wording, so ownership is only
+  # asserted on golden runs. Here the drift signal is the word error rate.
+  for folder in "$DESIGN" "$SPRINT"; do
+    name=$(basename "$folder"); golden="$ROOT_DIR/LokalBotTests/Fixtures/day-in-the-life/golden-transcripts/${name#*-}"
+    if rate=$(python3 "$ROOT_DIR/Scripts/day-in-the-life/assertions.py" wer "$folder" "$golden" "$MAX_WER"); then
+      pass "$name word error rate $rate"
+    else
+      fail "$name word error rate ${rate:-unavailable} exceeds $MAX_WER"
+    fi
+  done
+  python3 "$ROOT_DIR/Scripts/day-in-the-life/assertions.py" finished-notes "$DESIGN" \
+    && pass "design review notes finished" || fail "design review notes did not finish"
+else
+  python3 "$ROOT_DIR/Scripts/day-in-the-life/assertions.py" owned-action "$DESIGN" \
+    && pass "design review has an action owned by me" || fail "no action owned by me in the design review"
+fi
 
 echo "== boundary review keeps the meeting searchable =="
 # 0–36 s keeps every line the recorded notes answer cites (the last ends at

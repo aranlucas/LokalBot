@@ -39,6 +39,8 @@ final class ModelBudgetGuardTests: XCTestCase {
         case .notes:
             MeetingNotesGenerator.expandedStructuredOutputTokens(
                 from: call.maxTokens ?? 4_096, input: 0, contextTokens: 32_768) ?? (call.maxTokens ?? 4_096)
+        // Repairs get no expanded retry; a truncated one doubles up to 4K.
+        case .notesRepair: 4_096
         case .ask: ChatAgent.answerTokens
         }
     }

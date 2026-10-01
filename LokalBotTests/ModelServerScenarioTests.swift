@@ -68,6 +68,8 @@ final class ModelServerScenarioTests: XCTestCase {
                 system: MeetingNotesGenerator.systemPrompt(template: template, language: .matchTranscript)), .notes)
         }
         XCTAssertEqual(ModelRequestPurpose.classify(
+            system: PromptTemplates.meetingNotesRepairSystem(language: .matchTranscript)), .notesRepair)
+        XCTAssertEqual(ModelRequestPurpose.classify(
             system: ChatPrompt.systemPrompt(tools: [], libraryOverview: "")), .ask)
     }
 
