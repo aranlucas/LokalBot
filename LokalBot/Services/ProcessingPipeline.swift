@@ -988,11 +988,15 @@ final class ProcessingPipeline: ObservableObject {
             // an hour of completed transcription.
             let checkpoint = Self.checkpointURL(track: name, in: folder)
             do {
-                let checkpointInput = try JSONEncoder().encode([audioRevision, name, engine.displayName,
+                var checkpointParts: [String] = [audioRevision, name, engine.displayName,
                     language ?? "", prompt,
                     String(config.multiSpeakerDiarization), String(config.echoCancellation),
                     config.diarizationModel.checkpointIdentity,
-                    meeting.contentRange.map { "\($0.start):\($0.end)" } ?? "full", "identity-v2"])
+                    meeting.contentRange.map { "\($0.start):\($0.end)" } ?? "full", "identity-v2"]
+                if engine.speakerAttribution == .alignedWords {
+                    checkpointParts.append("aligned-words-\(QwenWordAligner.snapshot.revision)-merged-windows-v2")
+                }
+                let checkpointInput = try JSONEncoder().encode(checkpointParts)
                 let prepared = track == .mic
                     ? try await Self.echoCancelledMicrophone(in: folder, microphone: url, config: config)
                     : (nil, TranscriptEchoReport(status: .noReference))
@@ -1107,6 +1111,16 @@ final class ProcessingPipeline: ObservableObject {
     /// downloaded/prepared models are reused instead of rebuilt per job.
     func prepareDiarizationModels(config: AppSettings) async throws {
         try await diarizer.prepareModels(model: config.diarizationModel, includeVoiceSamples: config.rememberSpeakersOnMac)
+        guard config.transcriptionModel.engine.speakerAttribution == .alignedWords else { return }
+        // Fetch the word aligner with the speaker models. A failure is not
+        // fatal: attribution falls back to speaker regions for this job.
+        do {
+            try await QwenWordAligner.shared.downloadIfNeeded()
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            lokalbotLog("word aligner download failed: \(error.localizedDescription)")
+        }
     }
 
     private func write(_ transcript: Transcript, for meeting: Meeting) throws {

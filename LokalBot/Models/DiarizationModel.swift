@@ -16,11 +16,13 @@ enum DiarizationModel: String, Codable, CaseIterable, Identifiable, Sendable {
     var description: String {
         switch self {
         case .community1:
-            "Separates voices locally after recording. Downloads speaker models from Hugging Face on first use."
+            "Separates voices locally after recording. Downloads speaker models from Hugging Face on first use." + Self.alignerNote
         case .nemotron3:
-            "Separates up to 8 voices locally after recording, including overlapping speech. First use downloads about 200 MB from Hugging Face. Remembering voices also uses the Pyannote models."
+            "Separates up to 8 voices locally after recording, including overlapping speech. First use downloads about 200 MB from Hugging Face." + Self.alignerNote + " Remembering voices also uses the Pyannote models."
         }
     }
+
+    private static let alignerNote = " With Qwen3-ASR, it also downloads a word aligner (about 1 GB) that matches each word to a voice."
 
     /// Invalidate partial transcripts when the model, weights, or turn policy changes.
     var checkpointIdentity: String {

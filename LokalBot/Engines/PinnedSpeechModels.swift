@@ -192,6 +192,22 @@ extension PinnedModelSnapshot {
         .init(path: "vocab.json", bytes: 2776833,
               digest: "4783fe10ac3adce15ac8f358ef5462739852c569", isGitBlob: true),
     ])
+    /// speech-swift's default Qwen3 forced aligner (4-bit MLX). It times the
+    /// words of a whole-track Qwen transcript for speaker attribution.
+    static let qwenAligner = Self(repository: "aufklarer/Qwen3-ForcedAligner-0.6B-4bit", revision: "f0e9f12a0ddbcb5f1e1b7f0339090628f1cede1d", files: [
+        .init(path: "config.json", bytes: 5982,
+              digest: "7b9883fe52d0ba896773687a7fdad38eacab062d", isGitBlob: true),
+        .init(path: "merges.txt", bytes: 1671853,
+              digest: "31349551d90c7606f325fe0f11bbb8bd5fa0d7c7", isGitBlob: true),
+        .init(path: "model.safetensors", bytes: 978674048,
+              digest: "8187bcb2ab9046cbb274559523d21f60249410ccc561682bc5860b07101c5568", isGitBlob: false),
+        .init(path: "quantize_config.json", bytes: 214,
+              digest: "20ba9d363146422572ef706429cee64895d572d3", isGitBlob: true),
+        .init(path: "tokenizer_config.json", bytes: 12666,
+              digest: "3df92df83b22342e36a7b11cf9a70de2a2996bec", isGitBlob: true),
+        .init(path: "vocab.json", bytes: 2776833,
+              digest: "4783fe10ac3adce15ac8f358ef5462739852c569", isGitBlob: true),
+    ])
     static let qwenCompact = Self(repository: "aufklarer/Qwen3-ASR-0.6B-MLX-4bit", revision: "bc441bd1e4295c1f42d9879f056049a925b6e013", files: [
         .init(path: "config.json", bytes: 7187,
               digest: "049989ad1e19719b99c2f374eb7067040aa4c830", isGitBlob: true),

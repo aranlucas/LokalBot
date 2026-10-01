@@ -1,0 +1,104 @@
+{
+ "ami_wer": {
+  "engine-15": 0.18377,
+  "aligned words": 0.18377
+ },
+ "ami_cpwer": {
+  "production regions": {
+   "cpwer": 0.36515,
+   "delta": 0,
+   "ci95": [
+    0,
+    0
+   ],
+   "p_better": null
+  },
+  "engine windows, majority speaker": {
+   "cpwer": 0.40728,
+   "delta": 0.04213,
+   "ci95": [
+    0.00662,
+    0.07514
+   ],
+   "p_better": 0.0085
+  },
+  "aligned words, gap tolerance 0 s": {
+   "cpwer": 0.51107,
+   "delta": 0.14592,
+   "ci95": [
+    0.11825,
+    0.18473
+   ],
+   "p_better": 0.0
+  },
+  "aligned words, gap tolerance 0.5 s": {
+   "cpwer": 0.34896,
+   "delta": -0.01619,
+   "ci95": [
+    -0.03445,
+    -0.00064
+   ],
+   "p_better": 0.978
+  },
+  "aligned words, gap tolerance 1 s": {
+   "cpwer": 0.34539,
+   "delta": -0.01976,
+   "ci95": [
+    -0.03955,
+    -0.00356
+   ],
+   "p_better": 0.9905
+  },
+  "aligned words, gap tolerance 2 s": {
+   "cpwer": 0.34563,
+   "delta": -0.01952,
+   "ci95": [
+    -0.03901,
+    -0.00331
+   ],
+   "p_better": 0.9895
+  },
+  "aligned words, gap tolerance inf s": {
+   "cpwer": 0.34516,
+   "delta": -0.02,
+   "ci95": [
+    -0.03997,
+    -0.00339
+   ],
+   "p_better": 0.9905
+  }
+ },
+ "speaker_memory_support": {
+  "production regions": {
+   "ami": {
+    "accepted": 286,
+    "eligible": 417
+   },
+   "meetings": {
+    "accepted": 1319,
+    "eligible": 1501
+   }
+  },
+  "aligned words": {
+   "ami": {
+    "accepted": 212,
+    "eligible": 417
+   },
+   "meetings": {
+    "accepted": 862,
+    "eligible": 1501
+   }
+  },
+  "aligned words, snapped to turns (as shipped)": {
+   "ami": {
+    "accepted": 371,
+    "eligible": 417
+   },
+   "meetings": {
+    "accepted": 1418,
+    "eligible": 1501
+   }
+  }
+ },
+ "aligner_speed_x_realtime": 179
+}

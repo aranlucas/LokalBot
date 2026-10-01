@@ -1,0 +1,167 @@
+{
+ "1.7B word-attribution path (merged ≤60 s)": {
+  "0.85, pad 0.1 (shipped)": {
+   "meetings": 0.0441,
+   "ami_wer": 0.17686,
+   "ami_del_rate": 0.13425,
+   "invented_run_words": 27,
+   "coverage": [
+    0.989,
+    0.863
+   ]
+  },
+  "0.7": {
+   "meetings": 0.0441,
+   "ami_wer": 0.17567,
+   "ami_del_rate": 0.13378,
+   "invented_run_words": 27,
+   "coverage": [
+    0.989,
+    0.871
+   ]
+  },
+  "0.5": {
+   "meetings": 0.0439,
+   "ami_wer": 0.17424,
+   "ami_del_rate": 0.13187,
+   "invented_run_words": 27,
+   "coverage": [
+    0.99,
+    0.875
+   ]
+  },
+  "0.35": {
+   "meetings": 0.0431,
+   "ami_wer": 0.17305,
+   "ami_del_rate": 0.12806,
+   "invented_run_words": 27,
+   "coverage": [
+    0.989,
+    0.887
+   ]
+  },
+  "0.85, pad 0.3": {
+   "meetings": 0.0428,
+   "ami_wer": 0.17543,
+   "ami_del_rate": 0.1314,
+   "invented_run_words": 18,
+   "coverage": [
+    0.995,
+    0.877
+   ]
+  },
+  "no gate (whole chunk)": {
+   "meetings": 0.04231,
+   "ami_wer": 0.17734,
+   "ami_del_rate": 0.12949,
+   "invented_run_words": 18,
+   "coverage": [
+    1.0,
+    1.0
+   ]
+  }
+ },
+ "1.7B plain path (≤14 s)": {
+  "0.85 (shipped)": {
+   "meetings": 0.05296,
+   "ami_wer": 0.18377,
+   "ami_del_rate": 0.13759,
+   "invented_run_words": 22,
+   "coverage": [
+    0.912,
+    0.782
+   ]
+  },
+  "0.5": {
+   "meetings": 0.05335,
+   "ami_wer": 0.18496,
+   "ami_del_rate": 0.13854,
+   "invented_run_words": 25,
+   "coverage": [
+    0.924,
+    0.798
+   ]
+  }
+ },
+ "0.6B word-attribution path (merged ≤15 s)": {
+  "0.85 (shipped)": {
+   "meetings": 0.06769,
+   "ami_wer": 0.214,
+   "ami_del_rate": 0.16091,
+   "invented_run_words": 33,
+   "coverage": [
+    0.946,
+    0.822
+   ]
+  },
+  "0.5": {
+   "meetings": 0.06878,
+   "ami_wer": 0.20757,
+   "ami_del_rate": 0.1583,
+   "invented_run_words": 29,
+   "coverage": [
+    0.954,
+    0.834
+   ]
+  }
+ },
+ "False alarms": {
+  "1.7B merged ≤60 s, 0.85": {
+   "words": 33,
+   "per_10_min": 10.4,
+   "passed_minutes": 0.45
+  },
+  "1.7B merged ≤60 s, 0.7": {
+   "words": 58,
+   "per_10_min": 18.2,
+   "passed_minutes": 1.15
+  },
+  "1.7B merged ≤60 s, 0.5": {
+   "words": 94,
+   "per_10_min": 29.6,
+   "passed_minutes": 2.89
+  },
+  "1.7B merged ≤60 s, 0.35": {
+   "words": 97,
+   "per_10_min": 30.5,
+   "passed_minutes": 5.3
+  },
+  "1.7B merged ≤60 s, 0.85 pad 0.3": {
+   "words": 38,
+   "per_10_min": 12.0,
+   "passed_minutes": 0.84
+  },
+  "1.7B plain ≤14 s, 0.85": {
+   "words": 33,
+   "per_10_min": 10.4,
+   "passed_minutes": 0.45
+  },
+  "1.7B plain ≤14 s, 0.7": {
+   "words": 61,
+   "per_10_min": 19.2,
+   "passed_minutes": 0.81
+  },
+  "1.7B plain ≤14 s, 0.5": {
+   "words": 106,
+   "per_10_min": 33.3,
+   "passed_minutes": 1.52
+  },
+  "1.7B plain ≤14 s, 0.35": {
+   "words": 138,
+   "per_10_min": 43.4,
+   "passed_minutes": 2.38
+  }
+ },
+ "False alarms, 0.6B": {
+  "0.6B merged ≤15 s, 0.85": {
+   "words": 38,
+   "per_10_min": 12.0,
+   "passed_minutes": 0.45
+  },
+  "0.6B merged ≤15 s, 0.5": {
+   "words": 210,
+   "per_10_min": 66.0,
+   "passed_minutes": 2.86
+  }
+ }
+}

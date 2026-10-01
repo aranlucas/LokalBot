@@ -1,0 +1,516 @@
+{
+ "1.7B, merged ≤60 s (word-attribution path), English": {
+  "auto": {
+   "meetings": 0.05006967947441768,
+   "ami_wer": 0.17686265174958343,
+   "delta_vs_auto": null,
+   "invented_run_words": 79,
+   "windows_redecoded": 0
+  },
+  "script repair": {
+   "meetings": 0.04907425841130798,
+   "ami_wer": 0.17686265174958343,
+   "delta_vs_auto": [
+    -0.1,
+    -0.19,
+    -0.04
+   ],
+   "invented_run_words": 79,
+   "windows_redecoded": 23
+  },
+  "minority repair": {
+   "meetings": 0.04947242683655186,
+   "ami_wer": 0.17686265174958343,
+   "delta_vs_auto": [
+    -0.06,
+    -0.17,
+    0.05
+   ],
+   "invented_run_words": 85,
+   "windows_redecoded": 24
+  },
+  "vote and pin (shipped)": {
+   "meetings": 0.044097153095759505,
+   "ami_wer": 0.17686265174958343,
+   "delta_vs_auto": [
+    -0.6,
+    -2.01,
+    0.08
+   ],
+   "invented_run_words": 27,
+   "windows_redecoded": 187
+  },
+  "pinned en": {
+   "meetings": 0.044097153095759505,
+   "ami_wer": 0.17686265174958343,
+   "delta_vs_auto": [
+    -0.6,
+    -2.01,
+    0.08
+   ],
+   "invented_run_words": 27,
+   "windows_redecoded": null
+  }
+ },
+ "1.7B, ≤14 s (plain path), English": {
+  "auto": {
+   "meetings": 0.059327095361337845,
+   "ami_wer": 0.18114734587003095,
+   "delta_vs_auto": null,
+   "invented_run_words": 73,
+   "windows_redecoded": 0
+  },
+  "script repair": {
+   "meetings": 0.05793350587298427,
+   "ami_wer": 0.1801951916210426,
+   "delta_vs_auto": [
+    -0.14,
+    -0.26,
+    -0.04
+   ],
+   "invented_run_words": 82,
+   "windows_redecoded": 62
+  },
+  "minority repair": {
+   "meetings": 0.05793350587298427,
+   "ami_wer": 0.1801951916210426,
+   "delta_vs_auto": [
+    -0.14,
+    -0.26,
+    -0.04
+   ],
+   "invented_run_words": 82,
+   "windows_redecoded": 62
+  },
+  "vote and pin (shipped)": {
+   "meetings": 0.05295640055743579,
+   "ami_wer": 0.18376577005474887,
+   "delta_vs_auto": [
+    -0.64,
+    -2.05,
+    0.05
+   ],
+   "invented_run_words": 22,
+   "windows_redecoded": 766
+  },
+  "pinned en": {
+   "meetings": 0.05295640055743579,
+   "ami_wer": 0.18376577005474887,
+   "delta_vs_auto": [
+    -0.64,
+    -2.05,
+    0.05
+   ],
+   "invented_run_words": 22,
+   "windows_redecoded": null
+  }
+ },
+ "0.6B, merged ≤15 s, English": {
+  "auto": {
+   "meetings": 0.07575154290264782,
+   "ami_wer": 0.21352059033563436,
+   "delta_vs_auto": null,
+   "invented_run_words": 104,
+   "windows_redecoded": 0
+  },
+  "script repair": {
+   "meetings": 0.0748556639458491,
+   "ami_wer": 0.21375862889788147,
+   "delta_vs_auto": [
+    -0.09,
+    -0.17,
+    -0.03
+   ],
+   "invented_run_words": 104,
+   "windows_redecoded": 14
+  },
+  "minority repair": {
+   "meetings": 0.0748556639458491,
+   "ami_wer": 0.21375862889788147,
+   "delta_vs_auto": [
+    -0.09,
+    -0.17,
+    -0.03
+   ],
+   "invented_run_words": 104,
+   "windows_redecoded": 14
+  },
+  "vote and pin (shipped)": {
+   "meetings": 0.07505474815847103,
+   "ami_wer": 0.21399666746012855,
+   "delta_vs_auto": [
+    -0.07,
+    -0.26,
+    0.09
+   ],
+   "invented_run_words": 108,
+   "windows_redecoded": 558
+  },
+  "pinned en": {
+   "meetings": 0.06768863229145929,
+   "ami_wer": 0.21399666746012855,
+   "delta_vs_auto": [
+    -0.81,
+    -2.59,
+    0.07
+   ],
+   "invented_run_words": 33,
+   "windows_redecoded": null
+  }
+ },
+ "1.7B, FLEURS": {
+  "oracle code, merged ≤60 s": {
+   "fleurs-de": {
+    "error": 0.0438,
+    "language_used": "de",
+    "detected": null
+   },
+   "fleurs-ja": {
+    "error": 0.0713,
+    "language_used": "ja",
+    "detected": null
+   },
+   "fleurs-ru": {
+    "error": 0.102,
+    "language_used": "ru",
+    "detected": null
+   },
+   "fleurs-sr": {
+    "error": 0.1412,
+    "language_used": "sr",
+    "detected": null
+   },
+   "fleurs-en+de": {
+    "error": 0.1489,
+    "language_used": "auto",
+    "detected": null
+   }
+  },
+  "oracle name, merged ≤60 s": {
+   "fleurs-de": {
+    "error": 0.0454,
+    "language_used": "German",
+    "detected": null
+   },
+   "fleurs-ja": {
+    "error": 0.0681,
+    "language_used": "Japanese",
+    "detected": null
+   },
+   "fleurs-ru": {
+    "error": 0.0984,
+    "language_used": "Russian",
+    "detected": null
+   },
+   "fleurs-sr": {
+    "error": 0.145,
+    "language_used": "Serbian",
+    "detected": null
+   },
+   "fleurs-en+de": {
+    "error": 0.1489,
+    "language_used": "auto",
+    "detected": null
+   }
+  },
+  "auto, merged ≤60 s": {
+   "fleurs-de": {
+    "error": 0.0438,
+    "language_used": "auto",
+    "detected": null
+   },
+   "fleurs-ja": {
+    "error": 0.0681,
+    "language_used": "auto",
+    "detected": null
+   },
+   "fleurs-ru": {
+    "error": 0.102,
+    "language_used": "auto",
+    "detected": null
+   },
+   "fleurs-sr": {
+    "error": 0.1714,
+    "language_used": "auto",
+    "detected": null
+   },
+   "fleurs-en+de": {
+    "error": 0.1489,
+    "language_used": "auto",
+    "detected": null
+   }
+  },
+  "detect once, merged ≤60 s": {
+   "fleurs-de": {
+    "error": 0.0438,
+    "language_used": "de",
+    "detected": "de=1.00,sk=0.00,nl=0.00"
+   },
+   "fleurs-ja": {
+    "error": 0.0713,
+    "language_used": "ja",
+    "detected": "ja=1.00,zh-Hans=0.00,zh-Hant=0.00"
+   },
+   "fleurs-ru": {
+    "error": 0.102,
+    "language_used": "ru",
+    "detected": "ru=1.00,kk=0.00,bg=0.00"
+   },
+   "fleurs-sr": {
+    "error": 0.1714,
+    "language_used": "auto",
+    "detected": "hr=1.00,cs=0.00,sk=0.00"
+   },
+   "fleurs-en+de": {
+    "error": 0.1926,
+    "language_used": "de",
+    "detected": "de=1.00,hu=0.00,cs=0.00"
+   }
+  },
+  "vote and pin (shipped), merged ≤60 s": {
+   "fleurs-de": {
+    "error": 0.0438,
+    "language_used": "de",
+    "detected": "de=1.00"
+   },
+   "fleurs-ja": {
+    "error": 0.0713,
+    "language_used": "ja",
+    "detected": "ja=1.00"
+   },
+   "fleurs-ru": {
+    "error": 0.102,
+    "language_used": "ru",
+    "detected": "ru=1.00"
+   },
+   "fleurs-sr": {
+    "error": 0.1714,
+    "language_used": "auto",
+    "detected": "hr=1.00"
+   },
+   "fleurs-en+de": {
+    "error": 0.1489,
+    "language_used": "auto",
+    "detected": "de=0.66"
+   }
+  },
+  "oracle code, ≤14 s": {
+   "fleurs-de": {
+    "error": 0.0519,
+    "language_used": "de",
+    "detected": null
+   },
+   "fleurs-ja": {
+    "error": 0.0803,
+    "language_used": "ja",
+    "detected": null
+   },
+   "fleurs-ru": {
+    "error": 0.0801,
+    "language_used": "ru",
+    "detected": null
+   },
+   "fleurs-sr": {
+    "error": 0.1601,
+    "language_used": "sr",
+    "detected": null
+   },
+   "fleurs-en+de": {
+    "error": 0.0981,
+    "language_used": "auto",
+    "detected": null
+   }
+  },
+  "auto, ≤14 s": {
+   "fleurs-de": {
+    "error": 0.0454,
+    "language_used": "auto",
+    "detected": null
+   },
+   "fleurs-ja": {
+    "error": 0.0758,
+    "language_used": "auto",
+    "detected": null
+   },
+   "fleurs-ru": {
+    "error": 0.082,
+    "language_used": "auto",
+    "detected": null
+   },
+   "fleurs-sr": {
+    "error": 0.1846,
+    "language_used": "auto",
+    "detected": null
+   },
+   "fleurs-en+de": {
+    "error": 0.0981,
+    "language_used": "auto",
+    "detected": null
+   }
+  },
+  "detect once, ≤14 s": {
+   "fleurs-de": {
+    "error": 0.0519,
+    "language_used": "de",
+    "detected": "de=1.00,nl=0.00,hu=0.00"
+   },
+   "fleurs-ja": {
+    "error": 0.0803,
+    "language_used": "ja",
+    "detected": "ja=1.00,zh-Hans=0.00,zh-Hant=0.00"
+   },
+   "fleurs-ru": {
+    "error": 0.0801,
+    "language_used": "ru",
+    "detected": "ru=1.00,kk=0.00,uk=0.00"
+   },
+   "fleurs-sr": {
+    "error": 0.1846,
+    "language_used": "auto",
+    "detected": "tr=0.10,da=0.08,pt=0.07"
+   },
+   "fleurs-en+de": {
+    "error": 0.0981,
+    "language_used": "en",
+    "detected": "en=1.00,ro=0.00,id=0.00"
+   }
+  },
+  "vote and pin (shipped), ≤14 s": {
+   "fleurs-de": {
+    "error": 0.0519,
+    "language_used": "de",
+    "detected": "de=1.00"
+   },
+   "fleurs-ja": {
+    "error": 0.0803,
+    "language_used": "ja",
+    "detected": "ja=1.00"
+   },
+   "fleurs-ru": {
+    "error": 0.0801,
+    "language_used": "ru",
+    "detected": "ru=0.98"
+   },
+   "fleurs-sr": {
+    "error": 0.1846,
+    "language_used": "auto",
+    "detected": "hr=0.82"
+   },
+   "fleurs-en+de": {
+    "error": 0.0981,
+    "language_used": "auto",
+    "detected": "de=0.59"
+   }
+  }
+ },
+ "0.6B, FLEURS": {
+  "oracle code, merged ≤15 s": {
+   "fleurs-de": {
+    "error": 0.0989,
+    "language_used": "de",
+    "detected": null
+   },
+   "fleurs-ja": {
+    "error": 0.1593,
+    "language_used": "ja",
+    "detected": null
+   },
+   "fleurs-ru": {
+    "error": 0.1494,
+    "language_used": "ru",
+    "detected": null
+   },
+   "fleurs-sr": {
+    "error": 0.4426,
+    "language_used": "sr",
+    "detected": null
+   },
+   "fleurs-en+de": {
+    "error": 0.1576,
+    "language_used": "auto",
+    "detected": null
+   }
+  },
+  "auto, merged ≤15 s": {
+   "fleurs-de": {
+    "error": 0.107,
+    "language_used": "auto",
+    "detected": null
+   },
+   "fleurs-ja": {
+    "error": 0.1593,
+    "language_used": "auto",
+    "detected": null
+   },
+   "fleurs-ru": {
+    "error": 0.1439,
+    "language_used": "auto",
+    "detected": null
+   },
+   "fleurs-sr": {
+    "error": 0.5424,
+    "language_used": "auto",
+    "detected": null
+   },
+   "fleurs-en+de": {
+    "error": 0.1576,
+    "language_used": "auto",
+    "detected": null
+   }
+  },
+  "detect once, merged ≤15 s": {
+   "fleurs-de": {
+    "error": 0.0989,
+    "language_used": "de",
+    "detected": "de=1.00,hr=0.00,ca=0.00"
+   },
+   "fleurs-ja": {
+    "error": 0.1593,
+    "language_used": "ja",
+    "detected": "ja=1.00,zh-Hans=0.00,zh-Hant=0.00"
+   },
+   "fleurs-ru": {
+    "error": 0.1494,
+    "language_used": "ru",
+    "detected": "ru=1.00,kk=0.00,uk=0.00"
+   },
+   "fleurs-sr": {
+    "error": 0.5424,
+    "language_used": "auto",
+    "detected": "bg=0.65,kk=0.19,ru=0.10"
+   },
+   "fleurs-en+de": {
+    "error": 0.2539,
+    "language_used": "de",
+    "detected": "de=1.00,nl=0.00,hu=0.00"
+   }
+  },
+  "vote and pin (shipped), merged ≤15 s": {
+   "fleurs-de": {
+    "error": 0.0989,
+    "language_used": "de",
+    "detected": "de=1.00"
+   },
+   "fleurs-ja": {
+    "error": 0.1593,
+    "language_used": "ja",
+    "detected": "ja=1.00"
+   },
+   "fleurs-ru": {
+    "error": 0.1494,
+    "language_used": "ru",
+    "detected": "ru=0.98"
+   },
+   "fleurs-sr": {
+    "error": 0.5424,
+    "language_used": "auto",
+    "detected": "hr=0.34"
+   },
+   "fleurs-en+de": {
+    "error": 0.1576,
+    "language_used": "auto",
+    "detected": "de=0.62"
+   }
+  }
+ }
+}
