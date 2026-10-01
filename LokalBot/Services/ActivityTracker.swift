@@ -642,6 +642,14 @@ final class ActivityStore {
             "SELECT 1 FROM screen_bookmarks WHERE snapshot_id = ?1", bind: [snapshotID])
     }
 
+    /// Every saved moment, read once for a retention pass instead of one
+    /// query per candidate.
+    func bookmarkedSnapshotIDs() throws -> Set<Int64> {
+        Set(try requiredDatabase().queryChecked("SELECT snapshot_id FROM screen_bookmarks") {
+            sqlite3_column_int64($0, 0)
+        })
+    }
+
     func savedMoments(limit: Int = 200) -> [SavedMoment] {
         guard limit > 0 else { return [] }
         do {
@@ -773,7 +781,10 @@ final class ActivityStore {
         }
     }
 
-    func retentionReview(days: Int, keepTextForever: Bool, now: Date = Date()) throws -> RetentionReview {
+    /// `measuringBytes` stats every candidate file for the review sheet's
+    /// "space recovered"; deletion passes skip it.
+    func retentionReview(days: Int, keepTextForever: Bool, now: Date = Date(),
+                         measuringBytes: Bool = true) throws -> RetentionReview {
         let database = try requiredDatabase()
         let cutoff = now.addingTimeInterval(-Double(days) * 86_400)
         let hasVectors = try database.hasRowChecked("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'screen_embeddings'")
@@ -812,7 +823,8 @@ final class ActivityStore {
             SELECT COUNT(*) FROM screen_bookmarks JOIN screenshots ON screenshots.id = snapshot_id
             WHERE screenshots.ts < ?1
             """, bind: [cutoff.timeIntervalSince1970]) { Int(sqlite3_column_int($0, 0)) }
-        let bytes = candidates.reduce(Int64(0)) { sum, candidate in
+        let bytes = !measuringBytes ? 0 : candidates.reduce(Int64(0)) { sum, candidate in
+            guard !candidate.path.isEmpty else { return sum }
             let attributes = try? FileManager.default.attributesOfItem(atPath: candidate.path)
             return sum + ((attributes?[.size] as? NSNumber)?.int64Value ?? 0)
         }

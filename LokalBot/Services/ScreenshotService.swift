@@ -1181,14 +1181,23 @@ final class ScreenshotService: ObservableObject {
     /// screen text can be as sensitive as the pixels it came from.
     /// Execute only the reviewed data set. Regular maintenance is separate.
     func applyRetentionReview(_ review: RetentionReview) throws -> [String] {
-        let current = try store.retentionReview(days: review.days, keepTextForever: review.keepTextForever, now: now())
+        let current = try store.retentionReview(days: review.days, keepTextForever: review.keepTextForever,
+                                                now: now(), measuringBytes: false)
         guard review.covers(current) else { throw RetentionReviewError.scopeChanged }
         var failures: [String] = []
         var retainedTextIDs: [Int64] = []
+        // Re-check saving immediately before the irreversible file steps. The
+        // pass is synchronous on the main actor, so one read stays current.
+        let saved: Set<Int64>
+        do {
+            saved = try store.bookmarkedSnapshotIDs()
+        } catch {
+            failures.append("Saved moments: \(error.localizedDescription)")
+            saved = Set(current.candidates.map(\.id))
+        }
         for candidate in current.candidates {
             do {
-                // Re-check saving immediately before the irreversible file step.
-                guard try !store.isBookmarked(snapshotID: candidate.id) else { continue }
+                guard !saved.contains(candidate.id) else { continue }
                 if !candidate.path.isEmpty {
                     if FileManager.default.fileExists(atPath: candidate.path) {
                         try FileManager.default.removeItem(atPath: candidate.path)
@@ -1246,25 +1255,29 @@ final class ScreenshotService: ObservableObject {
             let review = try store.retentionReview(
                 days: configuration.retentionDays,
                 keepTextForever: configuration.keepOCRTextForever,
-                now: current)
+                now: current, measuringBytes: false)
             let orphaned = configuration.keepOCRTextForever
                 ? ActivityStore.OrphanedScreenEvidence()
                 : try store.orphanedScreenEvidence(olderThan:
                     current.addingTimeInterval(-Double(configuration.retentionDays) * 86_400))
             if !review.candidates.isEmpty || !review.activityTitles.isEmpty
                 || !review.codingAgentBursts.isEmpty || !orphaned.isEmpty {
-                let dates = Array(Set(review.evidenceDates + orphaned.timestamps)).sorted()
+                let dates = review.distinctEvidenceDays(adding: orphaned.timestamps)
                 try mutateEvidence(dates) {
                     var retainedTextIDs: [Int64] = []
+                    // One read of saved moments; nothing else runs on the main
+                    // actor until this pass returns, so it stays current.
+                    let saved: Set<Int64>
+                    do {
+                        saved = try store.bookmarkedSnapshotIDs()
+                    } catch {
+                        if firstError == nil { firstError = error.localizedDescription }
+                        saved = Set(review.candidates.map(\.id))
+                    }
                     // Delete only the reviewed IDs; a broad cutoff query could
                     // remove additional evidence whose days were not revoked.
                     for candidate in review.candidates {
-                        do {
-                            guard try !store.isBookmarked(snapshotID: candidate.id) else { continue }
-                        } catch {
-                            if firstError == nil { firstError = error.localizedDescription }
-                            continue
-                        }
+                        guard !saved.contains(candidate.id) else { continue }
                         if !candidate.path.isEmpty {
                             do {
                                 if FileManager.default.fileExists(atPath: candidate.path) {
