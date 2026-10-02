@@ -1489,7 +1489,7 @@ final class ActivitySampler: ObservableObject {
               let appName = frontmost.localizedName else { return }
         let processID = frontmost.processIdentifier
         let isExcluded = ScreenshotCaptureLayout.isExcluded(
-            appName: appName, excludedApps: excludedApps())
+            appName: appName, bundleIdentifier: frontmost.bundleIdentifier, excludedApps: excludedApps())
         let accessibility = isExcluded
             ? ScreenAccessibilityCaptureResult(snapshot: nil, timedOut: false)
             : await accessibilityReader.capture(processID: processID)
@@ -1510,7 +1510,7 @@ final class ActivitySampler: ObservableObject {
         let observation = accessibility.timedOut ? nil : accessibility.snapshot?.privacyObservation(
             appName: appName, bundleIdentifier: bundleIdentifier)
         let disposition = ScreenContextPrivacy.activityDisposition(
-            appName: appName, observation: observation,
+            appName: appName, bundleIdentifier: bundleIdentifier, observation: observation,
             excludedApps: excludedApps(), excludedDomains: excludedDomains())
         let storedApp = disposition.keepsApp ? appName : "Private"
         let title = disposition.keepsTitle

@@ -42,7 +42,8 @@ enum ScreenContextPrivacy {
         // Every window is tracked, including browser, web-app, and private
         // windows. App and domain exclusions and focused secure fields are
         // the boundaries; credential text is redacted separately.
-        guard !isExcluded(appName: observation.appName, rules: excludedApps),
+        guard !isExcluded(appName: observation.appName, bundleIdentifier: observation.bundleIdentifier,
+                          rules: excludedApps),
               observation.windowTitle != nil else { return false }
         if allowsUnknownFocus {
             guard focusPermitsCapture(
@@ -77,11 +78,13 @@ enum ScreenContextPrivacy {
 
     static func activityDisposition(
         appName: String,
+        bundleIdentifier: String? = nil,
         observation: Observation?,
         excludedApps: [String],
         excludedDomains: [String]
     ) -> ActivityDisposition {
-        guard !isExcluded(appName: appName, rules: excludedApps) else {
+        guard !isExcluded(appName: appName, bundleIdentifier: bundleIdentifier ?? observation?.bundleIdentifier,
+                          rules: excludedApps) else {
             return ActivityDisposition(keepsApp: false, keepsTitle: false)
         }
         guard let observation else { return ActivityDisposition(keepsApp: true, keepsTitle: false) }
@@ -100,10 +103,26 @@ enum ScreenContextPrivacy {
         return ActivityDisposition(keepsApp: true, keepsTitle: keepsTitle)
     }
 
-    static func isExcluded(appName: String, rules: [String]) -> Bool {
-        rules.contains { rawTerm in
+    /// Password managers are never captured, whatever their name in the
+    /// user's language ("Passwörter", "Trousseaux d'accès") and whatever the
+    /// editable list says.
+    static let passwordManagerBundleIdentifiers: Set<String> = [
+        "com.apple.passwords", "com.apple.keychainaccess", "com.1password.1password",
+        "com.agilebits.onepassword7", "com.bitwarden.desktop", "org.keepassxc.keepassxc",
+    ]
+
+    /// A rule matches the app's display name. A rule with a dot also matches
+    /// that bundle identifier and the ones beneath it ("com.agilebits" covers
+    /// "com.agilebits.onepassword7"), which stay the same in every language.
+    static func isExcluded(appName: String, bundleIdentifier: String? = nil, rules: [String]) -> Bool {
+        let bundle = bundleIdentifier?.lowercased() ?? ""
+        if passwordManagerBundleIdentifiers.contains(bundle) { return true }
+        return rules.contains { rawTerm in
             let term = rawTerm.trimmingCharacters(in: .whitespacesAndNewlines)
-            return !term.isEmpty && appName.localizedCaseInsensitiveContains(term)
+            guard !term.isEmpty else { return false }
+            if appName.localizedCaseInsensitiveContains(term) { return true }
+            let rule = term.lowercased()
+            return rule.contains(".") && (bundle == rule || bundle.hasPrefix(rule + "."))
         }
     }
 

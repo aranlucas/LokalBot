@@ -158,7 +158,9 @@ struct ExclusionRulesEditor: View {
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
         panel.allowsMultipleSelection = false
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        draft = url.deletingPathExtension().lastPathComponent
+        // The file name ("Passwords") is not the name the app runs under in
+        // every language ("Passwörter"); its bundle identifier is.
+        draft = Bundle(url: url)?.bundleIdentifier ?? url.deletingPathExtension().lastPathComponent
         add()
     }
 

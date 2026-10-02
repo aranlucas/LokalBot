@@ -161,8 +161,8 @@ struct ScreenshotCaptureLayout {
         return Selection(windowID: window.id)
     }
 
-    static func isExcluded(appName: String, excludedApps: [String]) -> Bool {
-        ScreenContextPrivacy.isExcluded(appName: appName, rules: excludedApps)
+    static func isExcluded(appName: String, bundleIdentifier: String? = nil, excludedApps: [String]) -> Bool {
+        ScreenContextPrivacy.isExcluded(appName: appName, bundleIdentifier: bundleIdentifier, rules: excludedApps)
     }
 
     /// Why `selection` found no single window, as counts only: never titles.
@@ -789,7 +789,7 @@ final class ScreenshotService: ObservableObject {
             return
         }
         guard !ScreenshotCaptureLayout.isExcluded(
-            appName: frontmost, excludedApps: config.excludedAppList)
+            appName: frontmost, bundleIdentifier: frontmostApp.bundleIdentifier, excludedApps: config.excludedAppList)
         else { lokalbotLog("context skip: excluded app (\(frontmost))"); return }
 
         guard captureGate.begin() else {

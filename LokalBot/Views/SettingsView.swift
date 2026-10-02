@@ -242,7 +242,7 @@ struct SettingsView: View {
                 .settingTarget("settings.excludedApps", selected: app.focusedSettingID)
             ExclusionRulesEditor(title: "Never capture these sites", value: $app.settings.excludedScreenDomains, kind: .domains)
                 .settingTarget("settings.excludedScreenDomains", selected: app.focusedSettingID)
-            SettingsHelp("Every app and window is tracked, including browsers and private windows. Add apps or sites here to keep them out; focused password fields and detected credentials are never captured.")
+            SettingsHelp("Every app and window is tracked, including browsers and private windows. Add apps or sites here to keep them out. Password managers (Passwords, Keychain Access, 1Password, Bitwarden, KeePassXC), focused password fields, and detected credentials are never captured.")
         }
     }
 

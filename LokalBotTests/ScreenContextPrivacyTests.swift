@@ -208,6 +208,28 @@ final class ScreenContextPrivacyTests: XCTestCase {
         XCTAssertEqual(disposition(webApp), .init(keepsApp: true, keepsTitle: false))
     }
 
+    func testPasswordManagersStayPrivateInAnyLanguageAndRulesCanNameBundleIDs() {
+        let passwords = ScreenContextPrivacy.Observation(
+            appName: "Passwörter", bundleIdentifier: "com.apple.Passwords",
+            windowTitle: "Bankkonto", sourceURL: nil, focusedSecureField: false)
+        XCTAssertFalse(ScreenContextPrivacy.permitsContent(passwords, excludedApps: [], excludedDomains: []),
+                       "the German Passwords app is skipped though no rule names it")
+        XCTAssertEqual(ScreenContextPrivacy.activityDisposition(
+            appName: "Trousseaux d'accès", bundleIdentifier: "com.apple.keychainaccess", observation: nil,
+            excludedApps: AppSettings().excludedAppList, excludedDomains: []),
+            .init(keepsApp: false, keepsTitle: false), "the default \"Keychain Access\" rule misses the French name")
+
+        let notes = ScreenContextPrivacy.Observation(
+            appName: "Notizen", bundleIdentifier: "com.apple.Notes",
+            windowTitle: "Ideas", sourceURL: nil, focusedSecureField: false)
+        XCTAssertFalse(ScreenContextPrivacy.permitsContent(notes, excludedApps: ["com.apple.Notes"], excludedDomains: []),
+                       "Choose App… stores the bundle identifier")
+        XCTAssertFalse(ScreenContextPrivacy.permitsContent(notes, excludedApps: ["com.apple"], excludedDomains: []))
+        XCTAssertTrue(ScreenContextPrivacy.permitsContent(notes, excludedApps: ["com.apple.Note"], excludedDomains: []))
+        XCTAssertTrue(ScreenContextPrivacy.permitsContent(notes, excludedApps: ["Notes"], excludedDomains: []),
+                      "a plain rule still matches the display name only")
+    }
+
     func testPrivateWindowsStillRespectAppDomainAndSecureFieldExclusions() {
         var observation = ScreenContextPrivacy.Observation(
             appName: "Safari", bundleIdentifier: "com.apple.Safari",
