@@ -46,7 +46,7 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                         ],
                         "since": [
                             "type": "string",
-                            "description": "Only meetings on or after this UTC day, formatted YYYY-MM-DD.",
+                            "description": "Only meetings on or after this local calendar day (YYYY-MM-DD).",
                         ],
                         "query": [
                             "type": "string",
@@ -270,14 +270,6 @@ struct FileLibraryToolProvider: LibraryToolProvider {
         "get_screenshot_detail",
     ]
 
-    private static let dayFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter
-    }()
-
     private func listMeetings(_ arguments: JSONValue?) -> ToolResult {
         do {
             var meetings = try SessionLookup.loadAllMeetings()
@@ -286,10 +278,10 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                 meetings = meetings.filter { $0.title.lowercased().contains(needle) }
             }
             if let since = arguments?["since"]?.stringValue {
-                guard let day = Self.dayFormatter.date(from: since) else {
+                guard let day = LibraryInputPolicy.localDay(since) else {
                     return .error(
                         .invalidArguments,
-                        "\"since\" must be formatted YYYY-MM-DD, got \"\(since)\".")
+                        "\"since\" must be a real local calendar day formatted YYYY-MM-DD, got \"\(since)\".")
                 }
                 meetings = meetings.filter { $0.startedAt >= day }
             }
@@ -678,7 +670,7 @@ struct FileLibraryToolProvider: LibraryToolProvider {
         let day: Date
         if let raw {
             guard let value = raw.stringValue,
-                  let parsed = Self.parseLocalDay(value, calendar: calendar) else {
+                  let parsed = LibraryInputPolicy.localDay(value, calendar: calendar) else {
                 return .failure(.error(
                     .invalidArguments,
                     "\"\(name)\" must be a real local calendar day formatted YYYY-MM-DD."))
@@ -691,21 +683,6 @@ struct FileLibraryToolProvider: LibraryToolProvider {
         let end = calendar.date(byAdding: .day, value: 1, to: start)
             ?? start.addingTimeInterval(86_400)
         return .success(DateInterval(start: start, end: end))
-    }
-
-    private static func parseLocalDay(_ value: String, calendar: Calendar) -> Date? {
-        let parts = value.split(separator: "-", omittingEmptySubsequences: false)
-        guard parts.count == 3,
-              parts[0].count == 4, parts[1].count == 2, parts[2].count == 2,
-              let year = Int(parts[0]), let month = Int(parts[1]), let day = Int(parts[2]),
-              let parsed = calendar.date(from: DateComponents(
-                calendar: calendar, timeZone: calendar.timeZone,
-                year: year, month: month, day: day)) else { return nil }
-        let components = calendar.dateComponents([.year, .month, .day], from: parsed)
-        guard components.year == year, components.month == month, components.day == day else {
-            return nil
-        }
-        return parsed
     }
 
     private enum LimitResult {
