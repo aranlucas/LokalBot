@@ -3,6 +3,11 @@ import Foundation
 /// Diarization partitions AUDIO before ASR. Text is never divided proportionally
 /// across speaker turns, and overlapping voices never inherit a majority label.
 enum AttributedTrackTranscriber {
+    /// A region shorter than this whose transcription fails is skipped rather
+    /// than failing the track. Longer regions keep normal error handling, so a
+    /// broken engine still surfaces.
+    static let rejectableRegionSeconds: TimeInterval = 1
+
     struct Region: Equatable {
         var start: Double
         var end: Double
@@ -91,14 +96,26 @@ enum AttributedTrackTranscriber {
             }
             try await withTaskCancellationHandler { try await worker.value } onCancel: { worker.cancel() }
             try Task.checkCancellation()
+            let value: Transcript
+            do {
 #if LOKALBOT_TEST_HOOKS
-            let slice = GoldenTranscriptionEngine.Region(track: url, start: region.start, end: region.end)
-            let value = try await GoldenTranscriptionEngine.$region.withValue(slice) {
-                try await engine.transcribe(audio: audio, language: language, prompt: prompt)
-            }
+                let slice = GoldenTranscriptionEngine.Region(track: url, start: region.start, end: region.end)
+                value = try await GoldenTranscriptionEngine.$region.withValue(slice) {
+                    try await engine.transcribe(audio: audio, language: language, prompt: prompt)
+                }
 #else
-            let value = try await engine.transcribe(audio: audio, language: language, prompt: prompt)
+                value = try await engine.transcribe(audio: audio, language: language, prompt: prompt)
 #endif
+            } catch let error where !(error is CancellationError)
+                        && region.end - region.start < Self.rejectableRegionSeconds {
+                // Turn boundaries leave slivers shorter than some engines accept
+                // (Parakeet rejects audio under 0.3 s). Losing one sliver is far
+                // better than failing the track, and with it the whole meeting.
+                lokalbotLog("speaker-asr: skipped a \(String(format: "%.2f", region.end - region.start)) s region "
+                    + "the engine rejected: \(error.localizedDescription)")
+                try? FileManager.default.removeItem(at: audio)
+                continue
+            }
             engineName = value.engine
             segments += value.segments.compactMap { segment in
                 guard !segment.displayText.isEmpty, segment.start.isFinite, segment.end.isFinite else { return nil }
