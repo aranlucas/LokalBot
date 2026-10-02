@@ -740,6 +740,22 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: output.appendingPathComponent(MeetingNotesPartial.fileName).path))
     }
 
+    func testLongMeetingTakeawaysInterleaveSoTheFirstBulletsSpanEveryPart() {
+        func claim(_ section: String, _ text: String) -> SummaryClaimEvidence.Claim {
+            SummaryClaimEvidence.Claim(section: section, text: text, speakerID: "p1", segmentID: text, quote: text)
+        }
+        let parts = [
+            [claim("TL;DR", "opening 1"), claim("Key points", "early detail"), claim("TL;DR", "opening 2")],
+            [claim("TL;DR", "middle 1"), claim("Decisions", "middle decision")],
+            [claim("TL;DR", "closing 1"), claim("TL;DR", "closing 2"), claim("TL;DR", "closing 3")],
+        ]
+        let ordered = MeetingNotesGenerator.interleavingTLDR(parts)
+        XCTAssertEqual(ordered.filter { $0.section == "TL;DR" }.map(\.text),
+                       ["opening 1", "middle 1", "closing 1", "opening 2", "closing 2", "closing 3"])
+        XCTAssertEqual(ordered.filter { $0.section != "TL;DR" }.map(\.text), ["early detail", "middle decision"])
+        XCTAssertEqual(ordered.count, 8, "no takeaway or note is dropped")
+    }
+
     func testOnlyKnownAlwaysReasoningProviderRaisesTheStructuredOutputFloor() {
         let url = URL(string: "https://openrouter.ai/api/v1")!
         var engine = OpenAICompatibleEngine(baseURL: url, model: "z-ai/glm-5.3-flash", chatDialect: .openRouter)
