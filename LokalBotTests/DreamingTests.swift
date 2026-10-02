@@ -570,6 +570,44 @@ final class DreamingTests: XCTestCase {
         XCTAssertTrue(DreamPrompts.system.contains("never invent generic productivity advice"))
     }
 
+    func testProjectFreshnessFollowsTheDaysEvidenceNotItsWording() throws {
+        let existing = DreamMemory(
+            updatedAt: try date("2026-10-01T04:00:00Z"),
+            lastDreamDay: "2026-09-30",
+            activeProjects: [
+                .init(name: "Atlas", status: "in review", lastActiveDay: "2026-08-31", evidence: ["PR open"]),
+                .init(name: "Dormant", status: "paused", lastActiveDay: "2026-08-31", evidence: []),
+            ])
+        let update = DreamMemoryUpdate(activeProjects: [
+            .init(name: "Atlas", status: "in review", evidence: ["PR open"], activeToday: true),
+            .init(name: "Dormant", status: "paused for now", evidence: [], activeToday: false),
+            .init(name: "Echo", status: "mentioned last week", evidence: [], activeToday: false),
+        ])
+
+        let merged = existing.merging(update, dreamDay: "2026-10-02",
+                                      at: try date("2026-10-03T04:00:00Z"), calendar: calendar)
+
+        let atlas = try XCTUnwrap(merged.activeProjects.first { $0.name == "Atlas" })
+        XCTAssertEqual(atlas.lastActiveDay, "2026-10-02", "an active project repeated verbatim stays fresh")
+        XCTAssertFalse(merged.activeProjects.contains { $0.name == "Dormant" },
+                       "rewording alone is not activity, so 32 idle days age it out")
+        XCTAssertFalse(merged.activeProjects.contains { $0.name == "Echo" },
+                       "a project with no work today is not inserted")
+    }
+
+    func testParseReadsProjectActivityAndToleratesItsAbsence() throws {
+        let output = """
+        {"narrative": "Release day.", "attention": [], "repeated_work": [], "suggested_checks": [],
+         "frictions": [], "top_actions": [],
+         "active_projects": [{"name": "Atlas", "status": "in review", "active_today": true, "evidence": ["PR"]},
+                             {"name": "Older", "status": "paused", "evidence": ["notes"]}],
+         "work_goals": [], "recurring_patterns": []}
+        """
+        let synthesis = try XCTUnwrap(DreamPrompts.parse(output))
+        XCTAssertEqual(synthesis.memory.activeProjects.map(\.activeToday), [true, nil])
+        XCTAssertTrue(DreamPrompts.system.contains("Every active project must include active_today"))
+    }
+
     func testParseToleratesFencedJSONAndAppliesCaps() throws {
         let output = """
         Sure! Here is the retrospective:

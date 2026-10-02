@@ -233,6 +233,10 @@ struct DreamMemoryUpdate: Equatable, Sendable {
         var name: String
         var status: String
         var evidence: [String]
+        /// True only when the analyzed day's evidence shows work on this
+        /// project; false when it is carried forward from memory. Nil when a
+        /// backend omitted it, which keeps the older text-change rule.
+        var activeToday: Bool?
     }
 
     struct Goal: Equatable, Sendable {
@@ -310,8 +314,10 @@ struct DreamMemory: Codable, Equatable, Sendable {
     }
 
     /// Deterministic merge of one night's proposed update:
-    /// - proposed projects update or insert by case-insensitive name,
-    ///   refreshing the day stamp only when new or actually changed;
+    /// - proposed projects update or insert by case-insensitive name; the day
+    ///   stamp refreshes when the model marks the project active today (or,
+    ///   when it omits the flag, when the entry is new or its text changed),
+    ///   and a project marked inactive is never inserted;
     /// - goals refresh (and new goals insert) only when the model explicitly
     ///   ties them to evidence from the analyzed day;
     /// - a goal marked expired is removed (never inserted) — the one sanctioned
@@ -340,11 +346,13 @@ struct DreamMemory: Codable, Equatable, Sendable {
                     || projects[index].evidence != evidence
                 projects[index].status = proposed.status
                 projects[index].evidence = evidence
-                if changed {
-                    projects[index].lastActiveDay = dreamDay
-                    projects[index].provenance = provenance
-                }
-            } else {
+                // Freshness follows the day's evidence, not wording: a
+                // paraphrase must not keep a dead project alive, and an
+                // active project repeated verbatim must not age out.
+                let active = proposed.activeToday ?? changed
+                if active { projects[index].lastActiveDay = dreamDay }
+                if active || changed { projects[index].provenance = provenance }
+            } else if proposed.activeToday != false {
                 projects.append(Project(name: proposed.name, status: proposed.status,
                                         lastActiveDay: dreamDay, evidence: evidence,
                                         provenance: provenance))
