@@ -104,6 +104,16 @@ struct ScreenMemoryTimeline: Codable, Equatable {
     var end: Date
     var activity: [ScreenMemoryActivityBlock]
     var screenshots: [ScreenMemoryScreenshotSummary]
+    /// True when that list stopped at the request's limit. Both lists are
+    /// oldest first, so the rest of the interval follows their last item.
+    var activityTruncated: Bool?
+    var screenshotsTruncated: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case start, end, activity, screenshots
+        case activityTruncated = "activity_truncated"
+        case screenshotsTruncated = "screenshots_truncated"
+    }
 }
 
 struct ScreenMemoryAppUsage: Codable, Equatable, Sendable {
@@ -268,10 +278,11 @@ struct SQLiteScreenMemoryReader: ScreenMemoryReading {
     func timeline(from start: Date, to end: Date, limit: Int) throws
         -> ScreenMemoryTimeline {
         try withConnection { connection in
+            // One row past the limit tells a cut list from a complete one.
             let intervalBindings: [SQLiteReadValue] = [
                 .double(start.timeIntervalSince1970),
                 .double(end.timeIntervalSince1970),
-                .int64(Int64(limit)),
+                .int64(Int64(limit) + 1),
             ]
             let activity = try connection.query("""
                 SELECT id, app, title, MAX(start, ?1), MIN(end, ?2) FROM activity_blocks
@@ -321,7 +332,10 @@ struct SQLiteScreenMemoryReader: ScreenMemoryReading {
                     privacyRedactionCount: Int(sqlite3_column_int64(row, 11)))
             }
             return ScreenMemoryTimeline(
-                start: start, end: end, activity: activity, screenshots: screenshots)
+                start: start, end: end,
+                activity: Array(activity.prefix(limit)), screenshots: Array(screenshots.prefix(limit)),
+                activityTruncated: activity.count > limit ? true : nil,
+                screenshotsTruncated: screenshots.count > limit ? true : nil)
         }
     }
 

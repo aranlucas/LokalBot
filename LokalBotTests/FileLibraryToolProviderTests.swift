@@ -4,16 +4,19 @@ import XCTest
 private final class StubScreenMemoryReader: ScreenMemoryReading {
     var timestamp = Date(timeIntervalSince1970: 1_780_000_000)
     var lastSearchRequest: ScreenMemorySearchRequest?
+    var searchHits: [ScreenMemorySearchHit]?
+    var lastTimelineStart: Date?
 
     func search(_ request: ScreenMemorySearchRequest) throws -> [ScreenMemorySearchHit] {
         lastSearchRequest = request
-        return [ScreenMemorySearchHit(
+        return searchHits ?? [ScreenMemorySearchHit(
             snapshotID: 7, capturedAt: timestamp, app: "Safari",
             windowTitle: "Report", textSource: "ocr", snippet: "«revenue» grew")]
     }
 
     func timeline(from start: Date, to end: Date, limit: Int) throws -> ScreenMemoryTimeline {
-        ScreenMemoryTimeline(
+        lastTimelineStart = start
+        return ScreenMemoryTimeline(
             start: start,
             end: end,
             activity: [ScreenMemoryActivityBlock(
@@ -438,6 +441,36 @@ final class FileLibraryToolProviderTests: XCTestCase {
         let missing = await provider.call(
             name: "get_screenshot_detail", arguments: ["snapshot_id": 99])
         XCTAssertTrue(missing.text.hasPrefix("[screenshot_not_found]"))
+    }
+
+    func testTimelineContinuesAfterATimeAndSearchCountsRepeatedCapturesOnce() async throws {
+        try screenGate.enable()
+        let repeated = ScreenMemorySearchHit(
+            snapshotID: 7, capturedAt: screenReader.timestamp, app: "Safari",
+            windowTitle: "Report", textSource: "ocr", snippet: "«revenue» grew")
+        var other = repeated
+        other.snapshotID = 9
+        other.snippet = "«revenue» target"
+        screenReader.searchHits = [repeated, repeated, repeated, other]
+
+        let search = await provider.call(name: "search_screen", arguments: ["query": "revenue", "limit": 10])
+
+        XCTAssertEqual(search.text.components(separatedBy: "\"snapshot_id\"").count - 1, 2, search.text)
+        XCTAssertEqual(screenReader.lastSearchRequest?.limit, 40, "reads past repeats to fill the limit")
+
+        var noon = DateComponents()
+        noon.year = 2026
+        noon.month = 5
+        noon.day = 27
+        noon.hour = 12
+        let after = try XCTUnwrap(Calendar.current.date(from: noon))
+        let timeline = await provider.call(
+            name: "get_timeline",
+            arguments: ["day": "2026-05-27", "after": .string(ISO8601DateFormatter().string(from: after))])
+        XCTAssertFalse(timeline.isError, timeline.text)
+        XCTAssertEqual(screenReader.lastTimelineStart, after)
+        let invalid = await provider.call(name: "get_timeline", arguments: ["day": "2026-05-27", "after": "noon"])
+        XCTAssertTrue(invalid.text.hasPrefix("[invalid_arguments]"), invalid.text)
     }
 
     func testScreenScopeBoundsSearchAndRejectsOlderDetail() async throws {

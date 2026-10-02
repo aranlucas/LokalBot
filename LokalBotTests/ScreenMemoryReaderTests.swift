@@ -119,6 +119,24 @@ final class ScreenMemoryReaderTests: XCTestCase {
         XCTAssertEqual(usage[1].durationSeconds, 1_800, accuracy: 0.001)
     }
 
+    func testTimelineSaysWhenItCutsTheDayAndContinuesFromTheLastItem() throws {
+        let end = dayStart.addingTimeInterval(86_400)
+        let complete = try reader.timeline(from: dayStart, to: end, limit: 100)
+        XCTAssertNil(complete.activityTruncated)
+        XCTAssertNil(complete.screenshotsTruncated)
+
+        let cut = try reader.timeline(from: dayStart, to: end, limit: 1)
+        XCTAssertEqual(cut.activity.map(\.app), ["Safari"])
+        XCTAssertEqual(cut.screenshots.map(\.app), ["Safari"])
+        XCTAssertEqual(cut.activityTruncated, true)
+        XCTAssertEqual(cut.screenshotsTruncated, true)
+
+        let rest = try reader.timeline(from: cut.activity[0].endedAt, to: end, limit: 1)
+        XCTAssertEqual(rest.activity.map(\.app), ["Xcode"])
+        XCTAssertEqual(rest.screenshots.map(\.app), ["Xcode"])
+        XCTAssertNil(rest.activityTruncated)
+    }
+
     func testScreenshotDetailReturnsOCRBookmarkAndNoPath() throws {
         let detail = try XCTUnwrap(reader.screenshotDetail(snapshotID: 1))
         XCTAssertEqual(detail.ocrText, "Q3 revenue grew fourteen percent")
