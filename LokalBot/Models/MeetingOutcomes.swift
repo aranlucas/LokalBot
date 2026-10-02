@@ -32,8 +32,6 @@ struct OutcomeSourceCitation: Codable, Equatable, Hashable, Identifiable, Sendab
 /// workflow status live separately in `MeetingOutcomeState`.
 struct MeetingOutcomes: Codable, Equatable, Sendable {
     static let currentSchemaVersion = 4
-    static let maximumActionItems = 10
-    static let maximumOtherActionItems = 5
 
     struct ActionItem: Codable, Equatable, Identifiable, Sendable {
         var id: String
@@ -210,23 +208,18 @@ struct MeetingOutcomes: Codable, Equatable, Sendable {
     var otherActionItems: [ActionItem] { actionItems.filter { !$0.isForUser && !$0.ownershipIsUnclear } }
     var unresolvedActionItems: [ActionItem] { actionItems.filter(\.ownershipIsUnclear) }
 
-    /// Keeps all of the user's work first, then unclear-owner actions spoken
-    /// on this Mac's microphone, then fills the remaining room with at most
-    /// five other or unclear-owner actions, ranked together by importance.
-    /// If the user alone owns more than ten actions, preserving their complete
-    /// list wins over the normal ten-item readability ceiling.
+    /// Orders the user's work first, then unclear-owner actions spoken on this
+    /// Mac's microphone, then every other or unclear-owner action, ranked
+    /// together by importance. Nothing is dropped: stored outcomes, search,
+    /// CLI/MCP, follow-ups, and briefs keep every validated action, and views
+    /// that show a short list cap their own presentation.
     func prioritizingActionItems() -> Self {
         var prioritized = self
-        let userItems = userActionItems
         let likelyUserItems = actionItems.filter(\.isLikelyUserAction)
             .sorted(by: Self.higherPriorityAction)
-            .prefix(max(0, Self.maximumActionItems - userItems.count))
-        let remainingSlots = max(0, Self.maximumActionItems - userItems.count - likelyUserItems.count)
-        let otherLimit = min(Self.maximumOtherActionItems, remainingSlots)
         let otherItems = actionItems.filter { !$0.isForUser && !$0.isLikelyUserAction }
             .sorted(by: Self.higherPriorityAction)
-            .prefix(otherLimit)
-        prioritized.actionItems = userItems + likelyUserItems + otherItems
+        prioritized.actionItems = userActionItems + likelyUserItems + otherItems
         return prioritized
     }
 

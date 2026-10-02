@@ -1,9 +1,10 @@
 import Foundation
+import NaturalLanguage
 
 /// Shared compact evidence for narrative facts and actionable outcomes. Model
 /// IDs are local to this immutable snapshot; durable artifacts use stable IDs.
 struct MeetingNotesEvidence {
-    static let ownershipPolicyVersion = "action-evidence-v2"
+    static let ownershipPolicyVersion = "action-evidence-v3"
 
     struct Unit: Codable, Equatable {
         var source: String
@@ -46,12 +47,18 @@ struct MeetingNotesEvidence {
     let units: [Unit]
     let speakers: [String: Transcript.SpeakerDescriptor]
     let roster: String
+    /// English-only wording checks may veto a task only when the meeting is
+    /// mostly English.
+    let isEnglishMeeting: Bool
 
     init(transcript: Transcript) {
         // Likely echo repeats a remote participant; the remote segment carries
         // those words, so the echo is never shown or cited as evidence.
         let transcript = transcript.markingSuspectedEcho()
         self.transcript = transcript
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(String(transcript.languageDetectionText.prefix(20_000)))
+        isEnglishMeeting = recognizer.dominantLanguage == .english
         let roster = transcript.speakerRoster
         let entries = roster.keys.sorted().enumerated().map { index, key in ("p\(index + 1)", roster[key]!) }
         speakers = Dictionary(uniqueKeysWithValues: entries)
@@ -262,7 +269,13 @@ struct MeetingNotesEvidence {
                 // Unrecognized phrasing must not lose a task; it only loses
                 // the ownership claim. Negated, conditional, or questioned
                 // undertakings and fragments without one are still not tasks.
-                guard hasCitedCommitment || OutcomeEvidencePolicy.expressesUndertaking(visibleSource),
+                // The fragment check reads English wording, so it can only
+                // veto tasks in English meetings; elsewhere every quoted
+                // commitment would look like a fragment and be deleted.
+                let undertaking = hasCitedCommitment
+                    || OutcomeEvidencePolicy.expressesUndertaking(visibleSource)
+                    || OutcomeEvidencePolicy.offersToTakeOn(visibleSource)
+                guard undertaking || !isEnglishMeeting,
                       !OutcomeEvidencePolicy.isQualified(visibleSource) else {
                     reject(item, "unsupported_commitment", kind: "actions"); continue
                 }
