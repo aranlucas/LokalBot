@@ -11,8 +11,9 @@ struct SearchCommand: AsyncParsableCommand {
             does, meetings with the most words follow. Rare words weigh more
             than common ones, exact-phrase hits come first, ties keep meeting
             recency, and one meeting contributes at most five transcript
-            hits. Quote the query ("…") to match only the exact phrase. JSON
-            by default; pass --table for a quick scan.
+            hits. Words of up to three letters or digits ("API", "Q3")
+            match only whole words. Quote the query ("…") to match only the
+            exact phrase. JSON by default; pass --table for a quick scan.
 
             This search walks the on-disk artifacts, so it works without
             launching the app.

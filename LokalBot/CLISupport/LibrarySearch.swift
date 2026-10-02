@@ -12,7 +12,8 @@ enum LibraryInputPolicy {
 /// when it contains every query word, in any order and ignoring case and
 /// accents; when none does, meetings with the most words follow. Hits with
 /// the exact phrase lead, ties keep meeting recency, and a quoted query
-/// matches only its exact phrase.
+/// matches only its exact phrase. Words of up to three letters or digits
+/// ("api", "ana", "q3") match only whole words.
 enum LibrarySearch {
     static let defaultLimit = 50
     /// One long meeting full of a common word must not fill every slot.
@@ -31,7 +32,8 @@ enum LibrarySearch {
         query: String,
         limit: Int = defaultLimit,
         meetings: [Meeting]? = nil,
-        transcriptHitsPerMeeting: Int? = maximumTranscriptHitsPerMeeting
+        transcriptHitsPerMeeting: Int? = maximumTranscriptHitsPerMeeting,
+        requireAllWords: Bool = true
     ) throws -> [SessionFormatter.SearchHit] {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         let quoted = trimmed.count > 2 && trimmed.hasPrefix("\"") && trimmed.hasSuffix("\"")
@@ -45,7 +47,7 @@ enum LibrarySearch {
         func consider(_ text: String, meeting index: Int, kind: Int, position: Int,
                       hit: (String) -> SessionFormatter.SearchHit?) {
             let haystack = folded(text)
-            let matched = terms.filter { haystack.contains($0) }
+            let matched = terms.filter { wordRange(of: $0, in: haystack) != nil }
             guard let first = matched.first else { return }
             let exact = haystack.contains(phrase)
             guard let value = (exact ? hit(phrase) : nil) ?? hit(first) else { return }
@@ -95,8 +97,10 @@ enum LibrarySearch {
         for (meeting, words) in coverage { meetingWeights[meeting] = weight(Array(words)) }
 
         // Every word somewhere in the meeting wins; when no meeting has them
-        // all, partial matches follow so a near miss is still found.
-        let complete = Set(coverage.filter { $0.value.count == terms.count }.keys)
+        // all, partial matches follow so a near miss is still found. A
+        // question's filler words need not appear, so Ask ranks every meeting
+        // by its words' weight instead.
+        let complete = requireAllWords ? Set(coverage.filter { $0.value.count == terms.count }.keys) : []
         var ranked: [(candidate: Candidate, score: Double)] = []
         for candidate in candidates where complete.isEmpty || complete.contains(candidate.meeting) {
             ranked.append((candidate, weight(candidate.matched)))
@@ -144,8 +148,32 @@ enum LibrarySearch {
         return meaningful.isEmpty ? words : meaningful
     }
 
+    /// The first match of `needle`; a short Latin word or number must stand
+    /// alone, since inside longer words ("rapid", "banana") it mostly matches
+    /// by accident.
+    static func wordRange(of needle: String, in text: String,
+                          options: String.CompareOptions = []) -> Range<String.Index>? {
+        let wholeWord = needle.count <= 3 && needle.unicodeScalars.allSatisfy(\.isASCII)
+        var start = text.startIndex
+        while start < text.endIndex, let range = text.range(of: needle, options: options, range: start..<text.endIndex) {
+            guard wholeWord else { return range }
+            let before = range.lowerBound > text.startIndex ? text[text.index(before: range.lowerBound)] : nil
+            let after = range.upperBound < text.endIndex ? text[range.upperBound] : nil
+            if !isWordCharacter(before) && !isWordCharacter(after) { return range }
+            start = text.index(after: range.lowerBound)
+        }
+        return nil
+    }
+
+    private static func isWordCharacter(_ character: Character?) -> Bool {
+        guard let character else { return false }
+        return character.isLetter || character.isNumber
+    }
+
     static func snippet(in haystack: String, around needle: String) -> String? {
-        guard let range = haystack.range(of: needle, options: [.caseInsensitive, .diacriticInsensitive]) else { return nil }
+        guard let range = wordRange(of: needle, in: haystack, options: [.caseInsensitive, .diacriticInsensitive]) else {
+            return nil
+        }
         let start = haystack.index(
             range.lowerBound,
             offsetBy: -40,

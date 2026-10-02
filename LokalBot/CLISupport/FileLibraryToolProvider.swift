@@ -75,7 +75,8 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                 name: "search_meetings",
                 description: "Word search across meeting titles, summaries, and transcripts. Meetings with every query word "
                     + "(any order, case- and accent-insensitive) come first, then partial matches; rare words weigh more, "
-                    + "exact-phrase hits lead, and ties keep recency. Wrap the query in double quotes for an exact phrase. "
+                    + "exact-phrase hits lead, and ties keep recency. Words of up to three letters or digits match "
+                    + "only whole words. Wrap the query in double quotes for an exact phrase. "
                     + "Hits carry kind, snippet, and timestamp; one meeting gives at most five transcript hits.",
                 inputSchema: [
                     "type": "object",

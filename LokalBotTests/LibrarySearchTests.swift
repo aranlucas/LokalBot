@@ -55,7 +55,8 @@ final class LibrarySearchTests: XCTestCase {
     }
 
     func testLimitCapsHits() throws {
-        XCTAssertEqual(try LibrarySearch.hits(query: "e", limit: 2).count, 2)
+        XCTAssertEqual(try LibrarySearch.hits(query: "planning").count, 2)
+        XCTAssertEqual(try LibrarySearch.hits(query: "planning", limit: 1).count, 1)
     }
 
     func testNoMatchReturnsEmpty() throws {
@@ -98,6 +99,18 @@ final class LibrarySearchTests: XCTestCase {
         let broad = try LibrarySearch.hits(query: "talked")
         XCTAssertEqual(broad.filter { $0.meeting_title == "Long sync" }.count, LibrarySearch.maximumTranscriptHitsPerMeeting)
         XCTAssertTrue(broad.contains { $0.meeting_title == "Vendor call" })
+    }
+
+    func testShortWordsMatchOnlyWholeWordsAndTheSnippetFindsThem() throws {
+        try MeetingFixture.write([
+            .init(id: UUID(), title: "Rapid growth", startedAt: Date(timeIntervalSince1970: 1_791_000_000),
+                  summary: "Rapid growth this quarter. " + String(repeating: "Filler. ", count: 20) + "The API limit stays at 50.",
+                  transcriptLines: ["Banana exports grew."]),
+        ], under: root)
+        let hits = try LibrarySearch.hits(query: "api")
+        XCTAssertEqual(hits.map(\.match_kind), ["summary"], "\"Rapid\" in the title is not the API")
+        XCTAssertTrue(hits.first?.snippet.contains("API limit") == true, hits.first?.snippet ?? "")
+        XCTAssertTrue(try LibrarySearch.hits(query: "ana").isEmpty, "\"Banana\" is not Ana")
     }
 
     func testUnicodeCaseExpansionUsesOriginalStringIndices() throws {
