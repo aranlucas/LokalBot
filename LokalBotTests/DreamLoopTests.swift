@@ -41,7 +41,7 @@ final class DreamLoopTests: XCTestCase {
 
     // MARK: - Retention and screen changes
 
-    func testScreenRetentionKeepsRecentReportsAndMeetingDerivedMemory() throws {
+    func testScreenDeletionKeepsRecentReportsAndMeetingDerivedMemory() throws {
         let store = try temporaryStore()
         let meetingID = UUID()
         // A recent report whose comparison window reaches a meeting held the
@@ -54,7 +54,7 @@ final class DreamLoopTests: XCTestCase {
             activeProjects: [.init(name: "Atlas", status: "in review", lastActiveDay: dayKey(2),
                                    provenance: recent)])
         try store.save(report: report, memory: memory)
-        // The expiring day's own report read that day's screens.
+        // The deleted day's own report read that day's screens.
         let expiring = DreamReport(
             day: dayKey(16), generatedAt: Date(), engineName: "test",
             evidenceProvenance: provenance(reportDay: dayKey(16), meetingID: UUID(), meetingDay: dayKey(16)),
@@ -64,9 +64,68 @@ final class DreamLoopTests: XCTestCase {
         try store.withScreenEvidenceMutation(on: [noon(16)]) {}
 
         XCTAssertTrue(store.hasReport(forDayKey: dayKey(2)),
-                      "expiring screens two weeks back must not revoke this week's reports")
+                      "deleting screens two weeks back must not revoke this week's reports")
         XCTAssertEqual(try store.loadMemory()?.activeProjects.map(\.name), ["Atlas"])
         XCTAssertFalse(store.hasReport(forDayKey: dayKey(16)), "the day that read those screens is revoked")
+    }
+
+    @MainActor func testScheduledRetentionKeepsDreamMemoryButDeletionStillRevokesIt() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("dream-retention-\(UUID())")
+        let previousRoot = ProcessInfo.processInfo.environment["LOKALBOT_STORAGE_ROOT"]
+        setenv("LOKALBOT_STORAGE_ROOT", root.path, 1)
+        defer {
+            if let previousRoot { setenv("LOKALBOT_STORAGE_ROOT", previousRoot, 1) } else { unsetenv("LOKALBOT_STORAGE_ROOT") }
+            try? FileManager.default.removeItem(at: root)
+        }
+        let app = AppState()
+        let store = app.dreamStore
+        let expiring = provenance(reportDay: dayKey(16), meetingID: UUID(), meetingDay: dayKey(16))
+        let project = DreamMemory.Project(name: "Atlas", status: "in review", lastActiveDay: dayKey(2),
+                                          provenance: expiring)
+        try store.save(report: DreamReport(day: dayKey(16), generatedAt: Date(), engineName: "test",
+                                           evidenceProvenance: expiring, narrative: "Old day"),
+                       memory: DreamMemory(updatedAt: Date(), lastDreamDay: dayKey(16), activeProjects: [project]))
+
+        try app.withScheduledRetention(on: [noon(16)]) {}
+        XCTAssertTrue(store.hasReport(forDayKey: dayKey(16)), "expiry is not a deletion")
+        XCTAssertEqual(try store.loadMemory()?.activeProjects.map(\.name), ["Atlas"])
+
+        try app.withPrimaryEvidenceChange(on: [noon(16)]) {}
+        XCTAssertFalse(store.hasReport(forDayKey: dayKey(16)), "deleting the captures still revokes what read them")
+        XCTAssertEqual(try store.loadMemory()?.activeProjects, [])
+    }
+
+    func testClearingMemoryDeletesEverythingAndRejectsADreamThatStartedBefore() throws {
+        let store = try temporaryStore()
+        let meetingID = UUID()
+        let recent = provenance(reportDay: dayKey(2), meetingID: meetingID, meetingDay: dayKey(2))
+        let pinned = DreamMemory.Project(name: "Atlas", status: "in review", lastActiveDay: dayKey(2),
+                                         pinned: true, provenance: recent)
+        try store.save(report: DreamReport(day: dayKey(2), generatedAt: Date(), engineName: "test",
+                                           evidenceProvenance: recent, narrative: "Recent day"),
+                       memory: DreamMemory(updatedAt: Date(), lastDreamDay: dayKey(2), activeProjects: [pinned]))
+        let before = try store.evidenceRevision()
+
+        try store.clearAll()
+
+        XCTAssertFalse(store.hasReport(forDayKey: dayKey(2)))
+        XCTAssertNil(try store.loadMemory(), "pinned entries are cleared too")
+        let staleProvenance = provenance(reportDay: dayKey(1), meetingID: meetingID, meetingDay: dayKey(1),
+                                         revision: before)
+        let stale = DreamReport(day: dayKey(1), generatedAt: Date(), engineName: "test",
+                                evidenceProvenance: staleProvenance, narrative: "Started before the clear")
+        XCTAssertThrowsError(try store.saveGenerated(report: stale, memory: nil, basedOnRevision: before)) {
+            XCTAssertTrue($0 is CancellationError)
+        }
+        XCTAssertFalse(store.hasReport(forDayKey: dayKey(1)))
+
+        let after = try store.evidenceRevision()
+        let freshProvenance = provenance(reportDay: dayKey(1), meetingID: meetingID, meetingDay: dayKey(1),
+                                         revision: after)
+        let fresh = DreamReport(day: dayKey(1), generatedAt: Date(), engineName: "test",
+                                evidenceProvenance: freshProvenance, narrative: "Started after the clear")
+        XCTAssertNoThrow(try store.saveGenerated(report: fresh, memory: nil, basedOnRevision: after))
+        XCTAssertTrue(store.hasReport(forDayKey: dayKey(1)))
     }
 
     func testDeletingTheMeetingStillRevokesEverythingThatReadIt() throws {

@@ -1769,6 +1769,27 @@ final class AppState: ObservableObject {
         }
     }
 
+    /// Scheduled retention expires screen text, titles, and agent sessions on
+    /// their own clock; nobody deleted or corrected them. Generated journals
+    /// still retract with their evidence (PRIVACY.md), but Dream reports and
+    /// work memory are long-term memory: they outlive the screen window and
+    /// go only when a source is deleted or corrected, or the memory is cleared.
+    /// Before, every pass wiped nearly all of it, because each memory change
+    /// inherits the sources of every other item.
+    func withScheduledRetention<T>(on days: [Date], _ mutation: () throws -> T) throws -> T {
+        defer { scheduledRetentionDidRemoveEvidence(on: days) }
+        purgeDigestSegmentAnswers(for: days)
+        try dayDigest.retractGeneratedJournals(for: days)
+        return try mutation()
+    }
+
+    private func scheduledRetentionDidRemoveEvidence(on days: [Date]) {
+        guard !days.isEmpty else { return }
+        dayDigest.reconsiderEvidence(for: days)
+        dailyMemoryExportScheduler.reconsider(days: days)
+        memoryRoutines.reconsiderEvidence()
+    }
+
     private func withPrimaryEvidenceChange<T>(for meetings: [Meeting], _ mutation: () throws -> T) throws -> T {
         defer { primaryEvidenceDidChange(for: meetings) }
         purgeDigestSegmentAnswers(for: meetings.map(\.startedAt))
@@ -1828,7 +1849,9 @@ final class AppState: ObservableObject {
     func applyTrackingSetting() {
         screenshots.mutateEvidence = { [weak self] days, mutation in
             guard let self else { throw CancellationError() }
-            try self.withPrimaryEvidenceChange(on: days, mutation)
+            // Only the scheduled retention pass calls this hook; explicit
+            // deletions go through `withPrimaryEvidenceChange` directly.
+            try self.withScheduledRetention(on: days, mutation)
         }
         sampler.excludedApps = { [weak self] in self?.settings.excludedAppList ?? [] }
         sampler.excludedDomains = { [weak self] in self?.settings.excludedScreenDomainList ?? [] }
@@ -2200,6 +2223,28 @@ final class AppState: ObservableObject {
         } catch {
             dreamMemory = nil
             lastError = "Could not load dream memory: \(error.localizedDescription)"
+        }
+    }
+
+    /// Settings' "Clear work memory": stops a dream in progress, deletes every
+    /// report and the work memory, and dreams only from today on, so the week
+    /// before the clear is not re-dreamed straight back into memory.
+    func clearDreamMemory() {
+        dreaming.stop()
+        do {
+            try dreamStore.clearAll()
+        } catch {
+            lastError = "Could not clear dream memory: \(error.localizedDescription)"
+        }
+        latestDreamReport = nil
+        refreshDreamMemory()
+        let today = DreamDay.key(for: Date(), calendar: .current)
+        if settings.dreamingEnabled, settings.dreamingFirstEligibleDayKey != today {
+            var updated = settings
+            updated.dreamingFirstEligibleDayKey = today
+            settings = updated  // reapplies the schedule through the settings observer
+        } else {
+            applyDreamingSetting()
         }
     }
 

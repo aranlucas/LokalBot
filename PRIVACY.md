@@ -1,6 +1,6 @@
 # LokalBot Privacy Policy
 
-Effective: October 1, 2026
+Effective: October 2, 2026
 
 LokalBot is a local-first macOS application. It has no LokalBot account,
 analytics service, advertising SDK, or telemetry backend. The project does not
@@ -74,10 +74,15 @@ release library. An explicit storage-root override still selects that folder.
 
 Dream reports and durable work memory record their source dependencies.
 Deleting or correcting those sources retracts dependent facts, including pinned
-entries. Older memory without source attribution is conservatively retracted
-when evidence changes. If cleanup fails, a durable revocation record blocks
-that memory from further use until cleanup succeeds. Exported copies remain
-where you saved them.
+entries. Scheduled retention is not a deletion for this purpose: when screen
+text, activity titles, or coding-agent records expire, the Dream reports and
+work memory derived from them remain, so they can outlast the screen-retention
+window. **Clear work memory** under Settings → Overnight review deletes every
+report and all work memory, including pinned entries. Older memory without
+source attribution is conservatively retracted when its sources are deleted or
+corrected. If cleanup fails, a durable revocation record blocks that memory
+from further use until cleanup succeeds. Exported copies remain where you saved
+them.
 
 Unchanged, app-generated daily journals retract when their primary evidence is
 removed or corrected, including scheduled capture retention. Edited and legacy

@@ -13,6 +13,7 @@ struct SettingsView: View {
     @State private var writingAdvancedExpanded = false
     @State private var writingSection = WritingSection.autocomplete
     @State private var forgettingCotypingLearning = false
+    @State private var confirmingDreamMemoryClear = false
     @State private var cotypingLearningMessage: String?
 
     private enum WritingSection: String, CaseIterable {
@@ -868,7 +869,7 @@ struct SettingsView: View {
                     get: { app.settings.dreamingEnabled },
                     set: { app.setDreamingEnabled($0) })) {
                     SettingsLabel("Review the day overnight",
-                                  help: "While your Mac is idle after the chosen time, LokalBot turns the previous day into a morning retrospective on Today. It uses your Think model; if that model is remote, the compiled evidence is sent to it.")
+                                  help: "After the chosen time, once your Mac is on power and LokalBot isn't recording or processing, LokalBot turns the previous day into a morning retrospective on Today. It uses your Think model; if that model is remote, the compiled evidence is sent to it.")
                 }
                     .settingTarget("settings.dreamingEnabled", selected: app.focusedSettingID)
                 if app.settings.dreamingEnabled {
@@ -920,9 +921,19 @@ struct SettingsView: View {
                         }
                     }
                 }
+                if app.dreamMemory != nil || app.latestDreamReport != nil {
+                    Button("Clear work memory…", role: .destructive) { confirmingDreamMemoryClear = true }
+                        .disabled(!app.libraryReady)
+                        .confirmationDialog("Clear work memory?", isPresented: $confirmingDreamMemoryClear) {
+                            Button("Clear Work Memory", role: .destructive) { app.clearDreamMemory() }
+                        } message: {
+                            Text("Deletes every overnight review and the remembered projects, goals, and patterns, including pinned ones. Reviews start again from today.")
+                        }
+                }
                 SettingsDetails("What the review uses",
                                 "It compiles meetings, outcomes, the day digest, and time totals, and keeps an evolving memory of active projects and goals. "
-                                    + "Nights the Mac slept through catch up at the next launch. Evidence and generated files stay in the local library. If no model is reachable, a plain evidence summary is written instead.")
+                                    + "Nights the Mac slept through catch up at the next launch. Evidence and generated files stay in the local library. If no model is reachable, a plain evidence summary is written instead. "
+                                    + "Reviews and memory are kept after screen text expires; deleting or correcting a meeting or capture they used removes what depended on it, and Clear work memory removes all of it.")
             }
         }
     }

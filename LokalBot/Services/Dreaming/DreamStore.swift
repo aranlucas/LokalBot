@@ -69,6 +69,9 @@ struct DreamStore {
         var invalidatedMeetings: [String: UInt64]?
         /// Activity-only changes; see `DreamEvidenceProvenance.isInvalidated`.
         var invalidatedActivityDays: [String: UInt64]?
+        /// Revision at which Settings cleared the memory. A dream that began
+        /// before it cannot write its snapshot back.
+        var memoryClearedRevision: UInt64?
     }
 
     var root: URL
@@ -386,6 +389,7 @@ struct DreamStore {
         try withLock {
             try requireAvailableEvidence()
             let state = try evidenceState()
+            if let cleared = state.memoryClearedRevision, revision < cleared { throw CancellationError() }
             if let provenance = report.evidenceProvenance {
                 guard provenance.revision <= revision, !isInvalidated(provenance, by: state) else {
                     throw CancellationError()
@@ -395,6 +399,28 @@ struct DreamStore {
             }
             if let memory { try save(memory) }
             try save(report)
+        }
+    }
+
+    /// Settings' "Clear work memory": deletes every report and the work
+    /// memory. Scheduled retention never removes them (they outlive the screen
+    /// window), so this and source deletion are how they go away.
+    func clearAll() throws {
+        try withLock {
+            var state = try evidenceState()
+            state.revision += 1
+            state.memoryClearedRevision = state.revision
+            try write(state, to: evidenceStateURL)
+            let fileManager = FileManager.default
+            if fileManager.fileExists(atPath: dreamsDirectory.path) {
+                for url in try fileManager.contentsOfDirectory(at: dreamsDirectory, includingPropertiesForKeys: nil) {
+                    try fileManager.removeItem(at: url)
+                }
+            }
+            for ext in ["json", "md"] {
+                let url = memoryDirectory.appendingPathComponent("\(Self.memoryFileName).\(ext)", isDirectory: false)
+                if fileManager.fileExists(atPath: url.path) { try fileManager.removeItem(at: url) }
+            }
         }
     }
 
