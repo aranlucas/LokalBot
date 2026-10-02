@@ -23,14 +23,36 @@ enum MeetingSummaryOutcomeSynchronizer {
         try Data(updated.utf8).write(to: url, options: .atomic)
     }
 
+    /// A correction to an action's owner, text, or due date changes only the
+    /// action list. A summary rendered from claims keeps the rest: each line
+    /// is reported speech whose speaker comes from the transcript, which a
+    /// correction leaves unchanged. Returns false when the saved summary has
+    /// no claims behind it, so its prose may still name the old owner.
+    static func applyActionCorrections(in folder: URL, outcomes: MeetingOutcomes) throws -> Bool {
+        let url = folder.appendingPathComponent("summary.md")
+        guard FileManager.default.fileExists(atPath: folder.appendingPathComponent("summary-claims.json").path),
+              let previous = try? String(contentsOf: url, encoding: .utf8) else { return false }
+        let updated = synchronize(previous, outcomes: outcomes, controlling: [actionItemsHeading])
+        if updated != previous { try Data(updated.utf8).write(to: url, options: .atomic) }
+        return true
+    }
+
     static func synchronize(
         _ summary: String,
         outcomes: MeetingOutcomes,
         template: NoteTemplate
     ) -> String {
-        let controlledHeadings = template == .meeting
-            ? [decisionsHeading, actionItemsHeading]
-            : [actionItemsHeading]
+        synchronize(
+            summary,
+            outcomes: outcomes,
+            controlling: template == .meeting ? [decisionsHeading, actionItemsHeading] : [actionItemsHeading])
+    }
+
+    private static func synchronize(
+        _ summary: String,
+        outcomes: MeetingOutcomes,
+        controlling controlledHeadings: [String]
+    ) -> String {
         let controlledSet = Set(controlledHeadings)
         let rendered = controlledHeadings.map { heading in
             MarkdownBlock(

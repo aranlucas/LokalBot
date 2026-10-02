@@ -128,6 +128,52 @@ final class ActionThreadRevisionTests: XCTestCase {
         XCTAssertTrue(summary.contains("Alice: Send the corrected report"))
     }
 
+    func testCorrectionKeepsAClaimsSummaryAndRewritesItsActionList() throws {
+        let (storage, meetings, action) = try fixture()
+        let meeting = meetings[0]
+        let folder = meeting.folderURL(in: storage)
+        let summaryURL = folder.appendingPathComponent("summary.md")
+        let narrative = "# Planning\n\n## TL;DR\n\n- **Alice:** The launch proposal needs another pass — [00:00:05]"
+        let rendered = MeetingSummaryOutcomeSynchronizer.synchronize(
+            narrative, outcomes: MeetingOutcomes(actionItems: [action]), template: .meeting)
+        try Data(rendered.utf8).write(to: summaryURL)
+        try Data("{}".utf8).write(to: folder.appendingPathComponent("summary-claims.json"))
+        let index = OutcomeIndex(storage: storage)
+        index.refresh(meetings: meetings)
+
+        XCTAssertTrue(index.correctAction(actionID: action.id, meetingID: meeting.id,
+            text: "Send the corrected proposal", owner: "Alice", due: "Friday"))
+
+        XCTAssertFalse(MeetingAttributionArtifacts.needsRefresh(in: folder))
+        var summary = try String(contentsOf: summaryURL, encoding: .utf8)
+        XCTAssertTrue(summary.contains("**Alice:** The launch proposal needs another pass"), summary)
+        XCTAssertTrue(summary.contains("### Me\nNone"), summary)
+        XCTAssertTrue(summary.contains("Alice: Send the corrected proposal — due Friday"), summary)
+        XCTAssertFalse(summary.contains(action.text), summary)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: folder.appendingPathComponent("summary-claims.json").path))
+
+        XCTAssertTrue(index.correctAction(actionID: action.id, meetingID: meeting.id,
+            text: "Send the corrected proposal", owner: "Alice", due: "Monday"))
+        summary = try String(contentsOf: summaryURL, encoding: .utf8)
+        XCTAssertTrue(summary.contains("Alice: Send the corrected proposal — due Monday"), summary)
+    }
+
+    func testDueCorrectionLeavesAFreeTextSummaryWithoutAskingForARefresh() throws {
+        let (storage, meetings, action) = try fixture()
+        let meeting = meetings[0]
+        let folder = meeting.folderURL(in: storage)
+        let summaryURL = folder.appendingPathComponent("summary.md")
+        try Data("## TL;DR\nYou will send the proposal".utf8).write(to: summaryURL)
+        let index = OutcomeIndex(storage: storage)
+        index.refresh(meetings: meetings)
+
+        XCTAssertTrue(index.correctAction(actionID: action.id, meetingID: meeting.id,
+            text: nil, owner: nil, due: "Friday"))
+
+        XCTAssertFalse(MeetingAttributionArtifacts.needsRefresh(in: folder))
+        XCTAssertEqual(try String(contentsOf: summaryURL, encoding: .utf8), "## TL;DR\nYou will send the proposal")
+    }
+
     func testCompletionAndUnrelatedFieldEditsPreserveCorrectionPrecedence() throws {
         let (storage, meetings, action) = try fixture()
         let baseline = Date().addingTimeInterval(-3_600)

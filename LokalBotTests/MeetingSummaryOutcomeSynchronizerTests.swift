@@ -127,6 +127,26 @@ final class MeetingSummaryOutcomeSynchronizerTests: XCTestCase {
         XCTAssertFalse(updated.contains("Old decision"))
     }
 
+    func testActionCorrectionsRewriteOnlyTheActionListOfAClaimsSummary() throws {
+        let folder = makeFolder()
+        let url = folder.appendingPathComponent("summary.md")
+        let previous = "## TL;DR\n\n- **Ana:** Recap.\n\n## Decisions\n\n- A lecture-specific note\n\n## Action items\n\n- [ ] Old task\n"
+        try Data(previous.utf8).write(to: url)
+        let outcomes = MeetingOutcomes(actionItems: [.init(text: "Send the report", owner: "Ana")])
+
+        XCTAssertFalse(try MeetingSummaryOutcomeSynchronizer.applyActionCorrections(in: folder, outcomes: outcomes))
+        XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), previous,
+                       "Free-text prose may still name the old owner")
+
+        try Data("{}".utf8).write(to: folder.appendingPathComponent("summary-claims.json"))
+        XCTAssertTrue(try MeetingSummaryOutcomeSynchronizer.applyActionCorrections(in: folder, outcomes: outcomes))
+        let updated = try String(contentsOf: url, encoding: .utf8)
+        XCTAssertTrue(updated.contains("## TL;DR\n\n- **Ana:** Recap."), updated)
+        XCTAssertTrue(updated.contains("## Decisions\n\n- A lecture-specific note"), updated)
+        XCTAssertTrue(updated.contains("- [ ] Ana: Send the report"), updated)
+        XCTAssertFalse(updated.contains("Old task"), updated)
+    }
+
     func testOutcomesAloneDoNotCreateACompletedSummary() throws {
         let folder = makeFolder()
         try MeetingSummaryOutcomeSynchronizer.synchronizeExisting(in: folder, outcomes: MeetingOutcomes(), template: .meeting)

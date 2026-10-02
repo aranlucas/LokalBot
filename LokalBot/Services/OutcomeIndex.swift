@@ -289,13 +289,21 @@ final class OutcomeIndex: ObservableObject {
             // its derived narrative, and another process cannot regenerate
             // memory between revocation and the durable source mutation.
             try mutateEvidence([projection.meeting]) {
-                try MeetingOutcomeStore.writeState(
-                    projection.state, to: projection.meeting.folderURL(in: storage))
-                if !projection.isArchived,
-                   previous.ownerOverride != actionState.ownerOverride
+                let folder = projection.meeting.folderURL(in: storage)
+                try MeetingOutcomeStore.writeState(projection.state, to: folder)
+                let ownerOrTextChanged = previous.ownerOverride != actionState.ownerOverride
                     || previous.ownerWasCleared != actionState.ownerWasCleared
-                    || previous.textCorrection != actionState.textCorrection {
-                    try MeetingAttributionArtifacts.invalidate(in: projection.meeting.folderURL(in: storage), preservingOutcomes: true)
+                    || previous.textCorrection != actionState.textCorrection
+                let dueChanged = previous.dueOverride != actionState.dueOverride
+                    || previous.dueWasCleared != actionState.dueWasCleared
+                guard !projection.isArchived, ownerOrTextChanged || dueChanged else { return }
+                // The summary keeps its narrative and shows the corrected action
+                // list. An older free-text summary can name the old owner in its
+                // prose, so an owner or text correction still asks for a refresh.
+                let kept = try MeetingSummaryOutcomeSynchronizer.applyActionCorrections(
+                    in: folder, outcomes: projection.correctedOutcomes)
+                if !kept, ownerOrTextChanged {
+                    try MeetingAttributionArtifacts.invalidate(in: folder, preservingOutcomes: true)
                 }
             }
             // Archived extraction stays out of Today, Ask, and action threads.
