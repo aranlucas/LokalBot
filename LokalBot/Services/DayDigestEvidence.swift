@@ -514,12 +514,15 @@ struct DayDigestEvidence: Equatable, Sendable {
         }
         for meeting in meetings {
             var lines = ["WORK SOURCE: MEETING", "Task context: \(meeting.title)"]
-            let sourceSummary = PromptContextSanitizer.sanitize(
-                meeting.sourceSummary, maxCharacters: 6_000)
-            if !sourceSummary.isEmpty { lines.append("Source summary:\n" + sourceSummary) }
+            // Outcomes lead. A busy segment cuts each source to a few hundred
+            // characters from the front, which kept the summary's generated
+            // title and provenance line and dropped every action and decision.
             let outcomes = PromptContextSanitizer.sanitize(
                 meeting.outcomes, maxCharacters: 3_000)
             if !outcomes.isEmpty { lines.append("Outcomes:\n" + outcomes) }
+            let sourceSummary = PromptContextSanitizer.sanitize(
+                Self.summaryBody(meeting.sourceSummary), maxCharacters: 6_000)
+            if !sourceSummary.isEmpty { lines.append("Source summary:\n" + sourceSummary) }
             lines.append(
                 "LOW-PRIORITY TRACE METADATA — do not summarize directly:\n"
                     + "\(time(meeting.startedAt))–\(time(meeting.endedAt)); "
@@ -553,6 +556,15 @@ struct DayDigestEvidence: Equatable, Sendable {
 
     /// Login transitions are useful in the lossless activity log, but they are
     /// not work topics and should not consume scarce overview space.
+    /// The summary without its generated title and provenance line; the
+    /// meeting event already carries both as task context and trace metadata.
+    static func summaryBody(_ summary: String) -> String {
+        SummaryPresentation.split(summary).body
+            .components(separatedBy: "\n")
+            .filter { !$0.hasPrefix("# ") }
+            .joined(separator: "\n")
+    }
+
     private func isSystemOnlySummaryActivity(app: String) -> Bool {
         app.trimmingCharacters(in: .whitespacesAndNewlines)
             .caseInsensitiveCompare("loginwindow") == .orderedSame

@@ -443,6 +443,45 @@ final class DayDigestEvidenceTests: XCTestCase {
             "Kept the critical meeting detail visible."))
     }
 
+    func testMeetingOutcomesLeadAndTheSummaryHeaderIsDroppedInBusySegments() {
+        var blocks: [ActivityBlock] = []
+        for index in 0..<24 {
+            blocks.append(ActivityBlock(
+                id: Int64(index + 1),
+                app: "Safari",
+                title: "Activity \(index)",
+                start: time(9, index),
+                end: time(9, index + 1)))
+        }
+        var summary = "# Architecture sync — Oct 2\n"
+            + "**Duration:** 45m · **App:** Zoom · **Words:** 5,210 · **Template:** Meeting · **Model:** Qwen3.5 4B\n\n"
+            + "## TL;DR\n"
+        for index in 0..<40 {
+            summary += "- Long discussion point \(index) about the storage layer and its migration plan.\n"
+        }
+        let meeting = DayDigestMeetingEvidence(
+            id: UUID(),
+            title: "Architecture sync",
+            app: "Zoom",
+            startedAt: time(9, 8),
+            endedAt: time(9, 9),
+            sourceSummary: summary,
+            outcomes: "Action items:\n- [ ] Send the migration deck (owner: Me)",
+            artifactModifiedAt: nil)
+        let evidence = DayDigestEvidence.build(
+            day: day,
+            blocks: blocks,
+            screenContexts: [],
+            meetings: [meeting],
+            calendar: calendar)
+
+        let segments = evidence.summarySegments(maxSegments: 1)
+
+        XCTAssertEqual(segments.count, 1)
+        XCTAssertTrue(segments[0].evidence.contains("Send the migration deck"), "actions survive a busy segment")
+        XCTAssertFalse(segments[0].evidence.contains("**Duration:**"))
+    }
+
     func testOverviewGeneratorExtractsEverySegmentBeforeTaskAggregation() async throws {
         let evidence = DayDigestEvidence.build(
             day: day,
