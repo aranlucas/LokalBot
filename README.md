@@ -76,6 +76,7 @@ Turn on Dictation in **Settings → Writing**, then hold **⌥ Space**, speak, a
 | Coming from… | What's different with LokalBot |
 | --- | --- |
 | [Granola](https://www.lokalbot.com/lokalbot-vs-granola) | The same bot-free capture, but transcription and summaries run on your Mac by default. No account and no subscription. |
+| [Apple Notes](https://www.lokalbot.com/lokalbot-vs-apple-notes) | Notes records your microphone, so with headphones on it misses the other side of a Zoom or Teams call. LokalBot records both sides and keeps every meeting searchable, with notes that cite the discussion. |
 | [Otter](https://www.lokalbot.com/lokalbot-vs-otter) · [Fireflies](https://www.lokalbot.com/lokalbot-vs-fireflies) | Nothing joins your call, audio stays on your Mac, and there are no minute caps. |
 | [Hyprnote (anarlog)](https://www.lokalbot.com/lokalbot-vs-hyprnote) | Local AI ships built in, with no separate model runner or API keys to set up. Dictation, a day timeline, and autocomplete come in the same app. |
 | [Meetily](https://www.lokalbot.com/lokalbot-vs-meetily) | Both are open source and run locally. Speaker separation, meeting detection, and MCP access are free here rather than Pro features, and dictation, a day timeline, and autocomplete come in the same app. |
@@ -84,7 +85,7 @@ Turn on Dictation in **Settings → Writing**, then hold **⌥ Space**, speak, a
 | [MacWhisper](https://www.lokalbot.com/lokalbot-vs-macwhisper) · [Superwhisper](https://www.lokalbot.com/lokalbot-vs-superwhisper) | Dictation comes alongside meeting notes, recall, and autocomplete, for free. For transcribing files you already have, MacWhisper is the better tool. |
 | [Wispr Flow](https://www.lokalbot.com/lokalbot-vs-wispr-flow) | Dictation and bot-free meeting notes run on your Mac, with no account, word cap, or connection required. Wispr Flow transcribes both in its cloud. |
 
-<sub>Competitor details were last verified on September 24, 2026, and October 1, 2026 for Meetily and Wispr Flow; each link has the full comparison and sources. Trademarks belong to their owners.</sub>
+<sub>Competitor details were last verified on September 24, 2026, and October 1, 2026 for Apple Notes, Meetily, and Wispr Flow; each link has the full comparison and sources. Trademarks belong to their owners.</sub>
 
 <a id="privacy--verify-it"></a>
 

@@ -33,6 +33,7 @@ Key facts:
 ## Comparisons
 
 - [LokalBot vs Granola](https://www.lokalbot.com/lokalbot-vs-granola)
+- [LokalBot vs Apple Notes](https://www.lokalbot.com/lokalbot-vs-apple-notes)
 - [LokalBot vs Otter.ai](https://www.lokalbot.com/lokalbot-vs-otter)
 - [LokalBot vs Fireflies.ai](https://www.lokalbot.com/lokalbot-vs-fireflies)
 - [LokalBot vs Hyprnote (anarlog)](https://www.lokalbot.com/lokalbot-vs-hyprnote)
