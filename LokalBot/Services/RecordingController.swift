@@ -298,9 +298,11 @@ final class RecordingController: ObservableObject {
     /// recording throughout either way.
     private static let provenSystemAudioSilentGrace: TimeInterval = 90
     private static let systemAudioReattachCooldown: TimeInterval = 10
-    /// Calendar event id + stop time of the last calendar-backed recording, so
-    /// the same scheduled meeting can't immediately re-record (helper-PID churn,
-    /// brief audio drops). See `MeetingMatcher.shouldSuppressRepeat`.
+    /// Calendar event id + stop time of the last calendar-backed recording the
+    /// user stopped, so detection cannot immediately restart a meeting they
+    /// ended. A call that ended on its own clears it; brief drops and helper
+    /// churn are absorbed by the detector's stop debounce and handoff. See
+    /// `MeetingMatcher.shouldSuppressRepeat`.
     private var lastCalendarEventID: String?
     private var lastCalendarEventEndedAt: Date?
     private static let calendarRepeatCooldown: TimeInterval = 5 * 60
@@ -687,7 +689,7 @@ final class RecordingController: ObservableObject {
         finalize(meeting, process: process, deferProcessing: deferProcessing)
         captureWarnings = []
         callObservationUnavailable = false
-        // The call may still be running; let it record again once verified.
+        // The call ended on its own; rejoining the same event records again.
         if allowsAutomaticRestart { lastCalendarEventEndedAt = nil }
     }
 

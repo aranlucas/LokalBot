@@ -35,9 +35,12 @@ struct MeetingDetectionEnd {
     }
 
     /// Neither automatic nor explicit recordings can be stopped by uncertainty.
+    /// A confident end means the call is over, so rejoining the same calendar
+    /// event is a new call and records at once. The repeat cooldown is for a
+    /// recording the user stopped.
     func action(detectorSessionID: UUID?, startedByUser _: Bool) -> Action {
         guard ownsRecording(detectorSessionID: detectorSessionID) else { return .ignore }
-        if confident { return .stop(allowsAutomaticRestart: false) }
+        if confident { return .stop(allowsAutomaticRestart: true) }
         return .ignore
     }
 }
@@ -175,9 +178,11 @@ enum MeetingMatcher {
     }
 
     /// Suppress an auto-start that would re-record the same calendar event right
-    /// after one for it ended — debounced browser-helper PID churn, brief audio
-    /// drops, a detector tick racing a manual stop. A genuinely new occurrence
-    /// has a different `externalID`, so it is never blocked.
+    /// after the user stopped its recording, such as a detector tick racing a
+    /// manual stop. A call that ended on its own never starts the cooldown: the
+    /// detector only announces a call once, so a refused rejoin would go
+    /// unrecorded to its end. A genuinely new occurrence has a different
+    /// `externalID`, so it is never blocked.
     static func shouldSuppressRepeat(eventID: String?,
                                      lastEventID: String?,
                                      lastEndedAt: Date?,

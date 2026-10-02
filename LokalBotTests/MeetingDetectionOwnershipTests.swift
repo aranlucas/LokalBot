@@ -16,7 +16,8 @@ final class MeetingDetectionOwnershipTests: XCTestCase {
         let uncertain = MeetingDetectionEnd(sessionID: owned, contentEndedAt: nil, confident: false)
         for startedByUser in [true, false] {
             XCTAssertEqual(confident.action(detectorSessionID: owned, startedByUser: startedByUser),
-                           .stop(allowsAutomaticRestart: false))
+                           .stop(allowsAutomaticRestart: true),
+                           "A call that ended can be rejoined; its next session must record")
             XCTAssertEqual(uncertain.action(detectorSessionID: UUID(), startedByUser: startedByUser), .ignore)
             XCTAssertEqual(uncertain.action(detectorSessionID: nil, startedByUser: startedByUser), .ignore)
         }
