@@ -45,6 +45,37 @@ final class TextEngineTests: XCTestCase {
         XCTAssertEqual(body["thinking_budget_tokens"] as? Int, 8_192)
     }
 
+    func testOllamaRequestsSetTheirPlannedContextAndDisableThinkingOnAZeroBudget() {
+        let plain = OllamaEngine.chatBody(model: "m", system: "s", user: "u", schema: nil, options: nil)
+        let plainOptions = plain["options"] as? [String: Any]
+        XCTAssertEqual(plainOptions?["num_ctx"] as? Int, MeetingSummaryGenerator.conservativeExternalContextTokens)
+        XCTAssertNil(plain["think"])
+        XCTAssertNil(plain["format"])
+
+        let notes = OllamaEngine.chatBody(
+            model: "m", system: "s", user: "u", schema: ["type": "object"],
+            options: TextGenerationOptions(maxTokens: 512, reasoningBudgetTokens: 0, temperature: 0))
+        let notesOptions = notes["options"] as? [String: Any]
+        XCTAssertEqual(notes["think"] as? Bool, false)
+        XCTAssertEqual(notesOptions?["num_ctx"] as? Int, MeetingSummaryGenerator.conservativeExternalContextTokens)
+        XCTAssertEqual(notesOptions?["num_predict"] as? Int, 512)
+        XCTAssertEqual(notesOptions?["temperature"] as? Double, 0)
+        XCTAssertNotNil(notes["format"])
+    }
+
+    func testDictationComposeNeverOpensAThinkingTurn() {
+        var body: [String: Any] = [:]
+        OpenAICompatibleEngine.applyGenerationOptions(
+            to: &body,
+            options: DictationTextPreparation.composeOptions,
+            defaultThinkingBudgetTokens: MainLLMRuntimePolicy.highReasoningBudgetTokens,
+            dialect: .llamaServer,
+            model: "local")
+        XCTAssertEqual(body["thinking_budget_tokens"] as? Int, 0)
+        XCTAssertEqual((body["chat_template_kwargs"] as? [String: Any])?["enable_thinking"] as? Bool, false)
+        XCTAssertEqual(body["max_tokens"] as? Int, 4_096)
+    }
+
     func testExplicitReasoningBudgetCanDisableThinkingForOneRequest() {
         var body: [String: Any] = [:]
 
