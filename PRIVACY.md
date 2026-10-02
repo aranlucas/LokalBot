@@ -257,9 +257,9 @@ default. A screen moment you explicitly save retains its encrypted pixels,
 captured text, and semantic search vector until you unsave or delete that
 moment. Excluded apps and domains and focused secure fields are skipped.
 Private and incognito browser windows are captured like any other window, so
-add a browser or site to the exclusions to keep it out. Detected credential
-text is redacted and
-causes the associated pixel payload to be dropped; no detector is perfect, so
+add a browser or site to the exclusions to keep it out. Detected credentials,
+payment card numbers, and IBANs are redacted and
+cause the associated pixel payload to be dropped; no detector is perfect, so
 exclude any source whose content should never be retained. Daily-memory exports
 and routine outputs are ordinary unencrypted Markdown files written only to
 folders you choose and remain there until you remove them. Routines have fixed
