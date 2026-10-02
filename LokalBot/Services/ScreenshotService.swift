@@ -539,7 +539,7 @@ enum ScreenPerceptualHash {
 /// Pure image transforms used by the background worker. Keeping these outside
 /// the `@MainActor` service is what makes Vision, Core Graphics, and ImageIO run
 /// away from SwiftUI's executor.
-private enum ScreenshotImageProcessing {
+enum ScreenshotImageProcessing {
     /// Hash the downscaled pixels before HEIC/OCR. Only byte-identical frames
     /// are suppressed; the much coarser perceptual hash is persisted later for
     /// visual grouping and must never discard changed OCR evidence.
@@ -559,6 +559,10 @@ private enum ScreenshotImageProcessing {
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate   // .fast is useless on dense UI text
         request.usesLanguageCorrection = false  // code/URLs shouldn't be "corrected"
+        // Without this Vision reads with its en-US default: Chinese and
+        // Japanese came back as noise (0.00 vs 0.98 character similarity),
+        // while English, German, and Serbian Latin/Cyrillic were unchanged.
+        request.automaticallyDetectsLanguage = true
         try? VNImageRequestHandler(cgImage: image).perform([request])
         return (request.results ?? [])
             .compactMap { $0.topCandidates(1).first?.string }

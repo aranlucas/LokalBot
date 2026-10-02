@@ -170,6 +170,8 @@ private actor DictationOCRWorker {
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
         request.usesLanguageCorrection = false
+        // Same as screen OCR: the en-US default cannot read CJK text.
+        request.automaticallyDetectsLanguage = true
         try? VNImageRequestHandler(cgImage: input.image).perform([request])
         return (request.results ?? [])
             .compactMap { $0.topCandidates(1).first?.string }
