@@ -121,11 +121,17 @@ enum AskLibraryContext {
             citations: citations)
     }
 
-    static func messages(question: String, contextText: String) -> [[String: String]] {
-        [
+    static func messages(question: String, contextText: String, now: Date = Date(),
+                         timeZone: TimeZone = .current) -> [[String: String]] {
+        let today = DateFormatter()
+        today.locale = Locale(identifier: "en_US_POSIX")
+        today.timeZone = timeZone
+        today.dateFormat = "EEEE, yyyy-MM-dd"
+        return [
             [
                 "role": "system",
-                "content": "You are LokalBot's meeting-library assistant. Answer the user's question using ONLY the meeting context provided. Cite the meetings you used by title and date. If the context does not contain the answer, reply exactly: I couldn't find that in your meetings.",
+                "content": "You are LokalBot's meeting-library assistant. Answer the user's question using ONLY the meeting context provided. Cite the meetings you used by title and date. If the context does not contain the answer, reply exactly: I couldn't find that in your meetings. "
+                    + "Today is \(today.string(from: now)) (\(timeZone.identifier)); meeting dates in the context are UTC days.",
             ],
             [
                 "role": "user",

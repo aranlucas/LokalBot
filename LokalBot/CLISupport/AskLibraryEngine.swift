@@ -105,10 +105,15 @@ struct URLSessionLlamaChatClient: LlamaChatClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         LocalLlamaServerAuthentication.apply(to: &request, token: token)
         request.timeoutInterval = 300
+        // The main server runs with reasoning on. A short grounded answer must
+        // not spend its whole 1,024-token allowance thinking, so disable the
+        // thinking turn as the app's own zero-budget requests do.
         request.httpBody = try JSONSerialization.data(withJSONObject: [
             "messages": messages,
             "temperature": 0.2,
             "max_tokens": 1024,
+            "thinking_budget_tokens": 0,
+            "chat_template_kwargs": ["enable_thinking": false],
         ] as [String: Any])
 
         let (data, _) = try await URLSession.shared.data(for: request)

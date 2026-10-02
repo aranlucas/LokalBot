@@ -111,9 +111,22 @@ enum ChatPrompt {
         return PromptContextSanitizer.sanitize(memory.markdown(), maxCharacters: 6_000)
     }
 
+    /// Lets the model resolve "yesterday" or "last Tuesday". It goes last in
+    /// the system prompt, so the tool list and library overview before it
+    /// stay a reusable cached prefix.
+    static func currentTimeLine(now: Date = Date(), timeZone: TimeZone = .current) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "EEEE, d MMMM yyyy, HH:mm"
+        return "Current local time: \(formatter.string(from: now)) (\(timeZone.identifier)). "
+            + "Resolve relative dates such as \"yesterday\" or \"last Tuesday\" from it."
+    }
+
     static func systemPrompt(tools: [ChatToolSpec], libraryOverview: String,
                              workMemory: String = "",
-                             inferencePrivacy: String = "Inference uses the selected backend, which may be local or remote. Do not claim that all processing stays on this Mac.") -> String {
+                             inferencePrivacy: String = "Inference uses the selected backend, which may be local or remote. Do not claim that all processing stays on this Mac.",
+                             currentTime: String = "") -> String {
         var lines: [String] = []
         lines.append("""
         You are LokalBot's assistant. You answer questions about the user's \
@@ -175,6 +188,10 @@ enum ChatPrompt {
             so verify with tools before citing it as fact.
             """)
             lines.append(workMemory)
+        }
+        if !currentTime.isEmpty {
+            lines.append("")
+            lines.append(currentTime)
         }
         return lines.joined(separator: "\n")
     }
@@ -515,10 +532,16 @@ struct ChatAgent {
 
     let engine: TextEngine
     let runner: ChatToolRunner
-    /// Hard cap on tool calls before we force a final synthesis pass.
-    var maxSteps = 4
-    /// How many prior turns of the conversation to replay as context.
-    var historyWindow = 8
+    /// Hard cap on tool calls before we force a final synthesis pass. Six
+    /// leaves room to search, then read a long meeting in a few transcript
+    /// windows; see `adaptLimits(to:)` for small-window engines.
+    var maxSteps = 6
+    /// Most recent prior messages (each user or assistant message counts
+    /// once) replayed as context, bounded again by `historyCharacters`.
+    var historyWindow = 16
+    /// Character budget for replayed messages, so a few long answers cannot
+    /// crowd the tools' observations out of the context window.
+    var historyCharacters = 12_000
     /// Ambient work-memory context (see `ChatPrompt.workMemoryContext`);
     /// empty when dreaming is off or has nothing yet.
     var workMemory = ""
@@ -529,6 +552,35 @@ struct ChatAgent {
         let text: String
     }
 
+    /// Apple's on-device model has a window of about 4K tokens, so it keeps
+    /// the earlier, smaller loop and history.
+    mutating func adaptLimits(to engine: TextEngine) {
+        var base = engine
+        while true {
+            if let leased = base as? LeasedTextEngine { base = leased.base; continue }
+            if let gated = base as? GatedTextEngine { base = gated.base; continue }
+            break
+        }
+        guard base is AppleIntelligenceEngine else { return }
+        maxSteps = 4
+        historyWindow = 8
+        historyCharacters = 4_000
+    }
+
+    /// The newest messages that fit both budgets, oldest first. A replay never
+    /// starts with an assistant message whose question was cut off.
+    static func replayedHistory(_ history: [Turn], maxMessages: Int, maxCharacters: Int) -> [Turn] {
+        var kept: [Turn] = []
+        var characters = 0
+        for turn in history.reversed() {
+            guard kept.count < maxMessages, characters + turn.text.count <= maxCharacters else { break }
+            kept.append(turn)
+            characters += turn.text.count
+        }
+        if kept.last?.role == .assistant { kept.removeLast() }
+        return kept.reversed()
+    }
+
     /// Produce the assistant's answer to `latest`, given prior `history`.
     /// `onEvent` fires on the main actor as tools start and finish.
     func respond(history: [Turn], latest: String,
@@ -537,9 +589,11 @@ struct ChatAgent {
         let system = ChatPrompt.systemPrompt(tools: runner.specs,
                                              libraryOverview: runner.libraryOverview(),
                                              workMemory: workMemory,
-                                             inferencePrivacy: ChatPrompt.inferencePrivacy(for: engine))
+                                             inferencePrivacy: ChatPrompt.inferencePrivacy(for: engine),
+                                             currentTime: ChatPrompt.currentTimeLine())
         var evidence = initialEvidence
-        var transcript: [String] = history.suffix(historyWindow).map {
+        var transcript: [String] = Self.replayedHistory(
+            history, maxMessages: historyWindow, maxCharacters: historyCharacters).map {
             "\($0.role == .user ? "User" : "Assistant"): \($0.text)"
         }
         transcript.append("User: \(latest)")
@@ -547,7 +601,7 @@ struct ChatAgent {
         for step in 0..<maxSteps {
             let observedEvidence = evidence
             let directive = step == 0
-                ? "Decide how to respond to the user's last message. If you need meeting data, reply with a single tool-call JSON object; otherwise reply with your final answer."
+                ? "Decide how to respond to the user's last message. If you need data from a tool, reply with a single tool-call JSON object; otherwise reply with your final answer."
                 : "Continue. Call another tool (one JSON object) if you still need data, or give your final answer in plain language."
             let output = try await engine.generateStreaming(
                 system: system,
@@ -599,7 +653,7 @@ struct ChatAgent {
         let finalEvidence = evidence
         let forced = try await engine.generateStreaming(
             system: system,
-            prompt: "Give your final answer now in plain language using the observations above. Begin with FINAL_ANSWER: on its own line. Do not call any more tools.",
+            prompt: "Give your final answer now in plain language using the observations above. Begin with FINAL_ANSWER: on its own line. Do not call any more tools. If the observations do not cover everything the user asked, say which part you could not check.",
             context: transcript,
             options: TextGenerationOptions(maxTokens: Self.answerTokens)) { partial in
                 if let answer = ChatPrompt.streamingAnswer(partial) {

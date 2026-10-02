@@ -154,4 +154,12 @@ final class AskLibraryContextTests: XCTestCase {
         XCTAssertTrue(messages[1]["content"]!.contains("CTX"))
         XCTAssertTrue(messages[1]["content"]!.hasSuffix("Question: Q?"))
     }
+
+    func testMessagesTellTheModelTodaysDate() throws {
+        let now = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-10-02T09:30:00Z"))
+        let zone = try XCTUnwrap(TimeZone(identifier: "Europe/Belgrade"))
+        let messages = AskLibraryContext.messages(question: "What did we decide last Tuesday?", contextText: "CTX",
+                                                  now: now, timeZone: zone)
+        XCTAssertTrue(messages[0]["content"]!.contains("Today is Friday, 2026-10-02 (Europe/Belgrade)"))
+    }
 }
