@@ -56,7 +56,9 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                 ]),
             ToolDefinition(
                 name: "get_meeting",
-                description: "Fetch one meeting as markdown. Sections: metadata, summary, transcript.",
+                description: "Fetch one meeting as markdown. Sections: metadata, summary, transcript. "
+                    + "A long transcript comes in windows of max_characters; a cut window ends with the "
+                    + "transcript_from value that continues it.",
                 inputSchema: [
                     "type": "object",
                     "properties": [
@@ -67,6 +69,14 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                         "include": [
                             "type": "string",
                             "description": "Comma-separated subset of metadata,summary,transcript. Default: all three.",
+                        ],
+                        "transcript_from": [
+                            "type": "string",
+                            "description": "Optional HH:MM:SS; the transcript starts at the first line at or after it.",
+                        ],
+                        "max_characters": [
+                            "type": "integer",
+                            "description": "Transcript characters per call (default 40,000, maximum 200,000).",
                         ],
                     ],
                     "required": ["id"],
@@ -304,6 +314,17 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                 .invalidArguments,
                 "get_meeting requires an \"id\" string (short id, full UUID, or \"latest\").")
         }
+        var options = parseInclude(arguments?["include"]?.stringValue)
+        switch boundedInteger(arguments?["max_characters"], name: "max_characters", default: 40_000, maximum: 200_000) {
+        case .success(let value): options.transcriptCharacters = value
+        case .failure(let result): return result
+        }
+        if let raw = arguments?["transcript_from"] {
+            guard let text = raw.stringValue, let seconds = SessionFormatter.seconds(fromStamp: text) else {
+                return .error(.invalidArguments, "\"transcript_from\" must be a time such as 00:42:10.")
+            }
+            options.transcriptFrom = seconds
+        }
 
         do {
             let meetings = try SessionLookup.loadAllMeetings()
@@ -325,9 +346,7 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                     .meetingNotFound,
                     "No meeting matches \"\(id)\". Use list_meetings or search_meetings to find ids.")
             }
-            return .text(SessionFormatter.getMarkdown(
-                meeting,
-                options: parseInclude(arguments?["include"]?.stringValue)))
+            return .text(SessionFormatter.getMarkdown(meeting, options: options))
         } catch {
             return .error(
                 .meetingNotFound,

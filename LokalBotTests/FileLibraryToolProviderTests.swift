@@ -294,6 +294,33 @@ final class FileLibraryToolProviderTests: XCTestCase {
         XCTAssertEqual(restoredRows.count, 2)
     }
 
+    func testGetMeetingReturnsALongTranscriptInWindows() async throws {
+        let lines = (0..<400).map { "Line \($0): " + String(repeating: "status update on the migration ", count: 6) }
+        try MeetingFixture.write([
+            .init(title: "Marathon sync", startedAt: Date(timeIntervalSince1970: 1_790_000_000), transcriptLines: lines),
+        ], under: root)
+
+        let first = await provider.call(name: "get_meeting", arguments: ["id": "latest", "max_characters": 5_000])
+
+        XCTAssertFalse(first.isError, first.text)
+        XCTAssertTrue(first.text.contains("Line 0:"))
+        XCTAssertFalse(first.text.contains("Line 399:"))
+        let marker = try XCTUnwrap(first.text.range(of: "transcript_from \""))
+        let stamp = String(first.text[marker.upperBound...].prefix(8))
+        let next = await provider.call(name: "get_meeting",
+                                       arguments: ["id": "latest", "max_characters": 5_000, "transcript_from": .string(stamp)])
+        XCTAssertFalse(next.text.contains("Line 0:"))
+        let resumed = try XCTUnwrap(SessionFormatter.seconds(fromStamp: stamp))
+        XCTAssertTrue(next.text.contains("Line \(Int(resumed) / 10):"), "resumes at the first line left out")
+
+        let short = await provider.call(name: "get_meeting", arguments: ["id": "latest", "include": "transcript",
+                                                                         "max_characters": 200_000])
+        XCTAssertTrue(short.text.contains("Line 399:"))
+        XCTAssertFalse(short.text.contains("Transcript continues"))
+        let invalid = await provider.call(name: "get_meeting", arguments: ["id": "latest", "transcript_from": "soon"])
+        XCTAssertTrue(invalid.text.hasPrefix("[invalid_arguments]"), invalid.text)
+    }
+
     func testListMeetingsFiltersByQuerySinceAndLimit() async {
         let byQuery = await provider.call(
             name: "list_meetings",
