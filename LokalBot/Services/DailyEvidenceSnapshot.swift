@@ -313,17 +313,37 @@ struct FileDailyEvidenceSource: DailyEvidenceSource {
 /// snapshot exists. A stale digest is omitted rather than allowed to disagree
 /// with newer corrections, meeting artifacts, or screen evidence.
 enum DailyEvidenceArtifacts {
+    struct GeneratedDigest: Equatable {
+        var text: String
+        /// False once the day's evidence changed after the digest was
+        /// written: new activity, or a source deleted or corrected.
+        var isCurrent: Bool
+    }
+
     static func currentDigest(
         for snapshot: DailyEvidenceSnapshot,
         root: URL,
         calendar: Calendar
     ) -> String? {
+        generatedDigest(for: snapshot, root: root, calendar: calendar)
+            .flatMap { $0.isCurrent ? $0.text : nil }
+    }
+
+    /// The day's unedited generated digest and whether it still matches the
+    /// day's evidence. Callers show only a current one, but can say that an
+    /// out-of-date one exists.
+    static func generatedDigest(
+        for snapshot: DailyEvidenceSnapshot,
+        root: URL,
+        calendar: Calendar
+    ) -> GeneratedDigest? {
         let dayKey = DreamDay.key(for: snapshot.day, calendar: calendar)
         let url = root.appendingPathComponent("journal/\(dayKey).md")
         guard let text = try? String(contentsOf: url, encoding: .utf8),
               !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               let metadata = DayDigestGenerationMetadataStore.load(for: url),
-              metadata.evidenceSignature != nil
+              let signature = metadata.evidenceSignature,
+              DayDigestGenerationMetadataStore.journalMatches(metadata, at: url)
         else { return nil }
         let detailed: DailyEvidenceSnapshot
         if snapshot.coverage.contains([.activityBlocks, .screenContexts]) {
@@ -334,8 +354,8 @@ enum DailyEvidenceArtifacts {
                           includeScreenSummary: false) else { return nil }
             detailed = loaded
         }
-        return DayDigestGenerationMetadataStore.isCurrent(
-            for: url, evidenceSignature: detailed.digestEvidence(calendar: calendar).contentSignature)
-            ? text : nil
+        return GeneratedDigest(
+            text: text,
+            isCurrent: detailed.digestEvidence(calendar: calendar).contentSignature == signature)
     }
 }

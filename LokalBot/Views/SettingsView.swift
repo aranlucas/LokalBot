@@ -722,7 +722,7 @@ struct SettingsView: View {
                             }
                         })) {
                         SettingsLabel("Export a daily memory note",
-                                      help: "Writes one unencrypted Markdown file per day with the digest, meeting links, app time, and saved moments. Existing non-LokalBot content is never overwritten.")
+                                      help: "Writes one unencrypted Markdown file per day with the digest, meeting links, app time, and saved moments. A day missed while your Mac was asleep is written later. Existing non-LokalBot content is never overwritten.")
                     }
                     .settingTarget("settings.dailyMemoryExportEnabled", selected: app.focusedSettingID)
                     if app.settings.dailyMemoryExportEnabled {

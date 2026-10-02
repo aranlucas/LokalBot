@@ -1806,14 +1806,20 @@ final class AppState: ObservableObject {
     }
 
     private func dayDigestDidChange(on day: Date) {
+        let calendar = Calendar.current
         // Export may have run while the replacement digest was still awaiting
         // a model. Reopen consumers after the journal and provenance are saved.
-        dailyMemoryExportScheduler.reconsider(day: day)
+        // A past day's note is rewritten only while all of that day is still
+        // retained: a digest rebuilt from what retention left would replace
+        // a fuller note.
+        let retainedSince = Date().addingTimeInterval(-Double(settings.retentionDays) * 86_400)
+        if calendar.startOfDay(for: day) >= retainedSince {
+            dailyMemoryExportScheduler.digestDidChange(on: day)
+        }
         memoryRoutines.reconsiderEvidence()
         // A dream only reads finished days' digests. Today's digest is
         // refreshed many times a day and no report depends on it yet; a past
         // day's regenerated digest revokes exactly that day's report.
-        let calendar = Calendar.current
         guard calendar.startOfDay(for: day) < calendar.startOfDay(for: Date()) else { return }
         invalidateDreams(affectedDays: [day], comparisonWindowDays: 1, activityOnly: true,
                          sourceDayKeys: [DreamDay.key(for: day, calendar: calendar)])
@@ -1883,7 +1889,7 @@ final class AppState: ObservableObject {
         case .obsidian: .obsidian
         case .logseq: .logseq
         }
-        dailyMemoryExportScheduler.configure(configuration) { day in
+        dailyMemoryExportScheduler.configure(configuration) { day, pass in
             let destination = URL(
                 fileURLWithPath: destinationPath,
                 isDirectory: true)
@@ -1891,11 +1897,18 @@ final class AppState: ObservableObject {
             let service = DailyMemoryExportService(
                 source: FileDailyMemoryExportSource(root: storageRoot),
                 calendar: .current)
-            _ = try service.export(
-                day: day,
-                configuration: DailyMemoryExportConfiguration(
-                    destinationDirectory: destination,
-                    format: exportKind))
+            do {
+                _ = try service.export(
+                    day: day,
+                    configuration: DailyMemoryExportConfiguration(
+                        destinationDirectory: destination,
+                        format: exportKind),
+                    pass: pass)
+            } catch is DailyMemoryExportError where !Calendar.current.isDateInToday(day) {
+                // A past day's file is the user's: their own note in that
+                // folder, or one they edited. It stays as it is, and no later
+                // export touches it, so there is nothing to report.
+            }
         } onError: { [weak self] message in
             self?.lastError = message
         }

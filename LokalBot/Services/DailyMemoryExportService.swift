@@ -11,6 +11,15 @@ struct DailyMemoryExportConfiguration: Equatable {
     var format: DailyMemoryExportKind
 }
 
+enum DailyMemoryExportPass: Equatable, Sendable {
+    /// Writes or refreshes the day's note.
+    case refresh
+    /// A past day the export missed, because the Mac was asleep or off at
+    /// the export hour. Written only if the folder has no file for that day
+    /// and something was recorded.
+    case catchUp
+}
+
 enum DailyMemoryExportError: LocalizedError, Equatable {
     case destinationCollision(URL)
     case generatedFileModified(URL)
@@ -38,10 +47,18 @@ struct DailyMemoryMeetingReference: Equatable {
 struct DailyMemoryExportSnapshot: Equatable {
     var day: Date
     var digest: String?
+    /// A digest exists but no longer matches the day's evidence, so it is
+    /// left out until the digest is updated.
+    var digestIsOutOfDate = false
     var meetings: [DailyMemoryMeetingReference]
     var savedMoments: [ScreenMemorySavedMoment]
     var stats: ScreenMemoryDaySummary
     var appUsage: [ScreenMemoryAppUsage]
+
+    var isEmpty: Bool {
+        digest == nil && meetings.isEmpty && savedMoments.isEmpty && appUsage.isEmpty
+            && stats.trackedSeconds == 0 && stats.screenshotCount == 0
+    }
 }
 
 /// Injection seam keeps rendering and atomic file behavior testable without a
@@ -78,7 +95,7 @@ struct FileDailyMemoryExportSource: DailyMemoryExportSource {
             for: day,
             meetings: allMeetings,
             includeDetailedActivity: false)
-        let digest = DailyEvidenceArtifacts.currentDigest(
+        let digest = DailyEvidenceArtifacts.generatedDigest(
             for: evidence,
             root: root,
             calendar: calendar)
@@ -92,7 +109,8 @@ struct FileDailyMemoryExportSource: DailyMemoryExportSource {
 
         return DailyMemoryExportSnapshot(
             day: evidence.day,
-            digest: digest,
+            digest: digest?.isCurrent == true ? digest?.text : nil,
+            digestIsOutOfDate: digest?.isCurrent == false,
             meetings: meetings,
             savedMoments: evidence.savedMoments,
             stats: evidence.stats,
@@ -107,6 +125,8 @@ struct DailyMemoryExportService {
     enum Outcome: Equatable {
         case written(URL)
         case unchanged(URL)
+        /// A catch-up found a file already there, or nothing recorded.
+        case skipped
     }
 
     var source: any DailyMemoryExportSource
@@ -128,18 +148,21 @@ struct DailyMemoryExportService {
     /// the current file still matches that hash, so a user edit made after
     /// generation is never overwritten. Identical content keeps its mtime;
     /// changed app-owned content uses same-directory atomic replacement.
-    func export(day: Date, configuration: DailyMemoryExportConfiguration) throws -> Outcome {
+    func export(day: Date, configuration: DailyMemoryExportConfiguration,
+                pass: DailyMemoryExportPass = .refresh) throws -> Outcome {
         let start = calendar.startOfDay(for: day)
         let end = calendar.date(byAdding: .day, value: 1, to: start)
             ?? start.addingTimeInterval(86_400)
-        let snapshot = try source.snapshot(
-            for: start,
-            interval: DateInterval(start: start, end: end))
-        let text = render(snapshot, format: configuration.format)
-        let data = Data(text.utf8)
         let outputURL = configuration.destinationDirectory.appendingPathComponent(
             fileName(for: start, format: configuration.format),
             isDirectory: false)
+        if pass == .catchUp, fileManager.fileExists(atPath: outputURL.path) { return .skipped }
+        let snapshot = try source.snapshot(
+            for: start,
+            interval: DateInterval(start: start, end: end))
+        if pass == .catchUp, snapshot.isEmpty { return .skipped }
+        let text = render(snapshot, format: configuration.format)
+        let data = Data(text.utf8)
         try Task.checkCancellation()
         try fileManager.createDirectory(
             at: configuration.destinationDirectory,
@@ -195,9 +218,10 @@ struct DailyMemoryExportService {
 
         let digest = snapshot.digest?
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        sections.append("## Digest\n\n" + ((digest?.isEmpty == false)
-            ? digest!
-            : "_No day digest was generated._"))
+        let missingDigest = snapshot.digestIsOutOfDate
+            ? "_The day's digest is out of date. It is added here once it is updated._"
+            : "_No day digest was generated._"
+        sections.append("## Digest\n\n" + ((digest?.isEmpty == false) ? digest! : missingDigest))
         sections.append(meetingsSection(snapshot.meetings))
         sections.append(savedMomentsSection(snapshot.savedMoments))
         sections.append(statsSection(snapshot))
