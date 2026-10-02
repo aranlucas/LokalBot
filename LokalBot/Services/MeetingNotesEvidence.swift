@@ -208,7 +208,8 @@ struct MeetingNotesEvidence {
                   let importance = item["importance"] as? Int, (1...5).contains(importance) else {
                 reject(item, "invalid_action", kind: "actions"); continue
             }
-            let due = Self.spokenDue(rawDue, sourceIDs: Set(visible.keys))
+            let citedText = ids.compactMap { visible[$0]?.map(\.text).joined(separator: " ") }.joined(separator: " ")
+            let due = Self.spokenDue(rawDue, sourceIDs: Set(visible.keys), citedText: citedText)
             let quote = (item["quote"] as? String).map { raw -> String in
                 var value = normalized(raw)
                 // Some providers wrap a copied clause in quotation marks.
@@ -349,11 +350,20 @@ struct MeetingNotesEvidence {
     /// The due date as spoken, or "" when there is none. The built-in
     /// Qwen3.5 4B sometimes copied a cited source ID ("s268") into `due`,
     /// which rendered as "due s268".
-    static func spokenDue(_ raw: String, sourceIDs: Set<String>) -> String {
+    static func spokenDue(_ raw: String, sourceIDs: Set<String>, citedText: String? = nil) -> String {
         let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         let bare = value.trimmingCharacters(in: CharacterSet(charactersIn: "[]()"))
         if sourceIDs.contains(bare) || bare.range(of: #"^[sS]\d+$"#, options: .regularExpression) != nil {
             return ""
+        }
+        // A year nobody said is the model's guess, not a deadline: an invented
+        // "2024-01-01" resolved into the past and topped Today as overdue. The
+        // action stays; only the unsupported due phrase goes.
+        if let citedText, let years = try? NSRegularExpression(pattern: #"(?<!\d)(?:19|20)\d{2}(?!\d)"#) {
+            for match in years.matches(in: value, range: NSRange(value.startIndex..., in: value)) {
+                guard let range = Range(match.range, in: value) else { continue }
+                if !citedText.contains(value[range]) { return "" }
+            }
         }
         return value
     }

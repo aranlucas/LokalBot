@@ -124,6 +124,20 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertEqual(MeetingNotesEvidence.spokenDue("sprint 12", sourceIDs: []), "sprint 12")
     }
 
+    func testDueWithAYearNobodySaidIsDroppedButTheActionStays() async throws {
+        var invented = action()
+        invented["due"] = "2024-01-01"
+        let script = Script([.text(try response(notes: [note()], actions: [invented]))])
+        let result = try await generate(script)
+        XCTAssertEqual(result.outcomes.userActionItems.count, 1)
+        XCTAssertNil(result.outcomes.userActionItems[0].due)
+
+        let said = "I will ship the update by March 2027, not on Friday."
+        XCTAssertEqual(MeetingNotesEvidence.spokenDue("2024-01-01", sourceIDs: [], citedText: said), "")
+        XCTAssertEqual(MeetingNotesEvidence.spokenDue("March 2027", sourceIDs: [], citedText: said), "March 2027")
+        XCTAssertEqual(MeetingNotesEvidence.spokenDue("Friday", sourceIDs: [], citedText: said), "Friday")
+    }
+
     func testRepairKeepsValidRecordsAndOnlySendsRejectedSources() async throws {
         var transcript = transcript
         transcript.segments += (3..<12).map { index in
