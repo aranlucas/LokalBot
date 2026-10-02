@@ -334,6 +334,24 @@ final class SearchIndex {
         }.filter { !locallyDeletedMeetingIDs.contains($0.meetingID) }
     }
 
+    /// Every meeting with a row matching the query. The Meetings list filter
+    /// shows all matches; ranked search fetched 2,000 rows and kept the first
+    /// 40 meetings, so a common word hid older ones.
+    func matchingMeetingIDs(_ query: String) -> Set<UUID> {
+        guard let match = Self.ftsQuery(from: query, matchAll: true, dropStopWords: false),
+              let database else { return [] }
+        let ids: [UUID] = database.query("""
+            SELECT DISTINCT meeting_id FROM docs WHERE docs MATCH ?1
+              AND NOT EXISTS (
+                  SELECT 1 FROM deleted_meetings AS deleted
+                  WHERE deleted.meeting_id = docs.meeting_id
+              )
+            """, bind: [match]) { statement in
+            sqlite3_column_text(statement, 0).flatMap { UUID(uuidString: String(cString: $0)) }
+        }
+        return Set(ids).subtracting(locallyDeletedMeetingIDs)
+    }
+
     /// Embeddings historically retained only the first 300 characters and lost
     /// source kind. Recover the matching document before choosing a reading excerpt.
     func semanticPassage(meetingID: UUID, start: TimeInterval, text: String, query: String) -> Hit? {

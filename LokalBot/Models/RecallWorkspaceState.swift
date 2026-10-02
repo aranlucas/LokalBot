@@ -103,6 +103,19 @@ extension RecallSearch {
     struct Result: Sendable {
         var meetings: [MeetingRecallGroup] = []
         var screens: [ScreenRecallGroup] = []
+        /// More meetings or screen sources matched than are listed.
+        var isTruncated = false
+
+        /// Pass one group more than `displayLimit` so a cut list is detected.
+        mutating func setMeetings(_ groups: [MeetingRecallGroup]) {
+            isTruncated = isTruncated || groups.count > displayLimit
+            meetings = Array(groups.prefix(displayLimit))
+        }
+
+        mutating func setScreens(_ groups: [ScreenRecallGroup]) {
+            isTruncated = isTruncated || groups.count > displayLimit
+            screens = Array(groups.prefix(displayLimit))
+        }
     }
 
     static func readableScreens(_ hits: [ActivityStore.OCRHit], query: String) -> [ActivityStore.OCRHit] {
@@ -117,7 +130,7 @@ extension RecallSearch {
 
     /// Group adjacent moments per source/day, then restore relevance order.
     /// Each timestamp is classified once; long sessions avoid quadratic scans.
-    static func screenGroups(_ hits: [ActivityStore.OCRHit], limit: Int = 40) -> [ScreenRecallGroup] {
+    static func screenGroups(_ hits: [ActivityStore.OCRHit], limit: Int = displayLimit) -> [ScreenRecallGroup] {
         guard limit > 0 else { return [] }
         struct Source: Hashable { let app: String; let window: String; let day: Date }
         let calendar = Calendar.current
@@ -168,7 +181,7 @@ extension RecallSearch {
             if searchMeetings {
                 let hits = SearchIndex(databaseURL: url, readOnly: true)
                     .search(query, kind: facet.kind, limit: 2_000, meetingIDs: scopedMeetingIDs)
-                result.meetings = groups(readable(hits, query: query))
+                result.setMeetings(groups(readable(hits, query: query), limit: displayLimit + 1))
             }
             guard !Task.isCancelled, searchScreens else { return result }
             var hits = store.searchOCR(query, limit: 2_000, filter: screenFilter, groupResults: false)
@@ -186,7 +199,7 @@ extension RecallSearch {
             }
             hits += saved.map { ActivityStore.OCRHit(snapshotID: $0.snapshotID, ts: $0.ts, app: $0.app,
                                                     windowTitle: $0.windowTitle, snippet: $0.note) }
-            result.screens = screenGroups(readableScreens(hits, query: query))
+            result.setScreens(screenGroups(readableScreens(hits, query: query), limit: displayLimit + 1))
             return result
         }
         guard !Task.isCancelled else { return Result() }
@@ -202,7 +215,8 @@ extension RecallSearch {
                 }
             }
             guard !Task.isCancelled else { return Result() }
-            result.meetings = fusedMeetings(keyword: result.meetings.flatMap(\.matches), semantic: passages)
+            result.setMeetings(fusedMeetings(keyword: result.meetings.flatMap(\.matches), semantic: passages,
+                                             limit: displayLimit + 1))
         }
         if searchScreens {
             let semantic = await app.embeddingIndex.searchScreen(query, filter: filter, limit: 200)
@@ -211,7 +225,7 @@ extension RecallSearch {
             let keywordByID = Dictionary(hits.map { ($0.snapshotID, $0) }, uniquingKeysWith: { first, _ in first })
             let semanticByID = Dictionary(semantic.map { ($0.snapshotID, $0) }, uniquingKeysWith: { first, _ in first })
             let ranked = ScreenSearchRanker.fuse(keyword: hits, semantic: semantic, limit: 2_000)
-            result.screens = screenGroups(ranked.compactMap { match in
+            result.setScreens(screenGroups(ranked.compactMap { match in
                 if let hit = keywordByID[match.snapshotID] { return hit }
                 guard let hit = semanticByID[match.snapshotID],
                       let shot = app.activityStore.screenshot(id: match.snapshotID) else { return nil }
@@ -220,7 +234,7 @@ extension RecallSearch {
                                                    windowTitle: shot.windowTitle, snippet: excerpt)
                 result.isSemantic = true
                 return result
-            })
+            }, limit: displayLimit + 1))
         }
         return result
     }

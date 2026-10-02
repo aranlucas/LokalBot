@@ -218,8 +218,7 @@ struct MeetingListView: View {
         searchTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(160))
             guard !Task.isCancelled else { return }
-            let allowed = Set(app.meetings.map(\.id))
-            contentMatches = Set(RecallSearch.meetings(needle, index: app.searchIndex, meetingIDs: allowed).map(\.id))
+            contentMatches = app.searchIndex.matchingMeetingIDs(needle)
             let visible = Set(groupedMeetings.flatMap(\.items).map(\.id))
             app.selectedMeetingIDs.formIntersection(visible)
         }

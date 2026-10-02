@@ -9,10 +9,15 @@ struct MeetingRecallGroup: Identifiable, Sendable {
     }
 }
 
-/// Shared grouping and lexical retrieval for Ask, Quick Recall and the library.
-/// Limits are applied to groups after ranking. The UI says "Showing" because
-/// the index fetch is bounded; it never presents the sampled count as a total.
+/// Shared grouping and lexical retrieval for Ask and Quick Recall. Limits are
+/// applied to groups after ranking, and a result that hit one says so. The
+/// Meetings list filter uses `SearchIndex.matchingMeetingIDs`, which has none.
 enum RecallSearch {
+    /// Meetings, or screen sources, that Ask lists for one search. A search
+    /// that finds more sets `Result.isTruncated`, so the count is not shown
+    /// as a total.
+    static let displayLimit = 40
+
     static func readable(_ hits: [SearchIndex.Hit], query: String) -> [SearchIndex.Hit] {
         hits.compactMap { hit in
             guard let snippet = RecallPassage.excerpt(hit.snippet, query: query) else { return nil }
@@ -21,7 +26,7 @@ enum RecallSearch {
         }
     }
 
-    static func groups(_ hits: [SearchIndex.Hit], limit: Int = 40) -> [MeetingRecallGroup] {
+    static func groups(_ hits: [SearchIndex.Hit], limit: Int = displayLimit) -> [MeetingRecallGroup] {
         var order: [UUID] = []
         var groups: [UUID: [SearchIndex.Hit]] = [:]
         for hit in hits {
@@ -35,7 +40,7 @@ enum RecallSearch {
     /// bury a relevant semantic-only meeting. Preserve lexical excerpts and
     /// deterministically deduplicate the same source passage across both lists.
     static func fusedMeetings(keyword: [SearchIndex.Hit], semantic: [SearchIndex.Hit],
-                              limit: Int = 40) -> [MeetingRecallGroup] {
+                              limit: Int = displayLimit) -> [MeetingRecallGroup] {
         guard limit > 0 else { return [] }
         let lexical = groups(keyword, limit: Int.max)
         let conceptual = groups(semantic, limit: Int.max)
@@ -65,11 +70,5 @@ enum RecallSearch {
             }
             return MeetingRecallGroup(id: id, matches: unique)
         }
-    }
-
-    @MainActor
-    static func meetings(_ query: String, index: SearchIndex, kind: SearchIndex.Kind? = nil,
-                         meetingIDs: Set<UUID>? = nil) -> [MeetingRecallGroup] {
-        groups(index.search(query, kind: kind, limit: 2_000, meetingIDs: meetingIDs))
     }
 }
