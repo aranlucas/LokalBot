@@ -80,6 +80,7 @@ actor LlamaServer {
     private var loadedModelPath: String?
     private var loadedAuthenticationToken: String?
     private var residencyGeneration: UUID?
+    private var outputTail: LlamaServerOutputTail?
     private let startup = AsyncSingleFlight()
     private let ownerID = UUID()
     private var ownershipLock: LocalRuntimeOwnershipLock?
@@ -232,7 +233,10 @@ actor LlamaServer {
                 "--api-key", authenticationToken,
             ] + extraArgs
             process.standardOutput = FileHandle.nullDevice
-            process.standardError = FileHandle.nullDevice
+            let output = LlamaServerOutputTail()
+            let errorPipe = Pipe()
+            output.attach(to: errorPipe)
+            process.standardError = errorPipe
             process.terminationHandler = { [weak self] process in
                 let processIdentifier = process.processIdentifier
                 let status = process.terminationStatus
@@ -246,6 +250,7 @@ actor LlamaServer {
             }
             try process.run()
             self.process = process
+            outputTail = output
             processStartedAt = Date()
             loadedModelPath = url.path
             loadedAuthenticationToken = authenticationToken
@@ -266,11 +271,16 @@ actor LlamaServer {
             for _ in 0..<240 {
                 try await Task.sleep(for: .milliseconds(500))
                 if !process.isRunning {
-                    throw ServerError.failedToStart("llama-server exited during startup")
+                    throw ServerError.failedToStart(
+                        await startupFailure("llama-server exited during startup", output: output))
                 }
-                if await healthy() { return }
+                if await healthy() {
+                    output.serverIsReady()
+                    return
+                }
             }
-            throw ServerError.failedToStart("server did not become healthy in time")
+            throw ServerError.failedToStart(
+                await startupFailure("server did not become healthy in time", output: output))
         } catch {
             await ModelResidency.shared.cancelLoad(loadReservation)
             await stop()
@@ -293,6 +303,17 @@ actor LlamaServer {
         return Self.saturatingAdd(total, max(0, runtimeAllowanceBytes))
     }
 
+    /// Says why a start failed, from the server's own output; the full tail
+    /// goes to the diagnostics log. No request has reached it yet.
+    private func startupFailure(_ summary: String, output: LlamaServerOutputTail) async -> String {
+        await output.settle()
+        let lines = output.lines
+        if !lines.isEmpty {
+            lokalbotLog("llama-server startup output port=\(port): " + lines.joined(separator: " | "))
+        }
+        return output.reason.map { "\(summary): \($0)" } ?? summary
+    }
+
     private nonisolated static func saturatingAdd(_ lhs: Int64, _ rhs: Int64) -> Int64 {
         let result = lhs.addingReportingOverflow(rhs)
         return result.overflow ? .max : result.partialValue
@@ -306,6 +327,7 @@ actor LlamaServer {
         loadedModelPath = nil
         loadedAuthenticationToken = nil
         residencyGeneration = nil
+        outputTail = nil
         if let old {
             removePidMarker(ifMatching: old.processIdentifier)
             if old.isRunning {
@@ -346,11 +368,9 @@ actor LlamaServer {
         let uptimeDescription = uptime.map {
             String(format: "%.2fs", $0)
         } ?? "unknown"
-        lokalbotLog(
-            "llama-server terminated unexpectedly port=\(port) pid=\(processIdentifier) "
-                + "model=\(model) reason=\(reason) status=\(status) uptime="
-                + uptimeDescription)
+        let output = outputTail
         let generation = residencyGeneration
+        outputTail = nil
         process = nil
         processStartedAt = nil
         loadedModelPath = nil
@@ -363,6 +383,17 @@ actor LlamaServer {
                 id: residencyID,
                 ifGenerationMatches: generation)
         }
+        // A failed start reports its own output (`startupFailure`).
+        var lastOutput: [String] = []
+        if let output, output.isReady {
+            await output.settle()
+            lastOutput = output.lines
+        }
+        lokalbotLog(
+            "llama-server terminated unexpectedly port=\(port) pid=\(processIdentifier) "
+                + "model=\(model) reason=\(reason) status=\(status) uptime="
+                + uptimeDescription
+                + (lastOutput.isEmpty ? "" : " output: " + lastOutput.joined(separator: " | ")))
     }
 
     private func stopRecordedServerIfOwned() async {
@@ -613,4 +644,103 @@ final class LocalRuntimeOwnershipLock {
     }
 
     deinit { close(descriptor) }
+}
+
+/// The tail of llama-server's stderr, kept in memory to explain a failure.
+/// Until the first health check passes the server has seen no request, so
+/// every line is kept and a failed start can say why. After that only crash
+/// lines are kept: request errors can echo request text, and diagnostic logs
+/// never hold transcripts or screen text (PRIVACY.md).
+final class LlamaServerOutputTail: @unchecked Sendable {
+    static let maximumLines = 12
+    static let maximumLineCharacters = 300
+    static let crashMarkers = ["ggml_assert", "ggml_metal", "out of memory", "insufficient memory",
+                               "failed to allocate", "terminating", "abort", "segmentation fault"]
+
+    private let lock = NSLock()
+    private var pending = Data()
+    private var kept: [String] = []
+    private var keepsEveryLine = true
+    private var finished = false
+
+    func attach(to pipe: Pipe) {
+        pipe.fileHandleForReading.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            guard let self, !data.isEmpty else {
+                handle.readabilityHandler = nil
+                self?.finish()
+                return
+            }
+            self.append(data)
+        }
+    }
+
+    /// The server passed its first health check.
+    func serverIsReady() {
+        lock.withLock { keepsEveryLine = false }
+    }
+
+    func append(_ data: Data) {
+        lock.withLock {
+            pending.append(data)
+            while let newline = pending.firstIndex(of: UInt8(ascii: "\n")) {
+                keep(String(decoding: pending[pending.startIndex..<newline], as: UTF8.self))
+                pending.removeSubrange(pending.startIndex...newline)
+            }
+            // An unterminated line cannot grow without bound.
+            if pending.count > 4 * Self.maximumLineCharacters {
+                keep(String(decoding: pending, as: UTF8.self))
+                pending.removeAll()
+            }
+        }
+    }
+
+    /// End of output: the process exited.
+    func finish() {
+        lock.withLock {
+            if !pending.isEmpty {
+                keep(String(decoding: pending, as: UTF8.self))
+                pending.removeAll()
+            }
+            finished = true
+        }
+    }
+
+    var isReady: Bool { lock.withLock { !keepsEveryLine } }
+    var isFinished: Bool { lock.withLock { finished } }
+    var lines: [String] { lock.withLock { kept } }
+
+    /// The first line that reports an error; the lines after it are usually
+    /// its consequences ("failed to load model", "exiting").
+    var reason: String? {
+        let lines = self.lines
+        return lines.first { line in
+            ["error", "failed", "ggml_assert"].contains { line.localizedCaseInsensitiveContains($0) }
+        } ?? lines.last
+    }
+
+    /// Waits briefly for the last output of an exited process.
+    func settle() async {
+        for _ in 0..<10 where !isFinished {
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+    }
+
+    /// Caller holds `lock`.
+    private func keep(_ raw: String) {
+        var line = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        // "0.00.077.284 E gguf_init_from_reader: …": drop the time and level.
+        if let prefix = line.range(of: #"^[0-9.]+ [A-Z] "#, options: .regularExpression) {
+            line.removeSubrange(prefix)
+        }
+        guard !line.isEmpty else { return }
+        if !keepsEveryLine {
+            let lowered = line.lowercased()
+            // A JSON parse error quotes the text it was reading.
+            guard Self.crashMarkers.contains(where: lowered.contains),
+                  !lowered.contains("last read") else { return }
+        }
+        kept.append(String(line.prefix(Self.maximumLineCharacters)))
+        if kept.count > Self.maximumLines { kept.removeFirst(kept.count - Self.maximumLines) }
+    }
 }
