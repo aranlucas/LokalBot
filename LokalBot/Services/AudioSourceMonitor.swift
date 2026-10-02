@@ -57,8 +57,8 @@ final class AudioSourceMonitor: ObservableObject {
 
     /// Pure media/music players. They emit continuous output but are never
     /// meetings, so — unlike an unknown app — they must not become recording
-    /// candidates. Browsers are intentionally absent: a web
-    /// meeting (Meet/Jitsi/Whereby) runs inside one, so those stay recordable.
+    /// candidates. Browsers are intentionally absent: a Google Meet call
+    /// runs inside one, so it stays recordable.
     nonisolated static let mediaBundleIDs: Set<String> = [
         // Streaming music
         "com.spotify.client",          // Spotify

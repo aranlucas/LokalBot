@@ -475,10 +475,13 @@ struct SettingsView: View {
                                       help: "Only record when everyone has been informed and any consent the meeting or location requires is in place.")
                     }
                     .settingTarget("settings.autoRecordMode", selected: app.focusedSettingID)
-                    LabeledContent("Detected apps") {
+                    LabeledContent {
                         Text(Set(MeetingDetector.knownApps.values).sorted().joined(separator: ", ")
-                             + " + browser meetings (Meet, Jitsi, Whereby)")
+                             + ", and Google Meet in a browser")
                             .settingsSecondary()
+                    } label: {
+                        SettingsLabel("Detected apps",
+                                      help: "Google Meet is detected only with its interface in English. Other browser calls, such as Jitsi, Whereby, or Teams on the web, are not detected, and recording one yourself saves only your microphone.")
                     }
                     LabeledContent("Wait before stopping") {
                         Stepper(value: $app.settings.stopDebounceSeconds,
