@@ -740,6 +740,26 @@ final class DreamingTests: XCTestCase {
         XCTAssertLessThanOrEqual(pack.count, DreamCompiler.evidenceCharacterLimit)
     }
 
+    func testEvidencePackKeepsLaterSectionsWhenTheJournalLogIsHuge() throws {
+        var evidence = try sampleEvidence()
+        var log: [String] = []
+        for index in 0..<4_000 {
+            log.append("- 09:\(String(format: "%02d", index % 60)) Safari — research page \(index)")
+        }
+        evidence.digest = "## Day summary\n\n- Shipped the release notes.\n\n## Time allocation\n\n- Xcode: 3h\n\n"
+            + "## Full activity log\n\n" + log.joined(separator: "\n")
+        let pack = DreamCompiler.evidencePack(evidence)
+        XCTAssertTrue(pack.contains("Shipped the release notes."))
+        XCTAssertTrue(pack.contains("Xcode: 3h"))
+        XCTAssertTrue(pack.contains("…(activity log truncated)"))
+        XCTAssertTrue(pack.contains("comparison window only"))
+        XCTAssertTrue(pack.contains("using saved corrections and status"))
+        XCTAssertLessThanOrEqual(pack.count, DreamCompiler.evidenceCharacterLimit)
+        XCTAssertEqual(DreamCompiler.digestForDream(try XCTUnwrap(evidence.digest)).count,
+                       DreamCompiler.digestCharacterLimit)
+        XCTAssertEqual(DreamCompiler.digestForDream("## Day summary\n\n- Short day."), "## Day summary\n\n- Short day.")
+    }
+
     // MARK: - Memory merge
 
     func testMemoryMergeInsertsUpdatesPrunesAndKeepsUnchangedStamps() throws {
