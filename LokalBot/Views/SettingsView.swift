@@ -754,7 +754,8 @@ struct SettingsView: View {
     private var digestInstructionsField: some View {
         VStack(alignment: .leading, spacing: 7) {
             SettingsLabel("Digest instructions (optional)",
-                          help: "Shapes both scheduled and manual digests.")
+                          help: "Shapes both scheduled and manual digests. The first "
+                            + "\(PromptTemplates.dayDigestCustomPromptMaxCharacters) characters are used.")
             ZStack(alignment: .topLeading) {
                 TextEditor(text: $app.settings.dayDigestCustomPrompt)
                     .font(AppFont.scaled(.body))
@@ -783,6 +784,20 @@ struct SettingsView: View {
             .overlay {
                 RoundedRectangle(cornerRadius: Brand.Radius.control, style: .continuous)
                     .stroke(Color(NSColor.separatorColor), lineWidth: 1.2)
+            }
+            // The digest uses only the first characters of the cleaned-up
+            // text; say so instead of dropping the rest silently.
+            let used = PromptContextSanitizer.sanitize(app.settings.dayDigestCustomPrompt).count
+            let limit = PromptTemplates.dayDigestCustomPromptMaxCharacters
+            if used > limit {
+                Text("\(used) of \(limit) characters. Only the first \(limit) are used; shorten the rest.")
+                    .workspaceTextRole(.warning)
+                    .accessibilityIdentifier("settings.digestInstructions.count")
+            } else if used > 0 {
+                Text("\(used) of \(limit) characters")
+                    .font(AppFont.scaled(.caption))
+                    .settingsSecondary()
+                    .accessibilityIdentifier("settings.digestInstructions.count")
             }
         }
     }
