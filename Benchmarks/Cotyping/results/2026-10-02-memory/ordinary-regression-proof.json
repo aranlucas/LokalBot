@@ -1,0 +1,24 @@
+{
+  "lfm": {
+    "checkpoints": 178,
+    "differences": {
+      "prompt": [],
+      "text": [],
+      "suppression": [],
+      "error": []
+    },
+    "originalAppSHA256": "726afa188d020e84d3fa542a2eaae5b1ac5c634d31f0a358c815b80515010709",
+    "currentAppSHA256": "90759b77c750bfe14907907985e4a3c474e09bc0fac0d74ac7102a6bbf71490e"
+  },
+  "gemma": {
+    "checkpoints": 178,
+    "differences": {
+      "prompt": [],
+      "text": [],
+      "suppression": [],
+      "error": []
+    },
+    "originalAppSHA256": "726afa188d020e84d3fa542a2eaae5b1ac5c634d31f0a358c815b80515010709",
+    "currentAppSHA256": "90759b77c750bfe14907907985e4a3c474e09bc0fac0d74ac7102a6bbf71490e"
+  }
+}

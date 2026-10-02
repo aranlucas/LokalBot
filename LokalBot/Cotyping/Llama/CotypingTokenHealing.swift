@@ -19,6 +19,7 @@ enum CotypingTokenHealing {
     /// would spend many forced decode steps for text the LLM path should not
     /// assist anyway.
     static let maxWordLength = 16
+    static let maxSeparatorLength = 8
 
     struct Split: Equatable, Sendable {
         /// The prompt to tokenize: original prompt cut at the word boundary,
@@ -34,7 +35,21 @@ enum CotypingTokenHealing {
     /// does not end in a word fragment, the fragment is too long, or cutting it
     /// would leave no usable context.
     static func split(prompt: String) -> Split? {
-        guard let last = prompt.last, isWordCharacter(last) else { return nil }
+        guard let last = prompt.last else { return nil }
+        if last.isWhitespace, !last.isNewline {
+            var start = prompt.endIndex
+            while start > prompt.startIndex {
+                let previous = prompt.index(before: start)
+                guard prompt[previous].isWhitespace, !prompt[previous].isNewline else { break }
+                start = previous
+            }
+            guard prompt.distance(from: start, to: prompt.endIndex) <= maxSeparatorLength,
+                  prompt[..<start].contains(where: { !$0.isWhitespace }) else { return nil }
+            // A completed word followed by a space must not be extended (cat -> cats).
+            // Replay the separator through natural tokens such as " is", then hide it.
+            return Split(healedPrompt: String(prompt[..<start]), requiredPrefix: String(prompt[start...]))
+        }
+        guard isWordCharacter(last) else { return nil }
 
         var wordStart = prompt.endIndex
         while wordStart > prompt.startIndex {
@@ -48,9 +63,10 @@ enum CotypingTokenHealing {
         var cutStart = wordStart
         while cutStart > prompt.startIndex {
             let prior = prompt.index(before: cutStart)
-            guard prompt[prior].isWhitespace else { break }
+            guard prompt[prior].isWhitespace, !prompt[prior].isNewline else { break }
             cutStart = prior
         }
+        guard prompt.distance(from: cutStart, to: wordStart) <= maxSeparatorLength else { return nil }
 
         let healed = String(prompt[..<cutStart])
         guard healed.contains(where: { !$0.isWhitespace }) else { return nil }

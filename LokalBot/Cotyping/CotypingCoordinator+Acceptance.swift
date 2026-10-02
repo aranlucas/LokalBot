@@ -5,7 +5,14 @@ extension CotypingCoordinator {
     // MARK: - Acceptance (called synchronously from the accept tap)
 
     func acceptFromTap(_ scope: CotypingAcceptScope) -> Bool {
-        guard isRunning else { return false }
+        guard isRunning, !discardRevokedMemoryContext() else { return false }
+        if let activeVisibleContext,
+           !CotypingVisibleContext.Policy(settings: settingsProvider()).permits(activeVisibleContext.target)
+                || !focusTracker.hasFreshVisibleContext(activeVisibleContext) {
+            clearSuggestion()
+            state = .idle
+            return false
+        }
         guard CotypingAcceptanceOwnershipPolicy.shouldOwnAcceptKey(
                   overlayIsVisible: overlay.isVisible,
                   hasSession: session != nil),
@@ -120,10 +127,7 @@ extension CotypingCoordinator {
         }
         lastAcceptanceAt = Date()
         CotypingStatsStore.shared.recordAccept(charsAccepted: acceptedChunk.count)
-        acceptedSuggestionBatch.append(
-            field: liveField,
-            acceptedText: acceptedChunk,
-            learningEnabled: settings.cotypingUseLocalLearning)
+        recordAcceptedText(acceptedChunk, field: liveField, settings: settings)
 
         acceptedWordCount += CotypingAcceptanceChunker.acceptedWordCount(in: acceptedChunk)
         current = current.advanced(by: acceptedChunk.count)
@@ -170,6 +174,13 @@ extension CotypingCoordinator {
             }
         }
         return true
+    }
+
+    func recordAcceptedText(_ text: String, field: CotypingField, settings: AppSettings) {
+        acceptedSuggestionBatch.append(
+            field: field, acceptedText: text,
+            learningEnabled: settings.cotypingUseLocalLearning && activeMemoryContext.selection.items.isEmpty
+                && activeVisibleContext == nil)
     }
 
     /// Atomically presents a suggestion. The invariant *session exists ⟺

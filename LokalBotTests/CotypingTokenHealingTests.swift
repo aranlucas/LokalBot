@@ -10,8 +10,9 @@ final class CotypingTokenHealingTests: XCTestCase {
             CotypingTokenHealing.Split(healedPrompt: "I wanted to", requiredPrefix: " follo"))
     }
 
-    func testNoSplitWhenPromptEndsAtWordBoundary() {
-        XCTAssertNil(CotypingTokenHealing.split(prompt: "I wanted to "))
+    func testReplaysSpaceAfterCompletedWord() {
+        XCTAssertEqual(CotypingTokenHealing.split(prompt: "I wanted to "),
+                       .init(healedPrompt: "I wanted to", requiredPrefix: " "))
         XCTAssertNil(CotypingTokenHealing.split(prompt: "end."))
     }
 
@@ -21,10 +22,24 @@ final class CotypingTokenHealingTests: XCTestCase {
             CotypingTokenHealing.Split(healedPrompt: "(", requiredPrefix: "follo"))
     }
 
-    func testNewlineSeparatorBecomesPartOfRequiredPrefix() {
+    func testNewlineRemainsInContext() {
         XCTAssertEqual(
             CotypingTokenHealing.split(prompt: "line one\nfollo"),
-            CotypingTokenHealing.Split(healedPrompt: "line one", requiredPrefix: "\nfollo"))
+            CotypingTokenHealing.Split(healedPrompt: "line one\n", requiredPrefix: "follo"))
+        XCTAssertNil(CotypingTokenHealing.split(prompt: "line one\n"))
+        XCTAssertEqual(CotypingTokenHealing.split(prompt: "line one\n  follo"),
+                       .init(healedPrompt: "line one\n", requiredPrefix: "  follo"))
+    }
+
+    func testSeparatorHealingIsBoundedAndByteExact() {
+        for separator in [" ", "\t", "  ", "\u{00a0}"] {
+            let prompt = "word" + separator
+            let split = CotypingTokenHealing.split(prompt: prompt)
+            XCTAssertEqual(split?.healedPrompt, "word")
+            XCTAssertEqual(split?.requiredPrefix, separator)
+        }
+        XCTAssertNil(CotypingTokenHealing.split(prompt: "word" + String(repeating: " ", count: 9)))
+        XCTAssertNil(CotypingTokenHealing.split(prompt: "   "))
     }
 
     func testFragmentLengthLimitIsInclusive() {
@@ -168,12 +183,18 @@ final class LocalLlamaHealedGenerationTests: XCTestCase {
     }
 
     @MainActor
-    func testPassthroughWhenCaretIsNotMidWord() {
-        // No fragment at the caret: today's prompt must survive byte-for-byte
-        // and generation must run unconstrained.
+    func testCompletedWordCannotBeExtendedPastTypedSpace() {
         let healed = LocalLlamaCotypingEngine.healedGeneration(
             for: request(prompt: "I wanted to ", wordPrefix: ""))
-        XCTAssertEqual(healed.prompt, "I wanted to ")
+        XCTAssertEqual(healed.prompt, "I wanted to")
+        XCTAssertEqual(healed.requiredPrefixUTF8, Array(" ".utf8))
+    }
+
+    @MainActor
+    func testParagraphBoundaryIsNotRemoved() {
+        let healed = LocalLlamaCotypingEngine.healedGeneration(
+            for: request(prompt: "Hi Ana,\n\n", wordPrefix: ""))
+        XCTAssertEqual(healed.prompt, "Hi Ana,\n\n")
         XCTAssertTrue(healed.requiredPrefixUTF8.isEmpty)
     }
 }

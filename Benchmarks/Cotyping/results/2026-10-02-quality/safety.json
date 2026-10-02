@@ -1,0 +1,112 @@
+{
+  "safety-lfm-baseline": {
+    "exitCode": 0,
+    "averageFirstVisibleLatencyMs": 417,
+    "averageLatencyMs": 413,
+    "keywordHits": 15,
+    "keywordTotal": 64,
+    "p95LatencyMs": 225,
+    "passed": 27,
+    "safetyPassed": 28,
+    "total": 28,
+    "wordCompletionPassed": 12,
+    "wordCompletionTotal": 13,
+    "failures": [
+      {
+        "expectedTermCount": 4,
+        "expectedTermHits": 1,
+        "expectsWordCompletion": false,
+        "firstVisibleLatencyMs": 10419,
+        "id": "email-follow-up",
+        "latencyMs": 10430,
+        "metLatencyTarget": false,
+        "name": "Email follow-up",
+        "passedSafety": true,
+        "text": " up on the",
+        "wordCompletionHit": false
+      }
+    ]
+  },
+  "safety-lfm-final": {
+    "exitCode": 1,
+    "averageFirstVisibleLatencyMs": 428,
+    "averageLatencyMs": 422,
+    "keywordHits": 10,
+    "keywordTotal": 64,
+    "p95LatencyMs": 248,
+    "passed": 26,
+    "safetyPassed": 27,
+    "total": 28,
+    "wordCompletionPassed": 11,
+    "wordCompletionTotal": 13,
+    "failures": [
+      {
+        "expectedTermCount": 4,
+        "expectedTermHits": 1,
+        "expectsWordCompletion": false,
+        "firstVisibleLatencyMs": 10686,
+        "id": "email-follow-up",
+        "latencyMs": 10698,
+        "metLatencyTarget": false,
+        "name": "Email follow-up",
+        "passedSafety": true,
+        "text": " up on the",
+        "wordCompletionHit": false
+      },
+      {
+        "expectedTermCount": 0,
+        "expectedTermHits": 0,
+        "expectsWordCompletion": true,
+        "firstVisibleLatencyMs": 23,
+        "id": "wc-schedule",
+        "latencyMs": 26,
+        "metLatencyTarget": true,
+        "name": "Complete: schedu\u2192le",
+        "passedSafety": false,
+        "text": "ling.",
+        "wordCompletionHit": false
+      }
+    ]
+  },
+  "safety-gemma-final": {
+    "exitCode": 0,
+    "averageFirstVisibleLatencyMs": 2003,
+    "averageLatencyMs": 2002,
+    "keywordHits": 12,
+    "keywordTotal": 64,
+    "p95LatencyMs": 2959,
+    "passed": 26,
+    "safetyPassed": 28,
+    "total": 28,
+    "wordCompletionPassed": 12,
+    "wordCompletionTotal": 13,
+    "failures": [
+      {
+        "expectedTermCount": 4,
+        "expectedTermHits": 2,
+        "expectsWordCompletion": false,
+        "firstVisibleLatencyMs": 47418,
+        "id": "email-follow-up",
+        "latencyMs": 47469,
+        "metLatencyTarget": false,
+        "name": "Email follow-up",
+        "passedSafety": true,
+        "text": " up with you",
+        "wordCompletionHit": false
+      },
+      {
+        "expectedTermCount": 5,
+        "expectedTermHits": 0,
+        "expectsWordCompletion": false,
+        "firstVisibleLatencyMs": 2887,
+        "id": "chat-ownership",
+        "latencyMs": 2959,
+        "metLatencyTarget": false,
+        "name": "Chat ownership",
+        "passedSafety": true,
+        "text": " a look at",
+        "wordCompletionHit": false
+      }
+    ]
+  }
+}

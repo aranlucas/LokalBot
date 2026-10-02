@@ -71,6 +71,17 @@ struct DictationView: View {
                 Toggle("Use the focused window as context", isOn: Binding(
                     get: { operation.dictationUseScreenContext }, set: { app.settings.dictationUseScreenContext = $0 }))
                     .disabled(app.dictation.state != .idle || app.dictation.isStarting)
+                Toggle("Use visible text above the field", isOn: $app.settings.dictationUseVisibleContext)
+                    .disabled(app.dictation.state != .idle || app.dictation.isStarting)
+                    .settingTarget("settings.dictationUseVisibleContext", selected: app.focusedSettingID)
+                SettingsHelp("Reads nearby messages and labels through Accessibility. No screenshot is needed, and the excerpts are not saved.")
+                Toggle("Use meeting and work memory", isOn: $app.settings.dictationUseMeetingMemory)
+                    .disabled(app.dictation.state != .idle || app.dictation.isStarting)
+                    .settingTarget("settings.dictationUseMeetingMemory", selected: app.focusedSettingID)
+                Toggle("Use screen-derived work memory", isOn: $app.settings.dictationUseScreenMemory)
+                    .disabled(app.dictation.state != .idle || app.dictation.isStarting)
+                    .settingTarget("settings.dictationUseScreenMemory", selected: app.focusedSettingID)
+                SettingsHelp("Adds relevant saved facts when you ask Compose to draft or reply. Work memory must also be enabled for its saved facts.")
             }
             SettingsHelp("Trying here shows the result below. It never inserts into another app or changes your clipboard; the shortcut uses the output setting above.")
         } header: {
@@ -98,7 +109,7 @@ struct DictationView: View {
             InferenceDisclosure(
                 settings: operation.dictationCompositionTextEngineSettings,
                 localText: "Speech uses the meeting ASR model; final wording uses your local composition model and writing profile. Everything stays on this Mac.",
-                remoteText: "Final wording uses your approved remote Think model (\(operation.summarizerBackend.displayName)). What you dictate — and any screen context it composes with — is sent to that server.")
+                remoteText: "Final wording uses your approved remote Think model (\(operation.summarizerBackend.displayName)). What you dictate, and any enabled screen context or saved facts it uses, is sent to that server.")
                 .accessibilityIdentifier("dictation.remoteNotice")
             } else {
                 Label("Speech recognition runs on this Mac. No screen context or rewrite model is used.", systemImage: "desktopcomputer")
@@ -111,7 +122,7 @@ struct DictationView: View {
         Section("Permissions") {
             PermissionRow(permission: .microphone, why: "Records your voice for the current dictation.")
             PermissionRow(permission: .inputMonitoring, why: "Detects the global dictation shortcut.")
-            if app.settings.dictationOutputMode == .pasteIntoFocusedApp {
+            if app.settings.dictationOutputMode == .pasteIntoFocusedApp || app.settings.dictationUseVisibleContext {
                 PermissionRow(permission: .accessibility, why: "Validates the focused field and inserts your text safely.")
             }
             if app.settings.dictationIntent == .compose && app.settings.dictationUseScreenContext {

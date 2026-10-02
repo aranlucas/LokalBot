@@ -10,24 +10,15 @@ enum CotypingPrefixWindow {
         !precedingText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    /// Keep only the latest short tail so long stale context cannot steer the
-    /// model: last `maxCharacters`, then the last `maxWords` of those.
+    /// Bound the latest text without rewriting paragraph breaks, list indentation,
+    /// or the exact whitespace at the caret. These are prediction inputs.
     static func truncatedPrefix(
         from precedingText: String, maxCharacters: Int, maxWords: Int
     ) -> String {
+        guard maxCharacters > 0, maxWords > 0 else { return "" }
         let characterWindow = String(precedingText.suffix(maxCharacters))
-        let trailingWords = characterWindow
-            .split(whereSeparator: { $0.isWhitespace })
-            .suffix(maxWords)
-            .map(String.init)
-            .joined(separator: " ")
-        // Preserve the trailing whitespace/newlines of the character window when
-        // the word rejoin would otherwise drop a meaningful boundary the caret
-        // sits on (e.g. a trailing space the user just typed).
-        if trailingWords.isEmpty { return characterWindow }
-        if let last = characterWindow.last, last.isWhitespace {
-            return trailingWords + String(last)
-        }
-        return trailingWords
+        let words = characterWindow.split(whereSeparator: { $0.isWhitespace })
+        guard words.count > maxWords else { return characterWindow }
+        return String(characterWindow[words[words.count - maxWords].startIndex...])
     }
 }

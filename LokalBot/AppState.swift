@@ -189,16 +189,23 @@ final class AppState: ObservableObject {
         }
     }
 
-    private static func dictationLifecycleChanged(from old: AppSettings, to new: AppSettings) -> Bool {
+    static func dictationLifecycleChanged(from old: AppSettings, to new: AppSettings) -> Bool {
         old.dictationEnabled != new.dictationEnabled
             || old.dictationShowOverlay != new.dictationShowOverlay
             || old.dictationLivePreview != new.dictationLivePreview
+            || !DictationGrounding.permissionsMatch(old, new)
     }
 
     static func cotypingLifecycleChanged(from old: AppSettings, to new: AppSettings) -> Bool {
         old.cotypingEnabled != new.cotypingEnabled
             || old.cotypingExcludedApps != new.cotypingExcludedApps
             || old.cotypingExcludedDomains != new.cotypingExcludedDomains
+            || old.cotypingUseVisibleContext != new.cotypingUseVisibleContext
+            || old.excludedApps != new.excludedApps
+            || old.excludedScreenDomains != new.excludedScreenDomains
+            || old.cotypingUseMeetingMemory != new.cotypingUseMeetingMemory
+            || old.cotypingUseScreenMemory != new.cotypingUseScreenMemory
+            || old.dreamingEnabled != new.dreamingEnabled
     }
 
     private static func cotypingRuntimeChanged(from old: AppSettings, to new: AppSettings) -> Bool {
@@ -722,6 +729,15 @@ final class AppState: ObservableObject {
         },
         onMicPermissionDenied: { [weak self] in
             self?.micRecoveryNeeded = true
+        }, memoryContextProvider: { [weak self] field, settings in
+            guard let self, self.libraryReady else { return .empty }
+            let root = self.storage.rootURL
+            let meetings = self.meetings
+            let task = Task.detached(priority: .userInitiated) {
+                CotypingMemoryContextProvider.load(root: root, meetings: meetings, field: field,
+                                                   settings: settings, allowBodyMatch: false)
+            }
+            return await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
         })
     /// Cotyping (inline AI autocomplete). Always runs its own model on the
     /// dedicated `LlamaServer.cotyping` instance so it never thrashes the
@@ -746,6 +762,16 @@ final class AppState: ObservableObject {
         engine: cotypingEngine,
         settingsProvider: { [store = settingsStore] in store.current },
         learningStore: cotypingLearning,
+        memoryContextProvider: { [weak self] field, settings in
+            guard let self, self.libraryReady,
+                  CotypingMemoryContext.Policy(settings: settings).enabled else { return .empty }
+            let root = self.storage.rootURL
+            let meetings = self.meetings
+            let task = Task.detached(priority: .userInitiated) {
+                CotypingMemoryContextProvider.load(root: root, meetings: meetings, field: field, settings: settings)
+            }
+            return await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
+        },
         isMeetingRecordingActive: { [weak self] in
             guard let self else { return false }
             return self.recording.isRecording || self.recording.isStarting
@@ -1761,6 +1787,7 @@ final class AppState: ObservableObject {
     }
 
     func withPrimaryEvidenceChange<T>(on days: [Date], _ mutation: () throws -> T) throws -> T {
+        if settings.cotypingUseMeetingMemory || settings.cotypingUseScreenMemory { cotyping.invalidateMemoryContext() }
         defer { primaryEvidenceDidChange(on: days) }
         purgeDigestSegmentAnswers(for: days)
         return try dreamStore.withScreenEvidenceMutation(on: days) {
@@ -1791,6 +1818,7 @@ final class AppState: ObservableObject {
     }
 
     private func withPrimaryEvidenceChange<T>(for meetings: [Meeting], _ mutation: () throws -> T) throws -> T {
+        if settings.cotypingUseMeetingMemory || settings.cotypingUseScreenMemory { cotyping.invalidateMemoryContext() }
         defer { primaryEvidenceDidChange(for: meetings) }
         purgeDigestSegmentAnswers(for: meetings.map(\.startedAt))
         return try dreamStore.withMeetingEvidenceMutation(for: meetings) {
@@ -2231,6 +2259,7 @@ final class AppState: ObservableObject {
     }
 
     func refreshDreamMemory() {
+        if settings.cotypingUseMeetingMemory || settings.cotypingUseScreenMemory { cotyping.invalidateMemoryContext() }
         do {
             dreamMemory = try dreamStore.loadMemory()
         } catch {

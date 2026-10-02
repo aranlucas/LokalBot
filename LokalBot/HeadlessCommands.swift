@@ -19,6 +19,8 @@ enum HeadlessCommand: Equatable {
     case chat(question: String)
     case agent(prompt: String)
     case cotypingBench
+    case cotypingReplay(input: URL, model: URL)
+    case dictationReplay(input: URL, endpoint: URL)
     case exportDiagnostics(destination: URL)
     case health(dayKey: String?, json: Bool)
     case recordCapture(seconds: Int, scenario: String)
@@ -58,6 +60,16 @@ enum HeadlessCommand: Equatable {
             return .dream(dayKey: next.flatMap { $0.hasPrefix("--") ? nil : $0 })
         }
         if args.contains("--cotyping-bench") { return .cotypingBench }
+        if let flag = args.firstIndex(of: "--dictation-replay"), args.count > flag + 1,
+           let serverFlag = args.firstIndex(of: "--server-url"), args.count > serverFlag + 1,
+           let endpoint = URL(string: args[serverFlag + 1]) {
+            return .dictationReplay(input: URL(fileURLWithPath: args[flag + 1]), endpoint: endpoint)
+        }
+        if let flag = args.firstIndex(of: "--cotyping-replay"), args.count > flag + 1,
+           let modelFlag = args.firstIndex(of: "--model-path"), args.count > modelFlag + 1 {
+            return .cotypingReplay(input: URL(fileURLWithPath: args[flag + 1]),
+                                  model: URL(fileURLWithPath: args[modelFlag + 1]))
+        }
         if args.contains("--health") {
             let dayFlag = args.firstIndex(of: "--day")
             let dayKey = dayFlag.flatMap { args.count > $0 + 1 ? args[$0 + 1] : nil }
@@ -208,6 +220,10 @@ struct HeadlessCommandRunner {
         case .chat(let question): runChat(question: question)
         case .agent(let prompt): runAgent(prompt: prompt)
         case .cotypingBench: runCotypingBench()
+        case .cotypingReplay(let input, let model):
+            Task { @MainActor in exit(await CotypingQualityReplay.run(input: input, model: model)) }
+        case .dictationReplay(let input, let endpoint):
+            Task { @MainActor in exit(await DictationContextReplay.run(input: input, endpoint: endpoint)) }
         case .exportDiagnostics(let destination): runExportDiagnostics(to: destination)
         case .health(let dayKey, let json): runHealth(dayKey: dayKey, json: json)
         case .recordCapture(let seconds, let scenario): runRecordCapture(seconds: seconds, scenario: scenario)
@@ -581,11 +597,22 @@ struct HeadlessCommandRunner {
 
     /// `LokalBot --cotyping-bench`: run the cotyping quality benchmark headless
     /// against the real engine and print one JSON document — the scriptable
-    /// face of the in-app "Run cotyping check" (same scenarios, same criteria).
+    /// face of the in-app "Run cotyping check" (same scenarios, same criteria),
+    /// excluding learned writing history so fixture runs need no Keychain access.
     /// Exit 0 when every scenario passes its safety contract, 1 otherwise.
     private func runCotypingBench() {
         Task { @MainActor in
-            let summary = await app.cotyping.runQualityBenchmark()
+            // Synthetic engine measurements must not initialize the live
+            // coordinator's learning store (or ask for its Keychain key).
+            let settings = app.settings
+            var config = CotypingConfiguration.standard
+            config.maxResponseTokens = settings.cotypingMaxResponseTokens
+            config.maxResponseWords = settings.cotypingMaxWords
+            let summary = await CotypingBenchmarkRunner.run(
+                engine: app.cotypingEngine,
+                config: config,
+                personalization: settings.cotypingPersonalization,
+                streamPartials: settings.cotypingStreamSuggestionsWhileGenerating)
             print(summary.jsonReport())
             await app.cotypingEngine.unload()
             await LlamaServer.shared.stop()

@@ -55,8 +55,7 @@ final class CotypingSurfaceContextTests: XCTestCase {
         let surface = try XCTUnwrap(CotypingSurfaceComposer.compose(
             appName: "Mail", bundleID: "com.apple.mail", windowTitle: "Re: Q3 planning", fieldPlaceholder: nil))
         let lines = CotypingSurfaceComposer.prefaceLines(for: surface)
-        XCTAssertEqual(lines.first, "An email being written in Mail.")
-        XCTAssertTrue(lines.contains("The window is titled \"Re: Q3 planning\"."))
+        XCTAssertEqual(lines, ["Subject: Re: Q3 planning"])
     }
 
     func testTitleStripsAppSuffix() {
@@ -68,8 +67,7 @@ final class CotypingSurfaceContextTests: XCTestCase {
         let surface = try XCTUnwrap(CotypingSurfaceComposer.compose(
             appName: "Slack", bundleID: "com.tinyspeck.slackmacgap", windowTitle: nil, fieldPlaceholder: "Message #general"))
         let lines = CotypingSurfaceComposer.prefaceLines(for: surface)
-        XCTAssertEqual(lines.first, "A chat message being typed in Slack.")
-        XCTAssertTrue(lines.contains("The text field is labeled \"Message #general\"."))
+        XCTAssertEqual(lines, ["Topic: #general"])
     }
 
     func testPromptPutsSurfaceFirst() {
@@ -87,12 +85,12 @@ final class CotypingSurfaceContextTests: XCTestCase {
         let on = CotypingPersonalization(
             userName: nil, styleNote: nil, languageHint: nil, isMultiLine: false, appContextEnabled: true)
         let req = try XCTUnwrap(CotypingRequestBuilder.build(field: field, config: .standard, personalization: on, generation: 0))
-        XCTAssertTrue(req.prompt.contains("An email being written in Mail."))
+        XCTAssertTrue(req.prompt.hasPrefix("Subject: Re: Q3 planning\n\n"))
         XCTAssertTrue(req.prompt.contains("Re: Q3 planning"))
         XCTAssertTrue(req.prompt.hasSuffix("Hi Sarah,"))
         XCTAssertEqual(
             req.conditioningPreface,
-            "An email being written in Mail.\nThe window is titled \"Re: Q3 planning\".")
+            "Subject: Re: Q3 planning")
 
         let off = CotypingPersonalization(
             userName: nil, styleNote: nil, languageHint: nil, isMultiLine: false, appContextEnabled: false)
@@ -108,6 +106,12 @@ final class CotypingSurfaceContextTests: XCTestCase {
         let decoded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(s))
         XCTAssertFalse(decoded.cotypingUseAppContext)
         XCTAssertFalse(decoded.cotypingPersonalization.appContextEnabled)
+    }
+
+    func testGenericFieldLabelDoesNotSteerTextTowardTheInterface() throws {
+        let surface = try XCTUnwrap(CotypingSurfaceComposer.compose(
+            appName: "Messages", bundleID: "com.apple.MobileSMS", windowTitle: nil, fieldPlaceholder: "Message"))
+        XCTAssertTrue(CotypingSurfaceComposer.prefaceLines(for: surface).isEmpty)
     }
 
     func testSurfaceCaptureCacheReusesSameFocusedFieldSession() {

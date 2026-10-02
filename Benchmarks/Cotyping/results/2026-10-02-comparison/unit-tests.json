@@ -1,0 +1,12 @@
+{
+  "result": "Passed",
+  "totalTestCount": 67,
+  "passedTests": 67,
+  "failedTests": 0,
+  "skippedTests": 0,
+  "testFailures": [],
+  "runtimeWarnings": [],
+  "configuration": "Debug, ENABLE_DEBUG_DYLIB=NO, CODE_SIGNING_ALLOWED=NO",
+  "platform": "macOS 27.0.1, arm64",
+  "suite": "Focused cotyping unit and native integration tests; LokalBotUITests excluded"
+}

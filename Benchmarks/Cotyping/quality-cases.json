@@ -1,0 +1,391 @@
+{
+  "version": 2,
+  "language": "mixed",
+  "provenance": "Original synthetic LokalBot quality challenge, frozen before candidate evaluation on 2026-10-02. No private writing. Independent of Cotabby screening and held-out phrases.",
+  "phrases": [
+    {
+      "id": "quality-email-01",
+      "category": "email",
+      "text": "Could you send me the revised proposal tomorrow?",
+      "scenario": {
+        "applicationName": "Mail",
+        "bundleIdentifier": "com.apple.mail",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Hi Ana,\n\nThanks for the update.\n\n"
+      }
+    },
+    {
+      "id": "quality-email-02",
+      "category": "email",
+      "text": "We are ready to ship the release.",
+      "scenario": {
+        "applicationName": "Mail",
+        "bundleIdentifier": "com.apple.mail",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Hi team,\n\nThe review is complete and all checks passed.\n\n"
+      }
+    },
+    {
+      "id": "quality-email-03",
+      "category": "email",
+      "text": "Please let me know what time works for you.",
+      "scenario": {
+        "applicationName": "Mail",
+        "bundleIdentifier": "com.apple.mail",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Dear Mark,\n\nI am available on Tuesday afternoon.\n\n"
+      }
+    },
+    {
+      "id": "quality-email-04",
+      "category": "email",
+      "text": "Thank you for your help with this.",
+      "scenario": {
+        "applicationName": "Mail",
+        "bundleIdentifier": "com.apple.mail",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Hi Sara,\n\nThe invoice has been paid.\n\n"
+      }
+    },
+    {
+      "id": "quality-email-05",
+      "category": "email",
+      "text": "I look forward to hearing your feedback.",
+      "scenario": {
+        "applicationName": "Mail",
+        "bundleIdentifier": "com.apple.mail",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Hi Luka,\n\nI have attached the draft for your review.\n\n"
+      }
+    },
+    {
+      "id": "quality-email-06",
+      "category": "email",
+      "text": "I will send you an updated invitation.",
+      "scenario": {
+        "applicationName": "Mail",
+        "bundleIdentifier": "com.apple.mail",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Hi Nina,\n\nOur meeting is now on Thursday.\n\n"
+      }
+    },
+    {
+      "id": "quality-email-07",
+      "category": "email",
+      "text": "Could we move the deadline to Friday?",
+      "scenario": {
+        "applicationName": "Mail",
+        "bundleIdentifier": "com.apple.mail",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Hi Ivan,\n\nWe need another day to finish testing.\n\n"
+      }
+    },
+    {
+      "id": "quality-email-08",
+      "category": "email",
+      "text": "I will keep you posted on our progress.",
+      "scenario": {
+        "applicationName": "Mail",
+        "bundleIdentifier": "com.apple.mail",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Hi Maria,\n\nThe change is live and the error rate is falling.\n\n"
+      }
+    },
+    {
+      "id": "quality-formatting-01",
+      "category": "formatting",
+      "text": "a bottle of sparkling water",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Shopping list:\n- apples\n- bananas\n- "
+      }
+    },
+    {
+      "id": "quality-formatting-02",
+      "category": "formatting",
+      "text": "Deploy to the staging environment",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Deployment checklist:\n1. Run the tests\n2. Review the changes\n3. "
+      }
+    },
+    {
+      "id": "quality-formatting-03",
+      "category": "formatting",
+      "text": "Missing notifications after waking from sleep",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Release notes:\n\nFixed:\n- A crash during startup\n- "
+      }
+    },
+    {
+      "id": "quality-formatting-04",
+      "category": "formatting",
+      "text": "quality assurance and release testing",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Team assignments:\nMina: design\nOgnjen: backend\nLea: "
+      }
+    },
+    {
+      "id": "quality-formatting-05",
+      "category": "formatting",
+      "text": "Private data should stay on the device.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "### Decision\n\nKeep processing local.\n\n### Reason\n\n"
+      }
+    },
+    {
+      "id": "quality-formatting-06",
+      "category": "formatting",
+      "text": "return sum of all item prices",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "def total(items):\n    # Calculate the sum\n    "
+      }
+    },
+    {
+      "id": "quality-formatting-07",
+      "category": "formatting",
+      "text": "Questions and next steps",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Meeting agenda:\n\n09:00 Introductions\n09:15 Project update\n09:30 "
+      }
+    },
+    {
+      "id": "quality-formatting-08",
+      "category": "formatting",
+      "text": "Could you tell me which version you are using?",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Customer: The application keeps crashing.\nSupport: "
+      }
+    },
+    {
+      "id": "quality-multilingual-01",
+      "category": "multilingual",
+      "text": "Hvala ti na brzom odgovoru.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Zdravo Ana,\n\n"
+      }
+    },
+    {
+      "id": "quality-multilingual-02",
+      "category": "multilingual",
+      "text": "Vidimo se u deset sati.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Dogovorili smo sastanak za sutra.\n"
+      }
+    },
+    {
+      "id": "quality-multilingual-03",
+      "category": "multilingual",
+      "text": "Možeš li da pošalješ poslednju verziju?",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Pregled dokumentacije je završen.\n"
+      }
+    },
+    {
+      "id": "quality-multilingual-04",
+      "category": "multilingual",
+      "text": "Šaljem vam izveštaj sa današnjeg sastanka.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Zdravo svima,\n\n"
+      }
+    },
+    {
+      "id": "quality-multilingual-05",
+      "category": "multilingual",
+      "text": "Хвала ти на брзом одговору.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Здраво Ана,\n\n"
+      }
+    },
+    {
+      "id": "quality-multilingual-06",
+      "category": "multilingual",
+      "text": "Vielen Dank für deine schnelle Antwort.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Hallo Anna,\n\n"
+      }
+    },
+    {
+      "id": "quality-multilingual-07",
+      "category": "multilingual",
+      "text": "Merci pour votre aide et votre patience.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Bonjour Marie,\n\n"
+      }
+    },
+    {
+      "id": "quality-multilingual-08",
+      "category": "multilingual",
+      "text": "Muchas gracias por tu ayuda con el proyecto.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Hola Ana,\n\n"
+      }
+    },
+    {
+      "id": "quality-long-context-01",
+      "category": "long-context",
+      "text": "Please ask Irena to approve the rollout.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Release owner: Irena.\n\nThe team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. \n\nNext steps:\n"
+      }
+    },
+    {
+      "id": "quality-long-context-02",
+      "category": "long-context",
+      "text": "The project is called Juniper and starts tomorrow.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Project codename: Juniper.\n\nThe team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. \n\nNext steps:\n"
+      }
+    },
+    {
+      "id": "quality-long-context-03",
+      "category": "long-context",
+      "text": "We will store the records in PostgreSQL.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Chosen database: PostgreSQL.\n\nThe team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. \n\nNext steps:\n"
+      }
+    },
+    {
+      "id": "quality-long-context-04",
+      "category": "long-context",
+      "text": "The new service will run in Helsinki.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Deployment region: Helsinki.\n\nThe team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. \n\nNext steps:\n"
+      }
+    },
+    {
+      "id": "quality-long-context-05",
+      "category": "long-context",
+      "text": "Please contact Milena for help with access.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Support contact: Milena.\n\nThe team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. \n\nNext steps:\n"
+      }
+    },
+    {
+      "id": "quality-long-context-06",
+      "category": "long-context",
+      "text": "The service sends jobs through RabbitMQ.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Chosen queue: RabbitMQ.\n\nThe team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. \n\nNext steps:\n"
+      }
+    },
+    {
+      "id": "quality-long-context-07",
+      "category": "long-context",
+      "text": "We encrypt each archive with AES-GCM.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Encryption algorithm: AES-GCM.\n\nThe team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. \n\nNext steps:\n"
+      }
+    },
+    {
+      "id": "quality-long-context-08",
+      "category": "long-context",
+      "text": "The report should be saved as Markdown.",
+      "scenario": {
+        "applicationName": "Notes",
+        "bundleIdentifier": "com.apple.Notes",
+        "windowTitle": "Draft",
+        "fieldPlaceholder": "",
+        "documentPrefix": "Primary document format: Markdown.\n\nThe team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. The team reviewed the checklist and recorded the outcome. All tests run on synthetic inputs. The document keeps the original requirements and the latest approved decisions. The next review will cover reliability, compatibility, and the remaining work. \n\nNext steps:\n"
+      }
+    }
+  ]
+}

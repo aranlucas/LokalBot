@@ -1,0 +1,2 @@
+# Preserve the frozen CSV ledger's CRLF bytes and hash.
+experiments.csv -text whitespace=cr-at-eol

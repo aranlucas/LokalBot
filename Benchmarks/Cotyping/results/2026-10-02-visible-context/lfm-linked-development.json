@@ -1,0 +1,274 @@
+{
+  "summary": {
+    "neither": {
+      "factualCases": 2,
+      "correct": 0,
+      "firstWordCorrect": 0,
+      "visibleSelectionsCorrect": 2,
+      "memorySelectionsCorrect": 2,
+      "totalCases": 2,
+      "errors": 0,
+      "suppressed": 0,
+      "forbiddenReads": 0,
+      "medianMs": 26.648334,
+      "byKind": {
+        "combined": {
+          "cases": 2,
+          "correct": 0,
+          "staleFact": 0
+        },
+        "generic": {
+          "cases": 0,
+          "correct": 0,
+          "staleFact": 0
+        }
+      }
+    },
+    "visible": {
+      "factualCases": 2,
+      "correct": 0,
+      "firstWordCorrect": 0,
+      "visibleSelectionsCorrect": 2,
+      "memorySelectionsCorrect": 2,
+      "totalCases": 2,
+      "errors": 0,
+      "suppressed": 0,
+      "forbiddenReads": 0,
+      "medianMs": 26.967687499999997,
+      "byKind": {
+        "combined": {
+          "cases": 2,
+          "correct": 0,
+          "staleFact": 0
+        },
+        "generic": {
+          "cases": 0,
+          "correct": 0,
+          "staleFact": 0
+        }
+      }
+    },
+    "memory": {
+      "factualCases": 2,
+      "correct": 0,
+      "firstWordCorrect": 0,
+      "visibleSelectionsCorrect": 2,
+      "memorySelectionsCorrect": 2,
+      "totalCases": 2,
+      "errors": 0,
+      "suppressed": 0,
+      "forbiddenReads": 0,
+      "medianMs": 23.902896,
+      "byKind": {
+        "combined": {
+          "cases": 2,
+          "correct": 0,
+          "staleFact": 0
+        },
+        "generic": {
+          "cases": 0,
+          "correct": 0,
+          "staleFact": 0
+        }
+      }
+    },
+    "both": {
+      "factualCases": 2,
+      "correct": 1,
+      "firstWordCorrect": 0,
+      "visibleSelectionsCorrect": 2,
+      "memorySelectionsCorrect": 2,
+      "totalCases": 2,
+      "errors": 0,
+      "suppressed": 0,
+      "forbiddenReads": 0,
+      "medianMs": 29.606729,
+      "byKind": {
+        "combined": {
+          "cases": 2,
+          "correct": 1,
+          "staleFact": 0
+        },
+        "generic": {
+          "cases": 0,
+          "correct": 0,
+          "staleFact": 0
+        }
+      }
+    }
+  },
+  "controls": [],
+  "cases": [
+    {
+      "id": "dev-anise",
+      "kind": "combined",
+      "variant": "neither",
+      "text": "a question to",
+      "expected": "Danica",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 33.311459,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-citrine",
+      "kind": "combined",
+      "variant": "neither",
+      "text": "a PDF document.",
+      "expected": "Parquet",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 19.985209,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-anise",
+      "kind": "combined",
+      "variant": "visible",
+      "text": "the Anise release",
+      "expected": "Danica",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 27.0235,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-citrine",
+      "kind": "combined",
+      "variant": "visible",
+      "text": "a Citrine file",
+      "expected": "Parquet",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 26.911875,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-anise",
+      "kind": "combined",
+      "variant": "memory",
+      "text": "a question to",
+      "expected": "Danica",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 26.787167,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-citrine",
+      "kind": "combined",
+      "variant": "memory",
+      "text": "a PDF document.",
+      "expected": "Parquet",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 21.018625,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-anise",
+      "kind": "combined",
+      "variant": "both",
+      "text": "the Anise release",
+      "expected": "Danica",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [
+        "memory-dev-anise"
+      ],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 31.373958,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-citrine",
+      "kind": "combined",
+      "variant": "both",
+      "text": "a Parquet file.",
+      "expected": "Parquet",
+      "correct": true,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [
+        "memory-dev-citrine"
+      ],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 27.8395,
+      "error": null,
+      "suppression": null
+    }
+  ],
+  "manifest": {
+    "appSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb",
+    "modelFile": "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
+    "modelSHA256": "856aeee6d85ac684b1db8dee48795b44fc06731ecda03aee36ece682413a9b9a",
+    "corpusSHA256": "f9afa87f4d0eddaf2b7d81fdf7493cde59817e2606e54470a33b70aec1840f2d",
+    "scriptSHA256": "dea80c674ccb4cb9bf7952e93f62fab235338ea5a24ab428682a886f27b48c8b",
+    "split": "development",
+    "caseIDs": [
+      "dev-anise",
+      "dev-citrine"
+    ],
+    "settings": "production defaults (3 words, 5 tokens)",
+    "context": "synthetic AX regions and saved facts; no live user data",
+    "metric": "expected fact occurs as complete lexical words in the emitted continuation"
+  }
+}

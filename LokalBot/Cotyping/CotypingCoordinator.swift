@@ -25,6 +25,7 @@ final class CotypingCoordinator: ObservableObject {
     @Published var lastSuggestion: String?
     /// Words accepted this session (diagnostics).
     @Published var acceptedWordCount = 0
+    @Published var memoryContextSources: [String] = []
 
     let focusTracker: CotypingFocusTracker
     let inputMonitor: CotypingInputMonitor
@@ -34,6 +35,9 @@ final class CotypingCoordinator: ObservableObject {
     let engine: CotypingCompleting
     let learningStore: CotypingLearningStore
     let settingsProvider: () -> AppSettings
+    let memoryContextProvider: (CotypingField, AppSettings) async -> CotypingMemoryContextProvider.Snapshot
+    var activeMemoryContext = CotypingMemoryContextProvider.Snapshot.empty
+    var activeVisibleContext: CotypingVisibleContext.Snapshot?
     /// Live flag from AppState — cotyping stays quiet while a meeting records.
     let isMeetingRecordingActive: () -> Bool
     let selfBundleID: String?
@@ -80,12 +84,14 @@ final class CotypingCoordinator: ObservableObject {
         engine: CotypingCompleting,
         settingsProvider: @escaping () -> AppSettings,
         learningStore: CotypingLearningStore,
+        memoryContextProvider: @escaping (CotypingField, AppSettings) async -> CotypingMemoryContextProvider.Snapshot = { _, _ in .empty },
         isMeetingRecordingActive: @escaping () -> Bool = { false },
         selfBundleID: String? = Bundle.main.bundleIdentifier
     ) {
         self.engine = engine
         self.learningStore = learningStore
         self.settingsProvider = settingsProvider
+        self.memoryContextProvider = memoryContextProvider
         self.isMeetingRecordingActive = isMeetingRecordingActive
         self.selfBundleID = selfBundleID
         self.focusTracker = CotypingFocusTracker()
@@ -112,6 +118,8 @@ final class CotypingCoordinator: ObservableObject {
 struct CotypingPrivacySettings: Equatable, Sendable {
     let appReadPolicy: CotypingAppReadPolicy
     let excludedDomains: [String]
+    let memoryPolicy: CotypingMemoryContext.Policy
+    let visibleContextPolicy: CotypingVisibleContext.Policy
 
     init(settings: AppSettings, selfBundleID: String?) {
         appReadPolicy = CotypingAppReadPolicy(
@@ -119,6 +127,8 @@ struct CotypingPrivacySettings: Equatable, Sendable {
             excludedApps: settings.cotypingExcludedAppList,
             selfBundleID: selfBundleID)
         excludedDomains = settings.cotypingExcludedDomainList
+        memoryPolicy = CotypingMemoryContext.Policy(settings: settings)
+        visibleContextPolicy = CotypingVisibleContext.Policy(settings: settings)
     }
 }
 

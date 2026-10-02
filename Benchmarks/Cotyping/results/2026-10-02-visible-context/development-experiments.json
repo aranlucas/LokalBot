@@ -1,0 +1,334 @@
+{
+  "selected": "facts-last",
+  "selectionReason": "8/8 development factual matches with the shortest successful prompt; current visible updates remain correct and saved reviewer name is used. No held-out outputs inspected.",
+  "startupFailure": {
+    "file": "development-prompt-experiments-stderr.log",
+    "reason": "CancellationError() during prewarm; zero observations; identical input completed on attempt 2."
+  },
+  "experiments": {
+    "relevant": {
+      "correct": 7,
+      "cases": 8,
+      "outputs": [
+        {
+          "id": "dev-date",
+          "text": "Thursday.",
+          "expected": "Thursday",
+          "correct": true
+        },
+        {
+          "id": "dev-place",
+          "text": "Tivat with my",
+          "expected": "Tivat",
+          "correct": true
+        },
+        {
+          "id": "dev-person",
+          "text": "Rafael for the",
+          "expected": "Rafael",
+          "correct": true
+        },
+        {
+          "id": "dev-conflict",
+          "text": "Friday, April 19",
+          "expected": "Friday",
+          "correct": true
+        },
+        {
+          "id": "dev-memory",
+          "text": "Leila.",
+          "expected": "Leila",
+          "correct": true
+        },
+        {
+          "id": "dev-serbian",
+          "text": "Budvi.",
+          "expected": "Budvi",
+          "correct": true
+        },
+        {
+          "id": "dev-form",
+          "text": "ThinkPad.",
+          "expected": "ThinkPad",
+          "correct": true
+        },
+        {
+          "id": "dev-both",
+          "text": "its assigned reviewer.",
+          "expected": "Omar",
+          "correct": false
+        }
+      ]
+    },
+    "reply-facts": {
+      "correct": 7,
+      "cases": 8,
+      "outputs": [
+        {
+          "id": "dev-date",
+          "text": "Thursday.",
+          "expected": "Thursday",
+          "correct": true
+        },
+        {
+          "id": "dev-place",
+          "text": "Tivat with my",
+          "expected": "Tivat",
+          "correct": true
+        },
+        {
+          "id": "dev-person",
+          "text": "Rafael for the",
+          "expected": "Rafael",
+          "correct": true
+        },
+        {
+          "id": "dev-conflict",
+          "text": "Friday, 10/",
+          "expected": "Friday",
+          "correct": true
+        },
+        {
+          "id": "dev-memory",
+          "text": "Leila.",
+          "expected": "Leila",
+          "correct": true
+        },
+        {
+          "id": "dev-serbian",
+          "text": "Budvi.",
+          "expected": "Budvi",
+          "correct": true
+        },
+        {
+          "id": "dev-form",
+          "text": "ThinkPad.",
+          "expected": "ThinkPad",
+          "correct": true
+        },
+        {
+          "id": "dev-both",
+          "text": "its assigned reviewer.",
+          "expected": "Omar",
+          "correct": false
+        }
+      ]
+    },
+    "specific": {
+      "correct": 7,
+      "cases": 8,
+      "outputs": [
+        {
+          "id": "dev-date",
+          "text": "Thursday.",
+          "expected": "Thursday",
+          "correct": true
+        },
+        {
+          "id": "dev-place",
+          "text": "Tivat with my",
+          "expected": "Tivat",
+          "correct": true
+        },
+        {
+          "id": "dev-person",
+          "text": "Rafael for the",
+          "expected": "Rafael",
+          "correct": true
+        },
+        {
+          "id": "dev-conflict",
+          "text": "Friday.",
+          "expected": "Friday",
+          "correct": true
+        },
+        {
+          "id": "dev-memory",
+          "text": "Leila.",
+          "expected": "Leila",
+          "correct": true
+        },
+        {
+          "id": "dev-serbian",
+          "text": "Budvi.",
+          "expected": "Budvi",
+          "correct": true
+        },
+        {
+          "id": "dev-form",
+          "text": "ThinkPad.",
+          "expected": "ThinkPad",
+          "correct": true
+        },
+        {
+          "id": "dev-both",
+          "text": "its assigned reviewer.",
+          "expected": "Omar",
+          "correct": false
+        }
+      ]
+    },
+    "facts-last": {
+      "correct": 8,
+      "cases": 8,
+      "outputs": [
+        {
+          "id": "dev-date",
+          "text": "Thursday.",
+          "expected": "Thursday",
+          "correct": true
+        },
+        {
+          "id": "dev-place",
+          "text": "Tivat with my",
+          "expected": "Tivat",
+          "correct": true
+        },
+        {
+          "id": "dev-person",
+          "text": "Rafael for the",
+          "expected": "Rafael",
+          "correct": true
+        },
+        {
+          "id": "dev-conflict",
+          "text": "Friday.",
+          "expected": "Friday",
+          "correct": true
+        },
+        {
+          "id": "dev-memory",
+          "text": "Leila.",
+          "expected": "Leila",
+          "correct": true
+        },
+        {
+          "id": "dev-serbian",
+          "text": "Budvi.",
+          "expected": "Budvi",
+          "correct": true
+        },
+        {
+          "id": "dev-form",
+          "text": "ThinkPad.",
+          "expected": "ThinkPad",
+          "correct": true
+        },
+        {
+          "id": "dev-both",
+          "text": "Omar.",
+          "expected": "Omar",
+          "correct": true
+        }
+      ]
+    },
+    "facts-last-current": {
+      "correct": 8,
+      "cases": 8,
+      "outputs": [
+        {
+          "id": "dev-date",
+          "text": "Thursday.",
+          "expected": "Thursday",
+          "correct": true
+        },
+        {
+          "id": "dev-place",
+          "text": "Tivat with my",
+          "expected": "Tivat",
+          "correct": true
+        },
+        {
+          "id": "dev-person",
+          "text": "Rafael for the",
+          "expected": "Rafael",
+          "correct": true
+        },
+        {
+          "id": "dev-conflict",
+          "text": "Friday.",
+          "expected": "Friday",
+          "correct": true
+        },
+        {
+          "id": "dev-memory",
+          "text": "Leila.",
+          "expected": "Leila",
+          "correct": true
+        },
+        {
+          "id": "dev-serbian",
+          "text": "Budvi.",
+          "expected": "Budvi",
+          "correct": true
+        },
+        {
+          "id": "dev-form",
+          "text": "ThinkPad.",
+          "expected": "ThinkPad",
+          "correct": true
+        },
+        {
+          "id": "dev-both",
+          "text": "Omar.",
+          "expected": "Omar",
+          "correct": true
+        }
+      ]
+    },
+    "reply": {
+      "correct": 8,
+      "cases": 8,
+      "outputs": [
+        {
+          "id": "dev-date",
+          "text": "Thursday.",
+          "expected": "Thursday",
+          "correct": true
+        },
+        {
+          "id": "dev-place",
+          "text": "Tivat with my",
+          "expected": "Tivat",
+          "correct": true
+        },
+        {
+          "id": "dev-person",
+          "text": "Rafael for the",
+          "expected": "Rafael",
+          "correct": true
+        },
+        {
+          "id": "dev-conflict",
+          "text": "Friday.",
+          "expected": "Friday",
+          "correct": true
+        },
+        {
+          "id": "dev-memory",
+          "text": "Leila.",
+          "expected": "Leila",
+          "correct": true
+        },
+        {
+          "id": "dev-serbian",
+          "text": "Budvi.",
+          "expected": "Budvi",
+          "correct": true
+        },
+        {
+          "id": "dev-form",
+          "text": "ThinkPad.",
+          "expected": "ThinkPad",
+          "correct": true
+        },
+        {
+          "id": "dev-both",
+          "text": "Omar.",
+          "expected": "Omar",
+          "correct": true
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "debugBuild": "passed",
+  "releaseBuild": "passed",
+  "unitTests": {
+    "passed": 183,
+    "failed": 0,
+    "skipped": 0,
+    "resultBundle": "/private/tmp/lokalbot-visible-unit-v4-20261002/results.xcresult",
+    "appSHA256": "600e69235b6e7fbcda4655e7be397a84c2a8207dcc78a5d1cceeae6945a3426c"
+  },
+  "pythonTests": {
+    "passed": 20,
+    "failed": 0
+  },
+  "lint": "passed",
+  "diffCheck": "passed",
+  "documentLinks": "passed",
+  "sourceFreezeMatches": true,
+  "frozenFileCount": 743,
+  "releaseAppSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb",
+  "nativeVisibleContextObservationsFinal": 368,
+  "nativeSavedMemoryRegressionObservations": 88,
+  "ordinaryRegressionObservations": 356,
+  "promptQualifiedRegressionObservations": 256,
+  "tuning": {
+    "promptFrozenBeforeFirstHeldout": true,
+    "promptChangedAfterFirstHeldout": false,
+    "retrievalChangedAfterOriginalHeldout": true,
+    "originalSetUsedAsRegressionAfterRetrievalChange": true,
+    "supplementFrozenBeforeInference": true,
+    "supplementUsedForTuning": false
+  },
+  "initialIssues": [
+    {
+      "kind": "unit test timeout",
+      "test": "testCredentialSnippetsOmittedAndPromptMarkersCannotLeak",
+      "resolution": "Added sensitive-label filtering for natural-language credential text; final test passes."
+    },
+    {
+      "kind": "development experiment startup cancellation",
+      "resolution": "Zero observations; identical experiment input completed on second attempt. Failed logs retained."
+    },
+    {
+      "kind": "unrelated saved-memory retrieval",
+      "candidate": "v3",
+      "case": "held-action-format",
+      "expectedMemoryIDs": [],
+      "actualMemoryIDs": [
+        "memory-held-both-format"
+      ],
+      "outputWasFactuallyCorrect": true,
+      "resolution": "Visible terms can qualify source-title matches only. Body fallback uses draft/title terms. Production and replay share the selector; regression reproduces old behavior and verifies the fix. Fresh supplement had not run."
+    }
+  ],
+  "localUITestsRun": false,
+  "liveAXCompatibilityValidated": false,
+  "installed": false,
+  "released": false,
+  "changedTestExpectationsThisPhase": []
+}

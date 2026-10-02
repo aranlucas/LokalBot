@@ -1,0 +1,3038 @@
+{
+  "overall": {
+    "checkpoints": 178,
+    "correct": 65,
+    "shown": 178,
+    "errors": 0,
+    "accuracy": 0.3651685393258427,
+    "coverage": 1.0,
+    "2WordAccuracy": 0.1232876712328767,
+    "3WordAccuracy": 0.03508771929824561,
+    "p50Ms": 27.454416,
+    "p95Ms": 73.50725
+  },
+  "categories": {
+    "email": {
+      "checkpoints": 52,
+      "correct": 24,
+      "shown": 52,
+      "errors": 0,
+      "accuracy": 0.46153846153846156,
+      "coverage": 1.0,
+      "2WordAccuracy": 0.20454545454545456,
+      "3WordAccuracy": 0.05555555555555555,
+      "p50Ms": 25.5705,
+      "p95Ms": 27.78875
+    },
+    "formatting": {
+      "checkpoints": 39,
+      "correct": 16,
+      "shown": 39,
+      "errors": 0,
+      "accuracy": 0.41025641025641024,
+      "coverage": 1.0,
+      "2WordAccuracy": 0.06451612903225806,
+      "3WordAccuracy": 0.0,
+      "p50Ms": 27.715334,
+      "p95Ms": 28.276709
+    },
+    "long-context": {
+      "checkpoints": 47,
+      "correct": 12,
+      "shown": 47,
+      "errors": 0,
+      "accuracy": 0.2553191489361702,
+      "coverage": 1.0,
+      "2WordAccuracy": 0.02564102564102564,
+      "3WordAccuracy": 0.0,
+      "p50Ms": 73.079708,
+      "p95Ms": 73.777167
+    },
+    "multilingual": {
+      "checkpoints": 40,
+      "correct": 13,
+      "shown": 40,
+      "errors": 0,
+      "accuracy": 0.325,
+      "coverage": 1.0,
+      "2WordAccuracy": 0.1875,
+      "3WordAccuracy": 0.08333333333333333,
+      "p50Ms": 22.82575,
+      "p95Ms": 28.003209
+    }
+  },
+  "scores": [
+    {
+      "id": "quality-email-01:1:0",
+      "phraseID": "quality-email-01",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "you",
+        "send",
+        "me",
+        "the",
+        "revised",
+        "proposal",
+        "tomorrow"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 36.348875
+    },
+    {
+      "id": "quality-email-01:2:0",
+      "phraseID": "quality-email-01",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "send",
+        "me",
+        "the",
+        "revised",
+        "proposal",
+        "tomorrow"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.78875
+    },
+    {
+      "id": "quality-email-01:3:0",
+      "phraseID": "quality-email-01",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "me",
+        "the",
+        "revised",
+        "proposal",
+        "tomorrow"
+      ],
+      "correct": true,
+      "matchingWords": 2,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.978958
+    },
+    {
+      "id": "quality-email-01:4:0",
+      "phraseID": "quality-email-01",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "the",
+        "revised",
+        "proposal",
+        "tomorrow"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.266042
+    },
+    {
+      "id": "quality-email-01:5:0",
+      "phraseID": "quality-email-01",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "revised",
+        "proposal",
+        "tomorrow"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 22.309166
+    },
+    {
+      "id": "quality-email-01:6:0",
+      "phraseID": "quality-email-01",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "proposal",
+        "tomorrow"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 25.603542
+    },
+    {
+      "id": "quality-email-01:7:0",
+      "phraseID": "quality-email-01",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "tomorrow"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 20.080708
+    },
+    {
+      "id": "quality-email-02:1:0",
+      "phraseID": "quality-email-02",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "are",
+        "ready",
+        "to",
+        "ship",
+        "the",
+        "release"
+      ],
+      "correct": true,
+      "matchingWords": 3,
+      "shown": true,
+      "error": null,
+      "latencyMs": 25.898833
+    },
+    {
+      "id": "quality-email-02:2:0",
+      "phraseID": "quality-email-02",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "ready",
+        "to",
+        "ship",
+        "the",
+        "release"
+      ],
+      "correct": true,
+      "matchingWords": 2,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.585083
+    },
+    {
+      "id": "quality-email-02:3:0",
+      "phraseID": "quality-email-02",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "to",
+        "ship",
+        "the",
+        "release"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.753584
+    },
+    {
+      "id": "quality-email-02:4:0",
+      "phraseID": "quality-email-02",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "ship",
+        "the",
+        "release"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.7415
+    },
+    {
+      "id": "quality-email-02:5:0",
+      "phraseID": "quality-email-02",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "the",
+        "release"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 17.569375
+    },
+    {
+      "id": "quality-email-02:6:0",
+      "phraseID": "quality-email-02",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "release"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 15.023709
+    },
+    {
+      "id": "quality-email-03:1:0",
+      "phraseID": "quality-email-03",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "let",
+        "me",
+        "know",
+        "what",
+        "time",
+        "works",
+        "for",
+        "you"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 26.263042
+    },
+    {
+      "id": "quality-email-03:2:0",
+      "phraseID": "quality-email-03",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "me",
+        "know",
+        "what",
+        "time",
+        "works",
+        "for",
+        "you"
+      ],
+      "correct": true,
+      "matchingWords": 2,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.576917
+    },
+    {
+      "id": "quality-email-03:3:0",
+      "phraseID": "quality-email-03",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "know",
+        "what",
+        "time",
+        "works",
+        "for",
+        "you"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.506458
+    },
+    {
+      "id": "quality-email-03:4:0",
+      "phraseID": "quality-email-03",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "what",
+        "time",
+        "works",
+        "for",
+        "you"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.417291
+    },
+    {
+      "id": "quality-email-03:5:0",
+      "phraseID": "quality-email-03",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "time",
+        "works",
+        "for",
+        "you"
+      ],
+      "correct": true,
+      "matchingWords": 2,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.092
+    },
+    {
+      "id": "quality-email-03:6:0",
+      "phraseID": "quality-email-03",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "works",
+        "for",
+        "you"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 22.633209
+    },
+    {
+      "id": "quality-email-03:7:0",
+      "phraseID": "quality-email-03",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "for",
+        "you"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 19.964417
+    },
+    {
+      "id": "quality-email-03:8:0",
+      "phraseID": "quality-email-03",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "you"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 14.919917
+    },
+    {
+      "id": "quality-email-04:1:0",
+      "phraseID": "quality-email-04",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "you",
+        "for",
+        "your",
+        "help",
+        "with",
+        "this"
+      ],
+      "correct": true,
+      "matchingWords": 3,
+      "shown": true,
+      "error": null,
+      "latencyMs": 26.014167
+    },
+    {
+      "id": "quality-email-04:2:0",
+      "phraseID": "quality-email-04",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "for",
+        "your",
+        "help",
+        "with",
+        "this"
+      ],
+      "correct": true,
+      "matchingWords": 2,
+      "shown": true,
+      "error": null,
+      "latencyMs": 23.279792
+    },
+    {
+      "id": "quality-email-04:3:0",
+      "phraseID": "quality-email-04",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "your",
+        "help",
+        "with",
+        "this"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 20.441292
+    },
+    {
+      "id": "quality-email-04:4:0",
+      "phraseID": "quality-email-04",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "help",
+        "with",
+        "this"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 17.468917
+    },
+    {
+      "id": "quality-email-04:5:0",
+      "phraseID": "quality-email-04",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "with",
+        "this"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 20.398625
+    },
+    {
+      "id": "quality-email-04:6:0",
+      "phraseID": "quality-email-04",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "this"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 17.607958
+    },
+    {
+      "id": "quality-email-05:1:0",
+      "phraseID": "quality-email-05",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "look",
+        "forward",
+        "to",
+        "hearing",
+        "your",
+        "feedback"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 25.557292
+    },
+    {
+      "id": "quality-email-05:2:0",
+      "phraseID": "quality-email-05",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "forward",
+        "to",
+        "hearing",
+        "your",
+        "feedback"
+      ],
+      "correct": true,
+      "matchingWords": 2,
+      "shown": true,
+      "error": null,
+      "latencyMs": 24.552083
+    },
+    {
+      "id": "quality-email-05:3:0",
+      "phraseID": "quality-email-05",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "to",
+        "hearing",
+        "your",
+        "feedback"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 20.251625
+    },
+    {
+      "id": "quality-email-05:4:0",
+      "phraseID": "quality-email-05",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "hearing",
+        "your",
+        "feedback"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 17.558375
+    },
+    {
+      "id": "quality-email-05:5:0",
+      "phraseID": "quality-email-05",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "your",
+        "feedback"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 17.618458
+    },
+    {
+      "id": "quality-email-05:6:0",
+      "phraseID": "quality-email-05",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "feedback"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 14.849833
+    },
+    {
+      "id": "quality-email-06:1:0",
+      "phraseID": "quality-email-06",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "will",
+        "send",
+        "you",
+        "an",
+        "updated",
+        "invitation"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 25.895166
+    },
+    {
+      "id": "quality-email-06:2:0",
+      "phraseID": "quality-email-06",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "send",
+        "you",
+        "an",
+        "updated",
+        "invitation"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 26.094042
+    },
+    {
+      "id": "quality-email-06:3:0",
+      "phraseID": "quality-email-06",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "you",
+        "an",
+        "updated",
+        "invitation"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.286
+    },
+    {
+      "id": "quality-email-06:4:0",
+      "phraseID": "quality-email-06",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "an",
+        "updated",
+        "invitation"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 25.5705
+    },
+    {
+      "id": "quality-email-06:5:0",
+      "phraseID": "quality-email-06",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "updated",
+        "invitation"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 25.777375
+    },
+    {
+      "id": "quality-email-06:6:0",
+      "phraseID": "quality-email-06",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "invitation"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 26.186209
+    },
+    {
+      "id": "quality-email-07:1:0",
+      "phraseID": "quality-email-07",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "we",
+        "move",
+        "the",
+        "deadline",
+        "to",
+        "friday"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.422667
+    },
+    {
+      "id": "quality-email-07:2:0",
+      "phraseID": "quality-email-07",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "move",
+        "the",
+        "deadline",
+        "to",
+        "friday"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.61625
+    },
+    {
+      "id": "quality-email-07:3:0",
+      "phraseID": "quality-email-07",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "the",
+        "deadline",
+        "to",
+        "friday"
+      ],
+      "correct": true,
+      "matchingWords": 2,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.330917
+    },
+    {
+      "id": "quality-email-07:4:0",
+      "phraseID": "quality-email-07",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "deadline",
+        "to",
+        "friday"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 22.915
+    },
+    {
+      "id": "quality-email-07:5:0",
+      "phraseID": "quality-email-07",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "to",
+        "friday"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 19.788625
+    },
+    {
+      "id": "quality-email-07:6:0",
+      "phraseID": "quality-email-07",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "friday"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 17.3605
+    },
+    {
+      "id": "quality-email-08:1:0",
+      "phraseID": "quality-email-08",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "will",
+        "keep",
+        "you",
+        "posted",
+        "on",
+        "our",
+        "progress"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 26.136708
+    },
+    {
+      "id": "quality-email-08:2:0",
+      "phraseID": "quality-email-08",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "keep",
+        "you",
+        "posted",
+        "on",
+        "our",
+        "progress"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.380167
+    },
+    {
+      "id": "quality-email-08:3:0",
+      "phraseID": "quality-email-08",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "you",
+        "posted",
+        "on",
+        "our",
+        "progress"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.617708
+    },
+    {
+      "id": "quality-email-08:4:0",
+      "phraseID": "quality-email-08",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "posted",
+        "on",
+        "our",
+        "progress"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 23.14075
+    },
+    {
+      "id": "quality-email-08:5:0",
+      "phraseID": "quality-email-08",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "on",
+        "our",
+        "progress"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 20.312833
+    },
+    {
+      "id": "quality-email-08:6:0",
+      "phraseID": "quality-email-08",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "our",
+        "progress"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 17.58075
+    },
+    {
+      "id": "quality-email-08:7:0",
+      "phraseID": "quality-email-08",
+      "category": "email",
+      "typed": "",
+      "words": [
+        "progress"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 14.863583
+    },
+    {
+      "id": "quality-formatting-01:1:0",
+      "phraseID": "quality-formatting-01",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "bottle",
+        "of",
+        "sparkling",
+        "water"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 25.56925
+    },
+    {
+      "id": "quality-formatting-01:2:0",
+      "phraseID": "quality-formatting-01",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "of",
+        "sparkling",
+        "water"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.691167
+    },
+    {
+      "id": "quality-formatting-01:3:0",
+      "phraseID": "quality-formatting-01",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "sparkling",
+        "water"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.794666
+    },
+    {
+      "id": "quality-formatting-01:4:0",
+      "phraseID": "quality-formatting-01",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "water"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.803875
+    },
+    {
+      "id": "quality-formatting-02:1:0",
+      "phraseID": "quality-formatting-02",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "to",
+        "the",
+        "staging",
+        "environment"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.95325
+    },
+    {
+      "id": "quality-formatting-02:2:0",
+      "phraseID": "quality-formatting-02",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "the",
+        "staging",
+        "environment"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.8545
+    },
+    {
+      "id": "quality-formatting-02:3:0",
+      "phraseID": "quality-formatting-02",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "staging",
+        "environment"
+      ],
+      "correct": true,
+      "matchingWords": 2,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.849834
+    },
+    {
+      "id": "quality-formatting-02:4:0",
+      "phraseID": "quality-formatting-02",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "environment"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.078
+    },
+    {
+      "id": "quality-formatting-03:1:0",
+      "phraseID": "quality-formatting-03",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "notifications",
+        "after",
+        "waking",
+        "from",
+        "sleep"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.705375
+    },
+    {
+      "id": "quality-formatting-03:2:0",
+      "phraseID": "quality-formatting-03",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "after",
+        "waking",
+        "from",
+        "sleep"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.847292
+    },
+    {
+      "id": "quality-formatting-03:3:0",
+      "phraseID": "quality-formatting-03",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "waking",
+        "from",
+        "sleep"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.917833
+    },
+    {
+      "id": "quality-formatting-03:4:0",
+      "phraseID": "quality-formatting-03",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "from",
+        "sleep"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 28.107125
+    },
+    {
+      "id": "quality-formatting-03:5:0",
+      "phraseID": "quality-formatting-03",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "sleep"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 28.085208
+    },
+    {
+      "id": "quality-formatting-04:1:0",
+      "phraseID": "quality-formatting-04",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "assurance",
+        "and",
+        "release",
+        "testing"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.125917
+    },
+    {
+      "id": "quality-formatting-04:2:0",
+      "phraseID": "quality-formatting-04",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "and",
+        "release",
+        "testing"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 26.802083
+    },
+    {
+      "id": "quality-formatting-04:3:0",
+      "phraseID": "quality-formatting-04",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "release",
+        "testing"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 26.909667
+    },
+    {
+      "id": "quality-formatting-04:4:0",
+      "phraseID": "quality-formatting-04",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "testing"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 26.638125
+    },
+    {
+      "id": "quality-formatting-05:1:0",
+      "phraseID": "quality-formatting-05",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "data",
+        "should",
+        "stay",
+        "on",
+        "the",
+        "device"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.715334
+    },
+    {
+      "id": "quality-formatting-05:2:0",
+      "phraseID": "quality-formatting-05",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "should",
+        "stay",
+        "on",
+        "the",
+        "device"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 28.0505
+    },
+    {
+      "id": "quality-formatting-05:3:0",
+      "phraseID": "quality-formatting-05",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "stay",
+        "on",
+        "the",
+        "device"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.919417
+    },
+    {
+      "id": "quality-formatting-05:4:0",
+      "phraseID": "quality-formatting-05",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "on",
+        "the",
+        "device"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 16.525917
+    },
+    {
+      "id": "quality-formatting-05:5:0",
+      "phraseID": "quality-formatting-05",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "the",
+        "device"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 20.380042
+    },
+    {
+      "id": "quality-formatting-05:6:0",
+      "phraseID": "quality-formatting-05",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "device"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 17.500042
+    },
+    {
+      "id": "quality-formatting-06:1:0",
+      "phraseID": "quality-formatting-06",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "sum",
+        "of",
+        "all",
+        "item",
+        "prices"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 25.769416
+    },
+    {
+      "id": "quality-formatting-06:2:0",
+      "phraseID": "quality-formatting-06",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "of",
+        "all",
+        "item",
+        "prices"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 36.442625
+    },
+    {
+      "id": "quality-formatting-06:3:0",
+      "phraseID": "quality-formatting-06",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "all",
+        "item",
+        "prices"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.49475
+    },
+    {
+      "id": "quality-formatting-06:4:0",
+      "phraseID": "quality-formatting-06",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "item",
+        "prices"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 28.118167
+    },
+    {
+      "id": "quality-formatting-06:5:0",
+      "phraseID": "quality-formatting-06",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "prices"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.240375
+    },
+    {
+      "id": "quality-formatting-07:1:0",
+      "phraseID": "quality-formatting-07",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "and",
+        "next",
+        "steps"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.816292
+    },
+    {
+      "id": "quality-formatting-07:2:0",
+      "phraseID": "quality-formatting-07",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "next",
+        "steps"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 28.276709
+    },
+    {
+      "id": "quality-formatting-07:3:0",
+      "phraseID": "quality-formatting-07",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "steps"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 28.166541
+    },
+    {
+      "id": "quality-formatting-08:1:0",
+      "phraseID": "quality-formatting-08",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "you",
+        "tell",
+        "me",
+        "which",
+        "version",
+        "you",
+        "are",
+        "using"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 28.211541
+    },
+    {
+      "id": "quality-formatting-08:2:0",
+      "phraseID": "quality-formatting-08",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "tell",
+        "me",
+        "which",
+        "version",
+        "you",
+        "are",
+        "using"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.95625
+    },
+    {
+      "id": "quality-formatting-08:3:0",
+      "phraseID": "quality-formatting-08",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "me",
+        "which",
+        "version",
+        "you",
+        "are",
+        "using"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.907875
+    },
+    {
+      "id": "quality-formatting-08:4:0",
+      "phraseID": "quality-formatting-08",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "which",
+        "version",
+        "you",
+        "are",
+        "using"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 22.742666
+    },
+    {
+      "id": "quality-formatting-08:5:0",
+      "phraseID": "quality-formatting-08",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "version",
+        "you",
+        "are",
+        "using"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 22.666917
+    },
+    {
+      "id": "quality-formatting-08:6:0",
+      "phraseID": "quality-formatting-08",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "you",
+        "are",
+        "using"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 25.917833
+    },
+    {
+      "id": "quality-formatting-08:7:0",
+      "phraseID": "quality-formatting-08",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "are",
+        "using"
+      ],
+      "correct": true,
+      "matchingWords": 2,
+      "shown": true,
+      "error": null,
+      "latencyMs": 19.121125
+    },
+    {
+      "id": "quality-formatting-08:8:0",
+      "phraseID": "quality-formatting-08",
+      "category": "formatting",
+      "typed": "",
+      "words": [
+        "using"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 14.478583
+    },
+    {
+      "id": "quality-multilingual-01:1:0",
+      "phraseID": "quality-multilingual-01",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "ti",
+        "na",
+        "brzom",
+        "odgovoru"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 20.013708
+    },
+    {
+      "id": "quality-multilingual-01:2:0",
+      "phraseID": "quality-multilingual-01",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "na",
+        "brzom",
+        "odgovoru"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 20.401459
+    },
+    {
+      "id": "quality-multilingual-01:3:0",
+      "phraseID": "quality-multilingual-01",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "brzom",
+        "odgovoru"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 26.142292
+    },
+    {
+      "id": "quality-multilingual-01:4:0",
+      "phraseID": "quality-multilingual-01",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "odgovoru"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 26.887708
+    },
+    {
+      "id": "quality-multilingual-02:1:0",
+      "phraseID": "quality-multilingual-02",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "se",
+        "u",
+        "deset",
+        "sati"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 26.223917
+    },
+    {
+      "id": "quality-multilingual-02:2:0",
+      "phraseID": "quality-multilingual-02",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "u",
+        "deset",
+        "sati"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.848833
+    },
+    {
+      "id": "quality-multilingual-02:3:0",
+      "phraseID": "quality-multilingual-02",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "deset",
+        "sati"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.779792
+    },
+    {
+      "id": "quality-multilingual-02:4:0",
+      "phraseID": "quality-multilingual-02",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "sati"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 28.003209
+    },
+    {
+      "id": "quality-multilingual-03:1:0",
+      "phraseID": "quality-multilingual-03",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "li",
+        "da",
+        "po\u0161alje\u0161",
+        "poslednju",
+        "verziju"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 28.023791
+    },
+    {
+      "id": "quality-multilingual-03:2:0",
+      "phraseID": "quality-multilingual-03",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "da",
+        "po\u0161alje\u0161",
+        "poslednju",
+        "verziju"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 25.129667
+    },
+    {
+      "id": "quality-multilingual-03:3:0",
+      "phraseID": "quality-multilingual-03",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "po\u0161alje\u0161",
+        "poslednju",
+        "verziju"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 20.088625
+    },
+    {
+      "id": "quality-multilingual-03:4:0",
+      "phraseID": "quality-multilingual-03",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "poslednju",
+        "verziju"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 17.495375
+    },
+    {
+      "id": "quality-multilingual-03:5:0",
+      "phraseID": "quality-multilingual-03",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "verziju"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 20.475833
+    },
+    {
+      "id": "quality-multilingual-04:1:0",
+      "phraseID": "quality-multilingual-04",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "vam",
+        "izve\u0161taj",
+        "sa",
+        "dana\u0161njeg",
+        "sastanka"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 25.964125
+    },
+    {
+      "id": "quality-multilingual-04:2:0",
+      "phraseID": "quality-multilingual-04",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "izve\u0161taj",
+        "sa",
+        "dana\u0161njeg",
+        "sastanka"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.942583
+    },
+    {
+      "id": "quality-multilingual-04:3:0",
+      "phraseID": "quality-multilingual-04",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "sa",
+        "dana\u0161njeg",
+        "sastanka"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 28.097083
+    },
+    {
+      "id": "quality-multilingual-04:4:0",
+      "phraseID": "quality-multilingual-04",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "dana\u0161njeg",
+        "sastanka"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.332792
+    },
+    {
+      "id": "quality-multilingual-04:5:0",
+      "phraseID": "quality-multilingual-04",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "sastanka"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.63875
+    },
+    {
+      "id": "quality-multilingual-05:1:0",
+      "phraseID": "quality-multilingual-05",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "\u0442\u0438",
+        "\u043d\u0430",
+        "\u0431\u0440\u0437\u043e\u043c",
+        "\u043e\u0434\u0433\u043e\u0432\u043e\u0440\u0443"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.319875
+    },
+    {
+      "id": "quality-multilingual-05:2:0",
+      "phraseID": "quality-multilingual-05",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "\u043d\u0430",
+        "\u0431\u0440\u0437\u043e\u043c",
+        "\u043e\u0434\u0433\u043e\u0432\u043e\u0440\u0443"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.433458
+    },
+    {
+      "id": "quality-multilingual-05:3:0",
+      "phraseID": "quality-multilingual-05",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "\u0431\u0440\u0437\u043e\u043c",
+        "\u043e\u0434\u0433\u043e\u0432\u043e\u0440\u0443"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.670834
+    },
+    {
+      "id": "quality-multilingual-05:4:0",
+      "phraseID": "quality-multilingual-05",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "\u043e\u0434\u0433\u043e\u0432\u043e\u0440\u0443"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.770041
+    },
+    {
+      "id": "quality-multilingual-06:1:0",
+      "phraseID": "quality-multilingual-06",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "dank",
+        "f\u00fcr",
+        "deine",
+        "schnelle",
+        "antwort"
+      ],
+      "correct": true,
+      "matchingWords": 3,
+      "shown": true,
+      "error": null,
+      "latencyMs": 27.454416
+    },
+    {
+      "id": "quality-multilingual-06:2:0",
+      "phraseID": "quality-multilingual-06",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "f\u00fcr",
+        "deine",
+        "schnelle",
+        "antwort"
+      ],
+      "correct": true,
+      "matchingWords": 2,
+      "shown": true,
+      "error": null,
+      "latencyMs": 23.289041
+    },
+    {
+      "id": "quality-multilingual-06:3:0",
+      "phraseID": "quality-multilingual-06",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "deine",
+        "schnelle",
+        "antwort"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 20.179458
+    },
+    {
+      "id": "quality-multilingual-06:4:0",
+      "phraseID": "quality-multilingual-06",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "schnelle",
+        "antwort"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 17.3005
+    },
+    {
+      "id": "quality-multilingual-06:5:0",
+      "phraseID": "quality-multilingual-06",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "antwort"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 14.802166
+    },
+    {
+      "id": "quality-multilingual-07:1:0",
+      "phraseID": "quality-multilingual-07",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "pour",
+        "votre",
+        "aide",
+        "et",
+        "votre",
+        "patience"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 20.214375
+    },
+    {
+      "id": "quality-multilingual-07:2:0",
+      "phraseID": "quality-multilingual-07",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "votre",
+        "aide",
+        "et",
+        "votre",
+        "patience"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 17.03025
+    },
+    {
+      "id": "quality-multilingual-07:3:0",
+      "phraseID": "quality-multilingual-07",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "aide",
+        "et",
+        "votre",
+        "patience"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 14.538125
+    },
+    {
+      "id": "quality-multilingual-07:4:0",
+      "phraseID": "quality-multilingual-07",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "et",
+        "votre",
+        "patience"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 26.230375
+    },
+    {
+      "id": "quality-multilingual-07:5:0",
+      "phraseID": "quality-multilingual-07",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "votre",
+        "patience"
+      ],
+      "correct": true,
+      "matchingWords": 2,
+      "shown": true,
+      "error": null,
+      "latencyMs": 19.582459
+    },
+    {
+      "id": "quality-multilingual-07:6:0",
+      "phraseID": "quality-multilingual-07",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "patience"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 14.917083
+    },
+    {
+      "id": "quality-multilingual-08:1:0",
+      "phraseID": "quality-multilingual-08",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "gracias",
+        "por",
+        "tu",
+        "ayuda",
+        "con",
+        "el",
+        "proyecto"
+      ],
+      "correct": true,
+      "matchingWords": 3,
+      "shown": true,
+      "error": null,
+      "latencyMs": 22.82575
+    },
+    {
+      "id": "quality-multilingual-08:2:0",
+      "phraseID": "quality-multilingual-08",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "por",
+        "tu",
+        "ayuda",
+        "con",
+        "el",
+        "proyecto"
+      ],
+      "correct": true,
+      "matchingWords": 2,
+      "shown": true,
+      "error": null,
+      "latencyMs": 19.673084
+    },
+    {
+      "id": "quality-multilingual-08:3:0",
+      "phraseID": "quality-multilingual-08",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "tu",
+        "ayuda",
+        "con",
+        "el",
+        "proyecto"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 17.29975
+    },
+    {
+      "id": "quality-multilingual-08:4:0",
+      "phraseID": "quality-multilingual-08",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "ayuda",
+        "con",
+        "el",
+        "proyecto"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 14.662667
+    },
+    {
+      "id": "quality-multilingual-08:5:0",
+      "phraseID": "quality-multilingual-08",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "con",
+        "el",
+        "proyecto"
+      ],
+      "correct": true,
+      "matchingWords": 2,
+      "shown": true,
+      "error": null,
+      "latencyMs": 20.169084
+    },
+    {
+      "id": "quality-multilingual-08:6:0",
+      "phraseID": "quality-multilingual-08",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "el",
+        "proyecto"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 17.523167
+    },
+    {
+      "id": "quality-multilingual-08:7:0",
+      "phraseID": "quality-multilingual-08",
+      "category": "multilingual",
+      "typed": "",
+      "words": [
+        "proyecto"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 14.683625
+    },
+    {
+      "id": "quality-long-context-01:1:0",
+      "phraseID": "quality-long-context-01",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "ask",
+        "irena",
+        "to",
+        "approve",
+        "the",
+        "rollout"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 74.290792
+    },
+    {
+      "id": "quality-long-context-01:2:0",
+      "phraseID": "quality-long-context-01",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "irena",
+        "to",
+        "approve",
+        "the",
+        "rollout"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 72.959708
+    },
+    {
+      "id": "quality-long-context-01:3:0",
+      "phraseID": "quality-long-context-01",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "to",
+        "approve",
+        "the",
+        "rollout"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 72.671667
+    },
+    {
+      "id": "quality-long-context-01:4:0",
+      "phraseID": "quality-long-context-01",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "approve",
+        "the",
+        "rollout"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.777167
+    },
+    {
+      "id": "quality-long-context-01:5:0",
+      "phraseID": "quality-long-context-01",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "the",
+        "rollout"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.220583
+    },
+    {
+      "id": "quality-long-context-01:6:0",
+      "phraseID": "quality-long-context-01",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "rollout"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.345792
+    },
+    {
+      "id": "quality-long-context-02:1:0",
+      "phraseID": "quality-long-context-02",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "project",
+        "is",
+        "called",
+        "juniper",
+        "and",
+        "starts",
+        "tomorrow"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 71.8455
+    },
+    {
+      "id": "quality-long-context-02:2:0",
+      "phraseID": "quality-long-context-02",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "is",
+        "called",
+        "juniper",
+        "and",
+        "starts",
+        "tomorrow"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.50725
+    },
+    {
+      "id": "quality-long-context-02:3:0",
+      "phraseID": "quality-long-context-02",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "called",
+        "juniper",
+        "and",
+        "starts",
+        "tomorrow"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.402792
+    },
+    {
+      "id": "quality-long-context-02:4:0",
+      "phraseID": "quality-long-context-02",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "juniper",
+        "and",
+        "starts",
+        "tomorrow"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.366125
+    },
+    {
+      "id": "quality-long-context-02:5:0",
+      "phraseID": "quality-long-context-02",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "and",
+        "starts",
+        "tomorrow"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 72.367875
+    },
+    {
+      "id": "quality-long-context-02:6:0",
+      "phraseID": "quality-long-context-02",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "starts",
+        "tomorrow"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 69.570833
+    },
+    {
+      "id": "quality-long-context-02:7:0",
+      "phraseID": "quality-long-context-02",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "tomorrow"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 72.473334
+    },
+    {
+      "id": "quality-long-context-03:1:0",
+      "phraseID": "quality-long-context-03",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "will",
+        "store",
+        "the",
+        "records",
+        "in",
+        "postgresql"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.279667
+    },
+    {
+      "id": "quality-long-context-03:2:0",
+      "phraseID": "quality-long-context-03",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "store",
+        "the",
+        "records",
+        "in",
+        "postgresql"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 72.961417
+    },
+    {
+      "id": "quality-long-context-03:3:0",
+      "phraseID": "quality-long-context-03",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "the",
+        "records",
+        "in",
+        "postgresql"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.771917
+    },
+    {
+      "id": "quality-long-context-03:4:0",
+      "phraseID": "quality-long-context-03",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "records",
+        "in",
+        "postgresql"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.361083
+    },
+    {
+      "id": "quality-long-context-03:5:0",
+      "phraseID": "quality-long-context-03",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "in",
+        "postgresql"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.466334
+    },
+    {
+      "id": "quality-long-context-03:6:0",
+      "phraseID": "quality-long-context-03",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "postgresql"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.752667
+    },
+    {
+      "id": "quality-long-context-04:1:0",
+      "phraseID": "quality-long-context-04",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "new",
+        "service",
+        "will",
+        "run",
+        "in",
+        "helsinki"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.735333
+    },
+    {
+      "id": "quality-long-context-04:2:0",
+      "phraseID": "quality-long-context-04",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "service",
+        "will",
+        "run",
+        "in",
+        "helsinki"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.282958
+    },
+    {
+      "id": "quality-long-context-04:3:0",
+      "phraseID": "quality-long-context-04",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "will",
+        "run",
+        "in",
+        "helsinki"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.322542
+    },
+    {
+      "id": "quality-long-context-04:4:0",
+      "phraseID": "quality-long-context-04",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "run",
+        "in",
+        "helsinki"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.90775
+    },
+    {
+      "id": "quality-long-context-04:5:0",
+      "phraseID": "quality-long-context-04",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "in",
+        "helsinki"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.482916
+    },
+    {
+      "id": "quality-long-context-04:6:0",
+      "phraseID": "quality-long-context-04",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "helsinki"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.345125
+    },
+    {
+      "id": "quality-long-context-05:1:0",
+      "phraseID": "quality-long-context-05",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "contact",
+        "milena",
+        "for",
+        "help",
+        "with",
+        "access"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.019
+    },
+    {
+      "id": "quality-long-context-05:2:0",
+      "phraseID": "quality-long-context-05",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "milena",
+        "for",
+        "help",
+        "with",
+        "access"
+      ],
+      "correct": true,
+      "matchingWords": 2,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.058417
+    },
+    {
+      "id": "quality-long-context-05:3:0",
+      "phraseID": "quality-long-context-05",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "for",
+        "help",
+        "with",
+        "access"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 67.158542
+    },
+    {
+      "id": "quality-long-context-05:4:0",
+      "phraseID": "quality-long-context-05",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "help",
+        "with",
+        "access"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 63.896416
+    },
+    {
+      "id": "quality-long-context-05:5:0",
+      "phraseID": "quality-long-context-05",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "with",
+        "access"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 69.578167
+    },
+    {
+      "id": "quality-long-context-05:6:0",
+      "phraseID": "quality-long-context-05",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "access"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 66.587583
+    },
+    {
+      "id": "quality-long-context-06:1:0",
+      "phraseID": "quality-long-context-06",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "service",
+        "sends",
+        "jobs",
+        "through",
+        "rabbitmq"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 72.845834
+    },
+    {
+      "id": "quality-long-context-06:2:0",
+      "phraseID": "quality-long-context-06",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "sends",
+        "jobs",
+        "through",
+        "rabbitmq"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.556041
+    },
+    {
+      "id": "quality-long-context-06:3:0",
+      "phraseID": "quality-long-context-06",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "jobs",
+        "through",
+        "rabbitmq"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 70.949083
+    },
+    {
+      "id": "quality-long-context-06:4:0",
+      "phraseID": "quality-long-context-06",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "through",
+        "rabbitmq"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 72.514084
+    },
+    {
+      "id": "quality-long-context-06:5:0",
+      "phraseID": "quality-long-context-06",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "rabbitmq"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 64.762125
+    },
+    {
+      "id": "quality-long-context-07:1:0",
+      "phraseID": "quality-long-context-07",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "encrypt",
+        "each",
+        "archive",
+        "with",
+        "aes-gcm"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 72.481792
+    },
+    {
+      "id": "quality-long-context-07:2:0",
+      "phraseID": "quality-long-context-07",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "each",
+        "archive",
+        "with",
+        "aes-gcm"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.079708
+    },
+    {
+      "id": "quality-long-context-07:3:0",
+      "phraseID": "quality-long-context-07",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "archive",
+        "with",
+        "aes-gcm"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.554042
+    },
+    {
+      "id": "quality-long-context-07:4:0",
+      "phraseID": "quality-long-context-07",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "with",
+        "aes-gcm"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 72.938209
+    },
+    {
+      "id": "quality-long-context-07:5:0",
+      "phraseID": "quality-long-context-07",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "aes-gcm"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.028542
+    },
+    {
+      "id": "quality-long-context-08:1:0",
+      "phraseID": "quality-long-context-08",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "report",
+        "should",
+        "be",
+        "saved",
+        "as",
+        "markdown"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.095833
+    },
+    {
+      "id": "quality-long-context-08:2:0",
+      "phraseID": "quality-long-context-08",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "should",
+        "be",
+        "saved",
+        "as",
+        "markdown"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 72.905834
+    },
+    {
+      "id": "quality-long-context-08:3:0",
+      "phraseID": "quality-long-context-08",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "be",
+        "saved",
+        "as",
+        "markdown"
+      ],
+      "correct": true,
+      "matchingWords": 1,
+      "shown": true,
+      "error": null,
+      "latencyMs": 72.836208
+    },
+    {
+      "id": "quality-long-context-08:4:0",
+      "phraseID": "quality-long-context-08",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "saved",
+        "as",
+        "markdown"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.166083
+    },
+    {
+      "id": "quality-long-context-08:5:0",
+      "phraseID": "quality-long-context-08",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "as",
+        "markdown"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.310167
+    },
+    {
+      "id": "quality-long-context-08:6:0",
+      "phraseID": "quality-long-context-08",
+      "category": "long-context",
+      "typed": "",
+      "words": [
+        "markdown"
+      ],
+      "correct": false,
+      "matchingWords": 0,
+      "shown": true,
+      "error": null,
+      "latencyMs": 73.072833
+    }
+  ],
+  "manifest": {
+    "modelFile": "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
+    "modelSHA256": "856aeee6d85ac684b1db8dee48795b44fc06731ecda03aee36ece682413a9b9a",
+    "appSHA256": "90759b77c750bfe14907907985e4a3c474e09bc0fac0d74ac7102a6bbf71490e",
+    "corpusSHA256": "8a3f3f7ad624dee5fcb8623fe0331947a3e13fe94beee28c00ef369e41f0cc41",
+    "scriptSHA256": "47b49595a25302e82e4e4024c93388188cbde2c9d447d6b0b1fd701ce80d8881",
+    "split": "all",
+    "splitSeed": 1337,
+    "screenPerCategory": 20,
+    "phraseIDs": [
+      "quality-email-01",
+      "quality-email-02",
+      "quality-email-03",
+      "quality-email-04",
+      "quality-email-05",
+      "quality-email-06",
+      "quality-email-07",
+      "quality-email-08",
+      "quality-formatting-01",
+      "quality-formatting-02",
+      "quality-formatting-03",
+      "quality-formatting-04",
+      "quality-formatting-05",
+      "quality-formatting-06",
+      "quality-formatting-07",
+      "quality-formatting-08",
+      "quality-multilingual-01",
+      "quality-multilingual-02",
+      "quality-multilingual-03",
+      "quality-multilingual-04",
+      "quality-multilingual-05",
+      "quality-multilingual-06",
+      "quality-multilingual-07",
+      "quality-multilingual-08",
+      "quality-long-context-01",
+      "quality-long-context-02",
+      "quality-long-context-03",
+      "quality-long-context-04",
+      "quality-long-context-05",
+      "quality-long-context-06",
+      "quality-long-context-07",
+      "quality-long-context-08"
+    ],
+    "mode": "word",
+    "promptMode": "production",
+    "settings": {
+      "appContext": true
+    },
+    "context": "none (app/title/field metadata only)",
+    "checkpoints": 178
+  }
+}

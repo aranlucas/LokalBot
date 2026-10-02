@@ -69,9 +69,12 @@ struct ModelCatalog {
 
     static let compactFallbackID = "qwen3.5-0.8b"
     static let recommendedSummarizationID = "qwen3.6-35b-a3b"
-    static let recommendedCotypingID = "lfm2.5-1.2b-instruct"
+    /// Default autocomplete model qualified on the shared next-word corpus.
+    static let qualityCotypingID = "gemma4-e2b-base-q6"
+    static let recommendedCotypingID = qualityCotypingID
+    static let lightweightCotypingID = "lfm2.5-1.2b-instruct"
     static let recommendedCotypingLicenseURL = URL(
-        string: "https://docs.liquid.ai/lfm/help/model-license")!
+        string: "https://ai.google.dev/gemma/apache_2")!
     /// Main LLM preselected for every fresh install. Larger models remain
     /// available in Settings → Models for users who prefer maximum quality.
     static let defaultSummarizationID = "qwen3.5-4b"
@@ -104,12 +107,19 @@ struct ModelCatalog {
               sizeBytes: 532_517_120,
               sizeGB: 0.53, blurb: "Tiny downloadable fallback for short meetings and cotyping.",
               disablesThinking: true),
-        Entry(id: recommendedCotypingID, displayName: "LFM2.5 1.2B Instruct",
+        Entry(id: lightweightCotypingID, displayName: "LFM2.5 1.2B Instruct",
               fileName: "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
               url: "https://huggingface.co/unsloth/LFM2.5-1.2B-Instruct-GGUF/resolve/bf1ebe055f24ddd24f3622d933a63b42606773f3/LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
               sha256: "856aeee6d85ac684b1db8dee48795b44fc06731ecda03aee36ece682413a9b9a",
               sizeBytes: 730_895_584,
-              sizeGB: 0.73, blurb: "Recommended fast, English-first cotyping model. Under 1 GB.",
+              sizeGB: 0.73, blurb: "Lightweight, English-first autocomplete alternative. Under 1 GB.",
+              disablesThinking: false),
+        Entry(id: qualityCotypingID, displayName: "Gemma 4 E2B Base (Autocomplete)",
+              fileName: "gemma-4-E2B.i1-Q6_K.gguf",
+              url: "https://huggingface.co/mradermacher/gemma-4-E2B-i1-GGUF/resolve/a9bf638e53783fc93778f357cc5c672eab5393b1/gemma-4-E2B.i1-Q6_K.gguf",
+              sha256: "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
+              sizeBytes: 3_845_328_608,
+              sizeGB: 3.85, blurb: "Default autocomplete model for higher-quality suggestions. 16 GB+ Macs.",
               disablesThinking: false),
         Entry(id: "qwen3.5-2b", displayName: "Qwen3.5 2B",
               fileName: "Qwen3.5-2B-Q4_K_M.gguf",
@@ -197,6 +207,10 @@ struct ModelCatalog {
         entries + custom.filter { customEntry in
             !entries.contains { $0.id == customEntry.id || $0.fileName == customEntry.fileName }
         }
+    }
+
+    static func mainLLMEntries(custom: [Entry]) -> [Entry] {
+        selectableEntries(custom: custom).filter { $0.id != qualityCotypingID }
     }
 
     /// The cotyping pickers' catalog: keystroke-scale built-ins plus every

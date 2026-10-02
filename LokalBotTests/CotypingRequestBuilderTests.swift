@@ -21,6 +21,19 @@ final class CotypingPrefixWindowTests: XCTestCase {
             from: String(repeating: "a", count: 50), maxCharacters: 5, maxWords: 10)
         XCTAssertEqual(windowed, "aaaaa")
     }
+
+    func testPreservesParagraphsListsAndCaretIndentation() {
+        let text = "Hi Ana,\n\nNext steps:\n  1. Review\n  2. "
+        XCTAssertEqual(CotypingPrefixWindow.truncatedPrefix(
+            from: text, maxCharacters: 2500, maxWords: 500), text)
+        XCTAssertEqual(CotypingPrefixWindow.truncatedPrefix(
+            from: text, maxCharacters: 2500, maxWords: 3), "1. Review\n  2. ")
+    }
+
+    func testZeroBudgetDoesNotCrashOrRetainContext() {
+        XCTAssertEqual(CotypingPrefixWindow.truncatedPrefix(from: "hello", maxCharacters: 0, maxWords: 3), "")
+        XCTAssertEqual(CotypingPrefixWindow.truncatedPrefix(from: "hello", maxCharacters: 3, maxWords: 0), "")
+    }
 }
 
 // MARK: - Request builder
@@ -81,5 +94,14 @@ final class CotypingRequestBuilderTests: XCTestCase {
             field: field(preceding: "I want to "), config: .standard,
             personalization: .none, generation: 0))
         XCTAssertEqual(request.wordPrefixAtCaret, "")
+        XCTAssertTrue(request.prompt.hasSuffix("I want to "))
+    }
+
+    func testProductionRequestKeepsEarlierDocumentFacts() throws {
+        let text = "Release owner: Irena.\n\n" + String(repeating: "reviewed item ", count: 100) + "\nAsk "
+        let request = try XCTUnwrap(CotypingRequestBuilder.build(
+            field: field(preceding: text), config: .standard, personalization: .none, generation: 0))
+        XCTAssertEqual(request.prefixText, text)
+        XCTAssertEqual(request.prompt, text)
     }
 }

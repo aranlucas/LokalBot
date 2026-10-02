@@ -10,8 +10,8 @@ final class CotypingPromptRendererTests: XCTestCase {
         XCTAssertNil(CotypingPromptRenderer.render(prefixText: "Hello wo").conditioningPreface)
     }
 
-    func testTrailingWhitespaceTrimmed() {
-        XCTAssertEqual(CotypingPromptRenderer.prompt(prefixText: "Hello wo  \n\t"), "Hello wo")
+    func testCaretWhitespaceIsPreserved() {
+        XCTAssertEqual(CotypingPromptRenderer.prompt(prefixText: "Hello wo  \n\t"), "Hello wo  \n\t")
     }
 
     func testPersonaPreface() {

@@ -108,8 +108,16 @@ final class CotypingSettingsTests: XCTestCase {
         XCTAssertTrue(settings.cotypingAutoAcceptTrailingPunctuation)
         XCTAssertFalse(settings.cotypingAddSpaceAfterAccept)
         XCTAssertTrue(settings.cotypingUseLocalLearning)
-        XCTAssertEqual(settings.cotypingBuiltInModelID, ModelCatalog.recommendedCotypingID)
+        XCTAssertEqual(settings.cotypingBuiltInModelID, "gemma4-e2b-base-q6")
         XCTAssertTrue(settings.menuBarOnly)
+    }
+
+    func testSavedAutocompleteModelSelectionIsPreserved() throws {
+        for modelID in ["lfm2.5-1.2b-instruct", "custom-autocomplete"] {
+            let data = try JSONSerialization.data(withJSONObject: ["cotypingBuiltInModelID": modelID])
+            let settings = try JSONDecoder().decode(AppSettings.self, from: data)
+            XCTAssertEqual(settings.cotypingBuiltInModelID, modelID)
+        }
     }
 
     func testInProcessRuntimeDefaultsOn() {

@@ -9,9 +9,11 @@ import XCTest
 private final class ScriptedCotypingEngine: CotypingCompleting {
     var result: Result<String, Error> = .success("")
     private(set) var requests: [CotypingRequest] = []
+    var beforeReturning: (() -> Void)?
 
     func generate(_ request: CotypingRequest) async throws -> CotypingNormalizationResult {
         requests.append(request)
+        beforeReturning?()
         return CotypingNormalizationResult(text: try result.get(), suppression: nil)
     }
 }
@@ -55,16 +57,59 @@ final class CotypingCoordinatorTests: XCTestCase {
         CotypingCoordinator(
             engine: engine,
             settingsProvider: { [settings] in settings },
-            learningStore: CotypingLearningStore(storageRoot: tempDir),
+            learningStore: CotypingLearningStore(storageRoot: tempDir, initialSnapshot: .init()),
             selfBundleID: "me.dotenv.LokalBot.tests")
     }
 
-    private func makeCoordinator(settingsBox: CotypingSettingsBox) -> CotypingCoordinator {
+    private func makeCoordinator(
+        settingsBox: CotypingSettingsBox,
+        memoryProvider: @escaping (CotypingField, AppSettings) async -> CotypingMemoryContextProvider.Snapshot = { _, _ in .empty }
+    ) -> CotypingCoordinator {
         CotypingCoordinator(
             engine: engine,
             settingsProvider: { settingsBox.value },
-            learningStore: CotypingLearningStore(storageRoot: tempDir),
+            learningStore: CotypingLearningStore(storageRoot: tempDir, initialSnapshot: .init()),
+            memoryContextProvider: memoryProvider,
             selfBundleID: "me.dotenv.LokalBot.tests")
+    }
+
+    func testChangedVisibleContextInvalidatesPendingAndCachedSuggestion() throws {
+        let coordinator = makeCoordinator()
+        coordinator.isRunning = true
+        let snapshot = try XCTUnwrap(CotypingVisibleContextReplay(CotypingVisibleContextTests.fixture()).capture(enabled: true))
+        coordinator.activeVisibleContext = snapshot
+        coordinator.lastSuggestion = "Thursday"
+        coordinator.state = .generating
+        let work = coordinator.generation
+        coordinator.handleFocusChange(.none)
+        XCTAssertGreaterThan(coordinator.generation, work)
+        XCTAssertNil(coordinator.activeVisibleContext)
+        XCTAssertNil(coordinator.lastSuggestion)
+        XCTAssertNil(coordinator.session)
+    }
+
+    func testVisibleContextAcceptanceDoesNotEnterLearnedExamples() throws {
+        let coordinator = makeCoordinator()
+        let snapshot = try XCTUnwrap(CotypingVisibleContextReplay(CotypingVisibleContextTests.fixture()).capture(enabled: true))
+        coordinator.activeVisibleContext = snapshot
+        let field = CotypingField(appName: "Mail", processID: 123, role: "AXTextArea",
+                                  precedingText: "I'll send it by ", trailingText: "", selectionLength: 0,
+                                  caretRect: .zero, isSecure: false, caretIsExact: true)
+        coordinator.recordAcceptedText("Thursday", field: field, settings: settings)
+        XCTAssertNil(coordinator.acceptedSuggestionBatch.complete()?.learningRecord)
+    }
+
+    func testSharedCaptureExclusionAndVisibleConsentChangesInvalidateLifecycle() {
+        let original = AppSettings()
+        var changed = original
+        changed.cotypingUseVisibleContext = true
+        XCTAssertTrue(AppState.cotypingLifecycleChanged(from: original, to: changed))
+        changed = original
+        changed.excludedApps += ", Mail"
+        XCTAssertTrue(AppState.cotypingLifecycleChanged(from: original, to: changed))
+        changed = original
+        changed.excludedScreenDomains = "private.example"
+        XCTAssertTrue(AppState.cotypingLifecycleChanged(from: original, to: changed))
     }
 
     func testApplySettingsWithCotypingOffDisablesWithoutRunning() {
@@ -175,5 +220,89 @@ final class CotypingCoordinatorTests: XCTestCase {
         } catch {
             XCTFail("unexpected error type: \(error)")
         }
+    }
+
+    private func memorySnapshot() -> CotypingMemoryContextProvider.Snapshot {
+        .init(selection: .init(items: [
+            .init(id: "atlas", title: "Atlas", text: "Atlas owner is Priya.",
+                  updatedAt: Date(), requiresMeetings: true),
+        ]), policy: .init(meetings: true, screenDerived: false, workMemory: settings.dreamingEnabled))
+    }
+
+    func testMemoryPreviewIsOptInAndSampleNeverRetrieves() async throws {
+        let box = CotypingSettingsBox(settings)
+        let snapshot = memorySnapshot()
+        var calls = 0
+        let coordinator = makeCoordinator(settingsBox: box) { _, _ in
+            calls += 1
+            return snapshot
+        }
+        _ = try await coordinator.previewSuggestion(precedingText: "Atlas owner is ")
+        XCTAssertEqual(calls, 0)
+        box.value.cotypingUseMeetingMemory = true
+        _ = try await coordinator.previewSuggestion(precedingText: "Atlas owner is ", sampleOnly: true)
+        XCTAssertEqual(calls, 0)
+        XCTAssertFalse(try XCTUnwrap(engine.requests.last).prompt.contains("Priya"))
+        _ = try await coordinator.previewSuggestion(precedingText: "Atlas owner is ")
+        XCTAssertEqual(calls, 1)
+        XCTAssertTrue(try XCTUnwrap(engine.requests.last).prompt.contains("Priya"))
+        XCTAssertEqual(coordinator.memoryContextSources, ["Atlas"])
+    }
+
+    func testMemoryPermissionRevokedDuringInferenceDropsPreview() async throws {
+        settings.cotypingUseMeetingMemory = true
+        let box = CotypingSettingsBox(settings)
+        let snapshot = memorySnapshot()
+        let coordinator = makeCoordinator(settingsBox: box) { _, _ in snapshot }
+        engine.result = .success("Priya")
+        engine.beforeReturning = { box.value.cotypingUseMeetingMemory = false }
+        let text = try await coordinator.previewSuggestion(precedingText: "Atlas owner is ")
+        XCTAssertEqual(text, "")
+        XCTAssertTrue(coordinator.memoryContextSources.isEmpty)
+    }
+
+    func testMemorySourceMutationDuringInferenceDropsPreview() async throws {
+        settings.cotypingUseMeetingMemory = true
+        let box = CotypingSettingsBox(settings)
+        let snapshot = memorySnapshot()
+        let coordinator = makeCoordinator(settingsBox: box) { _, _ in snapshot }
+        engine.result = .success("Priya")
+        engine.beforeReturning = { coordinator.invalidateMemoryContext() }
+        let text = try await coordinator.previewSuggestion(precedingText: "Atlas owner is ")
+        XCTAssertEqual(text, "")
+    }
+
+    func testMemoryInvalidationDropsCachedTextAndFencesPendingGeneration() {
+        settings.cotypingUseMeetingMemory = true
+        let coordinator = makeCoordinator()
+        coordinator.activeMemoryContext = memorySnapshot()
+        coordinator.memoryContextSources = ["Atlas"]
+        coordinator.lastSuggestion = "Priya"
+        coordinator.suggestionAnchorCache.record(identityKey: "field", requestFingerprint: "request",
+                                                   precedingText: "Atlas owner is ", fullText: "Priya")
+        let generation = coordinator.generation
+        coordinator.invalidateMemoryContext()
+        XCTAssertGreaterThan(coordinator.generation, generation)
+        XCTAssertNil(coordinator.lastSuggestion)
+        XCTAssertTrue(coordinator.memoryContextSources.isEmpty)
+        XCTAssertTrue(coordinator.activeMemoryContext.selection.items.isEmpty)
+        XCTAssertNil(coordinator.suggestionAnchorCache.remainder(
+            identityKey: "field", requestFingerprint: "request", precedingText: "Atlas owner is "))
+    }
+
+    func testMemoryGroundedAcceptanceDoesNotCreateLearningCopy() {
+        settings.cotypingUseLocalLearning = true
+        let coordinator = makeCoordinator()
+        let field = CotypingField(appName: "Notes", bundleID: "com.apple.Notes", processID: 0,
+            role: "AXTextArea", precedingText: "Atlas owner is ", trailingText: "", selectionLength: 0,
+            caretRect: .zero, isSecure: false, caretIsExact: true, learningScopeKey: "document:atlas")
+        coordinator.activeMemoryContext = memorySnapshot()
+        coordinator.recordAcceptedText("Priya leads the release.", field: field, settings: settings)
+        coordinator.clearSuggestion()
+        XCTAssertEqual(coordinator.learningStore.exampleCount, 0)
+        coordinator.activeMemoryContext = .empty
+        coordinator.recordAcceptedText("Our usual next step.", field: field, settings: settings)
+        coordinator.clearSuggestion()
+        XCTAssertEqual(coordinator.learningStore.exampleCount, 1, "control proves the field supports learning")
     }
 }

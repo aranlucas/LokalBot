@@ -1,0 +1,586 @@
+{
+  "summary": {
+    "neither": {
+      "cases": 6,
+      "errors": 0,
+      "selectionFailures": 0,
+      "forbiddenReads": 0,
+      "modelCallFailures": 0,
+      "medianMs": 175.43475,
+      "byKind": {
+        "factual": {
+          "correct": 0,
+          "cases": 4
+        },
+        "fidelity": {
+          "correct": 1,
+          "cases": 1
+        },
+        "transcribe": {
+          "correct": 1,
+          "cases": 1
+        }
+      }
+    },
+    "visible": {
+      "cases": 6,
+      "errors": 0,
+      "selectionFailures": 0,
+      "forbiddenReads": 0,
+      "modelCallFailures": 0,
+      "medianMs": 165.88325,
+      "byKind": {
+        "factual": {
+          "correct": 2,
+          "cases": 4
+        },
+        "fidelity": {
+          "correct": 1,
+          "cases": 1
+        },
+        "transcribe": {
+          "correct": 1,
+          "cases": 1
+        }
+      }
+    },
+    "memory": {
+      "cases": 6,
+      "errors": 0,
+      "selectionFailures": 0,
+      "forbiddenReads": 0,
+      "modelCallFailures": 0,
+      "medianMs": 186.488,
+      "byKind": {
+        "factual": {
+          "correct": 1,
+          "cases": 4
+        },
+        "fidelity": {
+          "correct": 1,
+          "cases": 1
+        },
+        "transcribe": {
+          "correct": 1,
+          "cases": 1
+        }
+      }
+    },
+    "both": {
+      "cases": 6,
+      "errors": 0,
+      "selectionFailures": 0,
+      "forbiddenReads": 0,
+      "modelCallFailures": 0,
+      "medianMs": 182.250333,
+      "byKind": {
+        "factual": {
+          "correct": 3,
+          "cases": 4
+        },
+        "fidelity": {
+          "correct": 1,
+          "cases": 1
+        },
+        "transcribe": {
+          "correct": 1,
+          "cases": 1
+        }
+      }
+    },
+    "all": {
+      "cases": 6,
+      "errors": 0,
+      "selectionFailures": 0,
+      "forbiddenReads": 0,
+      "modelCallFailures": 0,
+      "medianMs": 191.01025,
+      "byKind": {
+        "factual": {
+          "correct": 3,
+          "cases": 4
+        },
+        "fidelity": {
+          "correct": 1,
+          "cases": 1
+        },
+        "transcribe": {
+          "correct": 1,
+          "cases": 1
+        }
+      }
+    }
+  },
+  "controls": [
+    {
+      "id": "dev-fidelity",
+      "unchanged": true
+    },
+    {
+      "id": "dev-transcribe",
+      "unchanged": true
+    }
+  ],
+  "cases": [
+    {
+      "id": "dev-deadline",
+      "kind": "factual",
+      "variant": "neither",
+      "text": "I don't know the requested delivery day.",
+      "correct": false,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 403.726
+    },
+    {
+      "id": "dev-memory",
+      "kind": "factual",
+      "variant": "neither",
+      "text": "The Anise reviewer is John Doe.",
+      "correct": false,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 169.453167
+    },
+    {
+      "id": "dev-linked",
+      "kind": "factual",
+      "variant": "neither",
+      "text": "I will contact the owner.",
+      "correct": false,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 148.044542
+    },
+    {
+      "id": "dev-conflict",
+      "kind": "factual",
+      "variant": "neither",
+      "text": "The current Aster owner is [Owner Name].",
+      "correct": false,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 175.43475
+    },
+    {
+      "id": "dev-fidelity",
+      "kind": "fidelity",
+      "variant": "neither",
+      "text": "We might send 12 units on Friday, but this is not confirmed.",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 246.809416
+    },
+    {
+      "id": "dev-transcribe",
+      "kind": "transcribe",
+      "variant": "neither",
+      "text": "Draft a reply saying we cannot approve it.",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 0.0005
+    },
+    {
+      "id": "dev-deadline",
+      "kind": "factual",
+      "variant": "visible",
+      "text": "Thursday",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 141.53275
+    },
+    {
+      "id": "dev-memory",
+      "kind": "factual",
+      "variant": "visible",
+      "text": "The Anise reviewer is John Doe.",
+      "correct": false,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 167.594833
+    },
+    {
+      "id": "dev-linked",
+      "kind": "factual",
+      "variant": "visible",
+      "text": "I will contact the owner.",
+      "correct": false,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 165.88325
+    },
+    {
+      "id": "dev-conflict",
+      "kind": "factual",
+      "variant": "visible",
+      "text": "Petra",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 128.735667
+    },
+    {
+      "id": "dev-fidelity",
+      "kind": "fidelity",
+      "variant": "visible",
+      "text": "We might send 12 units on Friday, but this is not confirmed.",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 246.633875
+    },
+    {
+      "id": "dev-transcribe",
+      "kind": "transcribe",
+      "variant": "visible",
+      "text": "Draft a reply saying we cannot approve it.",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 0.000542
+    },
+    {
+      "id": "dev-deadline",
+      "kind": "factual",
+      "variant": "memory",
+      "text": "I don't know the requested delivery day.",
+      "correct": false,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 193.049333
+    },
+    {
+      "id": "dev-memory",
+      "kind": "factual",
+      "variant": "memory",
+      "text": "The Anise reviewer is Danica.",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 186.488
+    },
+    {
+      "id": "dev-linked",
+      "kind": "factual",
+      "variant": "memory",
+      "text": "I will contact the owner.",
+      "correct": false,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 157.495875
+    },
+    {
+      "id": "dev-conflict",
+      "kind": "factual",
+      "variant": "memory",
+      "text": "Ivan",
+      "correct": false,
+      "forbiddenFacts": [
+        "Ivan"
+      ],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 127.241417
+    },
+    {
+      "id": "dev-fidelity",
+      "kind": "fidelity",
+      "variant": "memory",
+      "text": "We might send 12 units on Friday, but this is not confirmed.",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 241.610167
+    },
+    {
+      "id": "dev-transcribe",
+      "kind": "transcribe",
+      "variant": "memory",
+      "text": "Draft a reply saying we cannot approve it.",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 0.000625
+    },
+    {
+      "id": "dev-deadline",
+      "kind": "factual",
+      "variant": "both",
+      "text": "Thursday",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 129.125334
+    },
+    {
+      "id": "dev-memory",
+      "kind": "factual",
+      "variant": "both",
+      "text": "The Anise reviewer is Danica.",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 187.323208
+    },
+    {
+      "id": "dev-linked",
+      "kind": "factual",
+      "variant": "both",
+      "text": "I will contact the owner.",
+      "correct": false,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 182.250333
+    },
+    {
+      "id": "dev-conflict",
+      "kind": "factual",
+      "variant": "both",
+      "text": "Petra",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 144.713334
+    },
+    {
+      "id": "dev-fidelity",
+      "kind": "fidelity",
+      "variant": "both",
+      "text": "We might send 12 units on Friday, but this is not confirmed.",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 249.591125
+    },
+    {
+      "id": "dev-transcribe",
+      "kind": "transcribe",
+      "variant": "both",
+      "text": "Draft a reply saying we cannot approve it.",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 0.000542
+    },
+    {
+      "id": "dev-deadline",
+      "kind": "factual",
+      "variant": "all",
+      "text": "Thursday",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 130.482791
+    },
+    {
+      "id": "dev-memory",
+      "kind": "factual",
+      "variant": "all",
+      "text": "The Anise reviewer is Danica.",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 191.01025
+    },
+    {
+      "id": "dev-linked",
+      "kind": "factual",
+      "variant": "all",
+      "text": "I will contact the owner.",
+      "correct": false,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 193.060791
+    },
+    {
+      "id": "dev-conflict",
+      "kind": "factual",
+      "variant": "all",
+      "text": "Petra",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 146.998417
+    },
+    {
+      "id": "dev-fidelity",
+      "kind": "fidelity",
+      "variant": "all",
+      "text": "We might send 12 units on Friday, but this is not confirmed.",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 242.659958
+    },
+    {
+      "id": "dev-transcribe",
+      "kind": "transcribe",
+      "variant": "all",
+      "text": "Draft a reply saying we cannot approve it.",
+      "correct": true,
+      "forbiddenFacts": [],
+      "memorySelectionCorrect": true,
+      "visibleSelectionCorrect": true,
+      "forbiddenReads": [],
+      "modelCallsCorrect": true,
+      "error": null,
+      "latencyMs": 0.000625
+    }
+  ],
+  "manifest": {
+    "appSHA256": "145881ec7f7f47c14bdd9512bd71401bd12c6c9a6a31860bd1ac8663d18aea91",
+    "serverSHA256": "7a776fb67a186875441c729b3392773953582017cd4f63f7d00bfdffa38f328f",
+    "modelSHA256": "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4",
+    "modelFile": "Qwen3.5-4B-Q4_K_M.gguf",
+    "corpusSHA256": "7063219ea6bd61a439b07ed8042142844e259f7fb81298b53872f1bcfdfff17c",
+    "scriptSHA256": "b62e7713fc9787cce1624595cb55d4f82419311aa57f08e0c7ddde5b424db03f",
+    "split": "development",
+    "caseIDs": [
+      "dev-deadline",
+      "dev-memory",
+      "dev-linked",
+      "dev-conflict",
+      "dev-fidelity",
+      "dev-transcribe"
+    ],
+    "serverArguments": [
+      "/private/tmp/lokalbot-dictation-context-release-routing-20261002/LokalBot.app/Contents/Resources/llama-cpp/llama-server",
+      "-m",
+      "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "50112",
+      "-c",
+      "32768",
+      "-ngl",
+      "99",
+      "--parallel",
+      "1",
+      "--jinja",
+      "--no-webui",
+      "--seed",
+      "12648430"
+    ],
+    "settings": "Production Compose: temperature 0.2, max 4096 output tokens, reasoning disabled; fixed server seed",
+    "scope": "Synthetic recognized speech, AX trees and saved facts. No microphone, live screen or user library."
+  }
+}

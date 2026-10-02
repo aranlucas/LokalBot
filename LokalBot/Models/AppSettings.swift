@@ -176,6 +176,9 @@ struct AppSettings: Codable, Equatable {
     var dictationEnabled: Bool = false
     var dictationIntent: DictationIntent = .transcribe
     var dictationUseScreenContext = false
+    var dictationUseVisibleContext = false
+    var dictationUseMeetingMemory = false
+    var dictationUseScreenMemory = false
     var dictationTriggerMode: DictationTriggerMode = .pushToTalk
     var dictationOutputMode: DictationOutputMode = .pasteIntoFocusedApp
     var dictationShowOverlay: Bool = true
@@ -470,6 +473,12 @@ struct AppSettings: Codable, Equatable {
     /// build on what you just copied. On by default; read fresh at generation
     /// time, never persisted, and ignored while cotyping itself is disabled.
     var cotypingUseClipboard: Bool = true
+    /// Separately opt in to relevant meeting notes/outcomes and attributed work
+    /// memory. Screen-derived facts require their independent permission too.
+    /// Transient Accessibility text above the focused field. Separate from saved screen memory.
+    var cotypingUseVisibleContext: Bool = false
+    var cotypingUseMeetingMemory: Bool = false
+    var cotypingUseScreenMemory: Bool = false
     /// Match the host field's font and text color so ghost text reads as a
     /// continuation. On by default; reads via Accessibility (cached per field).
     var cotypingMatchHostStyle: Bool = true
@@ -693,6 +702,7 @@ struct AppSettings: Codable, Equatable {
         case speechSpeed
         case dictationEnabled
         case dictationIntent, dictationUseScreenContext
+        case dictationUseVisibleContext, dictationUseMeetingMemory, dictationUseScreenMemory
         case dictationTriggerMode
         case dictationOutputMode
         case dictationShowOverlay
@@ -763,6 +773,9 @@ struct AppSettings: Codable, Equatable {
         case cotypingSuggestInIntegratedTerminals
         case cotypingUseAppContext
         case cotypingUseClipboard
+        case cotypingUseVisibleContext
+        case cotypingUseMeetingMemory
+        case cotypingUseScreenMemory
         case cotypingMatchHostStyle
         case cotypingMirrorPreference
         case cotypingAutocorrect
@@ -860,6 +873,9 @@ struct AppSettings: Codable, Equatable {
         try c.encode(dictationEnabled, forKey: .dictationEnabled)
         try c.encode(dictationIntent, forKey: .dictationIntent)
         try c.encode(dictationUseScreenContext, forKey: .dictationUseScreenContext)
+        try c.encode(dictationUseVisibleContext, forKey: .dictationUseVisibleContext)
+        try c.encode(dictationUseMeetingMemory, forKey: .dictationUseMeetingMemory)
+        try c.encode(dictationUseScreenMemory, forKey: .dictationUseScreenMemory)
         try c.encode(dictationTriggerMode, forKey: .dictationTriggerMode)
         try c.encode(dictationOutputMode, forKey: .dictationOutputMode)
         try c.encode(dictationShowOverlay, forKey: .dictationShowOverlay)
@@ -938,6 +954,9 @@ struct AppSettings: Codable, Equatable {
         try c.encode(cotypingSuggestInIntegratedTerminals, forKey: .cotypingSuggestInIntegratedTerminals)
         try c.encode(cotypingUseAppContext, forKey: .cotypingUseAppContext)
         try c.encode(cotypingUseClipboard, forKey: .cotypingUseClipboard)
+        try c.encode(cotypingUseVisibleContext, forKey: .cotypingUseVisibleContext)
+        try c.encode(cotypingUseMeetingMemory, forKey: .cotypingUseMeetingMemory)
+        try c.encode(cotypingUseScreenMemory, forKey: .cotypingUseScreenMemory)
         try c.encode(cotypingMatchHostStyle, forKey: .cotypingMatchHostStyle)
         try c.encode(cotypingMirrorPreference, forKey: .cotypingMirrorPreference)
         try c.encode(cotypingAutocorrect, forKey: .cotypingAutocorrect)
@@ -1004,6 +1023,9 @@ struct AppSettings: Codable, Equatable {
         // Existing installations keep the original Compose behavior.
         dictationIntent = decode(.dictationIntent, .compose)
         dictationUseScreenContext = decode(.dictationUseScreenContext, true)
+        dictationUseVisibleContext = decode(.dictationUseVisibleContext, false)
+        dictationUseMeetingMemory = decode(.dictationUseMeetingMemory, false)
+        dictationUseScreenMemory = decode(.dictationUseScreenMemory, false)
         dictationTriggerMode = decode(.dictationTriggerMode, defaults.dictationTriggerMode)
         dictationOutputMode = decode(.dictationOutputMode, defaults.dictationOutputMode)
         dictationShowOverlay = decode(.dictationShowOverlay, defaults.dictationShowOverlay)
@@ -1106,6 +1128,9 @@ struct AppSettings: Codable, Equatable {
             defaults.cotypingSuggestInIntegratedTerminals)
         cotypingUseAppContext = decode(.cotypingUseAppContext, defaults.cotypingUseAppContext)
         cotypingUseClipboard = decode(.cotypingUseClipboard, defaults.cotypingUseClipboard)
+        cotypingUseVisibleContext = decode(.cotypingUseVisibleContext, defaults.cotypingUseVisibleContext)
+        cotypingUseMeetingMemory = decode(.cotypingUseMeetingMemory, defaults.cotypingUseMeetingMemory)
+        cotypingUseScreenMemory = decode(.cotypingUseScreenMemory, defaults.cotypingUseScreenMemory)
         cotypingMatchHostStyle = decode(.cotypingMatchHostStyle, defaults.cotypingMatchHostStyle)
         cotypingMirrorPreference = decode(
             .cotypingMirrorPreference, defaults.cotypingMirrorPreference)

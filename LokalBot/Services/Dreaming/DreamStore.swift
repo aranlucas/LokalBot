@@ -287,6 +287,14 @@ struct DreamStore {
         }
     }
 
+    /// Autocomplete must fail closed during a source mutation without waiting
+    /// on a store/file lock inside the keyboard acceptance callback.
+    var autocompleteEvidenceIsAvailable: Bool {
+        guard Self.mutationLock.try() else { return false }
+        defer { Self.mutationLock.unlock() }
+        return evidenceIsAvailable
+    }
+
     func save(_ memory: DreamMemory) throws {
         try withLock {
             try requireAvailableEvidence()

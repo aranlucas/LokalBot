@@ -1,0 +1,800 @@
+{
+  "summary": {
+    "neither": {
+      "factualCases": 8,
+      "correct": 0,
+      "firstWordCorrect": 0,
+      "visibleSelectionsCorrect": 8,
+      "memorySelectionsCorrect": 8,
+      "totalCases": 8,
+      "errors": 0,
+      "suppressed": 0,
+      "forbiddenReads": 0,
+      "medianMs": 73.848271,
+      "byKind": {
+        "combined": {
+          "cases": 1,
+          "correct": 0,
+          "staleFact": 0
+        },
+        "conflict": {
+          "cases": 1,
+          "correct": 0,
+          "staleFact": 0
+        },
+        "generic": {
+          "cases": 0,
+          "correct": 0,
+          "staleFact": 0
+        },
+        "memory": {
+          "cases": 1,
+          "correct": 0,
+          "staleFact": 0
+        },
+        "visible": {
+          "cases": 5,
+          "correct": 0,
+          "staleFact": 0
+        }
+      }
+    },
+    "visible": {
+      "factualCases": 8,
+      "correct": 6,
+      "firstWordCorrect": 6,
+      "visibleSelectionsCorrect": 8,
+      "memorySelectionsCorrect": 8,
+      "totalCases": 8,
+      "errors": 0,
+      "suppressed": 0,
+      "forbiddenReads": 0,
+      "medianMs": 67.282271,
+      "byKind": {
+        "combined": {
+          "cases": 1,
+          "correct": 0,
+          "staleFact": 0
+        },
+        "conflict": {
+          "cases": 1,
+          "correct": 1,
+          "staleFact": 0
+        },
+        "generic": {
+          "cases": 0,
+          "correct": 0,
+          "staleFact": 0
+        },
+        "memory": {
+          "cases": 1,
+          "correct": 0,
+          "staleFact": 0
+        },
+        "visible": {
+          "cases": 5,
+          "correct": 5,
+          "staleFact": 0
+        }
+      }
+    },
+    "memory": {
+      "factualCases": 8,
+      "correct": 2,
+      "firstWordCorrect": 2,
+      "visibleSelectionsCorrect": 8,
+      "memorySelectionsCorrect": 8,
+      "totalCases": 8,
+      "errors": 0,
+      "suppressed": 0,
+      "forbiddenReads": 0,
+      "medianMs": 71.7295625,
+      "byKind": {
+        "combined": {
+          "cases": 1,
+          "correct": 1,
+          "staleFact": 0
+        },
+        "conflict": {
+          "cases": 1,
+          "correct": 0,
+          "staleFact": 1
+        },
+        "generic": {
+          "cases": 0,
+          "correct": 0,
+          "staleFact": 0
+        },
+        "memory": {
+          "cases": 1,
+          "correct": 1,
+          "staleFact": 0
+        },
+        "visible": {
+          "cases": 5,
+          "correct": 0,
+          "staleFact": 0
+        }
+      }
+    },
+    "both": {
+      "factualCases": 8,
+      "correct": 8,
+      "firstWordCorrect": 8,
+      "visibleSelectionsCorrect": 8,
+      "memorySelectionsCorrect": 8,
+      "totalCases": 8,
+      "errors": 0,
+      "suppressed": 0,
+      "forbiddenReads": 0,
+      "medianMs": 55.6868125,
+      "byKind": {
+        "combined": {
+          "cases": 1,
+          "correct": 1,
+          "staleFact": 0
+        },
+        "conflict": {
+          "cases": 1,
+          "correct": 1,
+          "staleFact": 0
+        },
+        "generic": {
+          "cases": 0,
+          "correct": 0,
+          "staleFact": 0
+        },
+        "memory": {
+          "cases": 1,
+          "correct": 1,
+          "staleFact": 0
+        },
+        "visible": {
+          "cases": 5,
+          "correct": 5,
+          "staleFact": 0
+        }
+      }
+    }
+  },
+  "controls": [],
+  "cases": [
+    {
+      "id": "dev-date",
+      "kind": "visible",
+      "variant": "neither",
+      "text": "the end of",
+      "expected": "Thursday",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 82.508208,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-place",
+      "kind": "visible",
+      "variant": "neither",
+      "text": "the Sequoia National",
+      "expected": "Tivat",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 71.884,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-person",
+      "kind": "visible",
+      "variant": "neither",
+      "text": "you to draw",
+      "expected": "Rafael",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 75.900959,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-conflict",
+      "kind": "conflict",
+      "variant": "neither",
+      "text": "the main branch.",
+      "expected": "Friday",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 58.942083,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-memory",
+      "kind": "memory",
+      "variant": "neither",
+      "text": "a bit of",
+      "expected": "Leila",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 71.01975,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-serbian",
+      "kind": "visible",
+      "variant": "neither",
+      "text": "subotu u 10",
+      "expected": "Budvi",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 77.720167,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-form",
+      "kind": "visible",
+      "variant": "neither",
+      "text": "the HP EliteBook",
+      "expected": "ThinkPad",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 75.812542,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-both",
+      "kind": "combined",
+      "variant": "neither",
+      "text": "the list.",
+      "expected": "Omar",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 50.948333,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-date",
+      "kind": "visible",
+      "variant": "visible",
+      "text": "Thursday.",
+      "expected": "Thursday",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 62.792333,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-place",
+      "kind": "visible",
+      "variant": "visible",
+      "text": "Tivat with my",
+      "expected": "Tivat",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 75.31525,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-person",
+      "kind": "visible",
+      "variant": "visible",
+      "text": "Rafael for the",
+      "expected": "Rafael",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 70.785625,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-conflict",
+      "kind": "conflict",
+      "variant": "visible",
+      "text": "Friday, 10/",
+      "expected": "Friday",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 74.896875,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-memory",
+      "kind": "memory",
+      "variant": "visible",
+      "text": "a bit of",
+      "expected": "Leila",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 76.295667,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-serbian",
+      "kind": "visible",
+      "variant": "visible",
+      "text": "Budvi.",
+      "expected": "Budvi",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 63.778917,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-form",
+      "kind": "visible",
+      "variant": "visible",
+      "text": "ThinkPad.",
+      "expected": "ThinkPad",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 49.025375,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-both",
+      "kind": "combined",
+      "variant": "visible",
+      "text": "its assigned reviewer.",
+      "expected": "Omar",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 57.7795,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-date",
+      "kind": "visible",
+      "variant": "memory",
+      "text": "the end of",
+      "expected": "Thursday",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 83.308666,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-place",
+      "kind": "visible",
+      "variant": "memory",
+      "text": "the Sequoia National",
+      "expected": "Tivat",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 71.441584,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-person",
+      "kind": "visible",
+      "variant": "memory",
+      "text": "you to draw",
+      "expected": "Rafael",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 74.235833,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-conflict",
+      "kind": "conflict",
+      "variant": "memory",
+      "text": "Tuesday.",
+      "expected": "Friday",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": true,
+      "visibleIDs": [],
+      "memoryIDs": [
+        "memory-dev-conflict"
+      ],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 45.622542,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-memory",
+      "kind": "memory",
+      "variant": "memory",
+      "text": "Leila.",
+      "expected": "Leila",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [
+        "memory-dev-memory"
+      ],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 40.756,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-serbian",
+      "kind": "visible",
+      "variant": "memory",
+      "text": "subotu u 10",
+      "expected": "Budvi",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 72.017541,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-form",
+      "kind": "visible",
+      "variant": "memory",
+      "text": "the HP EliteBook",
+      "expected": "ThinkPad",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 75.269917,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-both",
+      "kind": "combined",
+      "variant": "memory",
+      "text": "Omar.",
+      "expected": "Omar",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [
+        "memory-dev-both"
+      ],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 45.115375,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-date",
+      "kind": "visible",
+      "variant": "both",
+      "text": "Thursday.",
+      "expected": "Thursday",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 63.383083,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-place",
+      "kind": "visible",
+      "variant": "both",
+      "text": "Tivat with my",
+      "expected": "Tivat",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 74.128917,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-person",
+      "kind": "visible",
+      "variant": "both",
+      "text": "Rafael for the",
+      "expected": "Rafael",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 68.094542,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-conflict",
+      "kind": "conflict",
+      "variant": "both",
+      "text": "Friday.",
+      "expected": "Friday",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [
+        "memory-dev-conflict"
+      ],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 52.074541,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-memory",
+      "kind": "memory",
+      "variant": "both",
+      "text": "Leila.",
+      "expected": "Leila",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [
+        "memory-dev-memory"
+      ],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 41.633833,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-serbian",
+      "kind": "visible",
+      "variant": "both",
+      "text": "Budvi.",
+      "expected": "Budvi",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 59.299084,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-form",
+      "kind": "visible",
+      "variant": "both",
+      "text": "ThinkPad.",
+      "expected": "ThinkPad",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 48.862666,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "dev-both",
+      "kind": "combined",
+      "variant": "both",
+      "text": "Omar.",
+      "expected": "Omar",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [
+        "memory-dev-both"
+      ],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 51.536917,
+      "error": null,
+      "suppression": null
+    }
+  ],
+  "manifest": {
+    "appSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb",
+    "modelFile": "gemma-4-E2B.i1-Q6_K.gguf",
+    "modelSHA256": "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
+    "corpusSHA256": "18b47798e5bb3e29717f141e04b0181f1b9a89f9efa27e48f06177e53e1dbfce",
+    "scriptSHA256": "dea80c674ccb4cb9bf7952e93f62fab235338ea5a24ab428682a886f27b48c8b",
+    "split": "development",
+    "caseIDs": [
+      "dev-date",
+      "dev-place",
+      "dev-person",
+      "dev-conflict",
+      "dev-memory",
+      "dev-serbian",
+      "dev-form",
+      "dev-both"
+    ],
+    "settings": "production defaults (3 words, 5 tokens)",
+    "context": "synthetic AX regions and saved facts; no live user data",
+    "metric": "expected fact occurs as complete lexical words in the emitted continuation"
+  }
+}

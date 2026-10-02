@@ -146,6 +146,8 @@ enum CotypingSuggestionCacheFingerprint {
             settings.cotypingInProcessRuntime ? "local" : "http",
             settings.cotypingUseClipboard ? "clipboard:on" : "clipboard:off",
             settings.cotypingUseLocalLearning ? "learning:on" : "learning:off",
+            settings.cotypingUseMeetingMemory ? "meeting-memory:on" : "meeting-memory:off",
+            settings.cotypingUseScreenMemory ? "screen-memory:on" : "screen-memory:off",
             String(settings.cotypingLearningExamplesInPrompt),
             personalization.userName ?? "",
             personalization.styleNote ?? "",

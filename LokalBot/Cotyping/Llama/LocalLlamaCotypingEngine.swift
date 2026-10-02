@@ -150,7 +150,7 @@ final class LocalLlamaCotypingEngine: CotypingCompleting {
     static func healedGeneration(
         for request: CotypingRequest
     ) -> (prompt: String, requiredPrefixUTF8: [UInt8]) {
-        guard !request.wordPrefixAtCaret.isEmpty,
+        guard !request.wordPrefixAtCaret.isEmpty || request.precedingEndsWithWhitespace,
               let split = CotypingTokenHealing.split(prompt: request.prompt) else {
             return (request.prompt, [])
         }
