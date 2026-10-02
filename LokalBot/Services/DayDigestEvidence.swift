@@ -1051,6 +1051,9 @@ enum DayDigestOverviewGenerator {
         var outcome: String
         var nextStep: String
         var sourceIDs: [Int64]
+        /// Other distinct work in the same segment. Answers saved before it
+        /// existed decode with none.
+        var otherTasks: [FocusDraft]?
 
         enum CodingKeys: String, CodingKey {
             case substantive
@@ -1060,12 +1063,14 @@ enum DayDigestOverviewGenerator {
             case outcome
             case nextStep = "next_step"
             case sourceIDs = "source_ids"
+            case otherTasks = "other_tasks"
         }
     }
 
     private struct ParsedFocus {
         var block: DayDigestGeneratedFocusBlock?
         var isSubstantive: Bool
+        var others: [(block: DayDigestGeneratedFocusBlock, isSubstantive: Bool)] = []
     }
 
     private struct DigestDraft: Decodable {
@@ -1168,7 +1173,7 @@ enum DayDigestOverviewGenerator {
             // The prompt depends only on the segment's own evidence, so an
             // unchanged segment can reuse its earlier answer.
             let focusPrompt = """
-                Extract a substantive-work candidate from this evidence segment.
+                Extract the substantive-work candidates from this evidence segment.
                 Decide eligibility from the work content, not from time spent or app usage.
                 Allowed screen source IDs: \(segment.sourceIDs)
 
@@ -1176,16 +1181,20 @@ enum DayDigestOverviewGenerator {
                 """
             let cacheKey = DayDigestSegmentCache.key(
                 engine: engine, system: PromptTemplates.dayDigestFocusSystem, prompt: focusPrompt)
-            if let cached = segmentCache?.output(day: cacheDay, key: cacheKey),
-               let parsed = parseFocus(cached, segment: segment) {
-                if let block = parsed.block {
-                    coveredSeconds += segment.activeDuration
-                    if parsed.isSubstantive {
+            func accept(_ parsed: ParsedFocus) {
+                guard let block = parsed.block else { return }
+                coveredSeconds += segment.activeDuration
+                for (block, isSubstantive) in [(block: block, isSubstantive: parsed.isSubstantive)] + parsed.others {
+                    if isSubstantive {
                         substantiveBlocks.append(block)
                     } else {
                         fallbackBlocks.append(block)
                     }
                 }
+            }
+            if let cached = segmentCache?.output(day: cacheDay, key: cacheKey),
+               let parsed = parseFocus(cached, segment: segment) {
+                accept(parsed)
                 lokalbotLog(
                     "day digest segment index=\(index + 1)/\(segments.count) "
                         + "events=\(segment.eventCount) reused=true usable=\(parsed.block != nil)")
@@ -1293,28 +1302,22 @@ enum DayDigestOverviewGenerator {
             // A cancelled run is answering for evidence that just changed or
             // was deleted; never keep its answer.
             if parsed != nil, !Task.isCancelled { segmentCache?.store(output, day: cacheDay, key: cacheKey) }
-            if let parsed, let block = parsed.block {
-                coveredSeconds += segment.activeDuration
-                if parsed.isSubstantive {
-                    substantiveBlocks.append(block)
-                } else {
-                    fallbackBlocks.append(block)
-                }
-            }
+            if let parsed { accept(parsed) }
             lokalbotLog(
                 "day digest segment index=\(index + 1)/\(segments.count) "
                     + "events=\(segment.eventCount) chars=\(segment.evidence.count) "
                     + "parsed=\(parsed != nil) "
                     + "substantive=\(parsed?.isSubstantive == true) "
-                    + "usable=\(parsed?.block != nil) "
+                    + "usable=\(parsed?.block != nil) others=\(parsed?.others.count ?? 0) "
                     + "attempts=\(attempts) elapsed="
                     + String(format: "%.2fs", Date().timeIntervalSince(startedAt)))
         }
 
-        // Segment extraction yields one task per segment, so of several
-        // parallel sessions all but one would vanish. Those that recorded an
-        // outcome are stated from their actions and added after aggregation:
-        // a small model asked to merge them blends unrelated sessions.
+        // Segment extraction keeps at most three items per segment, and a
+        // small model rarely fills them all, so parallel sessions could still
+        // vanish. Those that recorded an outcome are stated from their actions
+        // and added after aggregation: a small model asked to merge them
+        // blends unrelated sessions.
         let sessionCandidates = agentSessionCandidates(evidence)
 
         let usesBestAvailableActivity = substantiveBlocks.isEmpty
@@ -1683,6 +1686,15 @@ enum DayDigestOverviewGenerator {
     }
 
     private static var focusSchema: [String: Any] {
+        var schema = focusTaskSchema
+        var properties = schema["properties"] as? [String: Any] ?? [:]
+        properties["other_tasks"] = ["type": "array", "items": focusTaskSchema, "maxItems": 2]
+        schema["properties"] = properties
+        schema["required"] = (schema["required"] as? [String] ?? []) + ["other_tasks"]
+        return schema
+    }
+
+    private static var focusTaskSchema: [String: Any] {
         [
             "type": "object",
             "properties": [
@@ -1765,28 +1777,44 @@ enum DayDigestOverviewGenerator {
               let draft = try? JSONDecoder().decode(FocusDraft.self, from: data) else {
             return nil
         }
-        let task = cleanInline(draft.task, maxCharacters: FieldLimit.titleCharacters)
-        let workDone = cleanSummary(draft.workDone, maxWords: FieldLimit.workDoneWords)
-        if task.isEmpty || workDone.isEmpty {
+        guard let main = focusBlock(draft, segment: segment) else {
             return draft.substantive
                 ? nil
                 : ParsedFocus(block: nil, isSubstantive: false)
         }
+        var parsed = ParsedFocus(block: main, isSubstantive: draft.substantive)
+        var seen = [normalizedTaskKey(main.task)]
+        // At most two others, as the schema asks; a repeat of a task already
+        // kept does not use a slot.
+        for other in draft.otherTasks ?? [] where parsed.others.count < 2 {
+            guard let block = focusBlock(other, segment: segment),
+                  !seen.contains(normalizedTaskKey(block.task)) else { continue }
+            seen.append(normalizedTaskKey(block.task))
+            parsed.others.append((block, other.substantive))
+        }
+        return parsed
+    }
+
+    private static func focusBlock(
+        _ draft: FocusDraft,
+        segment: DayDigestSummarySegment
+    ) -> DayDigestGeneratedFocusBlock? {
+        let task = cleanInline(draft.task, maxCharacters: FieldLimit.titleCharacters)
+        let workDone = cleanSummary(draft.workDone, maxWords: FieldLimit.workDoneWords)
+        guard !task.isEmpty, !workDone.isEmpty else { return nil }
         let allowed = Set(segment.sourceIDs)
         var sourceIDs: [Int64] = []
         for id in draft.sourceIDs where allowed.contains(id) && !sourceIDs.contains(id) {
             sourceIDs.append(id)
             if sourceIDs.count == 2 { break }
         }
-        return ParsedFocus(
-            block: DayDigestGeneratedFocusBlock(
-                task: task,
-                workDone: workDone,
-                status: normalizedStatus(draft.status),
-                outcome: cleanSummary(draft.outcome, maxWords: 32),
-                nextStep: cleanSummary(draft.nextStep, maxWords: 28),
-                sourceIDs: sourceIDs),
-            isSubstantive: draft.substantive)
+        return DayDigestGeneratedFocusBlock(
+            task: task,
+            workDone: workDone,
+            status: normalizedStatus(draft.status),
+            outcome: cleanSummary(draft.outcome, maxWords: 32),
+            nextStep: cleanSummary(draft.nextStep, maxWords: 28),
+            sourceIDs: sourceIDs)
     }
 
     private static func parseDigest(_ output: String) -> DigestDraft? {

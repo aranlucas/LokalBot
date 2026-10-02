@@ -1,0 +1,485 @@
+{
+  "model" : "qwen3.5-4b",
+  "results" : [
+    {
+      "calls" : [
+        {
+          "output" : "{\n  \"next_step\": \"Merge PR #118 after author responds to review comments\",\n  \"source_ids\": [101, 102],\n  \"status\": \"completed\",\n  \"other_tasks\": [\n    {\n      \"work_done\": \"Drafted escalation email about Acme Corp SSO login failures\",\n      \"status\": \"in_progress\",\n      \"substantive\": true,\n      \"task\": \"Acme Corp SSO login failure escalation\",\n      \"source_ids\": [103, 106],\n      \"outcome\": \"Email drafted with fix details (trust both certificates, ships 10:00 UTC)\",\n      \"next_step\": \"Send email to Jordan\"\n    }\n  ],\n  \"task\": \"AuthRateLimiter.swift rate limiter fix\",\n  \"outcome\": \"Implemented sliding window fix to reset counter after successful login; tests passing (18\/18)\",\n  \"substantive\": true,\n  \"work_done\": \"Fixed AuthRateLimiter.swift to reset counter after successful login; ran tests confirming fix works\"\n}",
+          "seconds" : 8.2524679899215698,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"task\": \"Search ranking v2 design doc\",\n  \"work_done\": \"Reviewed design doc proposal for BM25 baseline plus recency decay (half-life 30 days) and identified open question regarding per-team vs global boosts.\",\n  \"source_ids\": [107, 108],\n  \"next_step\": \"Address open question regarding per-team boosts or global boosts and prepare offline eval set for launch.\",\n  \"other_tasks\": [],\n  \"substantive\": true,\n  \"outcome\": \"Identified need for offline eval set before launch per Lee's comment; defined rollout plan with shadow traffic at 10% for one week.\",\n  \"status\": \"in_progress\"\n}",
+          "seconds" : 4.7528200149536133,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"task\": \"Incident response - Northwind payments webhook issue\",\n  \"work_done\": \"Coordinated rollback of deploy 4512 for Stripe webhook retry issue, confirmed queue draining after rollback\",\n  \"source_ids\": [110, 112],\n  \"next_step\": \"Write postmortem for incident\",\n  \"other_tasks\": [],\n  \"outcome\": \"Rollback completed, 1,100 items remaining in queue\",\n  \"substantive\": true,\n  \"status\": \"completed\"\n}",
+          "seconds" : 4.4765360355377197,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"tasks\": [\n    {\n      \"summary\": \"Implemented sliding window fix to reset counter after successful login in AuthRateLimiter.swift; tests passing (18\/18).\",\n      \"status\": \"completed\",\n      \"next_step\": \"Merge PR #118 after author responds to review comments\",\n      \"block_indices\": [\n        0\n      ],\"title\": \"AuthRateLimiter.swift rate limiter fix\"\n    },\n    {\n      \"summary\": \"Coordinated rollback of deploy 4512 for Northwind payments webhook retry issue; confirmed queue draining after rollback.\",\n      \"status\": \"completed\",\n      \"next_step\": \"Write postmortem for incident\",\n      \"block_indices\": [\n        3\n      ],\"title\": \"Incident response - Northwind payments webhook issue\"\n    },\n    {\n      \"summary\": \"Reviewed Search ranking v2 design doc proposal and identified need for offline eval set before launch; defined rollout plan with shadow traffic.\",\n      \"status\": \"in_progress\",\n      \"next_step\": \"Address open question regarding per-team boosts or global boosts and prepare offline eval set for launch\",\n      \"block_indices\": [\n        2\n      ],\"title\": \"Search ranking v2 design doc\"\n    },\n    {\n      \"summary\": \"Drafted escalation email about Acme Corp SSO login failures with fix details.\",\n      \"status\": \"in_progress\",\n      \"next_step\": \"Send email to Jordan\",\n      \"block_indices\": [\n        1\n      ],\"title\": \"Acme Corp SSO login failure escalation\"\n    }\n  ],\"decisions\": [],\"blockers\": []\n}",
+          "seconds" : 9.675881028175354,
+          "stage" : "digest"
+        }
+      ],
+      "covered_seconds" : 10800,
+      "day" : "parallel-morning",
+      "quality" : "complete",
+      "run" : 1,
+      "seconds" : 27.192427039146423,
+      "segments" : 3,
+      "summary" : "### Tasks\n- **AuthRateLimiter.swift rate limiter fix** — Completed. Implemented sliding window fix to reset counter after successful login in AuthRateLimiter.swift; tests passing (18\/18).\n- **Incident response - Northwind payments webhook issue** — Completed. Coordinated rollback of deploy 4512 for Northwind payments webhook retry issue; confirmed queue draining after rollback.\n- **Search ranking v2 design doc** — In progress. Reviewed Search ranking v2 design doc proposal and identified need for offline eval set before launch; defined rollout plan with shadow traffic.\n- **Acme Corp SSO login failure escalation** — In progress. Drafted escalation email about Acme Corp SSO login failures with fix details.\n\n### Decisions and next steps\n- Next — AuthRateLimiter.swift rate limiter fix: Merge PR #118 after author responds to review comments\n- Next — Incident response - Northwind payments webhook issue: Write postmortem for incident\n- Next — Search ranking v2 design doc: Address open question regarding per-team boosts or global boosts and prepare offline eval set for launch\n- Next — Acme Corp SSO login failure escalation: Send email to Jordan",
+      "tracked_seconds" : 10800
+    },
+    {
+      "calls" : [
+        {
+          "output" : "{\n  \"status\": \"completed\",\n  \"source_ids\": [\n    201,\n    202\n  ],\n  \"substantive\": true,\n  \"next_step\": \"Review migration script execution logs for data integrity.\",\n  \"task\": \"Database migration: migrate_users to PostgreSQL 16\",\n  \"other_tasks\": [],\n  \"work_done\": \"Executed SQL dump and applied migration script 0042_users_pg16.sql to add email_normalized column and index.\",\n  \"outcome\": \"Migration script executed successfully with 1843221 rows copied.\"\n}",
+          "seconds" : 4.3786859512329102,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"next_step\": \"Review migration logs and verify data integrity for the next batch of users.\",\n  \"source_ids\": [\n    203,\n    204\n  ],\n  \"substantive\": true,\n  \"status\": \"completed\",\n  \"task\": \"Database migration and verification\",\n  \"other_tasks\": [],\n  \"work_done\": \"Verified user data integrity in Postgres 16 replica and confirmed migration 0042 completion.\",\n  \"outcome\": \"Row counts match legacy data (1,843,221) and checksum verification passed.\"\n}",
+          "seconds" : 5.50298011302948,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"status\": \"unknown\",\n  \"source_ids\": [205, 206],\n  \"substantive\": false,\n  \"next_step\": \"\",\n  \"task\": \"Q4 OKRs — Platform team\",\n  \"other_tasks\": [],\n  \"work_done\": \"Reviewed Q4 OKRs document for Platform team, specifically O1 (Reliable payments) and O2 (Faster search). Noted Sam's suggestion to merge O1 KR2 into the checkout OKR.\",\"outcome\": \"\"\n}",
+          "seconds" : 4.2450098991394043,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"tasks\": [\n    {\n      \"block_indices\": [0, 1],\n      \"status\": \"completed\",\n      \"next_step\": \"Review migration script execution logs for data integrity.\",\n      \"title\": \"Database migration: migrate_users to PostgreSQL 16\",\n      \"summary\": \"Executed migration script 0042_users_pg16.sql to add email_normalized column and index, copying 1,843,221 rows. Verified data integrity in Postgres 16 replica with matching row counts and passed checksum verification.\"\n    },\n    {\n      \"block_indices\": [2],\n      \"status\": \"unknown\",\n      \"next_step\": \"\",\n      \"title\": \"Q4 OKRs — Platform team\",\n      \"summary\": \"Reviewed Q4 OKRs document for Platform team, specifically O1 (Reliable payments) and O2 (Faster search), noting a suggestion to merge O1 KR2 into the checkout OKR.\"\n    }\n  ],\"decisions\": [], \"blockers\": []}",
+          "seconds" : 8.075219988822937,
+          "stage" : "digest"
+        }
+      ],
+      "covered_seconds" : 10800,
+      "day" : "focused-day",
+      "quality" : "complete",
+      "run" : 1,
+      "seconds" : 22.232302069664001,
+      "segments" : 3,
+      "summary" : "### Tasks\n- **Database migration: migrate_users to PostgreSQL 16** — Completed. Executed migration script 0042_users_pg16.sql to add email_normalized column and index, copying 1,843,221 rows. Verified data integrity in Postgres 16 replica with matching row counts and passed checksum verification.\n- **Q4 OKRs — Platform team** — Reviewed Q4 OKRs document for Platform team, specifically O1 (Reliable payments) and O2 (Faster search), noting a suggestion to merge O1 KR2 into the checkout OKR.\n\n### Decisions and next steps\n- Next — Database migration: migrate_users to PostgreSQL 16: Review migration script execution logs for data integrity.",
+      "tracked_seconds" : 10800
+    },
+    {
+      "calls" : [
+        {
+          "output" : "{\n  \"next_step\": \"Add cursor pagination example to API documentation\",\n  \"source_ids\": [301, 303],\n  \"substantive\": true,\n  \"status\": \"completed\",\n  \"task\": \"Fix flaky CheckoutFlowTests in ShopApp\",\n  \"other_tasks\": [\n    {\n      \"work_done\": \"Answered technical question about pagination API (cursor vs offset) with Priya Raman\",\n      \"status\": \"completed\",\n      \"substantive\": true,\n      \"task\": \"Consultation: API pagination discussion\",\n      \"source_ids\": [302, 304],\n      \"outcome\": \"Agreed to update API docs with cursor example\",\n      \"next_step\": \"Add cursor example to API documentation\"\n    }\n  ],\n  \"work_done\": \"Fixed flaky CheckoutFlowTests by replacing sleep with waitForExistence for confirmation banner detection. Test now passes consistently (20\/20 runs). Committed fix to repository.\",\"outcome\": \"Test stability improved; flaky test resolved and committed\"}",
+          "seconds" : 6.0908730030059814,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"status\": \"unknown\",\n  \"source_ids\": [305],\n  \"substantive\": false,\n  \"next_step\": \"\",\n  \"task\": \"\",\n  \"other_tasks\": [],\n  \"work_done\": \"\",\"outcome\": \"\"\n}",
+          "seconds" : 3.5972840785980225,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"next_step\": \"Review SHOP-812 crash fix implementation and verify currency symbol fix for SHOP-815\",\n  \"source_ids\": [307, 308],\n  \"substantive\": true,\n  \"status\": \"in_progress\",\n  \"task\": \"Bug triage and release coordination\",\n  \"other_tasks\": [],\n  \"work_done\": \"Reviewed bug tickets SHOP-812 (crash on address edit) and SHOP-815 (wrong currency symbol) in Linear; discussed on-call rotation and release checklist ownership with Sam in 1:1 meeting\",\"outcome\": \"Identified urgent bug SHOP-812 assigned to self; confirmed promotion packet timeline draft deadline of September 1; pending decision on release checklist ownership\"}",
+          "seconds" : 4.9617240428924561,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"tasks\": [\n    {\n      \"block_indices\": [\n        0\n      ],\n      \"status\": \"completed\",\n      \"next_step\": \"Add cursor pagination example to API documentation\",\n      \"title\": \"Fix flaky CheckoutFlowTests in ShopApp\",\n      \"summary\": \"Replaced sleep with waitForExistence for confirmation banner detection to resolve flaky test failures. Test now passes consistently and the fix was committed to the repository.\"\n    },\n    {\n      \"block_indices\": [\n        1\n      ],\n      \"status\": \"completed\",\n      \"next_step\": \"Add cursor example to API documentation\",\n      \"title\": \"Consultation: API pagination discussion\",\n      \"summary\": \"Answered technical question about pagination API (cursor vs offset) and agreed to update API docs with cursor example.\"\n    },\n    {\n      \"block_indices\": [\n        2\n      ],\n      \"status\": \"in_progress\",\n      \"next_step\": \"Review SHOP-812 crash fix implementation and verify currency symbol fix for SHOP-815\",\n      \"title\": \"Bug triage and release coordination\",\n      \"summary\": \"Reviewed bug tickets SHOP-812 and SHOP-815 in Linear and discussed on-call rotation and release checklist ownership. Identified urgent bug SHOP-812 assigned to self; confirmed promotion packet timeline draft deadline of September 1.\"\n    }\n  ],\"decisions\": [], \"blockers\": []\n}",
+          "seconds" : 8.8082219362258911,
+          "stage" : "digest"
+        }
+      ],
+      "covered_seconds" : 7200,
+      "day" : "mixed-with-noise",
+      "quality" : "complete",
+      "run" : 1,
+      "seconds" : 23.499855041503906,
+      "segments" : 3,
+      "summary" : "### Tasks\n- **Fix flaky CheckoutFlowTests in ShopApp** — Completed. Replaced sleep with waitForExistence for confirmation banner detection to resolve flaky test failures. Test now passes consistently and the fix was committed to the repository.\n- **Consultation: API pagination discussion** — Completed. Answered technical question about pagination API (cursor vs offset) and agreed to update API docs with cursor example.\n- **Bug triage and release coordination** — In progress. Reviewed bug tickets SHOP-812 and SHOP-815 in Linear and discussed on-call rotation and release checklist ownership. Identified urgent bug SHOP-812 assigned to self; confirmed promotion packet timeline draft deadline of September 1.\n\n### Decisions and next steps\n- Next — Fix flaky CheckoutFlowTests in ShopApp: Add cursor pagination example to API documentation\n- Next — Bug triage and release coordination: Review SHOP-812 crash fix implementation and verify currency symbol fix for SHOP-815",
+      "tracked_seconds" : 9000
+    },
+    {
+      "calls" : [
+        {
+          "output" : "{\n  \"work_done\": \"Implemented rate limiter fix in AuthRateLimiter.swift to reset counters after successful login, ran tests confirming testResetsAfterSuccessfulLogin and testThrottlesSixthAttempt passed, reviewed PR #118 for billing-service proration rounding issues and test requirements, drafted escalation email response about Acme Corp SSO login failures\",\n  \"status\": \"completed\",\n  \"outcome\": \"Code fix implemented and tested successfully, PR review submitted with comments, escalation email drafted\",\n  \"next_step\": \"Send escalation email to Jordan, merge PR #118 after author responds\",\n  \"other_tasks\": [],\n  \"source_ids\": [101, 102],\n  \"substantive\": true,\n  \"task\": \"AuthRateLimiter fix and PR review\"\n}",
+          "seconds" : 5.3815649747848511,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"work_done\": \"Reviewing Search ranking v2 design doc proposal (BM25 baseline plus recency decay) and evaluating rollout strategy (shadow traffic at 10%)\",\n  \"status\": \"in_progress\",\n  \"outcome\": \"Identified open question regarding per-team vs global boosts and requirement for offline eval set before launch\",\n  \"next_step\": \"Address offline eval set requirement and decide on boost strategy\",\n  \"other_tasks\": [],\n  \"source_ids\": [107, 108],\n  \"substantive\": true,\n  \"task\": \"Search ranking v2 design doc review\"\n}",
+          "seconds" : 4.6543350219726562,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"work_done\": \"Design work on Onboarding v3 in Figma (Steps 2-3 of 4), including calendar connection and teammate invitation screens; incident response for Northwind Stripe webhook issue by rolling back deploy 4512 in Slack\",\n  \"status\": \"in_progress\",\n  \"outcome\": \"Variant B design approved for Thursday usability test; deploy 4512 rollback initiated and queue draining (1,100 remaining)\",\n  \"next_step\": \"Write postmortem for incident tomorrow; continue Onboarding v3 design through remaining steps\",\n  \"other_tasks\": [],\n  \"source_ids\": [109, 110],\n  \"substantive\": true,\n  \"task\": \"Onboarding v3 design and Northwind incident response\"\n}",
+          "seconds" : 5.0677230358123779,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"tasks\": [\n    {\n      \"block_indices\": [0],\n      \"status\": \"completed\",\n      \"next_step\": \"Send escalation email to Jordan, merge PR #118 after author responds\",\n      \"title\": \"AuthRateLimiter fix and PR review\",\n      \"summary\": \"Implemented rate limiter fix in AuthRateLimiter.swift and ran tests confirming functionality, reviewed PR #118 for billing-service proration rounding issues, and drafted escalation email response about Acme Corp SSO login failures.\"\n    },\n    {\n      \"block_indices\": [1],\n      \"status\": \"in_progress\",\n      \"next_step\": \"Address offline eval set requirement and decide on boost strategy\",\n      \"title\": \"Search ranking v2 design doc review\",\n      \"summary\": \"Reviewed Search ranking v2 design doc proposal evaluating rollout strategy and identified open question regarding per-team vs global boosts and requirement for offline eval set before launch.\"\n    },\n    {\n      \"block_indices\": [2],\n      \"status\": \"in_progress\",\n      \"next_step\": \"Write postmortem for incident tomorrow; continue Onboarding v3 design through remaining steps\",\n      \"title\": \"Onboarding v3 design and Northwind incident response\",\n      \"summary\": \"Completed Steps 2-3 of 4 for Onboarding v3 design in Figma and initiated rollback of deploy 4512 for Northwind Stripe webhook issue, with variant B design approved for Thursday usability test.\"\n    }\n  ],\n  \"decisions\": [],\n  \"blockers\": []\n}",
+          "seconds" : 8.9517040252685547,
+          "stage" : "digest"
+        }
+      ],
+      "covered_seconds" : 10800,
+      "day" : "parallel-morning",
+      "quality" : "complete",
+      "run" : 2,
+      "seconds" : 24.098208069801331,
+      "segments" : 3,
+      "summary" : "### Tasks\n- **AuthRateLimiter fix and PR review** — Completed. Implemented rate limiter fix in AuthRateLimiter.swift and ran tests confirming functionality, reviewed PR #118 for billing-service proration rounding issues, and drafted escalation email response about Acme Corp SSO login failures.\n- **Search ranking v2 design doc review** — In progress. Reviewed Search ranking v2 design doc proposal evaluating rollout strategy and identified open question regarding per-team vs global boosts and requirement for offline eval set before launch.\n- **Onboarding v3 design and Northwind incident response** — In progress. Completed Steps 2-3 of 4 for Onboarding v3 design in Figma and initiated rollback of deploy 4512 for Northwind Stripe webhook issue, with variant B design approved for Thursday usability test.\n\n### Decisions and next steps\n- Next — AuthRateLimiter fix and PR review: Send escalation email to Jordan, merge PR #118 after author responds\n- Next — Search ranking v2 design doc review: Address offline eval set requirement and decide on boost strategy\n- Next — Onboarding v3 design and Northwind incident response: Write postmortem for incident tomorrow; continue Onboarding v3 design through remaining steps",
+      "tracked_seconds" : 10800
+    },
+    {
+      "calls" : [
+        {
+          "output" : "{\n  \"substantive\": true,\n  \"source_ids\": [201, 202],\n  \"work_done\": \"Executed database migration script 0042_users_pg16.sql to add email_normalized column and index, and dumped legacy users table.\",\n  \"status\": \"completed\",\n  \"other_tasks\": [],\n  \"task\": \"Database Migration: Migrate users table schema to PostgreSQL 16\",\n  \"outcome\": \"Successfully created email_normalized column and unique index on 1,843,221 rows.\",\n  \"next_step\": \"Review migration logs for any errors or performance issues.\"\n}",
+          "seconds" : 4.4473389387130737,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"substantive\": true,\n  \"work_done\": \"Verified database migration 0042 completion by checking row counts match legacy data (1,843,221 rows) and running migration verification script with checksum validation\",\n  \"source_ids\": [203, 204],\n  \"status\": \"completed\",\n  \"other_tasks\": [],\n  \"task\": \"Database migration verification\",\n  \"outcome\": \"Migration 0042 verified complete with checksum ok; switching reads to PostgreSQL 16\",\n  \"next_step\": \"Continue monitoring migration stability or proceed to next migration phase\"\n}",
+          "seconds" : 4.4097030162811279,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"substantive\": false,\n  \"source_ids\": [205, 206],\n  \"work_done\": \"\",\n  \"status\": \"unknown\",\n  \"other_tasks\": [],\n  \"task\": \"\",\n  \"outcome\": \"\",\n  \"next_step\": \"\"\n}",
+          "seconds" : 3.6854709386825562,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"tasks\": [\n    {\n      \"block_indices\": [0, 1],\n      \"status\": \"completed\",\n      \"next_step\": \"Continue monitoring migration stability or proceed to next migration phase\",\n      \"title\": \"Database Migration: Migrate users table schema to PostgreSQL 16\",\n      \"summary\": \"Executed migration script to add email_normalized column and index on 1,843,221 rows, verified completion via checksum validation and row count matching.\"\n    }\n  ],\n  \"decisions\": [],\n  \"blockers\": []\n}",
+          "seconds" : 6.8430550098419189,
+          "stage" : "digest"
+        }
+      ],
+      "covered_seconds" : 7200,
+      "day" : "focused-day",
+      "quality" : "complete",
+      "run" : 2,
+      "seconds" : 19.412016034126282,
+      "segments" : 3,
+      "summary" : "### Tasks\n- **Database Migration: Migrate users table schema to PostgreSQL 16** — Completed. Executed migration script to add email_normalized column and index on 1,843,221 rows, verified completion via checksum validation and row count matching.\n\n### Decisions and next steps\n- Next — Database Migration: Migrate users table schema to PostgreSQL 16: Continue monitoring migration stability or proceed to next migration phase",
+      "tracked_seconds" : 10800
+    },
+    {
+      "calls" : [
+        {
+          "output" : "{\n  \"substantive\": true,\n  \"work_done\": \"Fixed flaky CheckoutFlowTests.swift test by replacing sleep with waitForExistence to wait for confirmation banner, and committed the fix\",\n  \"source_ids\": [301, 303],\n  \"status\": \"completed\",\n  \"other_tasks\": [\n    {\n      \"task\": \"Discussed pagination API approach with Priya Raman on Slack\",\n      \"outcome\": \"Decided to use cursor-based pagination with max 200 page size\",\n      \"substantive\": true,\n      \"next_step\": \"Add cursor example to API docs\",\"source_ids\": [302, 304],\n      \"work_done\": \"Clarified pagination approach for \/v2\/orders API with Priya Raman\",\n      \"status\": \"completed\"\n    }\n  ],\"task\": \"Fix flaky CheckoutFlowTests.swift test\",\n  \"next_step\": \"Add cursor pagination example to API docs\",\n  \"outcome\": \"Test now passes consistently (20\/20 runs); fix committed\"\n}",
+          "seconds" : 6.0485329627990723,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"substantive\": false,\n  \"source_ids\": [305],\n  \"work_done\": \"\",\n  \"status\": \"unknown\",\n  \"other_tasks\": [],\n  \"task\": \"\",\n  \"outcome\": \"\",\n  \"next_step\": \"\"\n}",
+          "seconds" : 3.7243070602416992,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"substantive\": true,\n  \"work_done\": \"Bug triage for ShopApp issues including SHOP-812 (Crash on address edit, urgent) and SHOP-815 (Wrong currency symbol in receipts, high priority)\",\n  \"source_ids\": [307, 309],\n  \"status\": \"in_progress\",\n  \"other_tasks\": [\n    {\n      \"task\": \"Release notes 2.4 review in Notion\",\n      \"outcome\": \"Reviewed release notes including Apple Pay checkout, order history, and address edit crash fixes\",\n      \"substantive\": false,\n      \"next_step\": \"Continue review or update release notes as needed\",\"source_ids\": [306],\"work_done\": \"Read release notes 2.4 in Notion\",\"status\": \"in_progress\"\n    },\n    {\n      \"task\": \"1:1 meeting with Sam\",\n      \"outcome\": \"Discussed on-call rotation feedback and promotion packet timeline\",\n      \"substantive\": false,\n      \"next_step\": \"Follow up on release checklist ownership question\",\"source_ids\": [308],\"work_done\": \"Attended 1:1 with Sam in Notion\",\"status\": \"in_progress\"\n    }\n  ],\"task\": \"Bug triage for ShopApp issues\",\n  \"next_step\": \"Address SHOP-812 crash issue and continue triaging remaining bugs\",\"outcome\": \"Identified urgent crash issue SHOP-812 and high priority SHOP-815; duplicate notification issue SHOP-819 noted for repro\"}",
+          "seconds" : 7.3502190113067627,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"tasks\": [\n    {\n      \"status\": \"completed\",\n      \"summary\": \"Fixed flaky CheckoutFlowTests.swift test by replacing sleep with waitForExistence, resulting in consistent test passes.\",\n      \"block_indices\": [0],\n      \"next_step\": \"Add cursor pagination example to API docs\",\"title\": \"Fix flaky CheckoutFlowTests.swift test\"\n    },\n    {\n      \"status\": \"completed\",\n      \"summary\": \"Clarified pagination approach for \/v2\/orders API with Priya Raman, deciding on cursor-based pagination with max 200 page size.\",\n      \"block_indices\": [1],\n      \"next_step\": \"Add cursor example to API docs\",\"title\": \"Discussed pagination API approach\"\n    },\n    {\n      \"status\": \"in_progress\",\n      \"summary\": \"Bug triage for ShopApp issues identified urgent crash SHOP-812 and high priority SHOP-815.\",\n      \"block_indices\": [2],\n      \"next_step\": \"Address SHOP-812 crash issue and continue triaging remaining bugs\",\"title\": \"Bug triage for ShopApp issues\"\n    },\n    {\n      \"status\": \"in_progress\",\n      \"summary\": \"Reviewed release notes 2.4 in Notion including Apple Pay checkout and order history fixes.\",\n      \"block_indices\": [3],\n      \"next_step\": \"Continue review or update release notes as needed\",\"title\": \"Release notes 2.4 review\"\n    },\n    {\n      \"status\": \"in_progress\",\n      \"summary\": \"Attended 1:1 meeting with Sam discussing on-call rotation feedback and promotion packet timeline.\",\n      \"block_indices\": [4],\n      \"next_step\": \"Follow up on release checklist ownership question\",\"title\": \"1:1 meeting with Sam\"\n    }\n  ],\"decisions\": [],\"blockers\": []}",
+          "seconds" : 12.442485928535461,
+          "stage" : "digest"
+        }
+      ],
+      "covered_seconds" : 7200,
+      "day" : "mixed-with-noise",
+      "quality" : "complete",
+      "run" : 2,
+      "seconds" : 29.615329027175903,
+      "segments" : 3,
+      "summary" : "### Tasks\n- **Fix flaky CheckoutFlowTests.swift test** — Completed. Fixed flaky CheckoutFlowTests.swift test by replacing sleep with waitForExistence, resulting in consistent test passes.\n- **Discussed pagination API approach** — Completed. Clarified pagination approach for \/v2\/orders API with Priya Raman, deciding on cursor-based pagination with max 200 page size.\n- **Bug triage for ShopApp issues** — In progress. Bug triage for ShopApp issues identified urgent crash SHOP-812 and high priority SHOP-815.\n- **Release notes 2.4 review** — In progress. Reviewed release notes 2.4 in Notion including Apple Pay checkout and order history fixes.\n- **1:1 meeting with Sam** — In progress. Attended 1:1 meeting with Sam discussing on-call rotation feedback and promotion packet timeline.\n\n### Decisions and next steps\n- Next — Fix flaky CheckoutFlowTests.swift test: Add cursor pagination example to API docs\n- Next — Bug triage for ShopApp issues: Address SHOP-812 crash issue and continue triaging remaining bugs\n- Next — Release notes 2.4 review: Continue review or update release notes as needed\n- Next — 1:1 meeting with Sam: Follow up on release checklist ownership question",
+      "tracked_seconds" : 9000
+    },
+    {
+      "calls" : [
+        {
+          "output" : "{\n  \"work_done\": \"Fixed AuthRateLimiter.swift rate limiter to reset counter after successful login; reviewed billing-service PR #118 for proration rounding issues and test coverage; drafted escalation email about Acme Corp SSO login failures\",\n  \"substantive\": true,\n  \"status\": \"in_progress\",\n  \"task\": \"Code fixes and review - AuthRateLimiter.swift and billing-service PR #118\",\n  \"outcome\": \"AuthRateLimiter.swift fix implemented; PR #118 review submitted with comments on rounding and test coverage; escalation email drafted but not sent\",\n  \"source_ids\": [101, 102],\n  \"other_tasks\": [\n    {\n      \"substantive\": false,\n      \"task\": \"Email communication - Acme Corp SSO escalation\",\n      \"work_done\": \"Drafted escalation email about SSO login failures traced to SAML certificate rotation\",\n      \"next_step\": \"Send draft email to Jordan\",\"outcome\": \"Email drafted but not sent\",\n      \"source_ids\": [103, 106],\"status\": \"in_progress\"\n    }\n  ],\"next_step\": \"Send escalation email; merge PR #118 after author responds to review comments\"}",
+          "seconds" : 7.4441300630569458,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"next_step\": \"Review Lee's comment regarding offline eval set requirement and finalize rollout plan.\",\n  \"substantive\": true,\n  \"status\": \"in_progress\",\n  \"task\": \"Search ranking v2 design doc\",\n  \"outcome\": \"Documented proposal for BM25 baseline with recency decay and identified need for offline eval set.\",\n  \"source_ids\": [107, 108],\n  \"other_tasks\": [],\"work_done\": \"Reviewed design doc proposal for Search ranking v2 including BM25 baseline and recency decay parameters.\"\n}",
+          "seconds" : 5.1156610250473022,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"work_done\": \"Designed Onboarding v3 Step 2 calendar connection UI variant in Figma; responded to production incident by rolling back deploy 4512 after webhook retry queue buildup\",\n  \"substantive\": true,\n  \"status\": \"completed\",\n  \"task\": \"Onboarding v3 UI design and incident response\",\n  \"outcome\": \"Step 2 calendar connection variant B created in Figma; deploy 4512 rolled back successfully with queue draining from 4,200 to 1,100 remaining\",\n  \"source_ids\": [109, 110],\n  \"other_tasks\": [],\n  \"next_step\": \"Write postmortem for incident\"\n}",
+          "seconds" : 6.4477009773254395,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"tasks\": [\n    {\n      \"status\": \"in_progress\",\n      \"summary\": \"Implemented AuthRateLimiter.swift rate limiter fix and reviewed billing-service PR #118 for rounding and test coverage issues.\",\n      \"block_indices\": [0],\n      \"next_step\": \"Send escalation email; merge PR #118 after author responds to review comments\",\"title\": \"Code fixes and review - AuthRateLimiter.swift and billing-service PR #118\"\n    },\n    {\n      \"status\": \"in_progress\",\n      \"summary\": \"Reviewed Search ranking v2 design doc proposal including BM25 baseline and recency decay parameters.\",\n      \"block_indices\": [1],\n      \"next_step\": \"Review Lee's comment regarding offline eval set requirement and finalize rollout plan.\",\"title\": \"Search ranking v2 design doc\"\n    },\n    {\n      \"status\": \"completed\",\n      \"summary\": \"Designed Onboarding v3 Step 2 calendar connection UI variant in Figma and rolled back production deploy 4512 after webhook retry queue buildup.\",\n      \"block_indices\": [2],\n      \"next_step\": \"Write postmortem for incident\",\"title\": \"Onboarding v3 UI design and incident response\"\n    },\n    {\n      \"status\": \"in_progress\",\n      \"summary\": \"Drafted escalation email about Acme Corp SSO login failures traced to SAML certificate rotation.\",\n      \"block_indices\": [3],\n      \"next_step\": \"Send draft email to Jordan\",\"title\": \"Email communication - Acme Corp SSO escalation\"\n    }\n  ],\"decisions\": [],\"blockers\": []}",
+          "seconds" : 13.888167977333069,
+          "stage" : "digest"
+        }
+      ],
+      "covered_seconds" : 10800,
+      "day" : "parallel-morning",
+      "quality" : "complete",
+      "run" : 3,
+      "seconds" : 32.94711709022522,
+      "segments" : 3,
+      "summary" : "### Tasks\n- **Code fixes and review - AuthRateLimiter.swift and billing-service PR #118** — In progress. Implemented AuthRateLimiter.swift rate limiter fix and reviewed billing-service PR #118 for rounding and test coverage issues.\n- **Search ranking v2 design doc** — In progress. Reviewed Search ranking v2 design doc proposal including BM25 baseline and recency decay parameters.\n- **Onboarding v3 UI design and incident response** — Completed. Designed Onboarding v3 Step 2 calendar connection UI variant in Figma and rolled back production deploy 4512 after webhook retry queue buildup.\n- **Email communication - Acme Corp SSO escalation** — In progress. Drafted escalation email about Acme Corp SSO login failures traced to SAML certificate rotation.\n\n### Decisions and next steps\n- Next — Code fixes and review - AuthRateLimiter.swift and billing-service PR #118: Send escalation email; merge PR #118 after author responds to review comments\n- Next — Search ranking v2 design doc: Review Lee's comment regarding offline eval set requirement and finalize rollout plan.\n- Next — Onboarding v3 UI design and incident response: Write postmortem for incident\n- Next — Email communication - Acme Corp SSO escalation: Send draft email to Jordan",
+      "tracked_seconds" : 10800
+    },
+    {
+      "calls" : [
+        {
+          "output" : "{\n  \"work_done\": \"Executed database migration script to normalize user email fields and created concurrent index on the new column.\",\n  \"source_ids\": [\n    201,\n    202\n  ],\n  \"substantive\": true,\n  \"next_step\": \"Verify migration success and check for any data integrity issues.\",\n  \"task\": \"Database Migration: Normalize user email fields\",\n  \"status\": \"completed\",\n  \"outcome\": \"Successfully migrated 1,843,221 rows and created unique index on email_normalized column.\",\"other_tasks\": []\n}",
+          "seconds" : 5.126891016960144,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"work_done\": \"Verified user migration data integrity by comparing row counts in the legacy system against the new Postgres 16 replica table (1,843,221 rows) and confirmed the migration script checksum.\",\n  \"source_ids\": [203, 204],\n  \"substantive\": true,\n  \"next_step\": \"Continue monitoring migration progress or proceed to switching reads to pg16 if not already done.\",\n  \"task\": \"Database Migration Verification\",\n  \"status\": \"completed\",\n  \"outcome\": \"Migration 0042 verified as complete with matching row counts between legacy and new system.\",\"other_tasks\": []\n}",
+          "seconds" : 6.7668459415435791,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"work_done\": \"Reviewed Q4 OKRs for Platform team, specifically O1 (Reliable payments) and O2 (Faster search), noting a suggestion to merge O1 KR2 into the checkout OKR.\",\n  \"source_ids\": [205, 206],\n  \"substantive\": false,\n  \"next_step\": \"None identified\",\n  \"task\": \"Review Q4 OKRs\",\n  \"status\": \"unknown\",\n  \"outcome\": \"None identified\",\n  \"other_tasks\": []\n}",
+          "seconds" : 6.9567420482635498,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"tasks\": [\n    {\n      \"block_indices\": [0, 1],\n      \"status\": \"completed\",\n      \"next_step\": \"Verify migration success and check for any data integrity issues.\",\n      \"title\": \"Database Migration: Normalize user email fields\",\n      \"summary\": \"Executed the migration script to normalize user email fields and created a concurrent index on the new column, successfully migrating 1,843,221 rows.\"\n    },\n    {\n      \"block_indices\": [2],\n      \"status\": \"unknown\",\n      \"next_step\": \"None identified\",\n      \"title\": \"Review Q4 OKRs\",\n      \"summary\": \"Reviewed Q4 OKRs for the Platform team, specifically O1 and O2, noting a suggestion to merge O1 KR2 into the checkout OKR.\"\n    }\n  ],\n  \"decisions\": [],\n  \"blockers\": []\n}",
+          "seconds" : 8.4430980682373047,
+          "stage" : "digest"
+        }
+      ],
+      "covered_seconds" : 10800,
+      "day" : "focused-day",
+      "quality" : "complete",
+      "run" : 3,
+      "seconds" : 27.325029015541077,
+      "segments" : 3,
+      "summary" : "### Tasks\n- **Database Migration: Normalize user email fields** — Completed. Executed the migration script to normalize user email fields and created a concurrent index on the new column, successfully migrating 1,843,221 rows.\n- **Review Q4 OKRs** — Reviewed Q4 OKRs for the Platform team, specifically O1 and O2, noting a suggestion to merge O1 KR2 into the checkout OKR.\n\n### Decisions and next steps\n- Next — Database Migration: Normalize user email fields: Verify migration success and check for any data integrity issues.\n- Next — Review Q4 OKRs: None identified",
+      "tracked_seconds" : 10800
+    },
+    {
+      "calls" : [
+        {
+          "output" : "{\n  \"substantive\": true,\n  \"next_step\": \"Continue testing other flaky tests in CheckoutFlowTests.swift\",\n  \"task\": \"CheckoutFlowTests.swift — ShopApp\",\n  \"status\": \"completed\",\n  \"other_tasks\": [\n    {\n      \"substantive\": false,\n      \"task\": \"Slack communication with Priya Raman (DM) - Northwind\",\n      \"work_done\": \"Discussed pagination approach for \/v2\/orders API (cursor-based, max 200 items)\",\n      \"next_step\": \"Add cursor example to API docs\",\n      \"outcome\": \"Agreed on pagination strategy\",\n      \"source_ids\": [302, 304],\"status\": \"completed\"\n    }\n  ],\n  \"outcome\": \"Fixed flaky test by replacing sleep with waitForExistence(timeout: 5); test now passes 20\/20 runs\",\n  \"source_ids\": [301, 303],\"work_done\": \"Fixed flaky testPlaceOrderShowsConfirmation by replacing sleep with waitForExistence(timeout: 5)\"}",
+          "seconds" : 5.688607931137085,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"status\": \"unknown\",\n  \"other_tasks\": [],\n  \"next_step\": \"\",\n  \"substantive\": false,\n  \"source_ids\": [\n    305\n  ],\n  \"work_done\": \"\",\n  \"outcome\": \"\",\n  \"task\": \"\"\n}",
+          "seconds" : 3.8570339679718018,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"status\": \"completed\",\n  \"other_tasks\": [],\n  \"next_step\": \"Review SHOP-812 crash fix implementation and verify address edit crash is resolved\",\n  \"substantive\": true,\n  \"source_ids\": [307, 308],\n  \"work_done\": \"Bug triage for ShopApp tickets SHOP-812 (Crash on address edit, Urgent) and SHOP-815 (Wrong currency symbol in receipts, High). Discussed on-call rotation and release checklist ownership with Sam in 1:1 meeting.\",\"outcome\": \"Identified SHOP-812 as urgent crash requiring immediate attention. Release notes 2.4 reviewed for feature tracking.\",\"task\": \"Bug triage and 1:1 meeting\"\n}",
+          "seconds" : 5.190437912940979,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"tasks\": [\n    {\n      \"block_indices\": [0],\n      \"status\": \"completed\",\n      \"next_step\": \"Continue testing other flaky tests in CheckoutFlowTests.swift\",\n      \"title\": \"Fixed flaky test in CheckoutFlowTests.swift\",\n      \"summary\": \"Replaced sleep with waitForExistence(timeout: 5) to fix flaky testPlaceOrderShowsConfirmation, resulting in 20\/20 passing runs.\"\n    },\n    {\n      \"block_indices\": [1],\n      \"status\": \"completed\",\n      \"next_step\": \"Review SHOP-812 crash fix implementation and verify address edit crash is resolved\",\n      \"title\": \"Bug triage and 1:1 meeting\",\n      \"summary\": \"Triage identified SHOP-812 as urgent crash requiring immediate attention and reviewed release notes 2.4 for feature tracking.\"\n    },\n    {\n      \"block_indices\": [2],\n      \"status\": \"completed\",\n      \"next_step\": \"Add cursor example to API docs\",\n      \"title\": \"Discussed pagination approach for \/v2\/orders API\",\n      \"summary\": \"Discussed pagination strategy with Priya Raman, agreeing on cursor-based approach with max 200 items.\"\n    }\n  ],\"decisions\": [], \"blockers\": []\n}",
+          "seconds" : 9.1061071157455444,
+          "stage" : "digest"
+        }
+      ],
+      "covered_seconds" : 7200,
+      "day" : "mixed-with-noise",
+      "quality" : "complete",
+      "run" : 3,
+      "seconds" : 23.889706969261169,
+      "segments" : 3,
+      "summary" : "### Tasks\n- **Fixed flaky test in CheckoutFlowTests.swift** — Completed. Replaced sleep with waitForExistence(timeout: 5) to fix flaky testPlaceOrderShowsConfirmation, resulting in 20\/20 passing runs.\n- **Bug triage and 1:1 meeting** — Completed. Triage identified SHOP-812 as urgent crash requiring immediate attention and reviewed release notes 2.4 for feature tracking.\n- **Discussed pagination approach for \/v2\/orders API** — Completed. Discussed pagination strategy with Priya Raman, agreeing on cursor-based approach with max 200 items.\n\n### Decisions and next steps\n- Next — Fixed flaky test in CheckoutFlowTests.swift: Continue testing other flaky tests in CheckoutFlowTests.swift\n- Next — Bug triage and 1:1 meeting: Review SHOP-812 crash fix implementation and verify address edit crash is resolved\n- Next — Discussed pagination approach for \/v2\/orders API: Add cursor example to API docs",
+      "tracked_seconds" : 9000
+    },
+    {
+      "calls" : [
+        {
+          "output" : "{\n  \"status\": \"completed\",\n  \"task\": \"AuthRateLimiter.swift — LokalAuth\",\n  \"next_step\": \"Continue implementing the fix for resetting counter after successful login\",\n  \"substantive\": true,\n  \"outcome\": \"Test suite passed with 18 tests, 0 failures\",\n  \"source_ids\": [101, 104],\n  \"other_tasks\": [\n    {\n      \"task\": \"Pull request #118 · Prorate mid-cycle plan changes · billing-service\",\n      \"outcome\": \"Review submitted with 2 comments waiting for author\",\n      \"substantive\": true,\n      \"next_step\": \"Wait for author response to review comments\",\n      \"source_ids\": [102, 105],\n      \"work_done\": \"Reviewed PR for proration rounding issue and test coverage\",\"status\": \"in_progress\"\n    },\n    {\n      \"task\": \"Acme Corp SSO login failures escalation\",\n      \"outcome\": \"Email drafted and sent to support-escalations@acme.example\",\n      \"substantive\": true,\n      \"next_step\": \"Monitor for response\",\n      \"source_ids\": [103, 106],\n      \"work_done\": \"Drafted and sent escalation email about SAML certificate rotation fix\",\n      \"status\": \"completed\"\n    }\n  ],\"work_done\": \"Implemented fix to reset rate limiter counter after successful login in AuthRateLimiter.swift, verified with test suite passing all 18 tests\"}",
+          "seconds" : 7.0767840147018433,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"status\": \"in_progress\",\n  \"task\": \"Search ranking v2 — design doc\",\n  \"next_step\": \"Address open question regarding per-team boosts or global boosts and prepare offline eval set\",\n  \"outcome\": \"Identified proposal for BM25 baseline plus recency decay and rollout plan with shadow traffic at 10%\",\n  \"substantive\": true,\n  \"source_ids\": [107, 108],\n  \"other_tasks\": [],\"work_done\": \"Reviewed design doc proposal for Search ranking v2 including BM25 baseline plus recency decay and rollout plan with shadow traffic at 10%\"}",
+          "seconds" : 5.5119750499725342,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"status\": \"completed\",\n  \"task\": \"Onboarding v3 design and incident response\",\n  \"next_step\": \"Write postmortem for incident-payments rollback\",\n  \"substantive\": true,\n  \"outcome\": \"Rollback of deploy 4512 completed, queue draining from 4,200 to 1,100 remaining; Onboarding v3 Step 2 and 3 design work in progress\",\n  \"source_ids\": [109, 110],\n  \"other_tasks\": [\n    {\n      \"task\": \"Onboarding v3 design\",\n      \"outcome\": \"Step 3 approved by Maya for Thursday usability test\",\n      \"substantive\": true,\n      \"next_step\": \"Continue Step 4 design\",\n      \"source_ids\": [111],\n      \"work_done\": \"Designed Step 3 of 4 (Invite teammates) in Figma\",\"status\": \"completed\"\n    }\n  ],\"work_done\": \"Rolled back deploy 4512 for Stripe webhook incident; designed Onboarding v3 Steps 2 and 3 in Figma\"}",
+          "seconds" : 6.827983021736145,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"tasks\": [\n    {\n      \"title\": \"AuthRateLimiter.swift — LokalAuth\",\n      \"status\": \"completed\",\n      \"next_step\": \"Continue implementing the fix for resetting counter after successful login\",\n      \"summary\": \"Implemented fix to reset rate limiter counter after successful login in AuthRateLimiter.swift, verified with test suite passing all 18 tests.\",\n      \"block_indices\": [0]\n    },\n    {\n      \"title\": \"Pull request #118 · Prorate mid-cycle plan changes · billing-service\",\n      \"status\": \"in_progress\",\n      \"next_step\": \"Wait for author response to review comments\",\n      \"summary\": \"Reviewed PR for proration rounding issue and test coverage, review submitted with 2 comments waiting for author.\",\n      \"block_indices\": [1]\n    },\n    {\n      \"title\": \"Acme Corp SSO login failures escalation\",\n      \"status\": \"completed\",\n      \"next_step\": \"Monitor for response\",\n      \"summary\": \"Drafted and sent escalation email about SAML certificate rotation fix to support-escalations@acme.example.\",\n      \"block_indices\": [2]\n    },\n    {\n      \"title\": \"Search ranking v2 — design doc\",\n      \"status\": \"in_progress\",\n      \"next_step\": \"Address open question regarding per-team boosts or global boosts and prepare offline eval set\",\n      \"summary\": \"Reviewed design doc proposal for Search ranking v2 including BM25 baseline plus recency decay and rollout plan with shadow traffic at 10%.\",\n      \"block_indices\": [3]\n    },\n    {\n      \"title\": \"Onboarding v3 design and incident response\",\n      \"status\": \"completed\",\n      \"next_step\": \"Write postmortem for incident-payments rollback\",\n      \"summary\": \"Rolled back deploy 4512 for Stripe webhook incident and designed Onboarding v3 Steps 2 and 3 in Figma.\",\n      \"block_indices\": [4]\n    },\n    {\n      \"title\": \"Onboarding v3 design\",\n      \"status\": \"completed\",\n      \"next_step\": \"Continue Step 4 design\",\n      \"summary\": \"Designed Step 3 of 4 (Invite teammates) in Figma, approved by Maya for Thursday usability test.\",\n      \"block_indices\": [5]\n    }\n  ],\"decisions\": [],\"blockers\": []}",
+          "seconds" : 14.076916933059692,
+          "stage" : "digest"
+        }
+      ],
+      "covered_seconds" : 10800,
+      "day" : "parallel-morning",
+      "quality" : "complete",
+      "run" : 4,
+      "seconds" : 33.549986004829407,
+      "segments" : 3,
+      "summary" : "### Tasks\n- **AuthRateLimiter.swift — LokalAuth** — Completed. Implemented fix to reset rate limiter counter after successful login in AuthRateLimiter.swift, verified with test suite passing all 18 tests.\n- **Pull request #118 · Prorate mid-cycle plan changes · billing-service** — In progress. Reviewed PR for proration rounding issue and test coverage, review submitted with 2 comments waiting for author.\n- **Acme Corp SSO login failures escalation** — Completed. Drafted and sent escalation email about SAML certificate rotation fix to support-escalations@acme.example.\n- **Search ranking v2 — design doc** — In progress. Reviewed design doc proposal for Search ranking v2 including BM25 baseline plus recency decay and rollout plan with shadow traffic at 10%.\n- **Onboarding v3 design and incident response** — Completed. Rolled back deploy 4512 for Stripe webhook incident and designed Onboarding v3 Steps 2 and 3 in Figma.\n- **Onboarding v3 design** — Completed. Designed Step 3 of 4 (Invite teammates) in Figma, approved by Maya for Thursday usability test.\n\n### Decisions and next steps\n- Next — AuthRateLimiter.swift — LokalAuth: Continue implementing the fix for resetting counter after successful login\n- Next — Pull request #118 · Prorate mid-cycle plan changes · billing-service: Wait for author response to review comments\n- Next — Acme Corp SSO login failures escalation: Monitor for response\n- Next — Search ranking v2 — design doc: Address open question regarding per-team boosts or global boosts and prepare offline eval set\n- Next — Onboarding v3 design and incident response: Write postmortem for incident-payments rollback\n- Next — Onboarding v3 design: Continue Step 4 design",
+      "tracked_seconds" : 10800
+    },
+    {
+      "calls" : [
+        {
+          "output" : "{\n  \"status\": \"completed\",\n  \"substantive\": true,\n  \"task\": \"Database migration: migrate_users to PostgreSQL 16\",\n  \"next_step\": \"Verify data integrity and index creation on email_normalized column\",\n  \"work_done\": \"Executed pg_dump to export legacy users table and applied migration script 0042_users_pg16.sql to add email_normalized column and unique index\",\n  \"outcome\": \"Successfully migrated 1,843,221 rows with new generated column and index created\",\n  \"source_ids\": [201, 202],\n  \"other_tasks\": []\n}",
+          "seconds" : 5.5740089416503906,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"status\": \"completed\",\n  \"substantive\": true,\n  \"task\": \"Database migration and verification\",\n  \"next_step\": \"Verify data integrity in prod-replica Postgres 16\",\n  \"work_done\": \"Verified migration 0042 completion and row count consistency (1,843,221 rows) between legacy and prod-replica tables.\",\n  \"outcome\": \"Migration checksum passed; reads switched to pg16.\",\n  \"source_ids\": [203, 204],\n  \"other_tasks\": []\n}",
+          "seconds" : 5.049530029296875,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"status\": \"unknown\",\n  \"substantive\": false,\n  \"task\": \"Q4 OKRs — Platform team\",\n  \"next_step\": \"Review Sam's suggestion to merge O1 KR2 into the checkout OKR\",\n  \"work_done\": \"Reviewed Q4 OKRs document in Google Docs\",\n  \"outcome\": \"Identified comment suggesting merging O1 KR2 into checkout OKR\",\n  \"source_ids\": [205, 206],\n  \"other_tasks\": []\n}",
+          "seconds" : 4.5866700410842896,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"tasks\": [\n    {\n      \"status\": \"completed\",\n      \"summary\": \"Executed pg_dump to export legacy users table and applied migration script 0042_users_pg16.sql to add email_normalized column and unique index, successfully migrating 1,843,221 rows.\",\n      \"block_indices\": [0],\n      \"next_step\": \"Verify data integrity and index creation on email_normalized column\",\n      \"title\": \"Database migration: migrate_users to PostgreSQL 16\"\n    },\n    {\n      \"status\": \"completed\",\n      \"summary\": \"Verified migration 0042 completion and row count consistency between legacy and prod-replica tables, with migration checksum passed and reads switched to pg16.\",\n      \"block_indices\": [1],\n      \"next_step\": \"Verify data integrity in prod-replica Postgres 16\",\n      \"title\": \"Database migration and verification\"\n    },\n    {\n      \"status\": \"unknown\",\n      \"summary\": \"Reviewed Q4 OKRs document in Google Docs and identified a comment suggesting merging O1 KR2 into checkout OKR.\",\n      \"block_indices\": [2],\n      \"next_step\": \"Review Sam's suggestion to merge O1 KR2 into the checkout OKR\",\n      \"title\": \"Q4 OKRs — Platform team\"\n    }\n  ],\"decisions\": [], \"blockers\": []}",
+          "seconds" : 13.020846962928772,
+          "stage" : "digest"
+        }
+      ],
+      "covered_seconds" : 10800,
+      "day" : "focused-day",
+      "quality" : "complete",
+      "run" : 4,
+      "seconds" : 28.254568934440613,
+      "segments" : 3,
+      "summary" : "### Tasks\n- **Database migration: migrate_users to PostgreSQL 16** — Completed. Executed pg_dump to export legacy users table and applied migration script 0042_users_pg16.sql to add email_normalized column and unique index, successfully migrating 1,843,221 rows.\n- **Database migration and verification** — Completed. Verified migration 0042 completion and row count consistency between legacy and prod-replica tables, with migration checksum passed and reads switched to pg16.\n- **Q4 OKRs — Platform team** — Reviewed Q4 OKRs document in Google Docs and identified a comment suggesting merging O1 KR2 into checkout OKR.\n\n### Decisions and next steps\n- Next — Database migration: migrate_users to PostgreSQL 16: Verify data integrity and index creation on email_normalized column\n- Next — Database migration and verification: Verify data integrity in prod-replica Postgres 16\n- Next — Q4 OKRs — Platform team: Review Sam's suggestion to merge O1 KR2 into the checkout OKR",
+      "tracked_seconds" : 10800
+    },
+    {
+      "calls" : [
+        {
+          "output" : "{\n  \"status\": \"completed\",\n  \"substantive\": true,\n  \"task\": \"CheckoutFlowTests.swift — ShopApp\",\n  \"next_step\": \"Review test coverage and consider adding more flaky test guards\",\n  \"work_done\": \"Fixed flaky test by replacing sleep with waitForExistence(timeout: 5) for animation wait; test now passes 20\/20 runs\",\n  \"outcome\": \"Test stability improved from 3\/10 to 20\/20 runs; commit recorded\",\n  \"source_ids\": [301, 303],\n  \"other_tasks\": [\n    {\n      \"task\": \"Northwind API documentation\",\n      \"outcome\": \"Clarified pagination approach (cursor-based) with client\",\n      \"substantive\": true,\n      \"next_step\": \"Add cursor example to API docs\",\"source_ids\": [302, 304],\n      \"work_done\": \"Discussed pagination approach with Priya Raman; confirmed cursor-based implementation\",\"status\": \"completed\"\n    }\n  ]\n}",
+          "seconds" : 7.0292319059371948,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"status\": \"unknown\",\n  \"substantive\": false,\n  \"task\": \"Reading Hacker News and listening to Lo-Fi radio\",\n  \"next_step\": \"None\",\n  \"work_done\": \"Viewed Hacker News feed and listened to Lo-Fi hip hop radio on YouTube\",\n  \"outcome\": \"No substantive work completed\",\n  \"source_ids\": [305],\n  \"other_tasks\": []\n}",
+          "seconds" : 4.6249710321426392,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"status\": \"completed\",\n  \"substantive\": true,\n  \"task\": \"ShopApp Bug Triage and Release Notes Review\",\n  \"next_step\": \"Continue triage of SHOP-819 duplicate push notifications and address crash fix\",\n  \"work_done\": \"Reviewed release notes 2.4 in Notion and triaged ShopApp bugs in Linear, including SHOP-812 crash on address edit (urgent), SHOP-815 wrong currency symbol (high), and SHOP-819 duplicate push notifications (medium)\",\n  \"outcome\": \"Identified 3 prioritized bugs with assigned priorities; release notes reviewed for 2.4\",\n  \"source_ids\": [307, 308],\n  \"other_tasks\": []\n}",
+          "seconds" : 6.1720259189605713,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"tasks\": [\n    {\n      \"block_indices\": [0],\n      \"status\": \"completed\",\n      \"next_step\": \"Review test coverage and consider adding more flaky test guards\",\n      \"title\": \"CheckoutFlowTests.swift — ShopApp\",\n      \"summary\": \"Fixed flaky test by replacing sleep with waitForExistence(timeout: 5) for animation wait; test now passes 20\/20 runs.\"\n    },\n    {\n      \"block_indices\": [1],\n      \"status\": \"completed\",\n      \"next_step\": \"Add cursor example to API docs\",\n      \"title\": \"Northwind API documentation\",\n      \"summary\": \"Discussed pagination approach with Priya Raman; confirmed cursor-based implementation.\"\n    },\n    {\n      \"block_indices\": [2],\n      \"status\": \"completed\",\n      \"next_step\": \"Continue triage of SHOP-819 duplicate push notifications and address crash fix\",\n      \"title\": \"ShopApp Bug Triage and Release Notes Review\",\n      \"summary\": \"Reviewed release notes 2.4 in Notion and triaged ShopApp bugs in Linear, including SHOP-812 crash on address edit (urgent), SHOP-815 wrong currency symbol (high), and SHOP-819 duplicate push notifications (medium).\"\n    },\n    {\n      \"block_indices\": [3],\n      \"status\": \"unknown\",\n      \"next_step\": \"\",\n      \"title\": \"Reading Hacker News and listening to Lo-Fi radio\",\n      \"summary\": \"Viewed Hacker News feed and listened to Lo-Fi hip hop radio on YouTube.\"\n    }\n  ],\"decisions\": [],\"blockers\": []}",
+          "seconds" : 13.314589977264404,
+          "stage" : "digest"
+        }
+      ],
+      "covered_seconds" : 9000,
+      "day" : "mixed-with-noise",
+      "quality" : "complete",
+      "run" : 4,
+      "seconds" : 31.185657978057861,
+      "segments" : 3,
+      "summary" : "### Tasks\n- **CheckoutFlowTests.swift — ShopApp** — Completed. Fixed flaky test by replacing sleep with waitForExistence(timeout: 5) for animation wait; test now passes 20\/20 runs.\n- **Northwind API documentation** — Completed. Discussed pagination approach with Priya Raman; confirmed cursor-based implementation.\n- **ShopApp Bug Triage and Release Notes Review** — Completed. Reviewed release notes 2.4 in Notion and triaged ShopApp bugs in Linear, including SHOP-812 crash on address edit (urgent), SHOP-815 wrong currency symbol (high), and SHOP-819 duplicate push notifications (medium).\n- **Reading Hacker News and listening to Lo-Fi radio** — Viewed Hacker News feed and listened to Lo-Fi hip hop radio on YouTube.\n\n### Decisions and next steps\n- Next — CheckoutFlowTests.swift — ShopApp: Review test coverage and consider adding more flaky test guards\n- Next — Northwind API documentation: Add cursor example to API docs",
+      "tracked_seconds" : 9000
+    },
+    {
+      "calls" : [
+        {
+          "output" : "{\n  \"next_step\": \"Review PR #118 comments and address remaining feedback from billing-service author\",\n  \"other_tasks\": [\n    {\n      \"substantive\": false,\n      \"task\": \"Email draft for Acme Corp SSO escalation\",\n      \"work_done\": \"Drafted response email about SSO certificate rotation fix\",\n      \"next_step\": \"Send email to Jordan\",\n      \"outcome\": \"Email drafted but not sent\",\n      \"source_ids\": [103, 106],\"status\": \"in_progress\"\n    }\n  ],\n  \"outcome\": \"Fixed AuthRateLimiter rate limiter to reset counter after successful login; submitted PR #118 review with comments about proration rounding and test coverage\",\n  \"status\": \"completed\",\n  \"work_done\": \"Implemented fix in AuthRateLimiter.swift to reset counter after successful login; ran 18 tests in AuthRateLimiterTests.swift; submitted review for PR #118 billing-service proration changes\",\n  \"source_ids\": [101, 102],\n  \"task\": \"AuthRateLimiter rate limiter fix and billing-service PR review\",\"substantive\": true\n}",
+          "seconds" : 7.6894049644470215,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"next_step\": \"Review offline eval set requirements and finalize rollout shadow traffic plan\",\n  \"other_tasks\": [],\n  \"outcome\": \"Identified open question regarding per-team vs global boosts and confirmed need for offline eval set before launch\",\n  \"status\": \"in_progress\",\n  \"work_done\": \"Reviewed Search ranking v2 design doc proposal including BM25 baseline and recency decay parameters\",\n  \"source_ids\": [107, 108],\n  \"task\": \"Search ranking v2 design doc review\",\n  \"substantive\": true\n}",
+          "seconds" : 6.0251630544662476,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"next_step\": \"Continue Figma design iteration for Onboarding v3 Step 4, and write postmortem for incident-payments\",\n  \"other_tasks\": [],\n  \"outcome\": \"Figma design iteration for Onboarding v3 Steps 2-3 completed with Variant B approved for usability test; Stripe webhook incident rollback completed with queue draining\",\n  \"status\": \"completed\",\n  \"work_done\": \"Designed Onboarding v3 Steps 2-4 in Figma with Variant B progress bar and skip link; received approval from Maya for usability test; rolled back deploy 4512 in response to Stripe webhook retry incident; monitored queue draining from 4,200 to 1,100 remaining\",\n  \"source_ids\": [109, 110],\n  \"task\": \"Onboarding v3 design iteration and incident-payments rollback\",\"substantive\": true\n}",
+          "seconds" : 7.2375730276107788,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"tasks\": [\n    {\n      \"block_indices\": [0],\n      \"status\": \"completed\",\n      \"next_step\": \"Review PR #118 comments and address remaining feedback from billing-service author\",\n      \"title\": \"AuthRateLimiter rate limiter fix and billing-service PR review\",\n      \"summary\": \"Implemented fix in AuthRateLimiter.swift to reset counter after successful login and submitted review for PR #118 billing-service proration changes.\"\n    },\n    {\n      \"block_indices\": [1],\n      \"status\": \"in_progress\",\n      \"next_step\": \"Review offline eval set requirements and finalize rollout shadow traffic plan\",\n      \"title\": \"Search ranking v2 design doc review\",\n      \"summary\": \"Reviewed Search ranking v2 design doc proposal including BM25 baseline and recency decay parameters and identified open question regarding per-team vs global boosts.\"\n    },\n    {\n      \"block_indices\": [2],\n      \"status\": \"completed\",\n      \"next_step\": \"Continue Figma design iteration for Onboarding v3 Step 4, and write postmortem for incident-payments\",\n      \"title\": \"Onboarding v3 design iteration and incident-payments rollback\",\n      \"summary\": \"Designed Onboarding v3 Steps 2-4 in Figma with Variant B progress bar and skip link, received approval for usability test, and rolled back deploy 4512 in response to Stripe webhook retry incident.\"\n    },\n    {\n      \"block_indices\": [3],\n      \"status\": \"in_progress\",\n      \"next_step\": \"Send email to Jordan\",\n      \"title\": \"Email draft for Acme Corp SSO escalation\",\n      \"summary\": \"Drafted response email about SSO certificate rotation fix but not yet sent.\"\n    }\n  ],\n  \"decisions\": [],\n  \"blockers\": []\n}",
+          "seconds" : 10.12201201915741,
+          "stage" : "digest"
+        }
+      ],
+      "covered_seconds" : 10800,
+      "day" : "parallel-morning",
+      "quality" : "complete",
+      "run" : 5,
+      "seconds" : 31.119907021522522,
+      "segments" : 3,
+      "summary" : "### Tasks\n- **AuthRateLimiter rate limiter fix and billing-service PR review** — Completed. Implemented fix in AuthRateLimiter.swift to reset counter after successful login and submitted review for PR #118 billing-service proration changes.\n- **Search ranking v2 design doc review** — In progress. Reviewed Search ranking v2 design doc proposal including BM25 baseline and recency decay parameters and identified open question regarding per-team vs global boosts.\n- **Onboarding v3 design iteration and incident-payments rollback** — Completed. Designed Onboarding v3 Steps 2-4 in Figma with Variant B progress bar and skip link, received approval for usability test, and rolled back deploy 4512 in response to Stripe webhook retry incident.\n- **Email draft for Acme Corp SSO escalation** — In progress. Drafted response email about SSO certificate rotation fix but not yet sent.\n\n### Decisions and next steps\n- Next — AuthRateLimiter rate limiter fix and billing-service PR review: Review PR #118 comments and address remaining feedback from billing-service author\n- Next — Search ranking v2 design doc review: Review offline eval set requirements and finalize rollout shadow traffic plan\n- Next — Onboarding v3 design iteration and incident-payments rollback: Continue Figma design iteration for Onboarding v3 Step 4, and write postmortem for incident-payments\n- Next — Email draft for Acme Corp SSO escalation: Send email to Jordan",
+      "tracked_seconds" : 10800
+    },
+    {
+      "calls" : [
+        {
+          "output" : "{\n  \"substantive\": true,\n  \"work_done\": \"Migrated users table schema to PostgreSQL 16, adding a generated column for normalized email and creating a concurrent index.\",\n  \"status\": \"completed\",\n  \"next_step\": \"Review migration logs for any errors or performance issues.\",\n  \"outcome\": \"Successfully created table with 1,843,221 rows migrated and added email_normalized column with unique index.\",\n  \"source_ids\": [201, 202],\n  \"task\": \"Database Migration: users table to PostgreSQL 16\",\n  \"other_tasks\": []\n}",
+          "seconds" : 4.4995980262756348,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"substantive\": true,\n  \"work_done\": \"Verified migration of users table to Postgres 16 replica using psql and TablePlus, confirming row counts match legacy data and migration script completed successfully.\",\n  \"status\": \"completed\",\n  \"next_step\": \"Continue monitoring database replication health.\",\n  \"outcome\": \"Migration 0042 confirmed complete; row counts verified (1,843,221).\",\n  \"source_ids\": [203, 204],\n  \"task\": \"Database Migration Verification\",\n  \"other_tasks\": []\n}",
+          "seconds" : 4.3596019744873047,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"substantive\": false,\n  \"work_done\": \"\",\n  \"status\": \"unknown\",\n  \"next_step\": \"\",\n  \"outcome\": \"\",\n  \"source_ids\": [205, 206],\n  \"task\": \"Reviewing Q4 OKRs for Platform team\",\n  \"other_tasks\": []\n}",
+          "seconds" : 3.7518429756164551,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"tasks\": [\n    {\n      \"status\": \"completed\",\n      \"title\": \"Database Migration: users table to PostgreSQL 16\",\n      \"summary\": \"Migrated the users table schema to PostgreSQL 16, adding a generated column for normalized email and creating a concurrent index. Successfully created the table with 1,843,221 rows migrated.\",\n      \"next_step\": \"Review migration logs for any errors or performance issues.\",\n      \"block_indices\": [\n        0,\n        1\n      ]\n    }\n  ],\"decisions\": [],\n  \"blockers\": []\n}",
+          "seconds" : 7.0479700565338135,
+          "stage" : "digest"
+        }
+      ],
+      "covered_seconds" : 7200,
+      "day" : "focused-day",
+      "quality" : "complete",
+      "run" : 5,
+      "seconds" : 19.682770013809204,
+      "segments" : 3,
+      "summary" : "### Tasks\n- **Database Migration: users table to PostgreSQL 16** — Completed. Migrated the users table schema to PostgreSQL 16, adding a generated column for normalized email and creating a concurrent index. Successfully created the table with 1,843,221 rows migrated.\n\n### Decisions and next steps\n- Next — Database Migration: users table to PostgreSQL 16: Review migration logs for any errors or performance issues.",
+      "tracked_seconds" : 10800
+    },
+    {
+      "calls" : [
+        {
+          "output" : "{\n  \"substantive\": true,\n  \"work_done\": \"Fixed flaky test in CheckoutFlowTests.swift by replacing sleep with waitForExistence to wait for confirmation banner animation to finish, then committed the fix\",\n  \"status\": \"completed\",\n  \"next_step\": \"Review PR for test fix and update API docs with cursor pagination example\",\n  \"outcome\": \"Test now passes consistently (20\/20 runs) and flaky test resolved\",\n  \"source_ids\": [301, 303],\n  \"task\": \"CheckoutFlowTests.swift — ShopApp\",\n  \"other_tasks\": [\n    {\n      \"substantive\": true,\n      \"task\": \"Northwind API documentation\",\n      \"work_done\": \"Discussed pagination implementation with Priya Raman and agreed to add cursor example to API docs\",\n      \"next_step\": \"Add cursor pagination example to API docs\",\n      \"outcome\": \"Client acknowledged and will update their implementation\",\n      \"source_ids\": [302, 304],\n      \"status\": \"in_progress\"\n    }\n  ]\n}",
+          "seconds" : 8.148745059967041,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"substantive\": false,\n  \"work_done\": \"\",\n  \"status\": \"unknown\",\n  \"next_step\": \"\",\n  \"outcome\": \"\",\n  \"source_ids\": [305],\n  \"task\": \"\",\n  \"other_tasks\": []\n}",
+          "seconds" : 4.1663858890533447,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"substantive\": true,\n  \"work_done\": \"Reviewed release notes 2.4 in Notion and triaged ShopApp bugs in Linear, including urgent crash issue SHOP-812 on address edit\",\n  \"status\": \"in_progress\",\n  \"next_step\": \"Address SHOP-812 crash on address edit\",\n  \"outcome\": \"Identified SHOP-812 as urgent crash issue assigned to me; reviewed SHOP-815 currency symbol issue and SHOP-819 duplicate push notifications\",\n  \"source_ids\": [307, 308],\n  \"task\": \"Bug triage and release notes review\",\n  \"other_tasks\": []\n}",
+          "seconds" : 4.7979000806808472,
+          "stage" : "segment"
+        },
+        {
+          "output" : "{\n  \"tasks\": [\n    {\n      \"status\": \"completed\",\n      \"title\": \"CheckoutFlowTests.swift — ShopApp\",\n      \"summary\": \"Fixed flaky test by replacing sleep with waitForExistence to wait for confirmation banner animation, resulting in consistent test passes.\",\n      \"next_step\": \"Review PR for test fix\",\n      \"block_indices\": [0]\n    },\n    {\n      \"status\": \"in_progress\",\n      \"title\": \"Northwind API documentation\",\n      \"summary\": \"Discussed pagination implementation and agreed to add cursor example to API docs.\",\n      \"next_step\": \"Add cursor pagination example to API docs\",\n      \"block_indices\": [1]\n    },\n    {\n      \"status\": \"in_progress\",\n      \"title\": \"Bug triage and release notes review\",\n      \"summary\": \"Reviewed release notes 2.4 in Notion and triaged ShopApp bugs, identifying SHOP-812 as an urgent crash issue.\",\n      \"next_step\": \"Address SHOP-812 crash on address edit\",\n      \"block_indices\": [2]\n    }\n  ],\"decisions\": [],\n  \"blockers\": []\n}",
+          "seconds" : 8.3804559707641602,
+          "stage" : "digest"
+        }
+      ],
+      "covered_seconds" : 7200,
+      "day" : "mixed-with-noise",
+      "quality" : "complete",
+      "run" : 5,
+      "seconds" : 25.539128065109253,
+      "segments" : 3,
+      "summary" : "### Tasks\n- **CheckoutFlowTests.swift — ShopApp** — Completed. Fixed flaky test by replacing sleep with waitForExistence to wait for confirmation banner animation, resulting in consistent test passes.\n- **Northwind API documentation** — In progress. Discussed pagination implementation and agreed to add cursor example to API docs.\n- **Bug triage and release notes review** — In progress. Reviewed release notes 2.4 in Notion and triaged ShopApp bugs, identifying SHOP-812 as an urgent crash issue.\n\n### Decisions and next steps\n- Next — CheckoutFlowTests.swift — ShopApp: Review PR for test fix\n- Next — Bug triage and release notes review: Address SHOP-812 crash on address edit",
+      "tracked_seconds" : 9000
+    }
+  ]
+}

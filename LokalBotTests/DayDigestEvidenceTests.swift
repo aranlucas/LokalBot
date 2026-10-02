@@ -42,6 +42,7 @@ final class DayDigestEvidenceTests: XCTestCase {
         var invalidFinal = false
         var nonSubstantiveFocusIndices: Set<Int> = []
         var bestAvailableFocusIndices: Set<Int> = []
+        var focusResponses: [Int: String] = [:]
         var finalResponse: String?
         var displayName: String { "structured-test" }
 
@@ -75,6 +76,7 @@ final class DayDigestEvidenceTests: XCTestCase {
                         {"substantive":false,"task":"","work_done":"","status":"unknown","outcome":"","next_step":"","source_ids":[]}
                         """
                 }
+                if let response = focusResponses[index] { return response }
                 if bestAvailableFocusIndices.contains(index) {
                     return """
                         {"substantive":false,"task":"Protocol research","work_done":"Reviewed material about a protocol without reaching a visible conclusion.","status":"unknown","outcome":"","next_step":"","source_ids":[]}
@@ -890,6 +892,31 @@ final class DayDigestEvidenceTests: XCTestCase {
         let aggregation = try XCTUnwrap(aggregationPrompts.last)
         XCTAssertTrue(aggregation.contains("Priority: primary\n  Task: Task 1"))
         XCTAssertTrue(aggregation.contains("Priority: secondary\n  Task: Protocol research"))
+    }
+
+    func testOneSegmentKeepsEachDistinctWorkItem() async throws {
+        let evidence = DayDigestEvidence.build(
+            day: day, blocks: [block(1, 9, "Implementation")], screenContexts: [], meetings: [], calendar: calendar)
+        let recorder = GenerationRecorder()
+        let focus = """
+            {"substantive":true,"task":"Fix the login rate limiter","work_done":"Reset the counter after a successful login.","status":"completed","outcome":"","next_step":"","source_ids":[],"other_tasks":[
+            {"substantive":true,"task":"Fix the login rate limiter","work_done":"Ran the limiter tests.","status":"completed","outcome":"","next_step":"","source_ids":[]},
+            {"substantive":true,"task":"Review PR #118","work_done":"Requested changes to the proration rounding.","status":"in_progress","outcome":"","next_step":"","source_ids":[]},
+            {"substantive":false,"task":"Reply to the Acme escalation","work_done":"Drafted a reply about the SAML certificate.","status":"in_progress","outcome":"","next_step":"","source_ids":[]}]}
+            """
+
+        let overview = try await DayDigestOverviewGenerator.generate(
+            evidence: evidence,
+            engine: StructuredDigestEngine(recorder: recorder, invalidFinal: true, focusResponses: [1: focus]),
+            customPrompt: "",
+            calendar: calendar)
+
+        XCTAssertEqual(overview.components(separatedBy: "**Fix the login rate limiter**").count - 1, 1, overview)
+        XCTAssertTrue(overview.contains("**Review PR #118**"), overview)
+        XCTAssertTrue(overview.contains("**Reply to the Acme escalation**"), "A repeat of the main task uses no slot")
+        let aggregationPrompts = await recorder.aggregationPrompts
+        let aggregation = try XCTUnwrap(aggregationPrompts.last)
+        XCTAssertTrue(aggregation.contains("Priority: secondary\n  Task: Reply to the Acme escalation"), aggregation)
     }
 
     func testFocusPromptCountsAIAssistedWorkAsSubstantive() {
