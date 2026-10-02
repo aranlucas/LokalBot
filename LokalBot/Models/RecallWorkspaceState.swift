@@ -38,6 +38,16 @@ struct RecallWorkspaceState {
         }
     }
 
+    /// "Ask about results" bounds meetings and screen moments to the displayed
+    /// rows. Activity has no result rows to bound, so a selected Activity
+    /// source stays; otherwise "How long was I in Figma today?" lost the only
+    /// tool that answers it whenever the question also matched a result.
+    mutating func selectResultEvidence(meetingIDs: Set<UUID>, screenIDs: Set<Int64>) {
+        let keepsActivity = sources.contains(.today)
+        selectEvidence(meetingIDs: meetingIDs, screenIDs: screenIDs)
+        if keepsActivity { sources.insert(.today) }
+    }
+
     /// An explicit source choice supersedes any earlier temporary narrowing.
     mutating func chooseSources(_ selection: Set<AskSourceScope>) {
         sources = selection

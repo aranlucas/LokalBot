@@ -50,6 +50,19 @@ final class RecallSourceScopeTests: XCTestCase {
         XCTAssertNil(state.sourcesBeforeEvidence)
     }
 
+    func testAskingAboutResultsKeepsASelectedActivitySource() {
+        var state = RecallWorkspaceState()
+        state.chooseSources([.meetings, .screen, .today])
+        state.selectResultEvidence(meetingIDs: [UUID()], screenIDs: [])
+        XCTAssertEqual(state.sources, [.meetings, .today])
+        state.clearEvidence()
+        XCTAssertEqual(state.sources, [.meetings, .screen, .today])
+
+        state.chooseSources([.meetings, .screen])
+        state.selectResultEvidence(meetingIDs: [], screenIDs: [42])
+        XCTAssertEqual(state.sources, [.screen], "Activity is never added when it was not selected")
+    }
+
     func testSourceChoiceDuringReviewSupersedesTheEarlierChoice() {
         var state = RecallWorkspaceState()
         state.selectEvidence(meetingIDs: [UUID()], screenIDs: [])

@@ -363,7 +363,7 @@ private struct AskContent: View {
         }
         pendingQuestion = nil
         if resultCount > 0 {
-            app.recallState.selectEvidence(
+            app.recallState.selectResultEvidence(
                 meetingIDs: Set(groupedMeetings.map(\.id)),
                 screenIDs: answerScreenIDs)
         }
