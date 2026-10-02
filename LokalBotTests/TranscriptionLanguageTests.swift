@@ -22,6 +22,15 @@ final class TranscriptionLanguageTests: XCTestCase {
         XCTAssertEqual(TranscriptionLanguage.fromLegacyHint(" DE "), .de)
     }
 
+    func testSerbianCanBeChosenExplicitlyWithoutBecomingASummaryPreset() {
+        let serbian = try? XCTUnwrap(TranscriptionLanguage(rawValue: "sr"))
+        XCTAssertEqual(serbian, .language(.sr))
+        XCTAssertEqual(serbian?.code, "sr")
+        XCTAssertEqual(serbian?.displayName, "Serbian")
+        XCTAssertTrue(TranscriptionLanguage.allCases.contains(.language(.sr)))
+        XCTAssertNil(SummaryLanguage(rawValue: "sr"), "summary script choice (Cyrillic or Latin) is a separate decision")
+    }
+
     func testLegacyHintMigrationFallsBackToAutoForUnknownCodes() {
         XCTAssertEqual(TranscriptionLanguage.fromLegacyHint("klingon"), .auto)
         XCTAssertEqual(TranscriptionLanguage.fromLegacyHint(""), .auto)
