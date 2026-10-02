@@ -816,5 +816,421 @@
       "runs": 5,
       "seconds_per_day": 26.636267224947613
     }
+  },
+  "candidate-v2": {
+    "rows": [
+      {
+        "covered": [
+          "acme-escalation",
+          "onboarding-design",
+          "rate-limit",
+          "search-ranking",
+          "webhook-incident"
+        ],
+        "day": "parallel-morning",
+        "duplicates": 0,
+        "error": null,
+        "leisure": 0,
+        "lines": 4,
+        "merged": 1,
+        "missed": [
+          "proration-review"
+        ],
+        "noise": 0,
+        "own_line": [
+          "acme-escalation",
+          "rate-limit",
+          "search-ranking"
+        ],
+        "recall": 0.8333333333333334,
+        "run": 1,
+        "seconds": 26.068243980407715,
+        "segment_calls": 3
+      },
+      {
+        "covered": [
+          "pg16-migration",
+          "q4-okrs"
+        ],
+        "day": "focused-day",
+        "duplicates": 0,
+        "error": null,
+        "leisure": 0,
+        "lines": 2,
+        "merged": 0,
+        "missed": [],
+        "noise": 0,
+        "own_line": [
+          "pg16-migration",
+          "q4-okrs"
+        ],
+        "recall": 1.0,
+        "run": 1,
+        "seconds": 22.03783094882965,
+        "segment_calls": 3
+      },
+      {
+        "covered": [
+          "bug-triage",
+          "flaky-test",
+          "pagination-answer",
+          "sam-one-on-one"
+        ],
+        "day": "mixed-with-noise",
+        "duplicates": 0,
+        "error": null,
+        "leisure": 1,
+        "lines": 4,
+        "merged": 1,
+        "missed": [
+          "release-notes"
+        ],
+        "noise": 0,
+        "own_line": [
+          "flaky-test",
+          "pagination-answer"
+        ],
+        "recall": 0.8,
+        "run": 1,
+        "seconds": 26.518568992614746,
+        "segment_calls": 3
+      },
+      {
+        "covered": [
+          "acme-escalation",
+          "onboarding-design",
+          "proration-review",
+          "rate-limit",
+          "search-ranking",
+          "webhook-incident"
+        ],
+        "day": "parallel-morning",
+        "duplicates": 0,
+        "error": null,
+        "leisure": 0,
+        "lines": 3,
+        "merged": 2,
+        "missed": [],
+        "noise": 0,
+        "own_line": [
+          "search-ranking"
+        ],
+        "recall": 1.0,
+        "run": 2,
+        "seconds": 26.74719798564911,
+        "segment_calls": 3
+      },
+      {
+        "covered": [
+          "pg16-migration",
+          "q4-okrs"
+        ],
+        "day": "focused-day",
+        "duplicates": 1,
+        "error": null,
+        "leisure": 0,
+        "lines": 3,
+        "merged": 0,
+        "missed": [],
+        "noise": 0,
+        "own_line": [
+          "pg16-migration",
+          "q4-okrs"
+        ],
+        "recall": 1.0,
+        "run": 2,
+        "seconds": 31.428990960121155,
+        "segment_calls": 3
+      },
+      {
+        "covered": [
+          "bug-triage",
+          "flaky-test",
+          "pagination-answer",
+          "release-notes"
+        ],
+        "day": "mixed-with-noise",
+        "duplicates": 0,
+        "error": null,
+        "leisure": 1,
+        "lines": 4,
+        "merged": 1,
+        "missed": [
+          "sam-one-on-one"
+        ],
+        "noise": 0,
+        "own_line": [
+          "bug-triage",
+          "release-notes"
+        ],
+        "recall": 0.8,
+        "run": 2,
+        "seconds": 36.49142801761627,
+        "segment_calls": 3
+      },
+      {
+        "covered": [
+          "acme-escalation",
+          "onboarding-design",
+          "proration-review",
+          "rate-limit",
+          "search-ranking",
+          "webhook-incident"
+        ],
+        "day": "parallel-morning",
+        "duplicates": 0,
+        "error": null,
+        "leisure": 0,
+        "lines": 4,
+        "merged": 2,
+        "missed": [],
+        "noise": 0,
+        "own_line": [
+          "acme-escalation",
+          "search-ranking"
+        ],
+        "recall": 1.0,
+        "run": 3,
+        "seconds": 33.5131710767746,
+        "segment_calls": 3
+      },
+      {
+        "covered": [
+          "pg16-migration",
+          "q4-okrs"
+        ],
+        "day": "focused-day",
+        "duplicates": 1,
+        "error": null,
+        "leisure": 0,
+        "lines": 3,
+        "merged": 0,
+        "missed": [],
+        "noise": 0,
+        "own_line": [
+          "pg16-migration",
+          "q4-okrs"
+        ],
+        "recall": 1.0,
+        "run": 3,
+        "seconds": 26.95084500312805,
+        "segment_calls": 3
+      },
+      {
+        "covered": [
+          "bug-triage",
+          "flaky-test",
+          "pagination-answer",
+          "release-notes",
+          "sam-one-on-one"
+        ],
+        "day": "mixed-with-noise",
+        "duplicates": 0,
+        "error": null,
+        "leisure": 1,
+        "lines": 6,
+        "merged": 0,
+        "missed": [],
+        "noise": 0,
+        "own_line": [
+          "bug-triage",
+          "flaky-test",
+          "pagination-answer",
+          "release-notes",
+          "sam-one-on-one"
+        ],
+        "recall": 1.0,
+        "run": 3,
+        "seconds": 30.71055507659912,
+        "segment_calls": 3
+      },
+      {
+        "covered": [
+          "acme-escalation",
+          "onboarding-design",
+          "proration-review",
+          "rate-limit",
+          "search-ranking",
+          "webhook-incident"
+        ],
+        "day": "parallel-morning",
+        "duplicates": 1,
+        "error": null,
+        "leisure": 0,
+        "lines": 6,
+        "merged": 1,
+        "missed": [],
+        "noise": 0,
+        "own_line": [
+          "acme-escalation",
+          "onboarding-design",
+          "proration-review",
+          "rate-limit",
+          "search-ranking"
+        ],
+        "recall": 1.0,
+        "run": 4,
+        "seconds": 32.331493973731995,
+        "segment_calls": 3
+      },
+      {
+        "covered": [
+          "pg16-migration",
+          "q4-okrs"
+        ],
+        "day": "focused-day",
+        "duplicates": 0,
+        "error": null,
+        "leisure": 0,
+        "lines": 2,
+        "merged": 0,
+        "missed": [],
+        "noise": 0,
+        "own_line": [
+          "pg16-migration",
+          "q4-okrs"
+        ],
+        "recall": 1.0,
+        "run": 4,
+        "seconds": 23.648787021636963,
+        "segment_calls": 3
+      },
+      {
+        "covered": [
+          "bug-triage",
+          "flaky-test",
+          "pagination-answer",
+          "release-notes",
+          "sam-one-on-one"
+        ],
+        "day": "mixed-with-noise",
+        "duplicates": 0,
+        "error": null,
+        "leisure": 1,
+        "lines": 5,
+        "merged": 1,
+        "missed": [],
+        "noise": 0,
+        "own_line": [
+          "flaky-test",
+          "pagination-answer",
+          "sam-one-on-one"
+        ],
+        "recall": 1.0,
+        "run": 4,
+        "seconds": 27.031206965446472,
+        "segment_calls": 3
+      },
+      {
+        "covered": [
+          "acme-escalation",
+          "onboarding-design",
+          "proration-review",
+          "rate-limit",
+          "search-ranking",
+          "webhook-incident"
+        ],
+        "day": "parallel-morning",
+        "duplicates": 0,
+        "error": null,
+        "leisure": 0,
+        "lines": 5,
+        "merged": 1,
+        "missed": [],
+        "noise": 0,
+        "own_line": [
+          "acme-escalation",
+          "proration-review",
+          "rate-limit",
+          "search-ranking"
+        ],
+        "recall": 1.0,
+        "run": 5,
+        "seconds": 27.119269967079163,
+        "segment_calls": 3
+      },
+      {
+        "covered": [
+          "pg16-migration",
+          "q4-okrs"
+        ],
+        "day": "focused-day",
+        "duplicates": 1,
+        "error": null,
+        "leisure": 0,
+        "lines": 3,
+        "merged": 0,
+        "missed": [],
+        "noise": 0,
+        "own_line": [
+          "pg16-migration",
+          "q4-okrs"
+        ],
+        "recall": 1.0,
+        "run": 5,
+        "seconds": 23.24496901035309,
+        "segment_calls": 3
+      },
+      {
+        "covered": [
+          "bug-triage",
+          "flaky-test",
+          "pagination-answer"
+        ],
+        "day": "mixed-with-noise",
+        "duplicates": 0,
+        "error": null,
+        "leisure": 0,
+        "lines": 3,
+        "merged": 0,
+        "missed": [
+          "release-notes",
+          "sam-one-on-one"
+        ],
+        "noise": 0,
+        "own_line": [
+          "bug-triage",
+          "flaky-test",
+          "pagination-answer"
+        ],
+        "recall": 0.6,
+        "run": 5,
+        "seconds": 25.42859399318695,
+        "segment_calls": 3
+      }
+    ],
+    "summary": {
+      "covered_per_run": [
+        11,
+        12,
+        13,
+        13,
+        11
+      ],
+      "duplicates": 4,
+      "errors": 0,
+      "items_per_run": 13,
+      "leisure": 4,
+      "lines_per_run": 11.4,
+      "merged": 10,
+      "missed": {
+        "proration-review": 1,
+        "release-notes": 2,
+        "sam-one-on-one": 2
+      },
+      "model": "qwen3.5-4b",
+      "noise": 0,
+      "own_line_per_run": [
+        7,
+        5,
+        9,
+        10,
+        9
+      ],
+      "own_line_recall_mean": 0.6153846153846154,
+      "recall_mean": 0.9230769230769231,
+      "runs": 5,
+      "seconds_per_day": 27.95141019821167
+    }
   }
 }

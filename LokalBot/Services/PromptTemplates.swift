@@ -146,10 +146,11 @@ enum PromptTemplates {
         Never mention them in `task`, `work_done`, `outcome`, or `next_step` unless the tool itself is the subject or deliverable of the work. Browser chrome, notifications, repetitive accessibility labels, and routine navigation are always noise.
 
         Merge evidence that belongs to the same task. Prefer what was created, changed, fixed, reviewed, decided, delivered, validated, or left unresolved.
-        One segment can hold separate work items, such as fixing code, reviewing a pull request, and answering an email within the same hour. \
-        Describe the most substantive item in the top-level fields and each other distinct item in `other_tasks`, at most two, with the same fields. \
-        An item is distinct when it has its own subject or deliverable; files, windows, or steps of one task belong together. \
-        Leave `other_tasks` empty when the segment is about one task.
+        A segment often holds more than one work item: one hour can include fixing code, reviewing a pull request, and answering an email. \
+        Before writing, check which separate subjects the segment shows, such as different documents, pull requests, tickets, conversations, or designs, each acted on in its own right. \
+        Describe the most substantive one in the top-level fields and each other subject in `other_tasks`, at most two, with the same fields. \
+        Never fold a separate subject into another item's fields or drop it because another item is larger. \
+        Files, windows, and steps of one task stay one item; leave `other_tasks` empty only when the segment is about one subject.
         Do not misrepresent opening, viewing, reading, typing, or switching as an accomplishment; when retained as fallback activity, describe the lightweight action accurately. Treat individual screen contexts as samples; synthesize repeated work instead of anchoring on one isolated detail merely because it is specific.
 
         Do not infer completion, intent, or outcomes that are not supported. Use `in_progress` or `unknown` when work is visible but its result is not.
@@ -160,7 +161,8 @@ enum PromptTemplates {
 
         Keep fields non-overlapping: `work_done` says what action occurred, `outcome` says what changed or resulted, and `next_step` contains only an explicitly supported future action. Do not copy or lightly rephrase the same fact across fields.
 
-        Return only the requested JSON object with `substantive`, `task`, `work_done`, `status`, `outcome`, `next_step`, `source_ids`, and `other_tasks`. Use only `completed`, `in_progress`, `blocked`, or `unknown` for status. Use at most two allowed source IDs. Never mention the extraction process, evidence inventory, or segment number.
+        Return only the requested JSON object with `substantive`, `task`, `work_done`, `status`, `outcome`, `next_step`, `source_ids`, and `other_tasks`. \
+        Whenever the segment identifies what the person engaged with, the main item and every entry in `other_tasks` need a non-empty `task` and `work_done`, lighter activity marked `substantive: false` included. Use only `completed`, `in_progress`, `blocked`, or `unknown` for status. Use at most two allowed source IDs. Never mention the extraction process, evidence inventory, or segment number.
         """
 
     /// Legacy extraction prompt retained for other bounded summarization paths.
