@@ -571,6 +571,49 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertEqual(result.outcomes.userActionItems.count, 1)
     }
 
+    func testFillerTheRepairFindsNoTaskInDoesNotLeaveNotesPartial() async throws {
+        var transcript = longTranscript()
+        transcript.segments[20] = .init(start: 100, end: 105, speaker: "me", text: "I'll be honest, the dependency worries me.",
+                                        attribution: .init(source: .microphone, identity: .user, method: .confirmation))
+        XCTAssertEqual(MeetingNotesEvidence(transcript: transcript).units.filter(\.isUserCommitment).map(\.source), ["s21"])
+        let script = Script([
+            .text(try response(notes: [note("s1", "The dependency needs review.")])),
+            // Asked again at temperature 0, the model gives the same answer.
+            .text(try response()), .text(try response()),
+        ])
+
+        let result = try await generate(script, transcript: transcript)
+
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 2, "a complete answer without a task is final")
+        XCTAssertTrue(calls[1].prompt.contains("missing_user_commitment"))
+        XCTAssertTrue(result.outcomes.userActionItems.isEmpty)
+        XCTAssertEqual(result.claims.count, 1)
+    }
+
+    func testACommitmentBesideSeveralOwnerUnclearTasksDoesNotLeaveNotesPartial() async throws {
+        var transcript = longTranscript()
+        transcript.segments[19] = .init(start: 95, end: 100, speaker: "them", text: "Someone should review the dependency.")
+        transcript.segments[20] = .init(start: 100, end: 105, speaker: "me", text: "I will take care of it.",
+                                        attribution: .init(source: .microphone, identity: .user, method: .confirmation))
+        transcript.segments[21] = .init(start: 105, end: 110, speaker: "them", text: "The migration plan should be updated.")
+        var reviewTask = action("s20", owner: "unknown")
+        reviewTask["text"] = "Review the dependency"
+        reviewTask["basis"] = "unclear"
+        var migrationTask = action("s22", owner: "unknown")
+        migrationTask["text"] = "Update the migration plan"
+        migrationTask["basis"] = "unclear"
+        let script = Script([
+            .text(try response(notes: [note("s1", "The dependency needs review.")], actions: [reviewTask, migrationTask])),
+        ])
+
+        let result = try await generate(script, transcript: transcript)
+
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 1, "proximity cannot choose between two tasks, so no repair is asked")
+        XCTAssertEqual(result.outcomes.unresolvedActionItems.count, 2)
+    }
+
     func testEmptySubstantialPartCannotReportComplete() async throws {
         let script = Script([.text(try response())])
         do {

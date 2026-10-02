@@ -12,6 +12,11 @@ extension MeetingNotesGenerator {
         /// Tasks (normalized text) whose ownership repairs answered in full
         /// but could not bind them; they stay visible as owner-unclear.
         var settledOwnership: [String]?
+        /// Rows the commitment check flagged that a complete repair answered
+        /// without a task for the user. The check only matches wording ("I'll
+        /// be honest" passes it), so that answer is final: asking again gets
+        /// the same reply and would leave the part partial for good.
+        var answeredCommitments: [String]?
     }
 
     struct PartJob {
@@ -251,6 +256,14 @@ extension MeetingNotesGenerator {
                     // independently validated facts never depend on their survival.
                     if !ownershipRepair {
                         recovery.pending.removeAll { repairable.contains($0) }
+                        let answered: [String] = repairable
+                            .filter { $0.reason == "missing_user_commitment" }
+                            .flatMap(\.sources)
+                        if !answered.isEmpty {
+                            var all = Set(recovery.answeredCommitments ?? [])
+                            all.formUnion(answered)
+                            recovery.answeredCommitments = all.sorted()
+                        }
                     }
                     recovery.repairTokenFloor = nil
                 } else if raw.truncated {
@@ -276,7 +289,10 @@ extension MeetingNotesGenerator {
                   !recovery.pending.contains(where: { $0.actionID != nil }) else { break }
             try checkpoint()
         }
-        part.complete = recovery.scanComplete && recovery.pending.isEmpty && missingCommitments(part, job: job, recovery: recovery).isEmpty
+        // A commitment still uncovered here was answered without a task, or
+        // sits beside several owner-unclear tasks that proximity cannot choose
+        // between. Neither changes on a retry, so neither holds the part open.
+        part.complete = recovery.scanComplete && recovery.pending.isEmpty
         try checkpoint()
     }
 
@@ -328,6 +344,7 @@ extension MeetingNotesGenerator {
     private static func queueMissingCommitments(_ part: Part, job: PartJob, recovery: inout Recovery) {
         guard recovery.scanComplete else { return }
         let compact = Dictionary(uniqueKeysWithValues: job.evidence.transcript.summaryCitationSources.map { ($0.value, $0.key) })
+        let answered = Set(recovery.answeredCommitments ?? [])
         for source in missingCommitments(part, job: job, recovery: recovery) {
             let missing = MeetingNotesEvidence.Rejection(sources: [source], kind: "actions", reason: "missing_user_commitment")
             let nearby = Set(repairEvidence([missing], units: job.units).map(\.source))
@@ -339,7 +356,7 @@ extension MeetingNotesGenerator {
                let anchor = action.citations.first.flatMap({ compact[$0.segmentID] }) {
                 recovery.pending.append(.init(sources: [anchor], kind: "actions", reason: "missing_ownership_evidence",
                                               text: action.text, actionID: action.id))
-            } else if candidates.isEmpty {
+            } else if candidates.isEmpty, !answered.contains(source) {
                 recovery.pending.append(missing)
             }
         }
@@ -447,6 +464,7 @@ extension MeetingNotesGenerator {
             + "Return empty arrays for unrequested kinds. Do not add a TL;DR or unrelated facts from neighboring context. "
             + "Previously accepted source-linked records are retained. Omit unsupported records. "
             + "For missing_user_commitment, extract the user's undertaking and its nearest relevant task context. "
+            + "If that row only manages the conversation (\"I'll be honest\", \"I'm going to share my screen\"), return no action for it. "
             + "For distant_action_context, cite only sources within eight segments of the primary source. "
             + "For missing_ownership_evidence, ambiguous_ownership_evidence, or ownership_quote_not_found, "
             + "repair only the action in feedback.text and copy that task text unchanged. Select a verbatim quote "
