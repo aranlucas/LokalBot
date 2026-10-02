@@ -73,7 +73,10 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                 ]),
             ToolDefinition(
                 name: "search_meetings",
-                description: "Case-insensitive substring search across meeting titles, summaries, and transcripts. Hits are recency-ordered with kind, snippet, and timestamp.",
+                description: "Word search across meeting titles, summaries, and transcripts. Meetings with every query word "
+                    + "(any order, case- and accent-insensitive) come first, then partial matches; rare words weigh more, "
+                    + "exact-phrase hits lead, and ties keep recency. Wrap the query in double quotes for an exact phrase. "
+                    + "Hits carry kind, snippet, and timestamp; one meeting gives at most five transcript hits.",
                 inputSchema: [
                     "type": "object",
                     "properties": [

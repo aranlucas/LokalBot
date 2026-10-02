@@ -80,7 +80,8 @@ enum AskLibraryContext {
             let hits = (try? LibrarySearch.hits(
                 query: term,
                 limit: maxSnippets,
-                meetings: meetings)) ?? []
+                meetings: meetings,
+                transcriptHitsPerMeeting: nil)) ?? []
             for hit in hits {
                 guard snippetCount < maxSnippets, !context.isFull else { break search }
                 guard seenSnippets.insert("\(hit.meeting_id)|\(hit.snippet)").inserted else {
