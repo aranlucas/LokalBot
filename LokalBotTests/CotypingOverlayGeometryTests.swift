@@ -316,4 +316,34 @@ final class CotypingOverlayGeometryTests: XCTestCase {
         XCTAssertEqual(converted.width, 2)
         XCTAssertEqual(converted.height, 20)
     }
+
+    /// Appended words widen the ghost to the right; they never move it.
+    func testAnExtendedInlineGhostKeepsItsLeadingEdge() {
+        let frame = CGRect(x: 300, y: 500, width: 80, height: 18)
+        let input = CGRect(x: 100, y: 100, width: 600, height: 500)
+        let screen = CGRect(x: 0, y: 0, width: 1440, height: 900)
+        let extended = CotypingOverlayGeometry.extendedInlineFrame(
+            from: frame, textSize: CGSize(width: 180.4, height: 18), inputFrame: input, visible: screen)
+        XCTAssertEqual(extended, CGRect(x: 300, y: 500, width: 181, height: 18))
+        // A shorter measurement never shrinks what is already drawn.
+        XCTAssertEqual(
+            CotypingOverlayGeometry.extendedInlineFrame(
+                from: frame, textSize: CGSize(width: 40, height: 18), inputFrame: input, visible: screen)?.width,
+            80)
+    }
+
+    func testAnExtensionThatLeavesTheFieldOrTheScreenIsRefused() {
+        let frame = CGRect(x: 300, y: 500, width: 80, height: 18)
+        let input = CGRect(x: 100, y: 100, width: 400, height: 500)
+        // 300 + 195 passes the field's right edge less its inset.
+        XCTAssertNil(CotypingOverlayGeometry.extendedInlineFrame(
+            from: frame, textSize: CGSize(width: 195, height: 18), inputFrame: input, visible: nil))
+        XCTAssertNotNil(CotypingOverlayGeometry.extendedInlineFrame(
+            from: frame, textSize: CGSize(width: 190, height: 18), inputFrame: input, visible: nil))
+        let screen = CGRect(x: 0, y: 0, width: 450, height: 900)
+        XCTAssertNil(CotypingOverlayGeometry.extendedInlineFrame(
+            from: frame, textSize: CGSize(width: 150, height: 18), inputFrame: nil, visible: screen))
+        XCTAssertNil(CotypingOverlayGeometry.extendedInlineFrame(
+            from: frame, textSize: CGSize(width: CGFloat.infinity, height: 18), inputFrame: nil, visible: nil))
+    }
 }

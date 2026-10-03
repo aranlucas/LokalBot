@@ -26,6 +26,14 @@ enum CotypingAXFocusIdentityKey {
     }
 }
 
+/// Search boxes stay quiet, as they do in Cotypist: a query is not prose to
+/// continue, and Tab there belongs to the results list.
+enum CotypingSearchFieldDetector {
+    static func isSearchField(role: String, subrole: String?) -> Bool {
+        role == "AXSearchField" || subrole == "AXSearchField"
+    }
+}
+
 struct CotypingAcceptanceContentRanges: Equatable, Sendable {
     let preceding: NSRange
     let trailing: NSRange

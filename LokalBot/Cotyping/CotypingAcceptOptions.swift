@@ -40,10 +40,53 @@ enum CotypingFullAcceptKey: Int, Codable, Sendable {
     case off = -1
 
     var keyCode: CGKeyCode? { self == .off ? nil : CGKeyCode(rawValue) }
+    /// How the key is named in a hint; nil when full accept is off.
+    var label: String? {
+        switch self {
+        case .backtick: "`"
+        case .rightArrow: "Right Arrow"
+        case .off: nil
+        }
+    }
+}
+
+/// What Escape does while a suggestion is showing. The rest of the time
+/// Escape is never touched.
+enum CotypingEscapeBehavior: String, Codable, CaseIterable, Identifiable, Sendable {
+    /// The suggestion goes away, the key stops here, and the field stays quiet
+    /// for a few seconds. Matches Cotypist's default.
+    case pause
+    /// The suggestion goes away and the key also reaches the app.
+    case passThrough
+
+    /// How long a field stays quiet after Escape.
+    static let pauseSeconds: TimeInterval = 10
+
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .pause: "Dismiss and pause briefly"
+        case .passThrough: "Dismiss and send Escape to the app"
+        }
+    }
 }
 
 /// Which accept key fired — the next chunk (word/phrase) or the whole tail.
 enum CotypingAcceptScope: Sendable {
     case chunk
     case whole
+}
+
+/// One line saying what the accept keys do with the current settings.
+enum CotypingAcceptHint {
+    static func text(acceptKey: CotypingAcceptKey, fullAcceptKey: CotypingFullAcceptKey,
+                     granularity: CotypingAcceptGranularity) -> String {
+        var parts = ["\(acceptKey.label) accepts the next \(granularity == .word ? "word" : "phrase")"]
+        // The primary key wins when both are bound to the same key.
+        if let full = fullAcceptKey.label, fullAcceptKey.rawValue != acceptKey.rawValue {
+            parts.append("\(full) accepts the rest")
+        }
+        parts.append("Esc dismisses")
+        return parts.joined(separator: " · ")
+    }
 }

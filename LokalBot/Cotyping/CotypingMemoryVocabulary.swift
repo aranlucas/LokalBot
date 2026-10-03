@@ -1,0 +1,100 @@
+import Foundation
+
+extension CotypingMemoryContext {
+    /// Everyday wording, calendar words and app names. A saved fact may supply
+    /// one of these as its detail ("in November", "on Zoom"), but sharing them
+    /// never shows that a draft is about the same topic: "I'll get back to" is
+    /// not about a note that happens to say so too.
+    ///
+    /// Folded like `terms`: lowercase, no diacritics, apostrophes split. Words
+    /// that double as common first names (Sam, Ali, Jan) are left out so a
+    /// person can still be looked up by name.
+    static let everydayTerms: Set<String> = [
+        // Contraction stems left by splitting on the apostrophe.
+        "don", "doesn", "didn", "won", "isn", "aren", "wasn", "weren", "haven", "hasn", "hadn",
+        "wouldn", "couldn", "shouldn", "ain",
+        // Common verbs.
+        "get", "gets", "got", "getting", "let", "lets", "know", "knows", "knew", "known",
+        "make", "makes", "made", "making", "take", "takes", "took", "taken", "taking",
+        "give", "gives", "gave", "given", "giving", "see", "sees", "saw", "seen", "seeing",
+        "look", "looks", "looked", "looking", "come", "comes", "came", "coming",
+        "going", "goes", "went", "gone", "gonna", "wanna", "gotta",
+        "think", "thinks", "thought", "thinking", "say", "says", "said", "saying",
+        "tell", "tells", "told", "telling", "ask", "asks", "asked", "asking",
+        "talk", "talks", "talked", "talking", "speak", "spoke", "call", "calls", "called", "calling",
+        "meet", "meets", "met", "try", "tries", "tried", "trying", "use", "uses", "used", "using",
+        "put", "puts", "keep", "keeps", "kept", "help", "helps", "helped", "helping",
+        "start", "starts", "started", "starting", "finish", "finished", "done",
+        "hope", "hoping", "wanted", "wants", "needs", "needed", "like", "liked", "love", "loved",
+        "feel", "feels", "felt", "seem", "seems", "sound", "sounds", "share", "shared", "sharing",
+        "sent", "sends", "sending", "reach", "reached", "reaching", "touch", "hear", "heard",
+        "wait", "waiting", "stay", "move", "moved", "moving", "run", "running", "set", "turn",
+        "show", "shows", "showed", "happen", "happens", "happened", "change", "changed", "changes",
+        "add", "added", "adding", "confirm", "confirmed", "schedule", "scheduled", "appreciate",
+        "mention", "mentioned", "remind", "reminder", "forward", "attach", "attached",
+        "reply", "respond", "connect", "catch", "circle", "loop", "ping", "join", "joined", "joining",
+        "bring", "brought", "leave", "left", "find", "found", "read", "wrote", "written",
+        "works", "worked", "having", "welcome", "sorry",
+        // Adverbs, adjectives and quantifiers.
+        "back", "also", "well", "even", "still", "soon", "later", "again", "already", "always",
+        "never", "ever", "maybe", "perhaps", "probably", "really", "very", "much", "many", "more",
+        "most", "less", "least", "few", "lot", "lots", "bit", "too", "now", "then", "here", "right",
+        "sure", "good", "great", "nice", "fine", "okay", "yes", "yeah", "yep", "nope", "cool",
+        "awesome", "perfect", "glad", "happy", "best", "better", "bad", "big", "small", "long",
+        "short", "late", "early", "earlier", "first", "last", "same", "other", "others", "another",
+        "own", "able", "ready", "free", "busy", "available", "possible", "quickly", "shortly",
+        "asap", "fyi", "before", "after", "afterwards", "until", "till", "while", "during", "since",
+        "over", "under", "between", "around", "through", "out", "off", "down", "away", "together",
+        "not", "only", "than", "because", "though", "although", "however", "else", "instead", "yet",
+        "once", "twice", "actually", "basically", "definitely", "absolutely", "exactly", "totally",
+        "currently", "recently", "finally", "hopefully", "unfortunately", "apparently", "obviously",
+        "especially", "usually", "sometimes", "often", "almost", "enough", "quite", "rather",
+        "pretty", "kind", "sort", "such", "per", "via", "previous", "upcoming", "past", "ago",
+        // Pronouns and counting words the search stop list leaves in.
+        "his", "her", "hers", "him", "its", "their", "theirs", "ours", "yours", "mine", "myself",
+        "yourself", "itself", "themselves", "ourselves", "everyone", "anyone", "someone",
+        "everybody", "everything", "anything", "something", "nothing", "all", "both", "each",
+        "every", "one", "ones", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+        "ten", "second", "third", "couple", "half",
+        // Time and calendar.
+        "time", "times", "day", "days", "weeks", "months", "years", "morning", "afternoon",
+        "evening", "night", "tonight", "weekend", "weekly", "daily", "monthly", "hour", "hours",
+        "minute", "minutes", "moment", "noon", "midnight", "date", "dates",
+        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+        "tue", "tues", "thu", "thur", "thurs", "fri",
+        "january", "february", "march", "april", "june", "july", "august", "september", "october",
+        "november", "december", "feb", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec",
+        // Communication nouns.
+        "thing", "things", "stuff", "way", "ways", "part", "point", "points", "question",
+        "questions", "idea", "ideas", "thoughts", "detail", "details", "info", "information",
+        "issue", "issues", "problem", "problems", "people", "person", "guys", "folks", "end",
+        "rest", "side", "case", "place", "list", "item", "items", "example", "reason", "answer",
+        "response", "link", "file", "doc", "docs", "document", "documents", "page", "pages",
+        "thread", "invite", "invitation", "attachment", "screenshot",
+        // Meeting kinds, platforms and app chrome that title meetings and windows.
+        "chat", "sync", "standup", "catchup", "kickoff", "intro", "session", "huddle", "recap",
+        "retro", "retrospective", "sprint", "demo", "interview", "recording", "untitled", "video",
+        "audio", "voice", "online", "zoom", "google", "teams", "microsoft", "webex", "slack",
+        "facetime", "skype", "discord", "whatsapp", "telegram", "chrome", "safari", "firefox",
+        "gmail", "outlook", "inbox", "notion", "calendar",
+        // German.
+        "und", "oder", "aber", "der", "das", "den", "dem", "ein", "eine", "einen", "ist", "sind",
+        "wird", "werden", "haben", "ich", "wir", "sie", "nicht", "auch", "noch", "schon", "nur",
+        "sehr", "von", "zum", "zur", "fur", "auf", "aus", "nach", "uber", "wie", "dass", "wenn",
+        "dann", "hier", "heute", "morgen", "gestern", "bitte", "danke", "gerne", "kann", "muss",
+        // French.
+        "les", "des", "une", "est", "sont", "avec", "pour", "dans", "que", "qui", "mais", "nous",
+        "vous", "cette", "tout", "tous", "tres", "bien", "merci", "bonjour", "aussi", "comme",
+        "faire", "vers", "chez", "entre", "apres", "avant", "demain",
+        // Spanish.
+        "los", "las", "una", "del", "con", "por", "para", "pero", "como", "muy", "sobre", "esta",
+        "este", "estoy", "hay", "tiene", "tengo", "puede", "puedo", "nos", "todo", "todos",
+        "gracias", "hola", "tambien", "cuando", "donde", "porque", "hoy", "ayer", "manana",
+        // Serbian, Latin script.
+        "ili", "jer", "sto", "sta", "kao", "kad", "kada", "gde", "kako", "koji", "koja", "koje",
+        "ovo", "ovaj", "taj", "smo", "ste", "nije", "nisu", "bilo", "bili", "bice", "ima", "nema",
+        "treba", "mogu", "moze", "hocu", "samo", "vec", "jos", "opet", "sada", "posle", "kasnije",
+        "danas", "sutra", "juce", "dobro", "vazi", "hvala", "pozdrav", "molim", "evo", "nam", "vam",
+        "svi", "sve", "bez", "oko", "kroz", "prema",
+    ]
+}

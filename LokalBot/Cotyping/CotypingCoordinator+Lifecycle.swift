@@ -26,6 +26,7 @@ extension CotypingCoordinator {
             activeMemoryContext = .empty
             activeVisibleContext = nil
             memoryContextSources = []
+            memoryContextSearched = false
             suggestionAnchorCache.removeAll()
         }
         guard settings.cotypingEnabled else { stop(reason: "Cotyping is off."); return }
@@ -70,6 +71,7 @@ extension CotypingCoordinator {
         activeMemoryContext = .empty
         activeVisibleContext = nil
         memoryContextSources = []
+        memoryContextSearched = false
         lastSuggestion = nil
         lastAcceptedTail = nil
         if !isDisabledState { state = .idle }
@@ -100,9 +102,12 @@ extension CotypingCoordinator {
         focusTracker.stop()
         inputMonitor.stop()
         isRunning = false
+        escapePause = nil
+        resetMeasurementState()
         activeMemoryContext = .empty
         activeVisibleContext = nil
         memoryContextSources = []
+        memoryContextSearched = false
         if let reason { state = .disabled(reason) } else { state = .idle }
     }
 
@@ -130,6 +135,7 @@ extension CotypingCoordinator {
         }
         inputMonitor.onKey = { [weak self] event in self?.handleKey(event) }
         inputMonitor.onAcceptKey = { [weak self] scope in self?.acceptFromTap(scope) ?? false }
+        inputMonitor.onDismissKey = { [weak self] in self?.dismissFromTap() ?? false }
         inputMonitor.acceptGate = { [weak self] in
             guard let self else { return false }
             return CotypingAcceptanceOwnershipPolicy.shouldOwnAcceptKey(

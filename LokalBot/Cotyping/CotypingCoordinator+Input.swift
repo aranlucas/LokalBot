@@ -7,15 +7,33 @@ extension CotypingCoordinator {
     func handleKey(_ event: CotypingInputEvent) {
         guard isRunning else { return }
         discardRevokedMemoryContext()
+        noteKey(event, live: focusTracker.focus.field)
+        if event.isEscape, let shown = session, overlay.isVisible, inputMonitor.isAcceptActive {
+            // The accept tap takes this Escape and decides whether the app
+            // sees it. Should the tap miss the key, the suggestion still goes.
+            pendingKeystrokeUptime = nil
+            Task { [weak self] in
+                try? await Task.sleep(for: .milliseconds(60))
+                guard let self, self.session == shown else { return }
+                self.cancelPendingGenerationWork()
+                self.clearSuggestion()
+                self.state = .idle
+            }
+            return
+        }
         switch event.kind {
         case .acceptance, .fullAcceptance:
             break // owned by the accept tap
         case .textMutation:
+            // Typing through a ghost that is already on screen has no wait to
+            // measure; scheduling the next suggestion starts a new one.
+            pendingKeystrokeUptime = nil
             if advanceActiveSessionIfTypedCharactersMatch(event.characters) {
                 return
             }
             scheduleGenerationAfterHostPublishDelay()
         case .dismissal, .navigation, .shortcut, .other:
+            pendingKeystrokeUptime = nil
             cancelPendingGenerationWork()
             clearSuggestion()
             state = .idle
@@ -25,6 +43,7 @@ extension CotypingCoordinator {
     func handleFocusChange(_ focus: CotypingFocus) {
         guard isRunning else { return }
         discardRevokedMemoryContext()
+        resolveInsertionCheck(live: focus.field)
         if let activeVisibleContext,
            focus.field == nil || (focus.field?.visibleContextWasRequested == true
                 && focus.field?.visibleContext != activeVisibleContext) {
@@ -71,9 +90,12 @@ extension CotypingCoordinator {
 
     func scheduleGenerationAfterHostPublishDelay(baseline explicitBaseline: CotypingField? = nil) {
         cancelPendingGenerationWork()
+        cancelSuggestionExtension()
         let baseline = explicitBaseline ?? focusTracker.focus.field
         let pollGeneration = hostPublishPollGeneration
         let keystrokeUptimeNanoseconds = DispatchTime.now().uptimeNanoseconds
+        // Measured from here until the suggestion this keystroke asks for is visible.
+        pendingKeystrokeUptime = keystrokeUptimeNanoseconds
 
         hostPublishPollTask?.cancel()
         hostPublishPollTask = Task { [weak self] in
@@ -174,6 +196,7 @@ extension CotypingCoordinator {
             showOverlay(text: remainingText, field: liveField, placement: placement)
         }
         markReady(remainingText)
+        extendSuggestionIfNeeded()
         return true
     }
 
@@ -202,6 +225,7 @@ extension CotypingCoordinator {
             showOverlay(text: remainingText, field: current.field)
         }
         markReady(remainingText)
+        extendSuggestionIfNeeded()
         return true
     }
 }

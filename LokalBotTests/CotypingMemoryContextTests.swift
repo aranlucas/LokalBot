@@ -45,15 +45,33 @@ final class CotypingMemoryContextTests: XCTestCase {
         XCTAssertNil(CotypingMemoryContext.select(items: [unknown], query: "Atlas", policy: enabled, now: now).text)
     }
 
-    func testOldOrFutureFactsAndDisabledWorkMemoryAreOmitted() {
+    func testOldOrFutureFactsAreOmitted() {
         var old = item()
         old.updatedAt = now.addingTimeInterval(-CotypingMemoryContext.maxAge - 1)
         var future = item(id: "future")
         future.updatedAt = now.addingTimeInterval(3600)
-        var memory = item(id: "dream")
+        XCTAssertNil(CotypingMemoryContext.select(items: [old, future], query: "Atlas",
+            policy: .init(meetings: true, screenDerived: true), now: now).text)
+    }
+
+    /// Reading what is already saved is granted by the writing switches alone.
+    /// The Overnight review switch only schedules new reviews.
+    @MainActor
+    func testSavedWorkMemoryIsReadUnderTheWritingGrantsAlone() {
+        var settings = AppSettings()
+        settings.cotypingUseScreenMemory = true
+        settings.dreamingEnabled = false
+        let policy = CotypingMemoryContext.Policy(settings: settings)
+        XCTAssertTrue(policy.enabled)
+        var memory = item(id: "dream", screens: true)
+        memory.requiresMeetings = false
         memory.isWorkMemory = true
-        XCTAssertNil(CotypingMemoryContext.select(items: [old, future, memory], query: "Atlas",
-            policy: .init(meetings: true, screenDerived: true, workMemory: false), now: now).text)
+        XCTAssertEqual(CotypingMemoryContext.select(items: [memory], query: "Atlas", policy: policy, now: now)
+            .items.map(\.id), ["dream"])
+        var reviewing = settings
+        reviewing.dreamingEnabled = true
+        XCTAssertEqual(CotypingMemoryContext.Policy(settings: reviewing), policy)
+        XCTAssertFalse(AppState.cotypingLifecycleChanged(from: settings, to: reviewing))
     }
 
     func testRecentFactsWinAndDuplicatesDoNotConsumeBudget() {
@@ -138,12 +156,49 @@ final class CotypingMemoryContextProviderTests: XCTestCase {
                        atomically: true, encoding: .utf8)
     }
 
-    private func load(_ selected: AppSettings? = nil) -> CotypingMemoryContextProvider.Snapshot {
+    private func load(_ selected: AppSettings? = nil,
+                      draft: String = "The Atlas release owner is ") -> CotypingMemoryContextProvider.Snapshot {
         let field = CotypingField(appName: "Mail", bundleID: "com.apple.mail", processID: 0, role: "AXTextArea",
-                                 precedingText: "The Atlas release owner is ", trailingText: "", selectionLength: 0,
+                                 precedingText: draft, trailingText: "", selectionLength: 0,
                                  caretRect: .zero, isSecure: false, caretIsExact: true)
         return CotypingMemoryContextProvider.load(root: root, meetings: [meeting], field: field,
                                                   settings: selected ?? settings)
+    }
+
+    /// Reproduces the escaped retrieval: a generic sentence picked up
+    /// "you on Friday" from a meeting it had nothing to do with, because the
+    /// two shared a pair of everyday words.
+    func testEverydayWordingDoesNotBorrowAnUnrelatedMeetingsDate() throws {
+        meeting.title = "Weekly sync"
+        try storage.saveMeta(meeting)
+        try writeNotes("Marko will get back to you on Friday.\nAtlas release owner is Priya.")
+        SearchIndex(databaseURL: root.appendingPathComponent("lokalbotv3.sqlite")).reindex(meeting, storage: storage)
+        XCTAssertNil(load(draft: "I'll get back to ").selection.text)
+        XCTAssertNil(load(draft: "I will get back to you on ").selection.text)
+        // The same notes still answer a draft that names their topic.
+        XCTAssertEqual(load(draft: "The Atlas release owner is ").selection.text, "Atlas release owner is Priya.")
+    }
+
+    func testWritingThatNamesNothingOpensNoSavedFile() throws {
+        try writeNotes("Marko will get back to you on Friday.")
+        let snapshot = load(draft: "Thanks, I'll get back to you soon about ")
+        XCTAssertTrue(snapshot.selection.items.isEmpty)
+        XCTAssertTrue(snapshot.stamps.isEmpty, "A generic draft must not touch the library")
+    }
+
+    func testSavedWorkMemoryIsReadWhileOvernightReviewIsOff() throws {
+        let day = DreamDay.key(for: Date())
+        let source = DreamEvidenceSource(kind: .screenDay, id: day, dayKey: day)
+        try DreamStore(root: root).save(DreamMemory(updatedAt: Date(), activeProjects: [
+            .init(name: "Borealis", status: "pricing page ships with the Tivat release", lastActiveDay: day,
+                  provenance: .init(sources: [source], revision: 0)),
+        ]))
+        var selected = AppSettings()
+        selected.cotypingUseScreenMemory = true
+        selected.dreamingEnabled = false
+        XCTAssertEqual(load(selected, draft: "The Borealis pricing page ships with ").selection.sourceTitles, ["Borealis"])
+        selected.cotypingUseScreenMemory = false
+        XCTAssertTrue(load(selected, draft: "The Borealis pricing page ships with ").selection.items.isEmpty)
     }
 
     func testReadsCurrentNotesAndRevokesOnEditOrDeletion() throws {

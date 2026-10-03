@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Paired native autocomplete replay with synthetic saved facts enabled/disabled.
 
-Measures recall of explicitly supplied facts, not unseen-fact prediction or user
-acceptance. Reference answers and case labels never enter the replay request.
+Measures two things together: recall of explicitly supplied facts, and leaving
+writing alone when no saved fact is relevant. Neither is unseen-fact prediction
+or user acceptance. Reference answers and case labels never enter the replay
+request.
 """
 
 import argparse
@@ -26,8 +28,20 @@ def replay_input(corpus, cases, enabled):
     }
 
 
+# "irrelevant" drafts share nothing with the saved facts. "distractor" drafts
+# share everyday wording with one but name no topic. Both must retrieve nothing.
+CONTROL_KINDS = {"irrelevant", "distractor"}
+
+
+def rate(part, whole):
+    return round(part / whole, 4) if whole else None
+
+
 def score(cases, without, with_memory):
     ids = [case["id"] for case in cases]
+    unknown = {case["kind"] for case in cases} - CONTROL_KINDS - {"relevant"}
+    if unknown:
+        raise ValueError(f"Unknown case kinds: {sorted(unknown)}")
     if any([row["id"] for row in observations] != ids for observations in [without, with_memory]):
         raise ValueError("Incomplete, duplicated or reordered replay")
     if any(row.get("usedPromptOverride") for row in without + with_memory):
@@ -47,12 +61,23 @@ def score(cases, without, with_memory):
                      "error": off.get("error") or on.get("error"),
                      "offLatencyMs": off["latencyMs"], "onLatencyMs": on["latencyMs"]})
     relevant = [row for row in rows if row["kind"] == "relevant"]
-    controls = [row for row in rows if row["kind"] == "irrelevant"]
+    controls = [row for row in rows if row["kind"] in CONTROL_KINDS]
+    # Ignoring irrelevant memory is scored like recalling a relevant fact: a
+    # control passes only if nothing was retrieved and the suggestion is the
+    # one the model gives with memory off.
+    abstentions = sum(not row["memoryIDs"] and row["unchanged"] for row in controls)
+    recall = rate(sum(row["onCorrect"] for row in relevant), len(relevant))
+    abstention = rate(abstentions, len(controls))
     return {"summary": {
         "relevantCases": len(relevant), "offCorrect": sum(row["offCorrect"] for row in relevant),
         "onCorrect": sum(row["onCorrect"] for row in relevant),
         "exactSelections": sum(row["selectionCorrect"] for row in rows), "totalCases": len(rows),
         "controlCases": len(controls), "unchangedControls": sum(row["unchanged"] for row in controls),
+        "distractorCases": sum(row["kind"] == "distractor" for row in controls),
+        "abstentions": abstentions,
+        "falseRetrievals": sum(bool(row["memoryIDs"]) for row in controls),
+        "recallRate": recall, "abstentionRate": abstention,
+        "balancedRelevance": None if recall is None or abstention is None else round((recall + abstention) / 2, 4),
         "errors": sum(bool(row["error"]) for row in rows),
         "offMedianMs": statistics.median(row["offLatencyMs"] for row in rows),
         "onMedianMs": statistics.median(row["onLatencyMs"] for row in rows),
@@ -78,7 +103,8 @@ def main():
                 "split": args.split, "caseIDs": [case["id"] for case in cases],
                 "factCount": len(corpus["memoryItems"]), "settings": "production defaults",
                 "context": "synthetic saved facts; no user library or learned examples",
-                "metric": "first lexical word matches explicitly supplied fact"}
+                "metric": "first lexical word matches explicitly supplied fact; "
+                          "controls retrieve nothing and keep the memory-off suggestion"}
     (args.output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     observations = []
     for enabled in [False, True]:

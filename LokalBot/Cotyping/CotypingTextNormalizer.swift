@@ -55,6 +55,9 @@ enum CotypingTextNormalizer {
             normalized.removeFirst(request.prefixText.count)
         }
 
+        // The model put a line break between the typed text and its completion.
+        // The break is dropped below; one space takes its place further down.
+        let beganOnNewLine = normalized.prefix(while: \.isWhitespace).contains(where: \.isNewline)
         normalized = normalized.trimmingCharacters(in: .controlCharacters.union(.newlines))
         // Drop leading formatting-only newlines before collapsing to one line, so
         // "\ndelicious" is not misread as an empty first line.
@@ -125,6 +128,15 @@ enum CotypingTextNormalizer {
         // Space management AFTER echo stripping (which can expose a leading space).
         if request.precedingEndsWithWhitespace {
             normalized = String(normalized.drop(while: { $0.isWhitespace }))
+        }
+        // Without its line break the completion would be glued to the typed
+        // text: two words run together, or a comma loses its space
+        // ("Hi team," + "I'm working").
+        let extendsFragment = request.wordPrefixAtCaret.count >= 2 && !request.wordPrefixIsValidWord
+        if beganOnNewLine, !request.forceWordContinuation, !extendsFragment,
+           !request.precedingEndsWithWhitespace, !request.prefixText.isEmpty,
+           let first = normalized.first, first.isLetter || first.isNumber {
+            normalized = " " + normalized
         }
         normalized = insertingMissingSentenceBoundarySpaces(in: normalized)
 

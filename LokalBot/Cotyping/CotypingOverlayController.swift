@@ -212,6 +212,47 @@ final class CotypingOverlayController {
         return true
     }
 
+    /// Grows a visible same-line inline ghost in place when words are appended
+    /// to it. Returns false when the longer text no longer fits beside the
+    /// caret; the caller then lays it out afresh, with wrapping.
+    @discardableResult
+    func extendInline(to text: String) -> Bool {
+        guard isVisible,
+              var render = lastInlineRender,
+              render.lineCount == 1,
+              let hosting,
+              text.count > render.text.count,
+              text.hasPrefix(render.text),
+              !text.contains(where: \.isNewline) else {
+            return false
+        }
+        hosting.rootView = CotypingGhostView(
+            text: text, style: render.renderStyle, showsChrome: false,
+            backgroundLuminance: render.backgroundLuminance)
+        hosting.layoutSubtreeIfNeeded()
+        let measured = CotypingGhostStyle.measuredTextSize(text, style: render.renderStyle)
+        let size = CGSize(
+            width: max(hosting.fittingSize.width, measured.width),
+            height: max(hosting.fittingSize.height, measured.height))
+        guard let frame = CotypingOverlayGeometry.extendedInlineFrame(
+            from: render.frame, textSize: size,
+            inputFrame: render.inputFrameRect, visible: render.visibleFrame)
+        else {
+            hosting.rootView = CotypingGhostView(
+                text: render.text, style: render.renderStyle, showsChrome: false,
+                backgroundLuminance: render.backgroundLuminance)
+            return false
+        }
+
+        sampleGeneration += 1
+        panel?.setFrame(frame.integral, display: true)
+        render.text = text
+        render.frame = frame.integral
+        lastInlineRender = render
+        acceptanceText = text
+        return true
+    }
+
     /// Returns true when a delayed post-accept AX refresh should keep the
     /// current inline geometry instead of re-presenting against likely stale
     /// host caret coordinates.

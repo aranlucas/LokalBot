@@ -82,6 +82,8 @@ struct SettingDescriptor: Identifiable {
         .init(id: "settings.cotypingMultiLine", title: "Allow multi-line suggestions", category: .writing, aliases: "cotypingMultiLine"),
         .init(id: "settings.cotypingAcceptKey", title: "Accept next", category: .writing, aliases: "cotypingAcceptKey"),
         .init(id: "settings.cotypingAcceptGranularity", title: "Each accept takes", category: .writing, aliases: "cotypingAcceptGranularity"),
+        .init(id: "settings.cotypingAutoAcceptTrailingPunctuation", title: "Accept punctuation with the word", category: .writing, aliases: "autocomplete tab full stop comma period"),
+        .init(id: "settings.cotypingEscapeBehavior", title: "Escape on a suggestion", category: .writing, aliases: "autocomplete esc dismiss pause suggestion"),
         .init(id: "settings.cotypingUseAppContext", title: "Use app and window context", category: .writing, aliases: "cotypingUseAppContext"),
         .init(id: "settings.cotypingUseClipboard", title: "Use clipboard as temporary context", category: .writing, aliases: "cotypingUseClipboard"),
         .init(id: "settings.cotypingUseVisibleContext", title: "Use visible text above the field", category: .writing, aliases: "autocomplete screen context reply message email"),

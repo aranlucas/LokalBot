@@ -6,6 +6,9 @@ import CoreGraphics
 nonisolated enum CotypingOverlayGeometry {
     /// Gap between the caret and the suggestion / screen edges.
     static let gap: CGFloat = 2
+    /// Space kept clear at the field's trailing edge; the inline layout wraps
+    /// ghost text at the same line.
+    static let inlineTrailingInset: CGFloat = 8
     static let reanchorDriftTolerance: CGFloat = 6
     static let backwardDriftHoldWindowMilliseconds = 300
 
@@ -60,6 +63,27 @@ nonisolated enum CotypingOverlayGeometry {
             }
         }
         return advanced
+    }
+
+    /// Frame for a same-line inline ghost after words are appended to it. The
+    /// leading edge stays where it is, so text already on screen does not move.
+    /// Nil when the longer text no longer fits beside the caret; the caller
+    /// then lays the ghost out afresh, with wrapping.
+    static func extendedInlineFrame(
+        from frame: CGRect,
+        textSize: CGSize,
+        inputFrame: CGRect?,
+        visible: CGRect?
+    ) -> CGRect? {
+        guard frame.origin.x.isFinite, frame.origin.y.isFinite,
+              textSize.width.isFinite, textSize.width > 0 else {
+            return nil
+        }
+        var extended = frame
+        extended.size.width = max(ceil(textSize.width), frame.width)
+        if let inputFrame, extended.maxX > inputFrame.maxX - inlineTrailingInset { return nil }
+        if let visible, extended.maxX > visible.maxX - gap { return nil }
+        return extended
     }
 
     /// CoTabby-style post-accept stability rule for inline ghosts. Hold small

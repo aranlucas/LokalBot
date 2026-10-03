@@ -183,7 +183,7 @@ final class DictationGroundingTests: XCTestCase {
         XCTAssertTrue(prompt.contains("[context delimiter removed]"))
     }
 
-    func testMixedWorkMemoryRequiresBothDictationGrantsAndWorkMemoryEnabled() {
+    func testMixedWorkMemoryRequiresBothDictationGrants() {
         var settings = configuration()
         let item = CotypingMemoryContext.Item(id: "mixed", title: "Juniper", text: "Juniper owner Nadja",
             updatedAt: Date(), requiresMeetings: true, requiresScreenMemory: true, isWorkMemory: true)
@@ -196,19 +196,29 @@ final class DictationGroundingTests: XCTestCase {
         settings.dictationUseMeetingMemory = false
         XCTAssertFalse(permitted())
         settings.dictationUseMeetingMemory = true
+        // Turning Overnight review off stops new reviews; it does not withdraw
+        // a grant to read what is already saved.
         settings.dreamingEnabled = false
-        XCTAssertFalse(permitted())
+        XCTAssertTrue(permitted())
     }
 
     func testGenericSpokenInstructionDoesNotRetrieveAnotherProjectsFacts() {
-        let field = DictationGrounding.field(speech: "Reply with the workshop city.", screen: nil, visible: nil)
         let item = CotypingMemoryContext.Item(id: "rill", title: "Rill", text: "Rill workshop city is Ulcinj.",
                                               updatedAt: Date(), requiresMeetings: true)
         let policy = CotypingMemoryContext.Policy(meetings: true, screenDerived: false)
-        XCTAssertEqual(CotypingMemoryContext.select(items: [item], for: field, includeTitle: false,
-                                                    policy: policy).items.count, 1)
-        XCTAssertTrue(CotypingMemoryContext.select(items: [item], for: field, includeTitle: false,
-                                                   policy: policy, allowBodyMatch: false).items.isEmpty)
+        func selected(_ speech: String, allowBodyMatch: Bool) -> Int {
+            let field = DictationGrounding.field(speech: speech, screen: nil, visible: nil)
+            return CotypingMemoryContext.select(items: [item], for: field, includeTitle: false,
+                                                policy: policy, allowBodyMatch: allowBodyMatch).items.count
+        }
+        // Two ordinary words name no topic, for typing or for dictation.
+        XCTAssertEqual(selected("Reply with the workshop city.", allowBodyMatch: true), 0)
+        XCTAssertEqual(selected("Reply with the workshop city.", allowBodyMatch: false), 0)
+        // A shared name lets typed text match a saved sentence; dictation
+        // still needs the source itself to be named.
+        XCTAssertEqual(selected("Reply that the workshop is in Ulcinj.", allowBodyMatch: true), 1)
+        XCTAssertEqual(selected("Reply that the workshop is in Ulcinj.", allowBodyMatch: false), 0)
+        XCTAssertEqual(selected("Reply with the Rill workshop city.", allowBodyMatch: false), 1)
     }
 
     func testVisibleReaderTimeoutDoesNotQueueAnotherWorker() async throws {

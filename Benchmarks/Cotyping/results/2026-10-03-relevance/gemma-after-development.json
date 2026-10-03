@@ -1,0 +1,122 @@
+{
+  "summary": {
+    "relevantCases": 3,
+    "offCorrect": 0,
+    "onCorrect": 3,
+    "exactSelections": 5,
+    "totalCases": 5,
+    "controlCases": 2,
+    "unchangedControls": 2,
+    "distractorCases": 2,
+    "abstentions": 2,
+    "falseRetrievals": 0,
+    "recallRate": 1.0,
+    "abstentionRate": 1.0,
+    "balancedRelevance": 1.0,
+    "errors": 0,
+    "offMedianMs": 66.619541,
+    "onMedianMs": 59.364
+  },
+  "cases": [
+    {
+      "id": "dev-get-back",
+      "kind": "distractor",
+      "expected": null,
+      "offText": "you on that.",
+      "onText": "you on that.",
+      "offCorrect": false,
+      "onCorrect": false,
+      "memoryIDs": [],
+      "selectionCorrect": true,
+      "unchanged": true,
+      "error": null,
+      "offLatencyMs": 62.911,
+      "onLatencyMs": 59.364
+    },
+    {
+      "id": "dev-closer-look",
+      "kind": "distractor",
+      "expected": null,
+      "offText": "the “",
+      "onText": "the “",
+      "offCorrect": false,
+      "onCorrect": false,
+      "memoryIDs": [],
+      "selectionCorrect": true,
+      "unchanged": true,
+      "error": null,
+      "offLatencyMs": 66.619541,
+      "onLatencyMs": 65.706416
+    },
+    {
+      "id": "dev-ostrog",
+      "kind": "relevant",
+      "expected": "Bojana",
+      "offText": "the Ostrog Foundation.",
+      "onText": "Bojana.",
+      "offCorrect": false,
+      "onCorrect": true,
+      "memoryIDs": [
+        "ostrog-owner"
+      ],
+      "selectionCorrect": true,
+      "unchanged": false,
+      "error": null,
+      "offLatencyMs": 67.739292,
+      "onLatencyMs": 51.876166
+    },
+    {
+      "id": "dev-tamaris-lowercase",
+      "kind": "relevant",
+      "expected": "14",
+      "offText": "2019.",
+      "onText": "14 october.",
+      "offCorrect": false,
+      "onCorrect": true,
+      "memoryIDs": [
+        "sync-tamaris"
+      ],
+      "selectionCorrect": true,
+      "unchanged": false,
+      "error": null,
+      "offLatencyMs": 69.287166,
+      "onLatencyMs": 63.002666
+    },
+    {
+      "id": "dev-answer-already-mentioned",
+      "kind": "relevant",
+      "expected": "Priya",
+      "offText": "a very nice",
+      "onText": "Priya.",
+      "offCorrect": false,
+      "onCorrect": true,
+      "memoryIDs": [
+        "atlas-owner"
+      ],
+      "selectionCorrect": true,
+      "unchanged": false,
+      "error": null,
+      "offLatencyMs": 66.399125,
+      "onLatencyMs": 39.420667
+    }
+  ],
+  "manifest": {
+    "appSHA256": "c00a2e76e4db1e19b93337541a14676bd88738f326b23c25062c96b11315fcac",
+    "modelFile": "gemma-4-E2B.i1-Q6_K.gguf",
+    "modelSHA256": "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
+    "corpusSHA256": "458c32d783ca48469d43230eb1c4daa7b1b06e2c17a7cc7ddf8b2ee7ca89db6d",
+    "scriptSHA256": "aac7a146b39109006c196ea5599d17e08eb61bf7dff7a68aaf76951fa4f59983",
+    "split": "development",
+    "caseIDs": [
+      "dev-get-back",
+      "dev-closer-look",
+      "dev-ostrog",
+      "dev-tamaris-lowercase",
+      "dev-answer-already-mentioned"
+    ],
+    "factCount": 13,
+    "settings": "production defaults",
+    "context": "synthetic saved facts; no user library or learned examples",
+    "metric": "first lexical word matches explicitly supplied fact; controls retrieve nothing and keep the memory-off suggestion"
+  }
+}

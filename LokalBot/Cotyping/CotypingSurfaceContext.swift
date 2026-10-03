@@ -11,7 +11,7 @@ import Foundation
 // Pure value logic — no AX, no I/O — so it is unit-testable.
 
 /// The coarse kind of writing surface the focused app presents.
-enum CotypingSurfaceClass: Equatable, Sendable {
+enum CotypingSurfaceClass: String, Equatable, Sendable {
     case codeEditor, terminal, email, chat, browser, other
 }
 

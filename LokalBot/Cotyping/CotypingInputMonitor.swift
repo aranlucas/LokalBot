@@ -15,6 +15,15 @@ enum CotypingKeyKind: Equatable, Sendable {
 struct CotypingInputEvent: Equatable, Sendable {
     var kind: CotypingKeyKind
     var characters: String
+    /// Command-Z. Reported so an accept that is undone at once can be counted.
+    var isUndo = false
+    /// Plain Escape, which the accept tap may take while a suggestion shows.
+    var isEscape = false
+
+    /// A key that takes text back: Backspace, Forward Delete, or undo.
+    var isCorrection: Bool {
+        isUndo || (kind == .textMutation && characters.isEmpty)
+    }
 }
 
 /// Global keyboard watcher for cotyping. Ported from Cotabby's `InputMonitor`:
@@ -35,6 +44,9 @@ final class CotypingInputMonitor {
     /// Invoked by the accept tap with the scope of the key that fired (next
     /// chunk vs whole). Returns `true` if it acted (key swallowed); else passthrough.
     var onAcceptKey: ((CotypingAcceptScope) -> Bool)?
+    /// Invoked by the accept tap for plain Escape while a suggestion is
+    /// visible. Returns `true` when the key was taken (swallowed).
+    var onDismissKey: (() -> Bool)?
     /// Consulted at event time: should the accept tap even consider this key?
     var acceptGate: () -> Bool = { false }
     /// The configured accept keys, read live at event time.
@@ -166,7 +178,9 @@ final class CotypingInputMonitor {
             return false
         }
         guard type == .keyDown, !suppressionController.isSynthetic(event) else { return false }
-        guard acceptGate(), let scope = acceptScope(for: event) else { return false }
+        guard acceptGate() else { return false }
+        if Self.isPlainEscape(event) { return onDismissKey?() ?? false }
+        guard let scope = acceptScope(for: event) else { return false }
         return onAcceptKey?(scope) ?? false
     }
 
@@ -186,10 +200,15 @@ final class CotypingInputMonitor {
             }
         }
         if flags.contains(.maskCommand) || flags.contains(.maskControl) {
-            return CotypingInputEvent(kind: .shortcut, characters: "")
+            // Matched by the character it produces, so it holds on any layout.
+            let isUndo = flags.contains(.maskCommand) && !flags.contains(.maskControl)
+                && !flags.contains(.maskAlternate) && !flags.contains(.maskShift)
+                && Self.characters(from: event).lowercased() == "z"
+            return CotypingInputEvent(kind: .shortcut, characters: "", isUndo: isUndo)
         }
         switch Int(keyCode) {
-        case 53, 36, 76: return CotypingInputEvent(kind: .dismissal, characters: "")  // Esc, Return, Keypad Enter
+        case 53: return CotypingInputEvent(kind: .dismissal, characters: "", isEscape: plain)
+        case 36, 76: return CotypingInputEvent(kind: .dismissal, characters: "")  // Return, Keypad Enter
         case 123, 124, 125, 126: return CotypingInputEvent(kind: .navigation, characters: "") // arrows
         case 51, 117: return CotypingInputEvent(kind: .textMutation, characters: "") // Backspace, Forward Delete
         default:
@@ -211,6 +230,13 @@ final class CotypingInputMonitor {
         if keyCode == acceptKeyCodeProvider() { return .chunk }
         if let full = fullAcceptKeyCodeProvider(), keyCode == full { return .whole }
         return nil
+    }
+
+    private static func isPlainEscape(_ event: CGEvent) -> Bool {
+        let flags = event.flags
+        return event.getIntegerValueField(.keyboardEventKeycode) == 53
+            && !flags.contains(.maskCommand) && !flags.contains(.maskControl)
+            && !flags.contains(.maskAlternate) && !flags.contains(.maskShift)
     }
 
     static func characters(from event: CGEvent) -> String {

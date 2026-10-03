@@ -26,6 +26,8 @@ final class CotypingCoordinator: ObservableObject {
     /// Words accepted this session (diagnostics).
     @Published var acceptedWordCount = 0
     @Published var memoryContextSources: [String] = []
+    /// The last suggestion looked for saved facts, whether or not it used any.
+    @Published var memoryContextSearched = false
 
     let focusTracker: CotypingFocusTracker
     let inputMonitor: CotypingInputMonitor
@@ -34,6 +36,9 @@ final class CotypingCoordinator: ObservableObject {
     let inserter: CotypingInserter
     let engine: CotypingCompleting
     let learningStore: CotypingLearningStore
+    /// Usage counters and typing measurements. Injected so tests never write
+    /// the installed app's saved counters.
+    let stats: CotypingStatsStore
     let settingsProvider: () -> AppSettings
     let memoryContextProvider: (CotypingField, AppSettings) async -> CotypingMemoryContextProvider.Snapshot
     var activeMemoryContext = CotypingMemoryContextProvider.Snapshot.empty
@@ -64,7 +69,22 @@ final class CotypingCoordinator: ObservableObject {
     var streamAcceptanceFence = CotypingStreamAcceptanceFence()
     var lastAcceptedTail: AcceptedSuggestionTail?
     var lastAcceptanceAt: Date?
+    /// When the keystroke that asked for the next suggestion was observed.
+    var pendingKeystrokeUptime: UInt64?
+    /// The latest accept, until the host field shows whether it arrived.
+    var pendingInsertionCheck: CotypingInsertionCheck?
+    /// Closes `pendingInsertionCheck` when no key or focus change does.
+    var insertionCheckExpiryTask: Task<Void, Never>?
+    /// How long an accept may wait to be read back. Tests shorten it.
+    var insertionCheckExpiryMilliseconds = CotypingInsertionCheck.timeoutMilliseconds
+    /// The latest accept while the next key could still take it back.
+    var acceptAwaitingNextKey: (surface: String, uptimeNanoseconds: UInt64)?
     var pendingInsertionConsumedCount: Int?
+    /// Tops up the visible suggestion while it is accepted or typed through.
+    var extensionTask: Task<Void, Never>?
+    var extensionGeneration: UInt64 = 0
+    /// Set by Escape: no suggestions in this field until the time passes.
+    var escapePause: (fieldAnchor: String, until: Date)?
     var suggestionAnchorCache = CotypingSuggestionAnchorCache()
     /// Fingerprint captured from the exact request currently in flight. Cache
     /// entries are recorded against this snapshot, not settings read after the
@@ -86,10 +106,12 @@ final class CotypingCoordinator: ObservableObject {
         learningStore: CotypingLearningStore,
         memoryContextProvider: @escaping (CotypingField, AppSettings) async -> CotypingMemoryContextProvider.Snapshot = { _, _ in .empty },
         isMeetingRecordingActive: @escaping () -> Bool = { false },
-        selfBundleID: String? = Bundle.main.bundleIdentifier
+        selfBundleID: String? = Bundle.main.bundleIdentifier,
+        stats: CotypingStatsStore? = nil
     ) {
         self.engine = engine
         self.learningStore = learningStore
+        self.stats = stats ?? .shared
         self.settingsProvider = settingsProvider
         self.memoryContextProvider = memoryContextProvider
         self.isMeetingRecordingActive = isMeetingRecordingActive

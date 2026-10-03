@@ -29,6 +29,10 @@ enum LokalBotMain {
             RunLoop.main.run()
             return
         }
+        // Reads one saved preferences value; needs no library, lock or window.
+        if case .cotypingMeasurements? = HeadlessCommand.parse(CommandLine.arguments) {
+            exit(CotypingStatsStore.printSaved())
+        }
         routeStartup(
             migrate: { DataMigration.runIfNeeded() },
             launchApplication: {

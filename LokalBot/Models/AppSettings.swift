@@ -432,9 +432,10 @@ struct AppSettings: Codable, Equatable {
     var cotypingStyleNote: String = ""
     /// Allow multi-line completions (off keeps suggestions to one line).
     var cotypingMultiLine: Bool = false
-    /// Soft length target; drives the per-request token budget. Keep the default
-    /// concise so inline suggestions offer the next few words, not a sentence.
-    var cotypingMaxWords: Int = 3
+    /// Soft length target; drives the per-request token budget. Four words is
+    /// what Cotypist usually shows; the suggestion is then topped up as it is
+    /// accepted, so it offers the next few words, not a sentence.
+    var cotypingMaxWords: Int = 4
     /// Initial idle time before the first measured in-process request, and the
     /// minimum pause on the model-server fallback. Once local latency is known,
     /// the in-process route switches to its documented adaptive tiers.
@@ -449,9 +450,11 @@ struct AppSettings: Codable, Equatable {
     var cotypingAcceptKey: CotypingAcceptKey = .tab
     var cotypingFullAcceptKey: CotypingFullAcceptKey = .backtick
     /// Accept punctuation attached to the next word in the same Tab press.
-    /// Matches CoTabby's default; disabling lets punctuation be accepted as its
-    /// own chunk.
-    var cotypingAutoAcceptTrailingPunctuation: Bool = true
+    /// Off by default to match Cotypist: a full stop or comma takes its own
+    /// press, so the sentence can still be ended differently.
+    var cotypingAutoAcceptTrailingPunctuation: Bool = false
+    /// What Escape does while a suggestion is showing.
+    var cotypingEscapeBehavior: CotypingEscapeBehavior = .pause
     /// Add or consume a horizontal space after accepting a completed word.
     /// Off by default to match CoTabby's shipped behavior.
     var cotypingAddSpaceAfterAccept: Bool = false
@@ -519,7 +522,10 @@ struct AppSettings: Codable, Equatable {
     static let legacyDefaultStopDebounceSeconds: TimeInterval = 60
     static let minimumStopDebounceSeconds: TimeInterval = 5
     static let maximumStopDebounceSeconds: TimeInterval = 120
-    static let currentCotypingSettingsVersion: Int = 3
+    static let currentCotypingSettingsVersion: Int = 4
+    /// Defaults before version 4, which moved both to what Cotypist does.
+    static let cotypistDefaultsCotypingSettingsVersion: Int = 4
+    static let previousDefaultCotypingMaxWords: Int = 3
     static let legacyPreviewCotypingSettingsVersion: Int = 0
     static let legacyPreviewCotypingMaxWords: Int = 2
     static let legacyPreviewCotypingDebounceMs: Int = 150
@@ -535,7 +541,22 @@ struct AppSettings: Codable, Equatable {
            words == legacyPreviewCotypingMaxWords {
             return AppSettings().cotypingMaxWords
         }
+        if decodedSettingsVersion < cotypistDefaultsCotypingSettingsVersion,
+           words == previousDefaultCotypingMaxWords {
+            return AppSettings().cotypingMaxWords
+        }
         return words
+    }
+
+    /// Attaching punctuation was the default before version 4 and had no
+    /// control in Settings, so a stored `true` from then is that default, not
+    /// a choice. From version 4 on the stored value is the user's.
+    static func migratedCotypingAutoAcceptTrailingPunctuation(
+        _ attached: Bool, decodedSettingsVersion: Int
+    ) -> Bool {
+        decodedSettingsVersion < cotypistDefaultsCotypingSettingsVersion
+            ? AppSettings().cotypingAutoAcceptTrailingPunctuation
+            : attached
     }
 
     static func migratedCotypingDebounceMs(_ milliseconds: Int, decodedSettingsVersion: Int) -> Int {
@@ -767,6 +788,7 @@ struct AppSettings: Codable, Equatable {
         case cotypingAcceptKey
         case cotypingFullAcceptKey
         case cotypingAutoAcceptTrailingPunctuation
+        case cotypingEscapeBehavior
         case cotypingAddSpaceAfterAccept
         case cotypingExcludedApps
         case cotypingExcludedDomains
@@ -948,6 +970,7 @@ struct AppSettings: Codable, Equatable {
         try c.encode(cotypingAcceptKey, forKey: .cotypingAcceptKey)
         try c.encode(cotypingFullAcceptKey, forKey: .cotypingFullAcceptKey)
         try c.encode(cotypingAutoAcceptTrailingPunctuation, forKey: .cotypingAutoAcceptTrailingPunctuation)
+        try c.encode(cotypingEscapeBehavior, forKey: .cotypingEscapeBehavior)
         try c.encode(cotypingAddSpaceAfterAccept, forKey: .cotypingAddSpaceAfterAccept)
         try c.encode(cotypingExcludedApps, forKey: .cotypingExcludedApps)
         try c.encode(cotypingExcludedDomains, forKey: .cotypingExcludedDomains)
@@ -1116,11 +1139,12 @@ struct AppSettings: Codable, Equatable {
             .cotypingAcceptGranularity, defaults.cotypingAcceptGranularity)
         cotypingAcceptKey = decode(.cotypingAcceptKey, defaults.cotypingAcceptKey)
         cotypingFullAcceptKey = decode(.cotypingFullAcceptKey, defaults.cotypingFullAcceptKey)
-        cotypingAutoAcceptTrailingPunctuation = decode(
-            .cotypingAutoAcceptTrailingPunctuation,
-            defaults.cotypingAutoAcceptTrailingPunctuation)
+        cotypingAutoAcceptTrailingPunctuation = Self.migratedCotypingAutoAcceptTrailingPunctuation(
+            decode(.cotypingAutoAcceptTrailingPunctuation, defaults.cotypingAutoAcceptTrailingPunctuation),
+            decodedSettingsVersion: cotypingSettingsVersion)
         cotypingAddSpaceAfterAccept = decode(
             .cotypingAddSpaceAfterAccept, defaults.cotypingAddSpaceAfterAccept)
+        cotypingEscapeBehavior = decode(.cotypingEscapeBehavior, defaults.cotypingEscapeBehavior)
         cotypingExcludedApps = decode(.cotypingExcludedApps, defaults.cotypingExcludedApps)
         cotypingExcludedDomains = decode(.cotypingExcludedDomains, defaults.cotypingExcludedDomains)
         cotypingSuggestInIntegratedTerminals = decode(
