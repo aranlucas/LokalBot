@@ -117,6 +117,7 @@ extension CotypingCoordinator {
             return
         }
         guard let field = focus.field else { state = .idle; return }
+        guard !isPausedByEscape(in: field) else { state = .idle; return }
 
         // Emoji: an explicit `:shortcode` intent wins over autocorrect and the LLM.
         if settings.cotypingEmoji, let emoji = CotypingEmoji.match(trailing: field.precedingText) {
@@ -236,7 +237,7 @@ extension CotypingCoordinator {
         stats.recordError()
     }
 
-    private func buildRequest(
+    func buildRequest(
         for field: CotypingField,
         settings: AppSettings,
         generation: UInt64,
@@ -389,9 +390,10 @@ extension CotypingCoordinator {
             requestFingerprint: activeSuggestionRequestFingerprint ?? "",
             precedingText: field.precedingText,
             fullText: text)
-        present(
-            CotypingSession(field: field, fullText: text, kind: .continuation),
-            overlayText: text)
+        var fresh = CotypingSession(field: field, fullText: text, kind: .continuation)
+        fresh.isOpenEnded = CotypingSuggestionExtension.isOpenEnded(
+            text, wordLimit: settingsProvider().cotypingMaxWords)
+        present(fresh, overlayText: text)
         return true
     }
 
@@ -495,7 +497,7 @@ extension CotypingCoordinator {
             streamedWork: work)
     }
 
-    private func seamVerdict(precedingText: String, completion: String) -> CotypingSeamGuard.Verdict {
+    func seamVerdict(precedingText: String, completion: String) -> CotypingSeamGuard.Verdict {
         let verdictsApply = spellChecker.verdictsApply(context: precedingText)
         return CotypingSeamGuard.verdict(
             precedingText: precedingText,
@@ -570,9 +572,11 @@ extension CotypingCoordinator {
         precedingText: String,
         trailingText: String = "",
         conversation: [CotypingRehearsalConversation.Message] = [],
-        sampleOnly: Bool = false
+        sampleOnly: Bool = false,
+        maxWords: Int? = nil
     ) async throws -> CotypingPreview {
-        let settings = settingsProvider()
+        var settings = settingsProvider()
+        if let maxWords { settings.cotypingMaxWords = maxWords }
         let work = generation
         var cfg = config
         cfg.maxResponseTokens = settings.cotypingMaxResponseTokens

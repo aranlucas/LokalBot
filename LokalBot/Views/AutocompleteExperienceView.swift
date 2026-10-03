@@ -16,6 +16,7 @@ struct AutocompleteExperienceView: View {
     @State private var generating = false
     @State private var error: String?
     @State private var task: Task<Void, Never>?
+    @State private var topUpTask: Task<Void, Never>?
     @State private var focusRevision = 0
 
     private static var openingRehearsal: CotypingRehearsal {
@@ -206,7 +207,11 @@ struct AutocompleteExperienceView: View {
                 .onChange(of: text) { _, updated in
                     // An accept or typing the suggested characters keeps the
                     // rest of the ghost, as in another app; anything else is stale.
-                    if rehearsal.textChanged(to: updated) == .stale { schedule() }
+                    switch rehearsal.textChanged(to: updated) {
+                    case .stale: schedule()
+                    case .advanced: topUp()
+                    case .unchanged: break
+                    }
                 }
                 .onChange(of: contextGrants) { _, _ in
                     // Re-run a rehearsal that is in use so the change shows at
@@ -293,6 +298,7 @@ struct AutocompleteExperienceView: View {
 
     private func schedule() {
         task?.cancel()
+        topUpTask?.cancel()
         rehearsal.dismiss()
         error = nil
         contextUse = nil
@@ -316,7 +322,8 @@ struct AutocompleteExperienceView: View {
 #endif
                 // Never show a suggestion for text that has since changed.
                 if !Task.isCancelled, text == context {
-                    rehearsal.present(result.text, after: context)
+                    rehearsal.present(result.text, after: context,
+                                      wordLimit: app.settings.cotypingMaxWords)
                     contextUse = result.use
                 }
             } catch is CancellationError {
@@ -332,10 +339,27 @@ struct AutocompleteExperienceView: View {
         guard let updated = rehearsal.accept(scope, text: text,
                                              options: .init(settings: app.settings)) else { return }
         text = updated
+        topUp()
+    }
+
+    /// Keeps the ghost a few words ahead while it is accepted or typed
+    /// through, by the same rules as a live field.
+    private func topUp() {
+        let limit = app.settings.cotypingMaxWords
+        guard let prefix = rehearsal.topUpPrefix(wordLimit: limit) else { return }
+        topUpTask?.cancel()
+        topUpTask = Task {
+            guard let more = try? await app.cotyping.preview(
+                precedingText: prefix, conversation: CotypingRehearsalConversation.sample,
+                maxWords: CotypingSuggestionExtension.topUpWordLimit(wordLimit: limit)),
+                  !Task.isCancelled else { return }
+            if rehearsal.topUp(with: more.text, continuing: prefix, wordLimit: limit) { topUp() }
+        }
     }
 
     private func dismiss() {
         task?.cancel()
+        topUpTask?.cancel()
         rehearsal.dismiss()
         // No suggestion is on screen any more, so there is nothing its
         // context rows could describe.

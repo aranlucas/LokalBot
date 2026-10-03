@@ -18,6 +18,28 @@ final class CotypingTextNormalizerTests: XCTestCase {
             repeatPenalty: 1.05, seed: 0, generation: 0)
     }
 
+    /// "Hi team," followed by a completion the model put on a new line used
+    /// to come out as "Hi team,I'm working".
+    func testACompletionThatBeganOnANewLineKeepsOneSeparatingSpace() {
+        XCTAssertEqual(
+            CotypingTextNormalizer.normalize("\n\nI'm working on it", for: request(prefix: "Hi team,")),
+            " I'm working on it")
+        XCTAssertEqual(
+            CotypingTextNormalizer.normalize("\ndelicious", for: request(prefix: "The food was")),
+            " delicious")
+        // A space the typed text already ends with is not doubled.
+        XCTAssertEqual(
+            CotypingTextNormalizer.normalize("\nI'm working on it", for: request(prefix: "Hi team, ")),
+            "I'm working on it")
+        // Completions that did not start on a new line are untouched.
+        XCTAssertEqual(
+            CotypingTextNormalizer.normalize(" up on that", for: request(prefix: "I wanted to follow")),
+            " up on that")
+        XCTAssertEqual(
+            CotypingTextNormalizer.normalize("ing along", for: request(prefix: "We are sing")),
+            "ing along")
+    }
+
     private func contextualRequest(prefix: String = "Thanks for ") -> CotypingRequest {
         let rendered = CotypingPromptRenderer.render(
             prefixText: prefix,

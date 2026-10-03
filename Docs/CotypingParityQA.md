@@ -8,7 +8,20 @@ LokalBot defaults:
   Cotyping runs its own dedicated model in-process on Apple Silicon, with a
   separate `llama-server` as the conservative fallback — it never reuses the
   summarization model.
-- Suggestion length defaults to 3 words for short inline continuations.
+- Suggestion length defaults to 4 words, the length Cotypist usually shows.
+- A suggestion is topped up while it is accepted or typed through: once two
+  words are left, the next few are appended in place, so the ghost stays two to
+  five words ahead and never runs out mid-sentence. It stops at the end of the
+  sentence, and words already on screen never change
+  (`CotypingSuggestionExtension`, `CotypingCoordinator+Extension`).
+- Tab takes a word without its trailing punctuation, as in Cotypist; a full
+  stop or comma is its own press. "Accept punctuation with the word" in
+  Settings restores the attached behavior.
+- Escape on a visible suggestion dismisses it, does not reach the app, and
+  holds suggestions in that field for 10 seconds, as in Cotypist. The setting
+  "Escape on a suggestion" can send the key through instead. A composing input
+  method always receives its own Escape.
+- Search fields (`AXSearchField`) stay quiet, as in Cotypist.
 - The initial/server pause defaults to 160 ms. It controls the first local
   request and the model-server floor; after the first latency sample, the
   in-process route uses 20/25/55 ms adaptive tiers. The settings label states
@@ -88,6 +101,39 @@ Note: Cotypist ships the *base* Gemma 4 E4B GGUF
 keeps Gemma 4 E4B Instruct as its higher-capacity option. The 2026-07-21 model
 matrix also tested Cotabby's E2B base and the E4B base; both missed LokalBot's
 current safety/word-completion gate, so they were not added as defaults.
+
+## Live comparison with Cotypist (2026-10-03)
+
+Cotypist 2026.4 (Gemma 4 E4B base, default length, free tier) and LokalBot
+(Gemma 4 E2B base) were each driven with real keystrokes in the same TextEdit
+document, one app running at a time, on the prompts in
+`Benchmarks/Cotyping/prompts.tsv`. Cotypist's ghost is visible to screen
+capture; LokalBot's is not, so LokalBot was read through what the accept keys
+inserted.
+
+| Behavior | Cotypist | LokalBot before | LokalBot now |
+| --- | --- | --- | --- |
+| Words shown at first | 1–5, usually 4 | exactly 3 | up to 4 |
+| While tabbing through | topped up at 2 words left, to about 5; ends with the sentence | ran out every 3 words, then a new suggestion | topped up at 2 words left |
+| Typing the suggested letters | ghost shrinks, then is topped up | ghost shrinks | ghost shrinks, then is topped up |
+| Tab on a word before punctuation | word only; punctuation is the next press | word and punctuation | word only |
+| Escape | swallowed; field quiet for 9–13 s even while typing | reached the app; next key suggested again | swallowed; field quiet for 10 s |
+| Search field (TextEdit Find) | no suggestion | suggested and inserted | no suggestion |
+| Plain single-line field (TextEdit Replace) | suggests | suggests | suggests |
+| Text after the caret on the line | no suggestion | no suggestion | no suggestion |
+| "Hi" / "Hi team," in an empty document | no suggestion | "," / "I'm working" glued on without a space | suggestion, correctly spaced |
+| Misspelled word ("recieve", "teh ") | no suggestion, no fix | offers the fix; continues after "teh " | unchanged |
+| Keystroke to visible | ghost present 0.2–0.4 s after the last key | median about 0.14 s | unchanged |
+
+Still different, deliberately or for lack of evidence:
+
+- Cotypist stays quiet when its model is unsure (a two-word draft, a diverging
+  letter). LokalBot always offers its best guess. Matching this needs the
+  token probabilities, not a length rule.
+- Cotypist offers no typo fix on the free tier and holds back after a
+  misspelled word. LokalBot's inline fix is a feature and was left on.
+- Cotypist's completions come from a larger model with screen context and
+  personalization; content quality was not scored here.
 
 ## Automated Check
 

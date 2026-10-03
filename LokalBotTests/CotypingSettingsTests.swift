@@ -19,7 +19,8 @@ final class CotypingSettingsTests: XCTestCase {
         settings.cotypingStreamSuggestionsWhileGenerating = true
         settings.cotypingAcceptGranularity = .phrase
         settings.cotypingFullAcceptKey = .rightArrow
-        settings.cotypingAutoAcceptTrailingPunctuation = false
+        settings.cotypingAutoAcceptTrailingPunctuation = true
+        settings.cotypingEscapeBehavior = .passThrough
         settings.cotypingAddSpaceAfterAccept = true
         settings.cotypingExcludedApps = "Terminal, 1Password"
         settings.cotypingSuggestInIntegratedTerminals = true
@@ -38,7 +39,8 @@ final class CotypingSettingsTests: XCTestCase {
         XCTAssertTrue(decoded.cotypingStreamSuggestionsWhileGenerating)
         XCTAssertEqual(decoded.cotypingAcceptGranularity, .phrase)
         XCTAssertEqual(decoded.cotypingFullAcceptKey, .rightArrow)
-        XCTAssertFalse(decoded.cotypingAutoAcceptTrailingPunctuation)
+        XCTAssertTrue(decoded.cotypingAutoAcceptTrailingPunctuation)
+        XCTAssertEqual(decoded.cotypingEscapeBehavior, .passThrough)
         XCTAssertTrue(decoded.cotypingAddSpaceAfterAccept)
         XCTAssertEqual(decoded.cotypingExcludedAppList, ["Terminal", "1Password"])
         XCTAssertTrue(decoded.cotypingSuggestInIntegratedTerminals)
@@ -105,7 +107,7 @@ final class CotypingSettingsTests: XCTestCase {
         XCTAssertEqual(
             settings.cotypingStreamSuggestionsWhileGenerating,
             AppSettings().cotypingStreamSuggestionsWhileGenerating)
-        XCTAssertTrue(settings.cotypingAutoAcceptTrailingPunctuation)
+        XCTAssertFalse(settings.cotypingAutoAcceptTrailingPunctuation)
         XCTAssertFalse(settings.cotypingAddSpaceAfterAccept)
         XCTAssertTrue(settings.cotypingUseLocalLearning)
         XCTAssertEqual(settings.cotypingBuiltInModelID, "gemma4-e2b-base-q6")
@@ -141,12 +143,35 @@ final class CotypingSettingsTests: XCTestCase {
 
     func testDefaultsKeepCotypingSuggestionsConcise() {
         let settings = AppSettings()
-        XCTAssertEqual(settings.cotypingMaxWords, 3)
+        XCTAssertEqual(settings.cotypingMaxWords, 4)
         XCTAssertEqual(settings.cotypingDebounceMs, 160)
         XCTAssertFalse(settings.cotypingStreamSuggestionsWhileGenerating)
-        XCTAssertTrue(settings.cotypingAutoAcceptTrailingPunctuation)
+        XCTAssertFalse(settings.cotypingAutoAcceptTrailingPunctuation)
         XCTAssertFalse(settings.cotypingAddSpaceAfterAccept)
-        XCTAssertEqual(settings.cotypingMaxResponseTokens, 5)
+        XCTAssertEqual(settings.cotypingMaxResponseTokens, 6)
+    }
+
+    /// Version 4 moved two defaults to what Cotypist does. Settings saved by
+    /// an earlier build follow; a value chosen since then is kept.
+    func testEarlierDefaultsMoveToTheCotypistOnesOnce() throws {
+        let earlier = #"{"cotypingSettingsVersion":3,"cotypingMaxWords":3,"cotypingAutoAcceptTrailingPunctuation":true}"#
+        let migrated = try JSONDecoder().decode(AppSettings.self, from: Data(earlier.utf8))
+        XCTAssertEqual(migrated.cotypingMaxWords, 4)
+        XCTAssertFalse(migrated.cotypingAutoAcceptTrailingPunctuation)
+
+        let customLength = #"{"cotypingSettingsVersion":3,"cotypingMaxWords":6}"#
+        XCTAssertEqual(try JSONDecoder().decode(AppSettings.self, from: Data(customLength.utf8)).cotypingMaxWords, 6)
+
+        let chosen = #"{"cotypingSettingsVersion":4,"cotypingMaxWords":3,"cotypingAutoAcceptTrailingPunctuation":true}"#
+        let kept = try JSONDecoder().decode(AppSettings.self, from: Data(chosen.utf8))
+        XCTAssertEqual(kept.cotypingMaxWords, 3)
+        XCTAssertTrue(kept.cotypingAutoAcceptTrailingPunctuation)
+
+        // Saving stamps the current version, so the move happens only once.
+        var saved = migrated
+        saved.cotypingMaxWords = 3
+        let reloaded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(saved))
+        XCTAssertEqual(reloaded.cotypingMaxWords, 3)
     }
 
     func testMaxResponseTokensMirrorCotypistBudget() {

@@ -8,11 +8,11 @@ struct CotypingContinuationAcceptance: Equatable, Sendable {
     /// The acceptance settings that shape a keypress.
     struct Options: Equatable, Sendable {
         var granularity: CotypingAcceptGranularity = .word
-        var autoAcceptTrailingPunctuation = true
+        var autoAcceptTrailingPunctuation = false
         var addSpaceAfterAccept = false
 
         init(granularity: CotypingAcceptGranularity = .word,
-             autoAcceptTrailingPunctuation: Bool = true,
+             autoAcceptTrailingPunctuation: Bool = false,
              addSpaceAfterAccept: Bool = false) {
             self.granularity = granularity
             self.autoAcceptTrailingPunctuation = autoAcceptTrailingPunctuation
@@ -106,13 +106,44 @@ struct CotypingRehearsal: Equatable, Sendable {
     /// The part of the suggestion still offered after the caret.
     var ghost: String { session?.remainingText ?? "" }
 
-    mutating func present(_ suggestion: String, after text: String) {
+    /// `wordLimit` is the length limit the suggestion was generated under.
+    /// With it, a suggestion the limit cut short can be topped up as it is
+    /// accepted, as in a live field.
+    mutating func present(_ suggestion: String, after text: String, wordLimit: Int? = nil) {
         guard !suggestion.isEmpty else {
             dismiss()
             return
         }
-        session = CotypingSession(field: Self.field(precedingText: text), fullText: suggestion)
+        var fresh = CotypingSession(field: Self.field(precedingText: text), fullText: suggestion)
+        if let wordLimit {
+            fresh.isOpenEnded = CotypingSuggestionExtension.isOpenEnded(suggestion, wordLimit: wordLimit)
+        }
+        session = fresh
         anchor = text
+    }
+
+    /// The text a top-up continues from, once the remaining ghost is running
+    /// short; nil while there is enough left or the thought is finished.
+    func topUpPrefix(wordLimit: Int) -> String? {
+        guard let session, CotypingSuggestionExtension.shouldExtend(session, wordLimit: wordLimit) else { return nil }
+        return CotypingSuggestionExtension.continuationPrefix(of: session)
+    }
+
+    /// Appends model output to the ghost when it still continues the same
+    /// suggestion. Returns whether the ghost grew.
+    mutating func topUp(with output: String, continuing prefix: String, wordLimit: Int) -> Bool {
+        guard let current = session,
+              CotypingSuggestionExtension.continuationPrefix(of: current) == prefix,
+              let addition = CotypingSuggestionExtension.addition(from: output, to: current.fullText) else {
+            return false
+        }
+        var extended = CotypingSession(
+            field: current.field, fullText: current.fullText + addition,
+            consumedCount: current.consumedCount)
+        extended.isOpenEnded = CotypingSuggestionExtension.isOpenEnded(
+            addition, wordLimit: CotypingSuggestionExtension.topUpWordLimit(wordLimit: wordLimit))
+        session = extended
+        return true
     }
 
     mutating func dismiss() {

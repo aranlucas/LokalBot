@@ -24,7 +24,11 @@ extension CotypingCoordinator {
             state = .idle
             return false
         }
-        freezeStreamedSuggestionForAcceptance()
+        if freezeStreamedSuggestionForAcceptance() {
+            // The model was still writing when the key came, so there is more
+            // to say: what was accepted from can be topped up like any other.
+            current.isOpenEnded = CotypingSuggestionExtension.isOpenEnded(current.fullText, wordLimit: 1)
+        }
         let live = CotypingAXHelper.resolveAcceptanceSnapshot(
             cachedField: focusTracker.focus.field)
         guard CotypingAcceptanceSnapshotPolicy.canAccept(
@@ -126,6 +130,7 @@ extension CotypingCoordinator {
                 showOverlay(text: remainingText, field: live.field ?? current.field)
             }
             syncAcceptInterception()
+            extendSuggestionIfNeeded()
             Task { [weak self] in
                 try? await Task.sleep(for: .milliseconds(30))
                 guard let self, self.overlay.isVisible, let liveSession = self.session,
@@ -150,6 +155,37 @@ extension CotypingCoordinator {
             }
         }
         return true
+    }
+
+    /// Escape while a suggestion is showing. The suggestion goes away and,
+    /// unless the user chose otherwise, the key stops here, so it does not
+    /// also close a dialog or leave a mode in the app, and the field stays
+    /// quiet for a few seconds. Called synchronously from the accept tap.
+    func dismissFromTap() -> Bool {
+        guard isRunning, let current = session, overlay.isVisible else { return false }
+        // A composing input method needs its own Escape.
+        let takesKey = settingsProvider().cotypingEscapeBehavior == .pause
+            && !inputSourceMonitor.isComposingIMEActive
+        cancelPendingGenerationWork()
+        clearSuggestion()
+        state = .idle
+        if takesKey {
+            escapePause = (
+                fieldAnchor: CotypingFieldIdentity.suggestionAnchor(for: current.field),
+                until: Date().addingTimeInterval(CotypingEscapeBehavior.pauseSeconds))
+        }
+        return takesKey
+    }
+
+    /// Whether Escape put this field on hold. The hold ends on its own, and it
+    /// never follows the user to another field.
+    func isPausedByEscape(in field: CotypingField, now: Date = Date()) -> Bool {
+        guard let pause = escapePause else { return false }
+        guard now < pause.until else {
+            escapePause = nil
+            return false
+        }
+        return pause.fieldAnchor == CotypingFieldIdentity.suggestionAnchor(for: field)
     }
 
     func recordAcceptedText(_ text: String, field: CotypingField, settings: AppSettings) {
@@ -202,6 +238,7 @@ extension CotypingCoordinator {
             }
         }
         session = nil
+        cancelSuggestionExtension()
         streamAcceptanceFence.reset()
         pendingInsertionConsumedCount = nil
         overlay.hide()
@@ -212,13 +249,15 @@ extension CotypingCoordinator {
         syncAcceptInterception()
     }
 
-    private func freezeStreamedSuggestionForAcceptance() {
-        guard streamAcceptanceFence.consumeForAcceptance() != nil else { return }
+    /// Returns whether a stream was still running and has been stopped.
+    private func freezeStreamedSuggestionForAcceptance() -> Bool {
+        guard streamAcceptanceFence.consumeForAcceptance() != nil else { return false }
         cancelPendingGenerationWork()
         pendingStreamPartial = nil
         streamValidationGeneration &+= 1
         streamValidationTask?.cancel()
         streamValidationTask = nil
+        return true
     }
 
     private func syncAcceptInterception() {

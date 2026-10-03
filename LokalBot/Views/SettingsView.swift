@@ -359,6 +359,18 @@ struct SettingsView: View {
                     ForEach(CotypingAcceptGranularity.allCases) { Text($0.label).tag($0) }
                 }
                     .settingTarget("settings.cotypingAcceptGranularity", selected: app.focusedSettingID)
+                Toggle(isOn: $app.settings.cotypingAutoAcceptTrailingPunctuation) {
+                    SettingsLabel("Accept punctuation with the word",
+                                  help: "When off, a full stop or comma after a word takes its own press, so you can still end the sentence differently.")
+                }
+                    .settingTarget("settings.cotypingAutoAcceptTrailingPunctuation", selected: app.focusedSettingID)
+                Picker(selection: $app.settings.cotypingEscapeBehavior) {
+                    ForEach(CotypingEscapeBehavior.allCases) { Text($0.label).tag($0) }
+                } label: {
+                    SettingsLabel("Escape on a suggestion",
+                                  help: "Pausing keeps Escape from also reaching the app and holds suggestions in that field for a few seconds. Escape is never touched when no suggestion is showing.")
+                }
+                    .settingTarget("settings.cotypingEscapeBehavior", selected: app.focusedSettingID)
             }
             Section("Context and profile") {
                 let context = cotypingContext

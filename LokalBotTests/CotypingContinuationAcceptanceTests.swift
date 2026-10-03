@@ -45,10 +45,10 @@ final class CotypingContinuationAcceptanceTests: XCTestCase {
         XCTAssertEqual(plan(" world again", after: "Hello ")?.insertionText, "world")
         // A new sentence gets its separating space.
         XCTAssertEqual(plan("Next step", after: "Done.")?.insertionText, " Next")
-        // Punctuation can be its own keypress.
-        let separate = Options(autoAcceptTrailingPunctuation: false)
-        XCTAssertEqual(plan(" yes, please", after: "I say", options: separate)?.acceptedChunk, " yes")
-        XCTAssertEqual(plan(" yes, please", after: "I say")?.acceptedChunk, " yes,")
+        // Punctuation is its own keypress unless the setting attaches it.
+        let attached = Options(autoAcceptTrailingPunctuation: true)
+        XCTAssertEqual(plan(" yes, please", after: "I say")?.acceptedChunk, " yes")
+        XCTAssertEqual(plan(" yes, please", after: "I say", options: attached)?.acceptedChunk, " yes,")
         // The optional trailing space is added only when the suggestion ends.
         let spaced = Options(addSpaceAfterAccept: true)
         XCTAssertEqual(plan(" soon", after: "See you", options: spaced)?.insertionText, " soon ")
@@ -70,10 +70,10 @@ final class CotypingContinuationAcceptanceTests: XCTestCase {
     func testOptionsMirrorTheSettings() {
         var settings = AppSettings()
         settings.cotypingAcceptGranularity = .phrase
-        settings.cotypingAutoAcceptTrailingPunctuation = false
+        settings.cotypingAutoAcceptTrailingPunctuation = true
         settings.cotypingAddSpaceAfterAccept = true
         XCTAssertEqual(Options(settings: settings),
-                       Options(granularity: .phrase, autoAcceptTrailingPunctuation: false, addSpaceAfterAccept: true))
+                       Options(granularity: .phrase, autoAcceptTrailingPunctuation: true, addSpaceAfterAccept: true))
         XCTAssertEqual(Options(settings: AppSettings()), Options())
     }
 

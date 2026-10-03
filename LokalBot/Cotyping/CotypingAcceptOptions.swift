@@ -50,6 +50,27 @@ enum CotypingFullAcceptKey: Int, Codable, Sendable {
     }
 }
 
+/// What Escape does while a suggestion is showing. The rest of the time
+/// Escape is never touched.
+enum CotypingEscapeBehavior: String, Codable, CaseIterable, Identifiable, Sendable {
+    /// The suggestion goes away, the key stops here, and the field stays quiet
+    /// for a few seconds. Matches Cotypist's default.
+    case pause
+    /// The suggestion goes away and the key also reaches the app.
+    case passThrough
+
+    /// How long a field stays quiet after Escape.
+    static let pauseSeconds: TimeInterval = 10
+
+    var id: String { rawValue }
+    var label: String {
+        switch self {
+        case .pause: "Dismiss and pause briefly"
+        case .passThrough: "Dismiss and send Escape to the app"
+        }
+    }
+}
+
 /// Which accept key fired — the next chunk (word/phrase) or the whole tail.
 enum CotypingAcceptScope: Sendable {
     case chunk

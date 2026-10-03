@@ -232,7 +232,9 @@ final class CotypingAcceptOptionsTests: XCTestCase {
         XCTAssertEqual(settings.cotypingAcceptGranularity, .word)
         XCTAssertEqual(settings.cotypingAcceptKey, .tab)
         XCTAssertEqual(settings.cotypingFullAcceptKey, .backtick)
-        XCTAssertTrue(settings.cotypingAutoAcceptTrailingPunctuation)
+        // Cotypist's default: punctuation after a word takes its own press.
+        XCTAssertFalse(settings.cotypingAutoAcceptTrailingPunctuation)
+        XCTAssertEqual(settings.cotypingEscapeBehavior, .pause)
         XCTAssertFalse(settings.cotypingAddSpaceAfterAccept)
     }
     func testKeyCodes() {

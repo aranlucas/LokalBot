@@ -102,6 +102,7 @@ extension CotypingCoordinator {
         focusTracker.stop()
         inputMonitor.stop()
         isRunning = false
+        escapePause = nil
         resetMeasurementState()
         activeMemoryContext = .empty
         activeVisibleContext = nil
@@ -134,6 +135,7 @@ extension CotypingCoordinator {
         }
         inputMonitor.onKey = { [weak self] event in self?.handleKey(event) }
         inputMonitor.onAcceptKey = { [weak self] scope in self?.acceptFromTap(scope) ?? false }
+        inputMonitor.onDismissKey = { [weak self] in self?.dismissFromTap() ?? false }
         inputMonitor.acceptGate = { [weak self] in
             guard let self else { return false }
             return CotypingAcceptanceOwnershipPolicy.shouldOwnAcceptKey(

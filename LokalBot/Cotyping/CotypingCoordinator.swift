@@ -80,6 +80,11 @@ final class CotypingCoordinator: ObservableObject {
     /// The latest accept while the next key could still take it back.
     var acceptAwaitingNextKey: (surface: String, uptimeNanoseconds: UInt64)?
     var pendingInsertionConsumedCount: Int?
+    /// Tops up the visible suggestion while it is accepted or typed through.
+    var extensionTask: Task<Void, Never>?
+    var extensionGeneration: UInt64 = 0
+    /// Set by Escape: no suggestions in this field until the time passes.
+    var escapePause: (fieldAnchor: String, until: Date)?
     var suggestionAnchorCache = CotypingSuggestionAnchorCache()
     /// Fingerprint captured from the exact request currently in flight. Cache
     /// entries are recorded against this snapshot, not settings read after the

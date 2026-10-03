@@ -214,6 +214,9 @@ struct CotypingSession: Equatable, Sendable {
     var consumedCount: Int = 0
     /// Continuation vs typo correction — drives how `accept` applies it.
     var kind: CotypingSuggestionKind = .continuation
+    /// The model's latest output was cut by the length limit, so there is more
+    /// to say. Only such a suggestion is topped up while it is accepted.
+    var isOpenEnded = false
 
     var acceptedText: String { String(fullText.prefix(consumedCount)) }
     var remainingText: String { String(fullText.dropFirst(consumedCount)) }

@@ -8,6 +8,19 @@ extension CotypingCoordinator {
         guard isRunning else { return }
         discardRevokedMemoryContext()
         noteKey(event, live: focusTracker.focus.field)
+        if event.isEscape, let shown = session, overlay.isVisible, inputMonitor.isAcceptActive {
+            // The accept tap takes this Escape and decides whether the app
+            // sees it. Should the tap miss the key, the suggestion still goes.
+            pendingKeystrokeUptime = nil
+            Task { [weak self] in
+                try? await Task.sleep(for: .milliseconds(60))
+                guard let self, self.session == shown else { return }
+                self.cancelPendingGenerationWork()
+                self.clearSuggestion()
+                self.state = .idle
+            }
+            return
+        }
         switch event.kind {
         case .acceptance, .fullAcceptance:
             break // owned by the accept tap
@@ -77,6 +90,7 @@ extension CotypingCoordinator {
 
     func scheduleGenerationAfterHostPublishDelay(baseline explicitBaseline: CotypingField? = nil) {
         cancelPendingGenerationWork()
+        cancelSuggestionExtension()
         let baseline = explicitBaseline ?? focusTracker.focus.field
         let pollGeneration = hostPublishPollGeneration
         let keystrokeUptimeNanoseconds = DispatchTime.now().uptimeNanoseconds
@@ -182,6 +196,7 @@ extension CotypingCoordinator {
             showOverlay(text: remainingText, field: liveField, placement: placement)
         }
         markReady(remainingText)
+        extendSuggestionIfNeeded()
         return true
     }
 
@@ -210,6 +225,7 @@ extension CotypingCoordinator {
             showOverlay(text: remainingText, field: current.field)
         }
         markReady(remainingText)
+        extendSuggestionIfNeeded()
         return true
     }
 }

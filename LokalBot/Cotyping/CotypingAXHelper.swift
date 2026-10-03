@@ -286,6 +286,10 @@ enum CotypingAXHelper {
             return CotypingFocus(appName: appName, bundleID: bundleID,
                                  capability: .unsupported("Not an editable text field."), field: nil)
         }
+        guard !CotypingSearchFieldDetector.isSearchField(role: role, subrole: subrole) else {
+            return CotypingFocus(appName: appName, bundleID: bundleID,
+                                 capability: .unsupported("Search field."), field: nil)
+        }
 
         let content = appReadPolicy.readIfAllowed(appName: appName, bundleID: bundleID) {
             let native = selectionRange(element)

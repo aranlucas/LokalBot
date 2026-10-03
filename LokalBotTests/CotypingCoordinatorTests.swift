@@ -494,4 +494,80 @@ final class CotypingCoordinatorTests: XCTestCase {
         coordinator.clearSuggestion()
         XCTAssertEqual(coordinator.learningStore.exampleCount, 1, "control proves the field supports learning")
     }
+
+    // MARK: - Topping up while accepting
+
+    private func shownSession(_ suggestion: String, after text: String) -> CotypingSession {
+        var session = CotypingSession(field: liveField(text, bundleID: "com.apple.TextEdit"), fullText: suggestion)
+        session.isOpenEnded = true
+        return session
+    }
+
+    func testATopUpContinuesFromTheEndOfTheSuggestionWithItsContext() async throws {
+        settings.cotypingUseClipboard = false
+        let coordinator = makeCoordinator()
+        let shown = shownSession(" between the number", after: "The main tradeoff is")
+            .advanced(by: " between".count)
+        engine.result = .success(" of menu items")
+        let addition = await coordinator.suggestionExtension(for: shown, settings: settings)
+        XCTAssertEqual(addition, " of menu items")
+        let request = try XCTUnwrap(engine.requests.last)
+        XCTAssertEqual(request.prefixText, "The main tradeoff is between the number")
+        XCTAssertEqual(request.maxWords, settings.cotypingMaxWords - 1, "a top-up is one word shorter")
+    }
+
+    func testATopUpThatWouldRewriteAVisibleWordIsDropped() async {
+        settings.cotypingUseClipboard = false
+        let coordinator = makeCoordinator()
+        let shown = shownSession(" between the number", after: "The main tradeoff is")
+        engine.result = .success("s of items")
+        let lengthened = await coordinator.suggestionExtension(for: shown, settings: settings)
+        XCTAssertNil(lengthened)
+        engine.result = .failure(EngineBoom())
+        let failed = await coordinator.suggestionExtension(for: shown, settings: settings)
+        XCTAssertNil(failed, "a failed top-up leaves the suggestion as it is")
+    }
+
+    func testATopUpIsOnlyAppliedToTheSuggestionOnScreen() {
+        let coordinator = makeCoordinator()
+        coordinator.isRunning = true
+        let shown = shownSession(" between the number", after: "The main tradeoff is")
+        coordinator.session = shown
+        // No ghost is on screen in a unit test, so nothing may be appended.
+        XCTAssertNil(coordinator.extendedSession(adding: " of menu items", to: shown, settings: settings))
+        coordinator.extendSuggestionIfNeeded()
+        XCTAssertNil(coordinator.extensionTask, "three words ahead need no top-up")
+        coordinator.clearSuggestion()
+        XCTAssertNil(coordinator.extensionTask)
+    }
+
+    // MARK: - Escape
+
+    func testEscapeHoldsOnlyTheFieldItWasPressedInAndOnlyBriefly() {
+        let coordinator = makeCoordinator()
+        let field = liveField("I wanted to follow", bundleID: "com.apple.TextEdit")
+        var other = field
+        other.focusIdentityKey = "another-field"
+        let now = Date()
+        XCTAssertFalse(coordinator.isPausedByEscape(in: field, now: now))
+
+        coordinator.escapePause = (
+            fieldAnchor: CotypingFieldIdentity.suggestionAnchor(for: field),
+            until: now.addingTimeInterval(CotypingEscapeBehavior.pauseSeconds))
+        XCTAssertTrue(coordinator.isPausedByEscape(in: field, now: now.addingTimeInterval(9)))
+        XCTAssertFalse(coordinator.isPausedByEscape(in: other, now: now.addingTimeInterval(1)))
+        XCTAssertFalse(coordinator.isPausedByEscape(in: field, now: now.addingTimeInterval(11)))
+        XCTAssertNil(coordinator.escapePause, "an expired hold is forgotten")
+    }
+
+    func testEscapeIsLeftAloneWhenNoSuggestionIsShowing() {
+        let coordinator = makeCoordinator()
+        coordinator.isRunning = true
+        XCTAssertFalse(coordinator.dismissFromTap(), "Escape must reach the app")
+        XCTAssertNil(coordinator.escapePause)
+        // A session without a visible ghost is not a suggestion the user can see.
+        coordinator.session = shownSession(" up", after: "I wanted to follow")
+        XCTAssertFalse(coordinator.dismissFromTap())
+        XCTAssertNil(coordinator.escapePause)
+    }
 }
