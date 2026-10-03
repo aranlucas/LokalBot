@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 import unittest
 
 from memory_replay import replay_input, score
@@ -30,6 +32,51 @@ class MemoryReplayTests(unittest.TestCase):
         result = score([control], [off], [on])["summary"]
         self.assertEqual(result["unchangedControls"], 0)
         self.assertEqual(result["exactSelections"], 1)
+
+    def testIgnoringIrrelevantMemoryIsScoredAlongsideRecall(self):
+        distractor = {"id": "generic", "prefix": "I'll get back to ", "kind": "distractor", "split": "heldout"}
+        cases = [self.case, distractor]
+        off = [dict(self.observation, text="Alex", memoryIDs=[]),
+               {"id": "generic", "text": "you soon", "prompt": "draft", "memoryIDs": [], "latencyMs": 10}]
+        ignored = [self.observation, dict(off[1])]
+        summary = score(cases, off, ignored)["summary"]
+        self.assertEqual((summary["recallRate"], summary["abstentionRate"], summary["balancedRelevance"]), (1, 1, 1))
+        self.assertEqual((summary["distractorCases"], summary["abstentions"], summary["falseRetrievals"]), (1, 1, 0))
+        # Borrowing an unrelated fact fails the control even if the words look plausible.
+        borrowed = [self.observation,
+                    dict(off[1], text="you on Friday", prompt="facts + draft", memoryIDs=["sync-followup"])]
+        summary = score(cases, off, borrowed)["summary"]
+        self.assertEqual((summary["abstentions"], summary["falseRetrievals"]), (0, 1))
+        self.assertEqual((summary["abstentionRate"], summary["balancedRelevance"]), (0, 0.5))
+        # A lookup that changes nothing still counts as retrieving.
+        retrieved = [self.observation, dict(off[1], memoryIDs=["sync-followup"])]
+        self.assertEqual(score(cases, off, retrieved)["summary"]["abstentions"], 0)
+
+    def testRatesAreAbsentWithoutCasesOfThatKindAndKindsAreChecked(self):
+        off = dict(self.observation, text="Alex", memoryIDs=[])
+        summary = score([self.case], [off], [self.observation])["summary"]
+        self.assertIsNone(summary["abstentionRate"])
+        self.assertIsNone(summary["balancedRelevance"])
+        with self.assertRaises(ValueError):
+            score([dict(self.case, kind="unlabelled")], [off], [self.observation])
+
+    def testRelevanceSupplementIsWellFormed(self):
+        corpus = json.loads(Path(__file__).with_name("memory-relevance-cases.json").read_text())
+        facts = {item["id"] for item in corpus["memoryItems"]}
+        ids = [case["id"] for case in corpus["cases"]]
+        self.assertEqual(len(ids), len(set(ids)))
+        for case in corpus["cases"]:
+            self.assertIn(case["split"], {"development", "heldout"})
+            if case["kind"] == "relevant":
+                self.assertIn(case["expectedMemoryID"], facts)
+                self.assertTrue(case["expected"])
+            else:
+                self.assertEqual(case["kind"], "distractor")
+                self.assertNotIn("expected", case)
+                self.assertNotIn("expectedMemoryID", case)
+        for split in ["development", "heldout"]:
+            kinds = {case["kind"] for case in corpus["cases"] if case["split"] == split}
+            self.assertEqual(kinds, {"relevant", "distractor"})
 
     def testRejectsMissingResultsAndPromptOverrides(self):
         with self.assertRaises(ValueError):

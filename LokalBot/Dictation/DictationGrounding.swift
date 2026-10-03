@@ -51,7 +51,6 @@ enum DictationGrounding {
             && frozen.dictationUseVisibleContext == current.dictationUseVisibleContext
             && frozen.dictationUseMeetingMemory == current.dictationUseMeetingMemory
             && frozen.dictationUseScreenMemory == current.dictationUseScreenMemory
-            && frozen.dreamingEnabled == current.dreamingEnabled
             && frozen.excludedApps == current.excludedApps
             && frozen.excludedScreenDomains == current.excludedScreenDomains
             && frozen.approvedRemoteInferenceOrigins == current.approvedRemoteInferenceOrigins

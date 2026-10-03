@@ -1,0 +1,104 @@
+{
+  "summary": {
+    "relevantCases": 2,
+    "offCorrect": 0,
+    "onCorrect": 2,
+    "exactSelections": 4,
+    "totalCases": 4,
+    "controlCases": 2,
+    "unchangedControls": 2,
+    "distractorCases": 2,
+    "abstentions": 2,
+    "falseRetrievals": 0,
+    "recallRate": 1.0,
+    "abstentionRate": 1.0,
+    "balancedRelevance": 1.0,
+    "errors": 0,
+    "offMedianMs": 67.71197900000001,
+    "onMedianMs": 66.105104
+  },
+  "cases": [
+    {
+      "id": "dev-get-back",
+      "kind": "distractor",
+      "expected": null,
+      "offText": "you on that.",
+      "onText": "you on that.",
+      "offCorrect": false,
+      "onCorrect": false,
+      "memoryIDs": [],
+      "selectionCorrect": true,
+      "unchanged": true,
+      "error": null,
+      "offLatencyMs": 61.770208,
+      "onLatencyMs": 69.226125
+    },
+    {
+      "id": "dev-closer-look",
+      "kind": "distractor",
+      "expected": null,
+      "offText": "the “",
+      "onText": "the “",
+      "offCorrect": false,
+      "onCorrect": false,
+      "memoryIDs": [],
+      "selectionCorrect": true,
+      "unchanged": true,
+      "error": null,
+      "offLatencyMs": 68.33325,
+      "onLatencyMs": 67.336917
+    },
+    {
+      "id": "dev-ostrog",
+      "kind": "relevant",
+      "expected": "Bojana",
+      "offText": "the Ostrog Foundation.",
+      "onText": "Bojana.",
+      "offCorrect": false,
+      "onCorrect": true,
+      "memoryIDs": [
+        "ostrog-owner"
+      ],
+      "selectionCorrect": true,
+      "unchanged": false,
+      "error": null,
+      "offLatencyMs": 67.090708,
+      "onLatencyMs": 53.311458
+    },
+    {
+      "id": "dev-tamaris-lowercase",
+      "kind": "relevant",
+      "expected": "14",
+      "offText": "2019.",
+      "onText": "14 october.",
+      "offCorrect": false,
+      "onCorrect": true,
+      "memoryIDs": [
+        "sync-tamaris"
+      ],
+      "selectionCorrect": true,
+      "unchanged": false,
+      "error": null,
+      "offLatencyMs": 69.728459,
+      "onLatencyMs": 64.873291
+    }
+  ],
+  "manifest": {
+    "appSHA256": "feb39284b4fcb4f17b98bfef262ff077fdaf4ed6c59644e93c47edce2899eea1",
+    "modelFile": "gemma-4-E2B.i1-Q6_K.gguf",
+    "modelSHA256": "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
+    "corpusSHA256": "5e994d07f3fbff553c6b769eefcaef395913cfea2c19ac515293f4cae0ed0495",
+    "scriptSHA256": "aac7a146b39109006c196ea5599d17e08eb61bf7dff7a68aaf76951fa4f59983",
+    "split": "development",
+    "caseIDs": [
+      "dev-get-back",
+      "dev-closer-look",
+      "dev-ostrog",
+      "dev-tamaris-lowercase"
+    ],
+    "factCount": 11,
+    "settings": "production defaults",
+    "context": "synthetic saved facts; no user library or learned examples",
+    "metric": "first lexical word matches explicitly supplied fact; controls retrieve nothing and keep the memory-off suggestion"
+  }
+}

@@ -303,6 +303,17 @@ and unknown document contexts do not learn or reuse examples. Settings →
 Autocomplete → **Forget learned text** removes the stored examples and cancels
 pending learning writes.
 
+Autocomplete keeps local counters, shown under Settings → Writing → **Usage and
+timing**: suggestions generated and accepted, generation time, and, for each
+kind of app (native apps, browsers, chat, email), the wait from your last
+keystroke to a visible suggestion, whether accepted text then appeared in the
+field, and whether you deleted or undid it at once. To check an insertion,
+LokalBot compares the end of the text before the caret with what it inserted.
+That comparison is held in memory for about a second and a half and then
+discarded; only the outcome is counted. No typed text, app name, or window title
+is stored. **Reset** clears the counters, and **Copy measurements** puts the
+counts on the clipboard only when you click it.
+
 Autocomplete also has a separate, off-by-default **Use visible text above the
 field** setting. It reads Accessibility labels and messages in the focused
 field's column, up to 600 points above it, within the same visible window/pane.
@@ -313,10 +324,12 @@ abstain. Shared capture exclusions and autocomplete exclusions both apply.
 This setting does not enable screen recording, screenshots, OCR, saved screen
 memory, or external access. Context is processed locally and held only in memory;
 context-grounded acceptances are excluded from saved learning. The setup preview
-never reads the screen. Before display, background validation reads the context
-again; while a suggestion is active it is polled for changes. Tab uses a recent
-validation (at most 600 ms old) and performs no screen traversal. A stalled
-validation, changed context/target, or revoked permission discards the suggestion.
+never reads the screen: with this setting on, the rehearsal in Settings uses its
+own synthetic sample conversation as the nearby text. Before display, background
+validation reads the context again; while a suggestion is active it is polled
+for changes. Tab uses a recent validation (at most 600 ms old) and performs no
+screen traversal. A stalled validation, changed context/target, or revoked
+permission discards the suggestion.
 Apps that do not expose visible static text through Accessibility get ordinary
 autocomplete without this additional context.
 
@@ -327,12 +340,24 @@ Meeting sources include current notes, summaries, and outcomes with saved
 corrections. With both relevant settings enabled, selected visible excerpts can
 also supply project names for this local lookup. Visible-context permission
 alone does not authorize saved-memory retrieval. Work memory includes attributed
-projects and goals; screen-derived
-memory can include distilled screen/activity and daily-journal facts, and also
-requires Work Memory to remain enabled. Facts combining meeting and screen
+projects and goals; screen-derived memory can include distilled screen/activity
+and daily-journal facts. These two settings are the whole permission to read
+saved work memory. They read what is already saved whether or not **Review the
+day overnight** is on, and they never start or schedule a review. Turning
+Overnight review off stops new reviews without withdrawing either grant;
+**Clear work memory** deletes the saved facts. Facts combining meeting and screen
 sources require both autocomplete grants. Unattributed legacy memories are
 excluded. This does not enable new capture, read raw screenshot pixels or OCR,
 grant external-agent access, or send the context to a remote model.
+
+A saved fact is used only when the writing is about it. Either the writing names
+the fact's source — at least half of the distinctive words of the meeting title
+or project name appear in your draft, the window title, or the selected visible
+text — or the fact shares several distinctive words with your own draft or
+window title, one of them written as a name. Everyday wording, weekdays and
+months, and app names never count, and a fact that only repeats the draft is
+left out. Writing that names nothing distinctive is answered without opening the
+library.
 
 Autocomplete reads current source files and checks for source changes before
 presenting or accepting a completion. Editing/deleting sources or revoking
@@ -340,7 +365,9 @@ access cancels affected pending and cached suggestions. No additional memory
 store is created, and memory-grounded accepted suggestions are not copied into
 autocomplete's learned examples. Text already accepted into another app remains
 there until you remove it. The setup sample never reads saved memory; a personal
-preview uses the enabled settings. Settings shows the titles of selected sources.
+preview uses the enabled settings. Settings shows each setting's effective state
+(available, unavailable and why, or nothing saved yet), the titles of the sources
+the last suggestion used, and when a lookup found nothing relevant.
 
 Dictation Compose has three independent, off-by-default grants: **Use visible
 text above the field**, **Use meeting and work memory**, and **Use screen-derived
@@ -349,8 +376,9 @@ same bounded Accessibility selection described above, with shared app/domain/
 private-window exclusions. No screenshots are needed for this setting. Saved
 facts use the current-source limits above; title matches in the spoken request
 or authorized screen context establish relevance. Mixed provenance requires both
-dictation memory grants, and Dream sources also require Work Memory to remain
-enabled. No new saved-memory store is created.
+dictation memory grants. As with autocomplete, these grants read saved work
+memory whether or not Overnight review is scheduled. No new saved-memory store
+is created.
 
 These sources assist explicit Compose writing requests such as “reply” or “draft.”
 Directly dictated sentences do not invoke the nearby-text or saved-memory

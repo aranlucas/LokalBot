@@ -361,28 +361,40 @@ struct SettingsView: View {
                     .settingTarget("settings.cotypingAcceptGranularity", selected: app.focusedSettingID)
             }
             Section("Context and profile") {
+                let context = cotypingContext
                 Toggle("Use app and window context", isOn: $app.settings.cotypingUseAppContext)
                     .settingTarget("settings.cotypingUseAppContext", selected: app.focusedSettingID)
                 Toggle("Use clipboard as temporary context", isOn: $app.settings.cotypingUseClipboard)
                     .settingTarget("settings.cotypingUseClipboard", selected: app.focusedSettingID)
                 Toggle(isOn: $app.settings.cotypingUseVisibleContext) {
-                    Text("Use visible text above the field")
-                    Text("Use nearby messages and labels to suggest relevant replies. Processed locally, never saved; capture exclusions apply.")
-                        .font(.caption).foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 3) {
+                        SettingsLabel("Use visible text above the field",
+                                      help: "Use nearby messages and labels to suggest relevant replies. Processed locally, never saved; capture exclusions apply.")
+                        CotypingContextStateLabel(state: context.visibleText)
+                    }
                 }
                 .settingTarget("settings.cotypingUseVisibleContext", selected: app.focusedSettingID)
                 Toggle(isOn: $app.settings.cotypingUseMeetingMemory) {
-                    SettingsLabel("Use meeting and work memory",
-                                  help: "Use up to two relevant facts from recent meeting notes, decisions, and work memory to help with names and details. Processed on this Mac.")
+                    VStack(alignment: .leading, spacing: 3) {
+                        SettingsLabel("Use meeting and work memory",
+                                      help: "Use up to two relevant facts from recent meeting notes, decisions, and work memory to help with names and details. Processed on this Mac.")
+                        CotypingContextStateLabel(state: context.meetingMemory)
+                    }
                 }
                 .settingTarget("settings.cotypingUseMeetingMemory", selected: app.focusedSettingID)
                 Toggle(isOn: $app.settings.cotypingUseScreenMemory) {
-                    SettingsLabel("Use screen-derived work memory",
-                                  help: "Also allow relevant work memory derived from screen activity and daily journals. Mixed meeting and screen memories require both settings. Does not capture new screens.")
+                    VStack(alignment: .leading, spacing: 3) {
+                        SettingsLabel("Use screen-derived work memory",
+                                      help: "Also allow relevant work memory derived from screen activity and daily journals. Reads what is already saved; it does not capture new screens or start an overnight review. Mixed meeting and screen memories require both settings.")
+                        CotypingContextStateLabel(state: context.screenMemory)
+                    }
                 }
                 .settingTarget("settings.cotypingUseScreenMemory", selected: app.focusedSettingID)
                 if !app.cotyping.memoryContextSources.isEmpty {
-                    Text("Context used: " + app.cotyping.memoryContextSources.joined(separator: ", "))
+                    Text("Last suggestion used: " + app.cotyping.memoryContextSources.joined(separator: ", "))
+                        .settingsSecondary()
+                } else if app.cotyping.memoryContextSearched {
+                    Text("Last suggestion: no relevant memory found.")
                         .settingsSecondary()
                 }
                 Toggle(isOn: $app.settings.cotypingUseLocalLearning) {
@@ -448,6 +460,11 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    /// What each optional autocomplete context source can do right now.
+    private var cotypingContext: CotypingContextAvailability {
+        app.cotypingContextAvailability(accessibilityGranted: permissions.granted[.accessibility] ?? false)
     }
 
     /// A labeled, visibly editable text field for optional profile values.

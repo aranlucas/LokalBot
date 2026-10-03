@@ -40,10 +40,32 @@ enum CotypingFullAcceptKey: Int, Codable, Sendable {
     case off = -1
 
     var keyCode: CGKeyCode? { self == .off ? nil : CGKeyCode(rawValue) }
+    /// How the key is named in a hint; nil when full accept is off.
+    var label: String? {
+        switch self {
+        case .backtick: "`"
+        case .rightArrow: "Right Arrow"
+        case .off: nil
+        }
+    }
 }
 
 /// Which accept key fired — the next chunk (word/phrase) or the whole tail.
 enum CotypingAcceptScope: Sendable {
     case chunk
     case whole
+}
+
+/// One line saying what the accept keys do with the current settings.
+enum CotypingAcceptHint {
+    static func text(acceptKey: CotypingAcceptKey, fullAcceptKey: CotypingFullAcceptKey,
+                     granularity: CotypingAcceptGranularity) -> String {
+        var parts = ["\(acceptKey.label) accepts the next \(granularity == .word ? "word" : "phrase")"]
+        // The primary key wins when both are bound to the same key.
+        if let full = fullAcceptKey.label, fullAcceptKey.rawValue != acceptKey.rawValue {
+            parts.append("\(full) accepts the rest")
+        }
+        parts.append("Esc dismisses")
+        return parts.joined(separator: " · ")
+    }
 }

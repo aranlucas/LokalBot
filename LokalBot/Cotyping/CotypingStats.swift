@@ -16,9 +16,26 @@ struct CotypingStats: Codable, Equatable, Sendable {
     var charsAccepted: Int = 0
     /// Rolling window of generation latencies, newest last.
     var latenciesMs: [Int] = []
+    /// What happened in other apps, by kind of writing surface (a
+    /// `CotypingSurfaceClass` raw value). See `CotypingLiveMeasure`.
+    var live: [String: CotypingLiveMeasure] = [:]
 
     /// Cap on retained latency samples — a rolling window for the averages.
     static let maxLatencies = 50
+
+    init() {}
+
+    /// Counters saved before a field existed keep their values instead of
+    /// resetting the whole record.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        generations = try container.decodeIfPresent(Int.self, forKey: .generations) ?? 0
+        errors = try container.decodeIfPresent(Int.self, forKey: .errors) ?? 0
+        accepts = try container.decodeIfPresent(Int.self, forKey: .accepts) ?? 0
+        charsAccepted = try container.decodeIfPresent(Int.self, forKey: .charsAccepted) ?? 0
+        latenciesMs = try container.decodeIfPresent([Int].self, forKey: .latenciesMs) ?? []
+        live = try container.decodeIfPresent([String: CotypingLiveMeasure].self, forKey: .live) ?? [:]
+    }
 
     /// Accepts per generation. Phrase acceptance can push this above 1.0 (one
     /// generation accepted in multiple word chunks), which is itself a useful
@@ -51,9 +68,19 @@ struct CotypingStats: Codable, Equatable, Sendable {
         }
     }
     mutating func recordError() { errors += 1 }
-    mutating func recordAccept(charsAccepted acceptedChars: Int) {
+    mutating func recordAccept(charsAccepted acceptedChars: Int, surface: String? = nil) {
         accepts += 1
         charsAccepted += max(0, acceptedChars)
+        if let surface { live[surface, default: .init()].accepts += 1 }
+    }
+    mutating func recordShown(latencyMs: Int, surface: String) {
+        live[surface, default: .init()].recordShown(latencyMs: latencyMs)
+    }
+    mutating func recordInsertion(_ outcome: CotypingInsertionCheck.Outcome, count: Int = 1, surface: String) {
+        for _ in 0..<max(0, count) { live[surface, default: .init()].record(outcome) }
+    }
+    mutating func recordCorrection(surface: String) {
+        live[surface, default: .init()].acceptsCorrected += 1
     }
     mutating func reset() { self = CotypingStats() }
 }
@@ -124,8 +151,26 @@ final class CotypingStatsStore: ObservableObject {
 
     /// Accept counters stay live in the UI for every chunk, but disk remains
     /// dirty until the coordinator closes that suggestion.
-    func recordAccept(charsAccepted: Int) {
-        stats.recordAccept(charsAccepted: charsAccepted)
+    func recordAccept(charsAccepted: Int, surface: String? = nil) {
+        stats.recordAccept(charsAccepted: charsAccepted, surface: surface)
+        revision &+= 1
+    }
+
+    /// Live measurements share the accept counters' persistence boundary: they
+    /// are written with the next generation or completed suggestion.
+    func recordShown(latencyMs: Int, surface: String) {
+        stats.recordShown(latencyMs: latencyMs, surface: surface)
+        revision &+= 1
+    }
+
+    func recordInsertion(_ outcome: CotypingInsertionCheck.Outcome, count: Int = 1, surface: String) {
+        guard outcome != .pending else { return }
+        stats.recordInsertion(outcome, count: count, surface: surface)
+        revision &+= 1
+    }
+
+    func recordCorrection(surface: String) {
+        stats.recordCorrection(surface: surface)
         revision &+= 1
     }
 
@@ -171,6 +216,16 @@ final class CotypingStatsStore: ObservableObject {
             if let previous { await previous.value }
             await persistence.persist(persistedStats)
         }
+    }
+
+    /// `--cotyping-measurements`: print what is saved, as JSON, so a script
+    /// that drove real apps can check how suggestions and accepts went.
+    static func printSaved(defaults: UserDefaults = .standard) -> Int32 {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        guard let data = try? encoder.encode(load(from: defaults)) else { return 1 }
+        FileHandle.standardOutput.write(data + Data([10]))
+        return 0
     }
 
     private static func load(from defaults: UserDefaults) -> CotypingStats {

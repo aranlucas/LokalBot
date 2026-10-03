@@ -1,0 +1,84 @@
+import Foundation
+
+/// Local measurements of how autocomplete behaves while typing in other apps:
+/// how long a suggestion takes to appear after the last keystroke, whether an
+/// accepted suggestion arrived in the field, and whether it was taken straight
+/// back. Counts and timings only; see `CotypingLiveMeasure`.
+extension CotypingCoordinator {
+    /// A deletion or undo this soon after an accept counts as correcting it.
+    nonisolated static let correctionWindowMilliseconds = 5_000
+    /// Longer waits are a suggestion restored later, not typing latency.
+    nonisolated static let maxMeasuredVisibleMilliseconds = 10_000
+
+    func surfaceKey(for field: CotypingField) -> String {
+        CotypingSurfaceClassifier.classify(
+            bundleID: field.bundleID,
+            isIntegratedTerminal: field.isIntegratedTerminal).rawValue
+    }
+
+    /// A continuation became visible. Records the wait since the keystroke
+    /// that asked for it, once per keystroke.
+    func noteSuggestionShown(_ session: CotypingSession) {
+        guard case .continuation = session.kind, let started = pendingKeystrokeUptime else { return }
+        pendingKeystrokeUptime = nil
+        let elapsed = Self.measuredMilliseconds(since: started)
+        guard elapsed <= Self.maxMeasuredVisibleMilliseconds else { return }
+        stats.recordShown(latencyMs: elapsed, surface: surfaceKey(for: session.field))
+    }
+
+    /// An accept keypress posted `inserted` into `field`.
+    func noteAcceptance(field: CotypingField, inserted: String, charsAccepted: Int) {
+        let surface = surfaceKey(for: field)
+        let now = DispatchTime.now().uptimeNanoseconds
+        stats.recordAccept(charsAccepted: charsAccepted, surface: surface)
+        acceptAwaitingNextKey = (surface, now)
+        guard !inserted.isEmpty else { return }
+        // `field` is a fresh read, so it can settle the previous accept first.
+        resolveInsertionCheck(live: field)
+        if pendingInsertionCheck != nil {
+            // The app has not published the previous accept yet; check both together.
+            pendingInsertionCheck?.extend(byInserting: inserted, at: now)
+        } else {
+            pendingInsertionCheck = CotypingInsertionCheck(
+                field: field, inserted: inserted, surface: surface, startedUptimeNanoseconds: now)
+        }
+    }
+
+    /// Compares the pending accept with what the host field now holds.
+    func resolveInsertionCheck(live: CotypingField?) {
+        guard let check = pendingInsertionCheck else { return }
+        let outcome = check.outcome(
+            live: live,
+            elapsedMilliseconds: Self.measuredMilliseconds(since: check.startedUptimeNanoseconds))
+        guard outcome != .pending else { return }
+        pendingInsertionCheck = nil
+        stats.recordInsertion(outcome, count: check.count, surface: check.surface)
+    }
+
+    /// The first key after an accept shows whether the accepted text was kept.
+    func noteKeyAfterAcceptance(_ event: CotypingInputEvent) {
+        guard let accepted = acceptAwaitingNextKey else { return }
+        switch event.kind {
+        case .acceptance, .fullAcceptance:
+            // Another accept restarts the window itself.
+            return
+        case .dismissal, .navigation, .shortcut, .textMutation, .other:
+            break
+        }
+        acceptAwaitingNextKey = nil
+        guard event.isCorrection,
+              Self.measuredMilliseconds(since: accepted.uptimeNanoseconds) <= Self.correctionWindowMilliseconds
+        else { return }
+        stats.recordCorrection(surface: accepted.surface)
+    }
+
+    func resetMeasurementState() {
+        pendingKeystrokeUptime = nil
+        pendingInsertionCheck = nil
+        acceptAwaitingNextKey = nil
+    }
+
+    private nonisolated static func measuredMilliseconds(since uptimeNanoseconds: UInt64) -> Int {
+        Int((DispatchTime.now().uptimeNanoseconds &- uptimeNanoseconds) / 1_000_000)
+    }
+}

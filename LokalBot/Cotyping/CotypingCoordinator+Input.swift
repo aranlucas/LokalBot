@@ -7,15 +7,21 @@ extension CotypingCoordinator {
     func handleKey(_ event: CotypingInputEvent) {
         guard isRunning else { return }
         discardRevokedMemoryContext()
+        noteKeyAfterAcceptance(event)
+        resolveInsertionCheck(live: focusTracker.focus.field)
         switch event.kind {
         case .acceptance, .fullAcceptance:
             break // owned by the accept tap
         case .textMutation:
+            // Typing through a ghost that is already on screen has no wait to
+            // measure; scheduling the next suggestion starts a new one.
+            pendingKeystrokeUptime = nil
             if advanceActiveSessionIfTypedCharactersMatch(event.characters) {
                 return
             }
             scheduleGenerationAfterHostPublishDelay()
         case .dismissal, .navigation, .shortcut, .other:
+            pendingKeystrokeUptime = nil
             cancelPendingGenerationWork()
             clearSuggestion()
             state = .idle
@@ -25,6 +31,7 @@ extension CotypingCoordinator {
     func handleFocusChange(_ focus: CotypingFocus) {
         guard isRunning else { return }
         discardRevokedMemoryContext()
+        resolveInsertionCheck(live: focus.field)
         if let activeVisibleContext,
            focus.field == nil || (focus.field?.visibleContextWasRequested == true
                 && focus.field?.visibleContext != activeVisibleContext) {
@@ -74,6 +81,8 @@ extension CotypingCoordinator {
         let baseline = explicitBaseline ?? focusTracker.focus.field
         let pollGeneration = hostPublishPollGeneration
         let keystrokeUptimeNanoseconds = DispatchTime.now().uptimeNanoseconds
+        // Measured from here until the suggestion this keystroke asks for is visible.
+        pendingKeystrokeUptime = keystrokeUptimeNanoseconds
 
         hostPublishPollTask?.cancel()
         hostPublishPollTask = Task { [weak self] in

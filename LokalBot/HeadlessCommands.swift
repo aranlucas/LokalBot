@@ -20,6 +20,9 @@ enum HeadlessCommand: Equatable {
     case agent(prompt: String)
     case cotypingBench
     case cotypingReplay(input: URL, model: URL)
+    /// Print the saved autocomplete counters and typing measurements and exit.
+    /// Runs before SwiftUI launches and reads one preferences value.
+    case cotypingMeasurements
     case dictationReplay(input: URL, endpoint: URL)
     case exportDiagnostics(destination: URL)
     case health(dayKey: String?, json: Bool)
@@ -60,6 +63,7 @@ enum HeadlessCommand: Equatable {
             return .dream(dayKey: next.flatMap { $0.hasPrefix("--") ? nil : $0 })
         }
         if args.contains("--cotyping-bench") { return .cotypingBench }
+        if args.contains("--cotyping-measurements") { return .cotypingMeasurements }
         if let flag = args.firstIndex(of: "--dictation-replay"), args.count > flag + 1,
            let serverFlag = args.firstIndex(of: "--server-url"), args.count > serverFlag + 1,
            let endpoint = URL(string: args[serverFlag + 1]) {
@@ -233,6 +237,7 @@ struct HeadlessCommandRunner {
 #endif
         // Normally handled before launch by `LokalBotMain`.
         case .agentSessions(let dayKey): exit(CodingAgentSessionsCLI.run(dayKey: dayKey))
+        case .cotypingMeasurements: exit(CotypingStatsStore.printSaved())
         }
     }
 

@@ -69,42 +69,18 @@ extension CotypingCoordinator {
         guard !remaining.isEmpty else { clearSuggestion(); return false }
 
         let settings = settingsProvider()
-        let baseChunk: String
-        switch scope {
-        case .whole:
-            baseChunk = remaining
-        case .chunk:
-            switch settings.cotypingAcceptGranularity {
-            case .word:
-                baseChunk = CotypingAcceptanceChunker.nextWord(
-                    in: remaining,
-                    autoAcceptTrailingPunctuation: settings.cotypingAutoAcceptTrailingPunctuation)
-            case .phrase:
-                baseChunk = CotypingAcceptanceChunker.nextPhrase(
-                    in: remaining,
-                    autoAcceptTrailingPunctuation: settings.cotypingAutoAcceptTrailingPunctuation)
-            }
-        }
-        let acceptedChunk = settings.cotypingAddSpaceAfterAccept
-            ? CotypingAcceptanceChunker.acceptanceChunkConsumingTrailingSpace(baseChunk, remainingText: remaining)
-            : baseChunk
-        guard !acceptedChunk.isEmpty else { return false }
         let liveField = live.field ?? current.field
-        let insertionChunk = CotypingAcceptanceChunker.insertionChunk(
-            forAcceptedChunk: acceptedChunk,
-            precedingText: liveField.precedingText)
-        let insertionText = CotypingAcceptanceChunker.insertionTextApplyingAutoSpace(
-            insertionChunk: insertionChunk,
-            acceptedChunk: acceptedChunk,
+        // Shared with the Settings rehearsal: one plan decides how much a
+        // keypress takes and how it is spaced.
+        guard let acceptance = CotypingContinuationAcceptance.plan(
             session: current,
-            addSpaceAfterAccept: settings.cotypingAddSpaceAfterAccept)
-        let forwardDeleteCount = CotypingMidWord.shouldForceContinuation(
+            scope: scope,
             precedingText: liveField.precedingText,
-            trailingText: liveField.trailingText)
-            ? CotypingMidWord.acceptedTrailingOverlapCount(
-                acceptedText: insertionText,
-                trailingText: liveField.trailingText)
-            : 0
+            trailingText: liveField.trailingText,
+            options: .init(settings: settings)) else { return false }
+        let acceptedChunk = acceptance.acceptedChunk
+        let insertionText = acceptance.insertionText
+        let forwardDeleteCount = acceptance.forwardDeleteCount
         let inserted: Bool
         if insertionText.isEmpty {
             inserted = true
@@ -126,7 +102,7 @@ extension CotypingCoordinator {
             return false
         }
         lastAcceptanceAt = Date()
-        CotypingStatsStore.shared.recordAccept(charsAccepted: acceptedChunk.count)
+        noteAcceptance(field: liveField, inserted: insertionText, charsAccepted: acceptedChunk.count)
         recordAcceptedText(acceptedChunk, field: liveField, settings: settings)
 
         acceptedWordCount += CotypingAcceptanceChunker.acceptedWordCount(in: acceptedChunk)
@@ -195,6 +171,7 @@ extension CotypingCoordinator {
         startSession(newSession, streamedWork: streamedWork)
         showOverlay(text: overlayText, field: newSession.field, acceptanceText: acceptanceText)
         markReady(acceptanceText ?? overlayText)
+        noteSuggestionShown(newSession)
     }
 
     /// The published tail of `present` — also used by the advance paths, which
@@ -217,7 +194,7 @@ extension CotypingCoordinator {
 
     func clearSuggestion() {
         if let completed = acceptedSuggestionBatch.complete() {
-            CotypingStatsStore.shared.suggestionCompleted()
+            stats.suggestionCompleted()
             if let record = completed.learningRecord {
                 learningStore.recordCompletedSuggestion(
                     field: record.field,

@@ -254,15 +254,20 @@ final class CotypingVisibleContextTests: XCTestCase {
                                                text: "The Mistral export format is JSON.", updatedAt: now,
                                                requiresMeetings: true)]
         let policy = CotypingMemoryContext.Policy(meetings: true, screenDerived: false)
-        // Reproduce the previous over-broad query: two incidental body terms
-        // would admit Mistral even though the visible conversation names Willow.
-        XCTAssertEqual(CotypingMemoryContext.select(
-            items: facts, query: CotypingMemoryContext.query(for: field, includeTitle: false),
-            policy: policy, now: now).items.map(\.id), ["mistral-format"])
+        // The visible conversation names Willow. Its incidental words ("export",
+        // "format") must not admit Mistral: nearby text can name a saved source
+        // but never counts as the user's own wording.
+        let query = CotypingMemoryContext.query(for: field, includeTitle: false)
+        XCTAssertTrue(query.all.isSuperset(of: ["willow", "export", "format"]))
+        XCTAssertFalse(query.own.contains("format"))
         XCTAssertTrue(CotypingMemoryContext.select(items: facts, for: field, includeTitle: false,
                                                    policy: policy, now: now).items.isEmpty)
+        // Two ordinary words of the user's own draft name no project either.
         field.visibleContext = nil
         field.precedingText = "The export format is "
+        XCTAssertTrue(CotypingMemoryContext.select(items: facts, for: field, includeTitle: false,
+                                                   policy: policy, now: now).items.isEmpty)
+        field.precedingText = "The Mistral export format is "
         XCTAssertEqual(CotypingMemoryContext.select(items: facts, for: field, includeTitle: false,
                                                      policy: policy, now: now).items.map(\.id), ["mistral-format"])
     }

@@ -37,7 +37,9 @@ enum CotypingMemoryContextProvider {
                      settings: AppSettings, now: Date = Date(), allowBodyMatch: Bool = true) -> Snapshot {
         let policy = CotypingMemoryContext.Policy(settings: settings)
         let query = CotypingMemoryContext.query(for: field, includeTitle: settings.cotypingUseAppContext)
-        guard policy.enabled, !query.isEmpty, !Task.isCancelled else { return .empty }
+        // Writing that names nothing distinctive cannot match a saved topic, so
+        // it is answered without opening the library.
+        guard policy.enabled, !query.all.isEmpty, !Task.isCancelled else { return .empty }
         let store = DreamStore(root: root)
         guard store.autocompleteEvidenceIsAvailable else { return .empty }
         var stamps: [URL: FileStamp] = [:]
@@ -45,16 +47,19 @@ enum CotypingMemoryContextProvider {
             let url = root.appendingPathComponent(path)
             stamps[url] = FileStamp(url)
         }
+        // Saved work memory is read under the writing grants alone; scheduling
+        // new overnight reviews is a separate setting.
         var items: [CotypingMemoryContext.Item] = []
-        if policy.workMemory, let memory = try? store.loadMemory() {
+        if let memory = try? store.loadMemory() {
             items += memoryItems(memory)
         }
         if policy.meetings {
-            items += meetingItems(root: root, meetings: meetings, query: query, now: now, stamps: &stamps)
+            items += meetingItems(root: root, meetings: meetings, query: query, now: now,
+                                  allowBodyMatch: allowBodyMatch, stamps: &stamps)
         }
         let snapshot = Snapshot(selection: CotypingMemoryContext.select(
-            items: items, for: field, includeTitle: settings.cotypingUseAppContext,
-            policy: policy, now: now, allowBodyMatch: allowBodyMatch), policy: policy, stamps: stamps, root: root)
+            items: items, query: query, policy: policy, now: now, allowBodyMatch: allowBodyMatch),
+            policy: policy, stamps: stamps, root: root)
         return !Task.isCancelled && snapshot.isCurrent(settings: settings) ? snapshot : .empty
     }
 
@@ -80,20 +85,26 @@ enum CotypingMemoryContextProvider {
         return projects + goals
     }
 
-    private static func meetingItems(root: URL, meetings: [Meeting], query: String, now: Date,
+    /// A finished meeting recent enough to supply a fact.
+    static func isEligible(_ meeting: Meeting, now: Date) -> Bool {
+        !meeting.isMergedSource && meeting.endedAt != nil
+            && now.timeIntervalSince(meeting.startedAt) <= CotypingMemoryContext.maxAge
+    }
+
+    private static func meetingItems(root: URL, meetings: [Meeting], query: CotypingMemoryContext.Query, now: Date,
+                                     allowBodyMatch: Bool,
                                      stamps: inout [URL: FileStamp]) -> [CotypingMemoryContext.Item] {
-        let eligible = meetings.filter {
-            !$0.isMergedSource && $0.endedAt != nil && now.timeIntervalSince($0.startedAt) <= CotypingMemoryContext.maxAge
-        }.sorted { $0.startedAt > $1.startedAt }
+        let eligible = meetings.filter { isEligible($0, now: now) }.sorted { $0.startedAt > $1.startedAt }
         let databaseURL = root.appendingPathComponent("lokalbotv3.sqlite")
-        let hits = FileManager.default.fileExists(atPath: databaseURL.path)
+        // Only distinctive words reach the index: everyday wording matches
+        // nearly every transcript and would crowd out the meeting that is named.
+        let hits = !query.search.isEmpty && FileManager.default.fileExists(atPath: databaseURL.path)
             ? SearchIndex(databaseURL: databaseURL, readOnly: true).search(
-                query, limit: 12, matchAll: false, dropStopWords: true,
+                query.search.joined(separator: " "), limit: 12, matchAll: false, dropStopWords: true,
                 meetingIDs: Set(eligible.map(\.id))) : []
         let hitIDs = Set(hits.map(\.meetingID))
-        let queryTerms = CotypingMemoryContext.terms(query)
         let candidates = eligible.filter {
-            hitIDs.contains($0.id) || !CotypingMemoryContext.terms($0.title).isDisjoint(with: queryTerms)
+            hitIDs.contains($0.id) || CotypingMemoryContext.names(title: $0.title, query: query) != nil
         }.prefix(4)
         var items: [CotypingMemoryContext.Item] = []
         for meeting in candidates {
@@ -134,8 +145,8 @@ enum CotypingMemoryContextProvider {
             for (index, source) in texts.enumerated() {
                 for (line, excerpt) in source.0.split(whereSeparator: \.isNewline).enumerated() {
                     let value = String(excerpt)
-                    guard !CotypingMemoryContext.terms(value).isDisjoint(with: queryTerms)
-                            || !CotypingMemoryContext.terms(current.title).isDisjoint(with: queryTerms) else { continue }
+                    guard CotypingMemoryContext.relevance(text: value, title: current.title, query: query,
+                                                          allowBodyMatch: allowBodyMatch) != nil else { continue }
                     items.append(.init(id: "\(current.id):\(index):\(line)", title: current.title,
                                        text: value, updatedAt: source.1, requiresMeetings: true))
                 }

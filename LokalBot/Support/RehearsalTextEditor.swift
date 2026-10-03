@@ -8,8 +8,11 @@ struct RehearsalTextEditor: NSViewRepresentable {
     @Binding var text: String
     let suggestion: String
     let acceptKey: CotypingAcceptKey
+    let fullAcceptKey: CotypingFullAcceptKey
     let focusRevision: Int
-    let onAccept: () -> Void
+    /// The accept key takes the next word or phrase; the full-accept key takes
+    /// everything that is left, exactly as in another app.
+    let onAccept: (CotypingAcceptScope) -> Void
     let onReject: () -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -40,11 +43,17 @@ struct RehearsalTextEditor: NSViewRepresentable {
         guard let editor = scroll.documentView as? RehearsalNativeTextView else { return }
         context.coordinator.parent = self
         if editor.string != text, !editor.hasMarkedText() {
+            context.coordinator.isApplyingText = true
             editor.string = text
             editor.setSelectedRange(NSRange(location: (text as NSString).length, length: 0))
+            context.coordinator.isApplyingText = false
         }
         editor.suggestion = suggestion
+        // Ghost text is painted, not part of the value, so assistive
+        // technology would otherwise never learn what is being offered.
+        editor.setAccessibilityPlaceholderValue(suggestion.isEmpty ? nil : suggestion)
         editor.acceptKey = acceptKey
+        editor.fullAcceptKey = fullAcceptKey
         editor.onAccept = onAccept
         editor.onReject = onReject
         editor.needsDisplay = true
@@ -61,6 +70,9 @@ struct RehearsalTextEditor: NSViewRepresentable {
     final class Coordinator: NSObject, NSTextViewDelegate {
         var parent: RehearsalTextEditor
         var focusRevision = 0
+        /// Set while SwiftUI's text is being written into the editor, so the
+        /// selection it passes through is not mistaken for the user's caret.
+        var isApplyingText = false
         init(_ parent: RehearsalTextEditor) { self.parent = parent }
         func textDidChange(_ notification: Notification) {
             guard let editor = notification.object as? NSTextView else { return }
@@ -68,7 +80,15 @@ struct RehearsalTextEditor: NSViewRepresentable {
             parent.text = editor.string
         }
         func textViewDidChangeSelection(_ notification: Notification) {
-            (notification.object as? NSTextView)?.needsDisplay = true
+            guard let editor = notification.object as? NSTextView else { return }
+            editor.needsDisplay = true
+            // A suggestion continues the end of the text. Selecting text or
+            // moving the caret elsewhere leaves it behind, as in another app.
+            guard !isApplyingText, !parent.suggestion.isEmpty, !editor.hasMarkedText() else { return }
+            let selection = editor.selectedRange()
+            if selection.length > 0 || selection.location != (editor.string as NSString).length {
+                parent.onReject()
+            }
         }
     }
 }
@@ -77,7 +97,8 @@ private final class RehearsalNativeTextView: NSTextView {
     private let inputSource = CotypingKeyboardInputSourceMonitor()
     var suggestion = ""
     var acceptKey: CotypingAcceptKey = .tab
-    var onAccept: (() -> Void)?
+    var fullAcceptKey: CotypingFullAcceptKey = .backtick
+    var onAccept: ((CotypingAcceptScope) -> Void)?
     var onReject: (() -> Void)?
 
     private var canAccept: Bool {
@@ -91,9 +112,17 @@ private final class RehearsalNativeTextView: NSTextView {
     override func keyDown(with event: NSEvent) {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
             .subtracting([.capsLock, .numericPad, .function])
-        if canAccept, modifiers.isEmpty, event.keyCode == UInt16(acceptKey.rawValue) {
-            onAccept?()
-            return
+        if canAccept, modifiers.isEmpty {
+            // Same precedence as the live accept tap: the primary key wins when
+            // both are set to the same key.
+            if event.keyCode == UInt16(acceptKey.rawValue) {
+                onAccept?(.chunk)
+                return
+            }
+            if let full = fullAcceptKey.keyCode, event.keyCode == UInt16(full) {
+                onAccept?(.whole)
+                return
+            }
         }
         if event.keyCode == 48, !hasMarkedText(), !inputSource.isComposingIMEActive,
            modifiers.isEmpty || modifiers == .shift {
@@ -106,6 +135,11 @@ private final class RehearsalNativeTextView: NSTextView {
         if !hasMarkedText(), event.keyCode == 53, !suggestion.isEmpty {
             onReject?()
             return
+        }
+        // Arrow keys navigate; like the live monitor, they drop the suggestion
+        // even when the caret has nowhere further to go.
+        if (123...126).contains(Int(event.keyCode)), !suggestion.isEmpty {
+            onReject?()
         }
         super.keyDown(with: event)
     }

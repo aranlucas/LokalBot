@@ -1,0 +1,253 @@
+{
+  "description": "Original synthetic supplement for retrieval relevance. Saved facts are realistic meeting-note lines, most of them commitments from generically titled meetings. Distractor drafts share everyday wording with a fact but name no topic, so the correct behavior is to select nothing and leave the suggestion unchanged. Relevant drafts name a topic and expect its fact. Expected answers, kinds and splits never enter the replay request.",
+  "asOf": "2026-10-02T12:00:00Z",
+  "memoryItems": [
+    {
+      "id": "sync-followup",
+      "title": "Weekly sync",
+      "text": "Marko will get back to you on Friday about the invoice.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "sync-contract",
+      "title": "Weekly sync",
+      "text": "Ana will send the signed contract next week.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "standup-look",
+      "title": "Daily standup",
+      "text": "We should take a closer look at the onboarding flow on Tuesday.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "catchup-call",
+      "title": "Catch-up with Jelena",
+      "text": "Jelena will call you tomorrow at noon about the venue.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "review-demo",
+      "title": "Friday review",
+      "text": "Let me know if the Thursday demo needs to move.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "sastanak-javiti",
+      "title": "Nedeljni sastanak",
+      "text": "Marko će ti se javiti sutra oko ugovora.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "sync-tamaris",
+      "title": "Weekly sync",
+      "text": "The Tamaris migration cutover is planned for 14 October.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "ostrog-owner",
+      "title": "Ostrog launch",
+      "text": "The Ostrog launch owner is Bojana.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "planning-perast",
+      "title": "Planning",
+      "text": "The vendor shortlist for the Perast offsite starts with Hotel Conte.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "kamenari-price",
+      "title": "Kamenari pricing workshop",
+      "text": "Kamenari pricing starts at 49 euros per seat.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "sync-lovcen",
+      "title": "Weekly sync",
+      "text": "Lovćen dashboard access goes through Ivana.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    }
+  ],
+  "cases": [
+    {
+      "id": "dev-get-back",
+      "prefix": "I'll get back to ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "development",
+      "kind": "distractor"
+    },
+    {
+      "id": "dev-closer-look",
+      "prefix": "We should take a closer look at ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "development",
+      "kind": "distractor"
+    },
+    {
+      "id": "dev-ostrog",
+      "prefix": "The Ostrog launch owner is ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Ostrog",
+      "expected": "Bojana",
+      "split": "development",
+      "kind": "relevant",
+      "expectedMemoryID": "ostrog-owner"
+    },
+    {
+      "id": "dev-tamaris-lowercase",
+      "prefix": "the tamaris cutover is planned for ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "expected": "14",
+      "split": "development",
+      "kind": "relevant",
+      "expectedMemoryID": "sync-tamaris"
+    },
+    {
+      "id": "held-get-back-friday",
+      "prefix": "I will get back to you on ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "heldout",
+      "kind": "distractor"
+    },
+    {
+      "id": "held-call-noon",
+      "prefix": "I'll call you tomorrow at noon about ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "heldout",
+      "kind": "distractor"
+    },
+    {
+      "id": "held-let-me-know",
+      "prefix": "Let me know if the demo ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "heldout",
+      "kind": "distractor"
+    },
+    {
+      "id": "held-send-contract",
+      "prefix": "Thanks, I will send the contract ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "split": "heldout",
+      "kind": "distractor"
+    },
+    {
+      "id": "held-browser-window",
+      "prefix": "I'll get back to you ",
+      "appName": "Google Chrome",
+      "bundleID": "com.google.Chrome",
+      "windowTitle": "Inbox (3) - Gmail - Google Chrome",
+      "split": "heldout",
+      "kind": "distractor"
+    },
+    {
+      "id": "held-take-a-look",
+      "prefix": "Could you take a look at the flow ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "heldout",
+      "kind": "distractor"
+    },
+    {
+      "id": "held-serbian-follow-up",
+      "prefix": "Javiću ti se sutra oko ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "heldout",
+      "kind": "distractor"
+    },
+    {
+      "id": "held-kamenari",
+      "prefix": "Kamenari pricing starts at ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Kamenari pricing",
+      "expected": "49",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "kamenari-price"
+    },
+    {
+      "id": "held-perast",
+      "prefix": "For the Perast offsite, the vendor shortlist starts with ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "expected": "Hotel",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "planning-perast"
+    },
+    {
+      "id": "held-lovcen",
+      "prefix": "Access to the Lovćen dashboard goes through ",
+      "appName": "Slack",
+      "bundleID": "com.tinyspeck.slackmacgap",
+      "windowTitle": "general - Acme - Slack",
+      "expected": "Ivana",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "sync-lovcen"
+    },
+    {
+      "id": "held-tamaris-date",
+      "prefix": "We agreed the Tamaris migration cutover happens on ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "expected": "14",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "sync-tamaris"
+    },
+    {
+      "id": "held-jelena",
+      "prefix": "I'll ask Jelena about the ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "expected": "venue",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "catchup-call"
+    }
+  ]
+}

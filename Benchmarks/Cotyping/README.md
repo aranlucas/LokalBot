@@ -91,6 +91,38 @@ checks selected source IDs, and byte-identical prompts/output for unrelated
 controls. File, settings and revocation behavior are covered by the provider
 and coordinator unit tests; this replay never opens a real library.
 
+### Relevance supplement
+
+`memory-relevance-cases.json` tests the other half of retrieval: leaving writing
+alone when no saved fact is relevant. Its saved facts are realistic meeting-note
+lines, mostly commitments from generically titled meetings ("Marko will get back
+to you on Friday about the invoice."). Distractor drafts share everyday wording
+with one of them but name no topic ("I'll get back to "), so the right behavior
+is to retrieve nothing and give the same suggestion as with memory off. Relevant
+drafts name a topic, including harder forms than the original fixture: a
+lowercase name, a fact filed under a generic meeting title, a title matched by
+two of its three words, and a name with diacritics.
+
+```sh
+uv run --no-project python -S Benchmarks/Cotyping/memory_replay.py \
+  --app /absolute/path/to/LokalBot.app/Contents/MacOS/LokalBot \
+  --model /absolute/path/to/model.gguf \
+  --corpus Benchmarks/Cotyping/memory-relevance-cases.json \
+  --split heldout --output /absolute/path/to/new-results
+```
+
+The scorer reports recall and abstention together. A control (`irrelevant` or
+`distractor`) passes only when no fact was selected and its prompt and output
+match the memory-off run; `falseRetrievals` counts controls that selected
+anything. `balancedRelevance` is the mean of the recall and abstention rates, so
+a change that recalls more by retrieving indiscriminately does not score higher.
+See the [relevance results](results/2026-10-03-relevance/REPORT.md).
+
+Retrieval is also scored without a model: `CotypingMemoryRelevanceTests` runs
+every case of all four fixtures through the production selection on each unit
+test run, so a threshold change that loses a relevant fact or borrows an
+unrelated one fails before any replay.
+
 
 ## Visible context and memory replay
 

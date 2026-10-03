@@ -1,0 +1,170 @@
+{
+  "model": "gemma-4-E2B.i1-Q6_K.gguf",
+  "relevance": {
+    "before-development": {
+      "appSHA256": "4652608c4a2d4558a3a3bcedda5c64429adda1a08f691df0e49d5a1a8b90a3b2",
+      "modelSHA256": "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
+      "corpusSHA256": "5e994d07f3fbff553c6b769eefcaef395913cfea2c19ac515293f4cae0ed0495",
+      "relevantCases": 2,
+      "offCorrect": 0,
+      "onCorrect": 2,
+      "controlCases": 2,
+      "abstentions": 0,
+      "falseRetrievals": 2,
+      "exactSelections": 2,
+      "totalCases": 4,
+      "recallRate": 1.0,
+      "abstentionRate": 0.0,
+      "balancedRelevance": 0.5,
+      "errors": 0
+    },
+    "after-development": {
+      "appSHA256": "feb39284b4fcb4f17b98bfef262ff077fdaf4ed6c59644e93c47edce2899eea1",
+      "modelSHA256": "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
+      "corpusSHA256": "5e994d07f3fbff553c6b769eefcaef395913cfea2c19ac515293f4cae0ed0495",
+      "relevantCases": 2,
+      "offCorrect": 0,
+      "onCorrect": 2,
+      "controlCases": 2,
+      "abstentions": 2,
+      "falseRetrievals": 0,
+      "exactSelections": 4,
+      "totalCases": 4,
+      "recallRate": 1.0,
+      "abstentionRate": 1.0,
+      "balancedRelevance": 1.0,
+      "errors": 0
+    },
+    "before-heldout": {
+      "appSHA256": "4652608c4a2d4558a3a3bcedda5c64429adda1a08f691df0e49d5a1a8b90a3b2",
+      "modelSHA256": "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
+      "corpusSHA256": "5e994d07f3fbff553c6b769eefcaef395913cfea2c19ac515293f4cae0ed0495",
+      "relevantCases": 5,
+      "offCorrect": 0,
+      "onCorrect": 5,
+      "controlCases": 7,
+      "abstentions": 1,
+      "falseRetrievals": 6,
+      "exactSelections": 6,
+      "totalCases": 12,
+      "recallRate": 1.0,
+      "abstentionRate": 0.1429,
+      "balancedRelevance": 0.5715,
+      "errors": 0
+    },
+    "after-heldout": {
+      "appSHA256": "feb39284b4fcb4f17b98bfef262ff077fdaf4ed6c59644e93c47edce2899eea1",
+      "modelSHA256": "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
+      "corpusSHA256": "5e994d07f3fbff553c6b769eefcaef395913cfea2c19ac515293f4cae0ed0495",
+      "relevantCases": 5,
+      "offCorrect": 0,
+      "onCorrect": 5,
+      "controlCases": 7,
+      "abstentions": 7,
+      "falseRetrievals": 0,
+      "exactSelections": 12,
+      "totalCases": 12,
+      "recallRate": 1.0,
+      "abstentionRate": 1.0,
+      "balancedRelevance": 1.0,
+      "errors": 0
+    }
+  },
+  "regression": {
+    "memory-cases heldout": {
+      "appSHA256": "feb39284b4fcb4f17b98bfef262ff077fdaf4ed6c59644e93c47edce2899eea1",
+      "onCorrect": 12,
+      "relevantCases": 12,
+      "exactSelections": 22,
+      "totalCases": 22,
+      "abstentions": 10,
+      "controlCases": 10,
+      "errors": 0,
+      "rowsDifferingFromRecordedFinalist": []
+    },
+    "visible-context-cases heldout": {
+      "appSHA256": "feb39284b4fcb4f17b98bfef262ff077fdaf4ed6c59644e93c47edce2899eea1",
+      "correctByVariant": {
+        "neither": [
+          0,
+          18
+        ],
+        "visible": [
+          12,
+          18
+        ],
+        "memory": [
+          4,
+          18
+        ],
+        "both": [
+          16,
+          18
+        ]
+      },
+      "memorySelectionsCorrectByVariant": {
+        "neither": [
+          32,
+          32
+        ],
+        "visible": [
+          32,
+          32
+        ],
+        "memory": [
+          32,
+          32
+        ],
+        "both": [
+          32,
+          32
+        ]
+      },
+      "errors": 0,
+      "controlsUnchanged": true,
+      "rowsDifferingFromRecordedFinalist": []
+    },
+    "visible-memory-link-cases heldout": {
+      "appSHA256": "feb39284b4fcb4f17b98bfef262ff077fdaf4ed6c59644e93c47edce2899eea1",
+      "correctByVariant": {
+        "neither": [
+          0,
+          4
+        ],
+        "visible": [
+          0,
+          4
+        ],
+        "memory": [
+          0,
+          4
+        ],
+        "both": [
+          3,
+          4
+        ]
+      },
+      "memorySelectionsCorrectByVariant": {
+        "neither": [
+          4,
+          4
+        ],
+        "visible": [
+          4,
+          4
+        ],
+        "memory": [
+          4,
+          4
+        ],
+        "both": [
+          4,
+          4
+        ]
+      },
+      "errors": 0,
+      "controlsUnchanged": true,
+      "rowsDifferingFromRecordedFinalist": []
+    }
+  }
+}

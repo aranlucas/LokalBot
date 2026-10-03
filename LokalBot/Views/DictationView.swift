@@ -81,7 +81,7 @@ struct DictationView: View {
                 Toggle("Use screen-derived work memory", isOn: $app.settings.dictationUseScreenMemory)
                     .disabled(app.dictation.state != .idle || app.dictation.isStarting)
                     .settingTarget("settings.dictationUseScreenMemory", selected: app.focusedSettingID)
-                SettingsHelp("Adds relevant saved facts when you ask Compose to draft or reply. Work memory must also be enabled for its saved facts.")
+                SettingsHelp("Adds relevant saved facts when you ask Compose to draft or reply. Reads what is already saved; it does not start an overnight review.")
             }
             SettingsHelp("Trying here shows the result below. It never inserts into another app or changes your clipboard; the shortcut uses the output setting above.")
         } header: {

@@ -73,6 +73,133 @@ final class CotypingStatsTests: XCTestCase {
     }
 }
 
+// MARK: - Live typing measurements
+
+final class CotypingLiveMeasureTests: XCTestCase {
+    private func field(_ text: String, processID: pid_t = 42, role: String = "AXTextArea") -> CotypingField {
+        CotypingField(appName: "Notes", bundleID: "com.apple.Notes", processID: processID, role: role,
+                      precedingText: text, trailingText: "", selectionLength: 0, caretRect: .zero,
+                      isSecure: false, caretIsExact: true)
+    }
+
+    private func insertion(_ text: String, after before: String) -> CotypingInsertionCheck {
+        CotypingInsertionCheck(field: field(before), inserted: text, surface: "other", startedUptimeNanoseconds: 0)
+    }
+
+    /// Counters saved before the measurements existed must keep their values.
+    func testOlderSavedCountersDecodeWithoutResetting() throws {
+        let saved = Data(#"{"generations":5,"errors":1,"accepts":2,"charsAccepted":20,"latenciesMs":[100,140]}"#.utf8)
+        let stats = try JSONDecoder().decode(CotypingStats.self, from: saved)
+        XCTAssertEqual(stats.generations, 5)
+        XCTAssertEqual(stats.accepts, 2)
+        XCTAssertEqual(stats.latenciesMs, [100, 140])
+        XCTAssertTrue(stats.live.isEmpty)
+        let partial = try JSONDecoder().decode(CotypingStats.self, from: Data(#"{"live":{"chat":{"shown":3}}}"#.utf8))
+        XCTAssertEqual(partial.live["chat"]?.shown, 3)
+        XCTAssertEqual(partial.live["chat"]?.accepts, 0)
+    }
+
+    func testMeasurementsAreKeptPerSurfaceAndRoundTrip() throws {
+        var stats = CotypingStats()
+        stats.recordShown(latencyMs: 180, surface: "other")
+        stats.recordShown(latencyMs: 320, surface: "other")
+        stats.recordShown(latencyMs: 90, surface: "browser")
+        stats.recordAccept(charsAccepted: 4, surface: "other")
+        stats.recordAccept(charsAccepted: 6)
+        stats.recordInsertion(.confirmed, surface: "other")
+        stats.recordInsertion(.mismatched, count: 2, surface: "browser")
+        stats.recordInsertion(.unconfirmed, surface: "browser")
+        stats.recordInsertion(.pending, surface: "browser")
+        stats.recordCorrection(surface: "other")
+        XCTAssertEqual(stats.accepts, 2, "the lifetime counter includes accepts without a surface")
+        XCTAssertEqual(stats.live["other"]?.accepts, 1)
+        XCTAssertEqual(stats.live["other"]?.medianVisibleMs, 320)
+        XCTAssertEqual(stats.live["browser"]?.insertionsMismatched, 2)
+        XCTAssertEqual(stats.live["browser"]?.insertionsChecked, 2)
+        XCTAssertEqual(stats.liveTotal.shown, 3)
+        XCTAssertEqual(stats.liveTotal.insertionsUnconfirmed, 1)
+        XCTAssertEqual(stats.liveRows.map(\.title), ["Native apps", "Browsers"])
+        XCTAssertEqual(try JSONDecoder().decode(CotypingStats.self, from: JSONEncoder().encode(stats)), stats)
+        stats.reset()
+        XCTAssertTrue(stats.live.isEmpty)
+    }
+
+    func testVisibleLatencyWindowIsCapped() {
+        var measure = CotypingLiveMeasure()
+        for ms in 1...60 { measure.recordShown(latencyMs: ms) }
+        XCTAssertEqual(measure.shown, 60)
+        XCTAssertEqual(measure.visibleLatenciesMs.count, CotypingLiveMeasure.maxLatencies)
+        XCTAssertEqual(measure.visibleLatenciesMs.first, 11)
+        XCTAssertEqual(measure.p95VisibleMs, 58)
+    }
+
+    func testReportListsCountsAndTimingsOnly() {
+        var stats = CotypingStats()
+        stats.recordGeneration(latencyMs: 49)
+        stats.recordShown(latencyMs: 180, surface: "other")
+        stats.recordAccept(charsAccepted: 3, surface: "other")
+        stats.recordInsertion(.confirmed, surface: "other")
+        stats.recordShown(latencyMs: 240, surface: "chat")
+        let report = stats.report(model: "Gemma 4 E2B Base")
+        XCTAssertTrue(report.hasPrefix("Autocomplete typing measurements (Gemma 4 E2B Base)"))
+        XCTAssertTrue(report.contains("Suggested 1 · accepted 1 · generation median 49 ms, p95 49 ms"))
+        XCTAssertTrue(report.contains("| Native apps | 1 | 180 / 180 ms | 1 | 1 / 0 / 0 | 0 |"))
+        XCTAssertTrue(report.contains("| Chat | 1 | 240 / 240 ms | 0 | 0 / 0 / 0 | 0 |"))
+        XCTAssertTrue(report.contains("| All | 2 |"))
+        XCTAssertTrue(CotypingStats().report(model: "LFM").contains("No typing measured yet"))
+    }
+
+    func testInsertionIsConfirmedWhenTheFieldShowsIt() {
+        let check = insertion(" up", after: "I wanted to follow")
+        XCTAssertEqual(check.outcome(live: field("I wanted to follow"), elapsedMilliseconds: 20), .pending)
+        XCTAssertEqual(check.outcome(live: field("I wanted to follow up"), elapsedMilliseconds: 40), .confirmed)
+        // Typing that continued, or a browser's non-breaking space, is still the same insertion.
+        XCTAssertEqual(check.outcome(live: field("I wanted to follow up on it"), elapsedMilliseconds: 900), .confirmed)
+        XCTAssertEqual(insertion(" soon ", after: "See you")
+            .outcome(live: field("See you soon\u{00A0}"), elapsedMilliseconds: 40), .confirmed)
+        // Deleting part of it at once does not mean it never arrived.
+        XCTAssertEqual(check.outcome(live: field("I wanted to follow u"), elapsedMilliseconds: 300), .confirmed)
+        // An empty field has no text before the caret to anchor on.
+        XCTAssertEqual(insertion("Hello", after: "").outcome(live: field("Hello"), elapsedMilliseconds: 40), .confirmed)
+    }
+
+    func testInsertionThatNeverShowsUpIsNotCalledSuccessful() {
+        let check = insertion(" up", after: "I wanted to follow")
+        let late = CotypingInsertionCheck.timeoutMilliseconds
+        XCTAssertEqual(check.outcome(live: field("I wanted to follow"), elapsedMilliseconds: late), .unconfirmed)
+        XCTAssertEqual(check.outcome(live: field("I wanted to followup"), elapsedMilliseconds: 40), .pending)
+        XCTAssertEqual(check.outcome(live: field("I wanted to followup"), elapsedMilliseconds: late), .mismatched)
+        XCTAssertEqual(check.outcome(live: field("I wanted to follow  up"), elapsedMilliseconds: late), .mismatched,
+                       "a doubled space is a visible difference")
+        // Another field, or none, cannot say anything about this one.
+        XCTAssertEqual(check.outcome(live: field("I wanted to follow up", processID: 7), elapsedMilliseconds: late),
+                       .unconfirmed)
+        XCTAssertEqual(check.outcome(live: nil, elapsedMilliseconds: 10), .pending)
+        XCTAssertEqual(check.outcome(live: nil, elapsedMilliseconds: late), .unconfirmed)
+    }
+
+    func testAcceptsSentBeforeTheAppPublishesAreCheckedTogether() {
+        var check = insertion(" up", after: "I wanted to follow")
+        check.extend(byInserting: " on", at: 1_000)
+        XCTAssertEqual(check.count, 2)
+        XCTAssertEqual(check.outcome(live: field("I wanted to follow up"), elapsedMilliseconds: 30), .pending)
+        XCTAssertEqual(check.outcome(live: field("I wanted to follow up on"), elapsedMilliseconds: 60), .confirmed)
+    }
+
+    func testMeasurementsFlagIsRecognizedBeforeLaunch() {
+        XCTAssertEqual(HeadlessCommand.parse(["LokalBot", "--cotyping-measurements"]), .cotypingMeasurements)
+        XCTAssertEqual(HeadlessCommand.parse(["LokalBot", "--cotyping-bench"]), .cotypingBench)
+    }
+
+    func testDeletionAndUndoAreCorrections() {
+        XCTAssertTrue(CotypingInputEvent(kind: .textMutation, characters: "").isCorrection)
+        XCTAssertTrue(CotypingInputEvent(kind: .shortcut, characters: "", isUndo: true).isCorrection)
+        XCTAssertFalse(CotypingInputEvent(kind: .textMutation, characters: "a").isCorrection)
+        XCTAssertFalse(CotypingInputEvent(kind: .shortcut, characters: "").isCorrection)
+        XCTAssertFalse(CotypingInputEvent(kind: .dismissal, characters: "").isCorrection)
+    }
+}
+
 final class CotypingStatsStoreTests: XCTestCase {
     @MainActor
     func testPersistAndReload() async {

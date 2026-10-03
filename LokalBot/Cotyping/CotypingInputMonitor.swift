@@ -15,6 +15,13 @@ enum CotypingKeyKind: Equatable, Sendable {
 struct CotypingInputEvent: Equatable, Sendable {
     var kind: CotypingKeyKind
     var characters: String
+    /// Command-Z. Reported so an accept that is undone at once can be counted.
+    var isUndo = false
+
+    /// A key that takes text back: Backspace, Forward Delete, or undo.
+    var isCorrection: Bool {
+        isUndo || (kind == .textMutation && characters.isEmpty)
+    }
 }
 
 /// Global keyboard watcher for cotyping. Ported from Cotabby's `InputMonitor`:
@@ -186,7 +193,11 @@ final class CotypingInputMonitor {
             }
         }
         if flags.contains(.maskCommand) || flags.contains(.maskControl) {
-            return CotypingInputEvent(kind: .shortcut, characters: "")
+            // Matched by the character it produces, so it holds on any layout.
+            let isUndo = flags.contains(.maskCommand) && !flags.contains(.maskControl)
+                && !flags.contains(.maskAlternate) && !flags.contains(.maskShift)
+                && Self.characters(from: event).lowercased() == "z"
+            return CotypingInputEvent(kind: .shortcut, characters: "", isUndo: isUndo)
         }
         switch Int(keyCode) {
         case 53, 36, 76: return CotypingInputEvent(kind: .dismissal, characters: "")  // Esc, Return, Keypad Enter
