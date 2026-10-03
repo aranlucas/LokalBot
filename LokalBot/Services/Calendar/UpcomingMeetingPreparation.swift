@@ -144,27 +144,49 @@ struct UpcomingMeetingEvidence: Equatable, Sendable {
             sentences.prefix(3).joined(separator: " "), maxCharacters: 520)
     }
 
+    static let promptContextCharacters = 12_000
+
+    /// Decisions, commitments, and project context are what the brief is for.
+    /// Prior meeting summaries share the room those leave: placed first and cut
+    /// at the end, six long summaries used to push them past the cap.
     var promptContext: String {
-        var sections = [
+        var head = [
             "Upcoming meeting: \(event.title)",
             "Scheduled: \(event.startDate.formatted(date: .complete, time: .shortened))–"
                 + event.endDate.formatted(date: .omitted, time: .shortened),
         ]
         if !event.participantNames.isEmpty {
-            sections.append("Participants: \(event.participantNames.joined(separator: ", "))")
+            head.append("Participants: \(event.participantNames.joined(separator: ", "))")
         }
         if let agenda {
-            sections.append("Agenda from the invitation:\n\(agenda)")
+            head.append("Agenda from the invitation:\n\(agenda)")
         }
+        let tail = outcomeSections
+        var sections = head
         if !relatedMeetings.isEmpty {
-            let rows = relatedMeetings.map { related in
-                var row = "- \(related.meeting.startedAt.formatted(date: .abbreviated, time: .omitted)) · "
+            let heading = "Prior related meetings:"
+            let fixed = (head + tail + [heading]).joined(separator: "\n\n").count + 2
+            let share = max(0, Self.promptContextCharacters - fixed) / relatedMeetings.count
+            var rows: [String] = []
+            for related in relatedMeetings {
+                let row = "- \(related.meeting.startedAt.formatted(date: .abbreviated, time: .omitted)) · "
                     + related.meeting.title
-                if !related.summary.isEmpty { row += "\n  \(related.summary)" }
-                return row
+                let summaryRoom = share - row.count - 4
+                if related.summary.isEmpty || summaryRoom < 80 {
+                    rows.append(row)
+                } else {
+                    rows.append(row + "\n  "
+                        + PromptContextSanitizer.sanitize(related.summary, maxCharacters: summaryRoom))
+                }
             }
-            sections.append("Prior related meetings:\n" + rows.joined(separator: "\n"))
+            sections.append(heading + "\n" + rows.joined(separator: "\n"))
         }
+        return PromptContextSanitizer.sanitize(
+            (sections + tail).joined(separator: "\n\n"), maxCharacters: Self.promptContextCharacters)
+    }
+
+    private var outcomeSections: [String] {
+        var sections: [String] = []
         if !decisions.isEmpty {
             sections.append("Prior decisions:\n" + decisions.map { "- \($0.text)" }.joined(separator: "\n"))
         }
@@ -186,8 +208,7 @@ struct UpcomingMeetingEvidence: Equatable, Sendable {
                 "- \($0.name): \($0.status) (last active \($0.lastActiveDay))"
             }.joined(separator: "\n"))
         }
-        return PromptContextSanitizer.sanitize(
-            sections.joined(separator: "\n\n"), maxCharacters: 12_000)
+        return sections
     }
 
     private func sentence(_ value: String) -> String {

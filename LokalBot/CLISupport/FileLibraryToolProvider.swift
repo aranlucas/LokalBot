@@ -46,7 +46,7 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                         ],
                         "since": [
                             "type": "string",
-                            "description": "Only meetings on or after this UTC day, formatted YYYY-MM-DD.",
+                            "description": "Only meetings on or after this local calendar day (YYYY-MM-DD).",
                         ],
                         "query": [
                             "type": "string",
@@ -56,7 +56,9 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                 ]),
             ToolDefinition(
                 name: "get_meeting",
-                description: "Fetch one meeting as markdown. Sections: metadata, summary, transcript.",
+                description: "Fetch one meeting as markdown. Sections: metadata, summary, transcript. "
+                    + "A long transcript comes in windows of max_characters; a cut window ends with the "
+                    + "transcript_from value that continues it.",
                 inputSchema: [
                     "type": "object",
                     "properties": [
@@ -67,6 +69,14 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                         "include": [
                             "type": "string",
                             "description": "Comma-separated subset of metadata,summary,transcript. Default: all three.",
+                        ],
+                        "transcript_from": [
+                            "type": "string",
+                            "description": "Optional HH:MM:SS; the transcript starts at the first line at or after it.",
+                        ],
+                        "max_characters": [
+                            "type": "integer",
+                            "description": "Transcript characters per call (default 40,000, maximum 200,000).",
                         ],
                     ],
                     "required": ["id"],
@@ -260,14 +270,6 @@ struct FileLibraryToolProvider: LibraryToolProvider {
         "get_screenshot_detail",
     ]
 
-    private static let dayFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter
-    }()
-
     private func listMeetings(_ arguments: JSONValue?) -> ToolResult {
         do {
             var meetings = try SessionLookup.loadAllMeetings()
@@ -276,10 +278,10 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                 meetings = meetings.filter { $0.title.lowercased().contains(needle) }
             }
             if let since = arguments?["since"]?.stringValue {
-                guard let day = Self.dayFormatter.date(from: since) else {
+                guard let day = LibraryInputPolicy.localDay(since) else {
                     return .error(
                         .invalidArguments,
-                        "\"since\" must be formatted YYYY-MM-DD, got \"\(since)\".")
+                        "\"since\" must be a real local calendar day formatted YYYY-MM-DD, got \"\(since)\".")
                 }
                 meetings = meetings.filter { $0.startedAt >= day }
             }
@@ -304,6 +306,17 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                 .invalidArguments,
                 "get_meeting requires an \"id\" string (short id, full UUID, or \"latest\").")
         }
+        var options = parseInclude(arguments?["include"]?.stringValue)
+        switch boundedInteger(arguments?["max_characters"], name: "max_characters", default: 40_000, maximum: 200_000) {
+        case .success(let value): options.transcriptCharacters = value
+        case .failure(let result): return result
+        }
+        if let raw = arguments?["transcript_from"] {
+            guard let text = raw.stringValue, let seconds = SessionFormatter.seconds(fromStamp: text) else {
+                return .error(.invalidArguments, "\"transcript_from\" must be a time such as 00:42:10.")
+            }
+            options.transcriptFrom = seconds
+        }
 
         do {
             let meetings = try SessionLookup.loadAllMeetings()
@@ -325,9 +338,7 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                     .meetingNotFound,
                     "No meeting matches \"\(id)\". Use list_meetings or search_meetings to find ids.")
             }
-            return .text(SessionFormatter.getMarkdown(
-                meeting,
-                options: parseInclude(arguments?["include"]?.stringValue)))
+            return .text(SessionFormatter.getMarkdown(meeting, options: options))
         } catch {
             return .error(
                 .meetingNotFound,
@@ -659,7 +670,7 @@ struct FileLibraryToolProvider: LibraryToolProvider {
         let day: Date
         if let raw {
             guard let value = raw.stringValue,
-                  let parsed = Self.parseLocalDay(value, calendar: calendar) else {
+                  let parsed = LibraryInputPolicy.localDay(value, calendar: calendar) else {
                 return .failure(.error(
                     .invalidArguments,
                     "\"\(name)\" must be a real local calendar day formatted YYYY-MM-DD."))
@@ -672,21 +683,6 @@ struct FileLibraryToolProvider: LibraryToolProvider {
         let end = calendar.date(byAdding: .day, value: 1, to: start)
             ?? start.addingTimeInterval(86_400)
         return .success(DateInterval(start: start, end: end))
-    }
-
-    private static func parseLocalDay(_ value: String, calendar: Calendar) -> Date? {
-        let parts = value.split(separator: "-", omittingEmptySubsequences: false)
-        guard parts.count == 3,
-              parts[0].count == 4, parts[1].count == 2, parts[2].count == 2,
-              let year = Int(parts[0]), let month = Int(parts[1]), let day = Int(parts[2]),
-              let parsed = calendar.date(from: DateComponents(
-                calendar: calendar, timeZone: calendar.timeZone,
-                year: year, month: month, day: day)) else { return nil }
-        let components = calendar.dateComponents([.year, .month, .day], from: parsed)
-        guard components.year == year, components.month == month, components.day == day else {
-            return nil
-        }
-        return parsed
     }
 
     private enum LimitResult {

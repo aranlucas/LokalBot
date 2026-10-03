@@ -565,7 +565,11 @@ final class DreamingTests: XCTestCase {
     // MARK: - Prompts / parsing
 
     func testDreamPromptRequestsHumanMorningBriefCopy() {
-        XCTAssertTrue(DreamPrompts.system.contains("Use \"yesterday\", never a raw ISO date"))
+        // Catch-up dreams cover older days, and the brief is read later, so
+        // the narrative names no relative day.
+        XCTAssertTrue(DreamPrompts.system.contains("never write \"yesterday\", \"today\", or a raw ISO date"))
+        // The pass may run on an approved remote model.
+        XCTAssertFalse(DreamPrompts.system.contains("Mac"))
         XCTAssertTrue(DreamPrompts.system.contains("never say \"the user\""))
         XCTAssertTrue(DreamPrompts.system.contains("never invent generic productivity advice"))
     }

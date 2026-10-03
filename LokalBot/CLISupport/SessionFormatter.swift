@@ -13,6 +13,11 @@ enum SessionFormatter {
         var includeSummary: Bool
         var includeTranscript: Bool
         var includeMetadata: Bool
+        /// Clients with an output limit (MCP) read a long transcript in
+        /// windows: entries from `transcriptFrom` on, up to this many
+        /// characters. Nil returns the whole transcript, as the CLI does.
+        var transcriptCharacters: Int?
+        var transcriptFrom: TimeInterval?
 
         static let all = GetOptions(includeSummary: true,
                                     includeTranscript: true,
@@ -87,12 +92,53 @@ enum SessionFormatter {
             lines.append(summary.trimmingCharacters(in: .whitespacesAndNewlines))
             lines.append("")
         }
-        if options.includeTranscript, let transcript = SessionLookup.transcriptMarkdown(for: meeting) {
+        if options.includeTranscript, let limit = options.transcriptCharacters,
+           let transcript = SessionLookup.transcript(for: meeting) {
+            let window = transcriptWindow(transcript, from: options.transcriptFrom ?? 0, maxCharacters: limit)
+            lines.append("## Transcript")
+            lines.append(window.text)
+            if let next = window.nextFrom {
+                lines.append("")
+                lines.append("[Transcript continues. Call get_meeting with transcript_from \"\(next)\" to read on.]")
+            }
+            lines.append("")
+        } else if options.includeTranscript, let transcript = SessionLookup.transcriptMarkdown(for: meeting) {
             lines.append("## Transcript")
             lines.append(transcript.trimmingCharacters(in: .whitespacesAndNewlines))
             lines.append("")
         }
         return lines.joined(separator: "\n")
+    }
+
+    /// Whole entries from `start` on, up to `maxCharacters`; `nextFrom` is the
+    /// stamp of the first entry left out. The first entry is always kept, so a
+    /// caller paging through a transcript always makes progress.
+    static func transcriptWindow(_ transcript: Transcript, from start: TimeInterval,
+                                 maxCharacters: Int) -> (text: String, nextFrom: String?) {
+        let roster = transcript.speakerRoster
+        var kept: [String] = []
+        var used = 0
+        for segment in transcript.segments where segment.start >= start {
+            guard let line = transcript.markdownLine(segment, roster: roster) else { continue }
+            if !kept.isEmpty, used + line.count + 2 > maxCharacters {
+                return (kept.joined(separator: "\n\n"), Transcript.stamp(segment.start))
+            }
+            kept.append(line)
+            used += line.count + 2
+        }
+        return (kept.joined(separator: "\n\n"), nil)
+    }
+
+    /// Seconds for "HH:MM:SS", "MM:SS", or a plain number of seconds.
+    static func seconds(fromStamp stamp: String) -> TimeInterval? {
+        let parts = stamp.trimmingCharacters(in: .whitespaces).split(separator: ":", omittingEmptySubsequences: false)
+        guard (1...3).contains(parts.count) else { return nil }
+        var total: TimeInterval = 0
+        for part in parts {
+            guard let value = Double(part), value >= 0 else { return nil }
+            total = total * 60 + value
+        }
+        return total
     }
 
     // MARK: - search

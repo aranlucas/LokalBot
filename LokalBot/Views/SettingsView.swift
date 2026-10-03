@@ -475,10 +475,13 @@ struct SettingsView: View {
                                       help: "Only record when everyone has been informed and any consent the meeting or location requires is in place.")
                     }
                     .settingTarget("settings.autoRecordMode", selected: app.focusedSettingID)
-                    LabeledContent("Detected apps") {
+                    LabeledContent {
                         Text(Set(MeetingDetector.knownApps.values).sorted().joined(separator: ", ")
-                             + " + browser meetings (Meet, Jitsi, Whereby)")
+                             + ", and Google Meet in a browser")
                             .settingsSecondary()
+                    } label: {
+                        SettingsLabel("Detected apps",
+                                      help: "Google Meet is detected only with its interface in English. Other browser calls, such as Jitsi, Whereby, or Teams on the web, are not detected, and recording one yourself saves only your microphone.")
                     }
                     LabeledContent("Wait before stopping") {
                         Stepper(value: $app.settings.stopDebounceSeconds,
@@ -722,7 +725,7 @@ struct SettingsView: View {
                             }
                         })) {
                         SettingsLabel("Export a daily memory note",
-                                      help: "Writes one unencrypted Markdown file per day with the digest, meeting links, app time, and saved moments. Existing non-LokalBot content is never overwritten.")
+                                      help: "Writes one unencrypted Markdown file per day with the digest, meeting links, app time, and saved moments. A day missed while your Mac was asleep is written later. Existing non-LokalBot content is never overwritten.")
                     }
                     .settingTarget("settings.dailyMemoryExportEnabled", selected: app.focusedSettingID)
                     if app.settings.dailyMemoryExportEnabled {
@@ -754,7 +757,8 @@ struct SettingsView: View {
     private var digestInstructionsField: some View {
         VStack(alignment: .leading, spacing: 7) {
             SettingsLabel("Digest instructions (optional)",
-                          help: "Shapes both scheduled and manual digests.")
+                          help: "Shapes both scheduled and manual digests. The first "
+                            + "\(PromptTemplates.dayDigestCustomPromptMaxCharacters) characters are used.")
             ZStack(alignment: .topLeading) {
                 TextEditor(text: $app.settings.dayDigestCustomPrompt)
                     .font(AppFont.scaled(.body))
@@ -783,6 +787,20 @@ struct SettingsView: View {
             .overlay {
                 RoundedRectangle(cornerRadius: Brand.Radius.control, style: .continuous)
                     .stroke(Color(NSColor.separatorColor), lineWidth: 1.2)
+            }
+            // The digest uses only the first characters of the cleaned-up
+            // text; say so instead of dropping the rest silently.
+            let used = PromptContextSanitizer.sanitize(app.settings.dayDigestCustomPrompt).count
+            let limit = PromptTemplates.dayDigestCustomPromptMaxCharacters
+            if used > limit {
+                Text("\(used) of \(limit) characters. Only the first \(limit) are used; shorten the rest.")
+                    .workspaceTextRole(.warning)
+                    .accessibilityIdentifier("settings.digestInstructions.count")
+            } else if used > 0 {
+                Text("\(used) of \(limit) characters")
+                    .font(AppFont.scaled(.caption))
+                    .settingsSecondary()
+                    .accessibilityIdentifier("settings.digestInstructions.count")
             }
         }
     }

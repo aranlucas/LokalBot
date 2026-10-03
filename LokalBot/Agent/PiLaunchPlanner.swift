@@ -68,6 +68,8 @@ enum PiLaunchPlanner {
         } ?? "null"
         // A credential-free endpoint must not inherit a key for another
         // service from the parent process (including injected test sessions).
+        // The extension takes the key at startup and removes it from the
+        // environment that the agent's shell commands inherit.
         environment["LOKALBOT_LLM_API_KEY"] = endpoint.apiKey
         if let agentAccessCapability {
             environment[AgentAccessGate.capabilityEnvironmentKey] = agentAccessCapability

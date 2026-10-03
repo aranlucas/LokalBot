@@ -38,6 +38,7 @@ private struct AskContent: View {
         nonmutating set { app.recallState.facet = newValue }
     }
     @State private var hits: [SearchIndex.Hit] = []
+    @State private var resultsTruncated = false
     @State private var ocrHits: [ActivityStore.OCRHit] = []
     @State private var screenGroups: [ScreenRecallGroup] = []
     private var selectedScreenApp: String? {
@@ -286,6 +287,12 @@ private struct AskContent: View {
 
     private var groupedMeetings: [MeetingRecallGroup] { RecallSearch.groups(hits) }
     private var resultCount: Int { groupedMeetings.count + screenGroups.count }
+    /// A search that found more than the list holds says so instead of
+    /// presenting the listed count as the total.
+    private var resultCountLabel: String {
+        let count = CountLabel.format(resultCount, "result")
+        return resultsTruncated ? "More than " + count : count
+    }
 
     /// Return: keywords open the highlighted result; a question asks through
     /// `askAboutResults`, the same scoped path as Command-Return.
@@ -714,7 +721,7 @@ private struct AskContent: View {
         ScrollViewReader { proxy in
             List {
                 if isSearching { LoadingStateLabel("Searching local sources…") }
-                Text(CountLabel.format(resultCount, "result") + (returnAction == .ask
+                Text(resultCountLabel + (returnAction == .ask
                      ? " · Return asks · ↓ to pick a result"
                      : " · Return opens · ⌘Return asks"))
                     .workspaceTextRole(.metadata)
@@ -811,7 +818,7 @@ private struct AskContent: View {
         let q = query, request = app.recallState, dateScope = app.askDateScope
         searchedQuery = q
         // Never leave rows from a previous query available to Return.
-        hits = []; ocrHits = []; screenGroups = []
+        hits = []; ocrHits = []; screenGroups = []; resultsTruncated = false
         isSearching = !q.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         searchTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(160))
@@ -835,6 +842,7 @@ private struct AskContent: View {
 
     private func publishSearch(_ result: RecallSearch.Result) {
         hits = result.meetings.flatMap(\.matches)
+        resultsTruncated = result.isTruncated
         screenGroups = result.screens
         ocrHits = result.screens.flatMap(\.matches)
         screenApps = Array(Set(ocrHits.map(\.app) + [selectedScreenApp].compactMap { $0 })).sorted()

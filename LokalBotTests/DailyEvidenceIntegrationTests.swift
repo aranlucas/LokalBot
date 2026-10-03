@@ -177,9 +177,10 @@ final class DailyEvidenceIntegrationTests: XCTestCase {
         defer { exports.stop() }
         let destination = root.appendingPathComponent("exports")
         let output = destination.appendingPathComponent("\(DreamDay.key(for: day, calendar: calendar)).md")
-        exports.configure(.init(enabled: true, hour: 0, destinationID: destination.path)) { date in
+        exports.configure(.init(enabled: true, hour: 0, destinationID: destination.path)) { date, pass in
             let service = DailyMemoryExportService(source: FileDailyMemoryExportSource(root: root), calendar: calendar)
-            _ = try service.export(day: date, configuration: .init(destinationDirectory: destination, format: .markdown))
+            _ = try service.export(day: date, configuration: .init(destinationDirectory: destination, format: .markdown),
+                                   pass: pass)
         } onError: { XCTFail($0) }
         await waitForText("Original digest", at: output)
 
@@ -211,7 +212,7 @@ final class DailyEvidenceIntegrationTests: XCTestCase {
         XCTAssertTrue(index.correctAction(actionID: action.id, meetingID: meeting.id,
                                           text: "Send the signed final proposal", owner: nil, due: nil))
         await fulfillment(of: [generationStarted], timeout: 3)
-        await waitForText("No day digest was generated", at: output)
+        await waitForText("The day's digest is out of date", at: output)
         await allowGeneration.release()
         await waitForText("Send the signed final proposal", at: output)
         XCTAssertTrue(DayDigestGenerationMetadataStore.isCurrent(

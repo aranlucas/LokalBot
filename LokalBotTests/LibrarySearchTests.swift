@@ -32,6 +32,17 @@ final class LibrarySearchTests: XCTestCase {
         super.tearDown()
     }
 
+    func testLocalDayIsTheUsersCalendarDayNotUTC() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Los_Angeles"))
+        let day = try XCTUnwrap(LibraryInputPolicy.localDay("2026-10-02", calendar: calendar))
+
+        XCTAssertEqual(day, try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-10-02T07:00:00Z")))
+        XCTAssertNil(LibraryInputPolicy.localDay("2026-02-30", calendar: calendar))
+        XCTAssertNil(LibraryInputPolicy.localDay("2026-10-2", calendar: calendar))
+        XCTAssertNil(LibraryInputPolicy.localDay("October 2", calendar: calendar))
+    }
+
     func testFindsTitleSummaryAndTranscriptKinds() throws {
         let redis = try LibrarySearch.hits(query: "redis")
         XCTAssertEqual(Set(redis.map(\.match_kind)), ["summary", "transcript"])

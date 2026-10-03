@@ -13,9 +13,23 @@ import { homedir } from "node:os";
 
 const MUTATING_TOOLS = new Set(["write", "edit", "bash"]);
 const MAX_APPROVAL_TEXT = 64 * 1024;
+const API_KEY = Symbol.for("lokalbot.llmApiKey");
+
+/// The provider key stays inside this process. pi gives every shell command
+/// a copy of its environment, so a command or a script it starts could
+/// otherwise read the key. pi evaluates this module again for a new session,
+/// so the key is kept on globalThis rather than read from the environment.
+export function takeProviderAPIKey(): string {
+  const store = globalThis as unknown as Record<symbol, string | undefined>;
+  store[API_KEY] ??= process.env.LOKALBOT_LLM_API_KEY;
+  delete process.env.LOKALBOT_LLM_API_KEY;
+  // llama.cpp ignores the key; Ollama/LM Studio may want one.
+  return store[API_KEY] ?? "lokalbot";
+}
 
 export default function lokalbotExtension(pi: ExtensionAPI) {
   const protectedRoots = privateRoots();
+  const apiKey = takeProviderAPIKey();
   const baseUrl = process.env.LOKALBOT_LLM_BASE_URL;
   const model = process.env.LOKALBOT_LLM_MODEL;
   if (!baseUrl || !model) {
@@ -49,8 +63,7 @@ export default function lokalbotExtension(pi: ExtensionAPI) {
     streamSimple: (selectedModel, context, options) => completions.streamSimple(
       selectedModel, context, { ...options, fetch: inferenceFetch },
     ),
-    // llama.cpp ignores the key; Ollama/LM Studio may want one.
-    apiKey: process.env.LOKALBOT_LLM_API_KEY ?? "lokalbot",
+    apiKey,
     models: [
       {
         id: model,

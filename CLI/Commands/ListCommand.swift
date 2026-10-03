@@ -12,10 +12,10 @@ struct ListCommand: AsyncParsableCommand {
             """
     )
 
-    @Option(name: .long, help: "Only include meetings on or after this date (YYYY-MM-DD).")
+    @Option(name: .long, help: "Only include meetings on or after this local day (YYYY-MM-DD).")
     var since: String?
 
-    @Option(name: .long, help: "Only include meetings on or before this date (YYYY-MM-DD).")
+    @Option(name: .long, help: "Only include meetings on or before this local day (YYYY-MM-DD).")
     var until: String?
 
     @Option(name: .long, help: "Substring match against the title (case-insensitive).")
@@ -41,7 +41,8 @@ struct ListCommand: AsyncParsableCommand {
             meetings = meetings.filter { $0.startedAt >= date }
         }
         if let date = untilDate {
-            let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: date) ?? date
+            let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: date)
+                ?? date.addingTimeInterval(86_400)
             meetings = meetings.filter { $0.startedAt < endOfDay }
         }
         if let query {
@@ -56,15 +57,9 @@ struct ListCommand: AsyncParsableCommand {
             : SessionFormatter.listJSON(meetings))
     }
 
-    private static func parseDate(_ s: String) -> Date? {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withFullDate]
-        return f.date(from: s)
-    }
-
     private static func requireDate(_ value: String, option: String) throws -> Date {
-        guard let date = parseDate(value) else {
-            throw ValidationError("\(option) must use YYYY-MM-DD, got '\(value)'.")
+        guard let date = LibraryInputPolicy.localDay(value) else {
+            throw ValidationError("\(option) must be a real local day formatted YYYY-MM-DD, got '\(value)'.")
         }
         return date
     }

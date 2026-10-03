@@ -7,6 +7,49 @@ import XCTest
 /// the /v1/models response parsing that health checks depend on.
 final class LlamaServerTests: XCTestCase {
 
+    func testOutputTailSaysWhyAStartFailed() {
+        let tail = LlamaServerOutputTail()
+        // Chunks split lines, as pipe reads do.
+        // The shape of llama-server's real output for a corrupt model file.
+        tail.append(Data("0.00.077.101 I llama_model_loader: loaded meta data\n0.00.077.284 E gguf_init_from_reader: failed ".utf8))
+        tail.append(Data("to read header\n0.00.077.456 E llama_model_load_from_file_impl: failed to load model\n".utf8))
+        tail.append(Data("0.00.077.732 E srv  llama_server: exiting due to model loading error".utf8))
+        tail.finish()
+
+        XCTAssertTrue(tail.isFinished)
+        XCTAssertEqual(tail.lines.count, 4)
+        XCTAssertEqual(tail.lines.last, "srv  llama_server: exiting due to model loading error")
+        XCTAssertEqual(tail.reason, "gguf_init_from_reader: failed to read header")
+    }
+
+    /// Once the server answers requests, its errors can quote request text.
+    func testOutputTailKeepsOnlyCrashLinesOnceServing() {
+        let tail = LlamaServerOutputTail()
+        tail.serverIsReady()
+        tail.append(Data("""
+            srv  log_server_r: request: POST /v1/chat/completions 127.0.0.1 200
+            srv  send_error: error: [json.exception.parse_error.101] parse error; last read: '"Notes from the board meeting abort
+            ggml_metal_graph_compute: command buffer 0 failed with status 5
+            error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)
+
+            """.utf8))
+
+        XCTAssertEqual(tail.lines, [
+            "ggml_metal_graph_compute: command buffer 0 failed with status 5",
+            "error: Insufficient Memory (00000008:kIOGPUCommandBufferCallbackErrorOutOfMemory)",
+        ])
+    }
+
+    func testOutputTailIsBounded() {
+        let tail = LlamaServerOutputTail()
+        tail.append(Data((1...20).map { "line \($0)\n" }.joined().utf8))
+        tail.append(Data((String(repeating: "x", count: 1_000) + "\n").utf8))
+
+        XCTAssertEqual(tail.lines.count, LlamaServerOutputTail.maximumLines)
+        XCTAssertEqual(tail.lines.first, "line 10")
+        XCTAssertEqual(tail.lines.last?.count, LlamaServerOutputTail.maximumLineCharacters)
+    }
+
     /// The privacy story requires every built-in server to be reachable only
     /// via loopback. A non-loopback base URL here would be a data-exfiltration
     /// bug, not a configuration choice.

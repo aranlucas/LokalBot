@@ -240,7 +240,7 @@ enum DreamCompiler {
                                reason: DreamFallbackReason, note: String) -> DreamReport {
         let meetingCount = evidence.meetings.count
         let meetingPhrase = meetingCount == 1 ? "1 recorded meeting" : "\(meetingCount) recorded meetings"
-        let narrative = note + " Yesterday: \(meetingPhrase), "
+        let narrative = note + " The day had \(meetingPhrase), "
             + "\(duration(evidence.stats.trackedSeconds)) tracked across "
             + "\(evidence.stats.appCount) apps."
 

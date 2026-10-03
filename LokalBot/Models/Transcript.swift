@@ -212,12 +212,15 @@ struct Transcript: Codable {
     /// Renders `transcript.md` — "[00:14:32] **Me:** …"
     var markdown: String {
         let roster = speakerRoster
-        return segments.compactMap { seg in
-            let text = seg.displayText
-            guard !text.isEmpty else { return nil }
-            let name = roster[Self.canonicalSpeakerKey(seg.speaker)]?.name ?? Self.defaultSpeakerName(for: seg.speaker)
-            return "**[\(Self.stamp(seg.start))] \(name):** \(text)"
-        }.joined(separator: "\n\n")
+        return segments.compactMap { markdownLine($0, roster: roster) }.joined(separator: "\n\n")
+    }
+
+    /// One `markdown` entry; nil for a segment with no text.
+    func markdownLine(_ segment: Segment, roster: [String: SpeakerDescriptor]) -> String? {
+        let text = segment.displayText
+        guard !text.isEmpty else { return nil }
+        let name = roster[Self.canonicalSpeakerKey(segment.speaker)]?.name ?? Self.defaultSpeakerName(for: segment.speaker)
+        return "**[\(Self.stamp(segment.start))] \(name):** \(text)"
     }
 
     /// Stable source IDs used by outcome extraction and evidence links. The ID

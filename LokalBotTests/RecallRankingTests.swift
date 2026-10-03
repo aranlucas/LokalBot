@@ -11,6 +11,38 @@ final class RecallRankingTests: XCTestCase {
         XCTAssertFalse(ranked.contains { $0.id == lexical.last?.meetingID })
     }
 
+    func testMeetingsListFilterFindsEveryMatchingMeeting() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("recall-filter-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: root) }
+        try MeetingFixture.write((0..<45).map { index in
+            .init(title: "Sync \(index)", startedAt: Date(timeIntervalSince1970: 1_780_000_000 + Double(index) * 3_600),
+                  transcriptLines: (0..<60).map { "Rollout step \($0) for team \(index)." })
+        }, under: root)
+        let storage = StorageManager(rootURL: root)
+        let meetings = storage.loadMeetings()
+        let index = SearchIndex(databaseURL: root.appendingPathComponent("lokalbotv3.sqlite"))
+        index.reindexAll(meetings, storage: storage)
+
+        XCTAssertEqual(index.matchingMeetingIDs("rollout"), Set(meetings.map(\.id)))
+        XCTAssertLessThan(RecallSearch.groups(index.search("rollout", limit: 2_000), limit: .max).count, meetings.count,
+                          "ranked search reaches only the meetings in its first 2,000 rows")
+    }
+
+    func testResultSaysWhenItListsFewerSourcesThanMatched() {
+        let groups = (0...RecallSearch.displayLimit).map { _ in
+            MeetingRecallGroup(id: UUID(), matches: [hit(UUID(), "Match")])
+        }
+        var cut = RecallSearch.Result()
+        cut.setMeetings(groups)
+        XCTAssertEqual(cut.meetings.count, RecallSearch.displayLimit)
+        XCTAssertTrue(cut.isTruncated)
+
+        var whole = RecallSearch.Result()
+        whole.setMeetings(Array(groups.prefix(RecallSearch.displayLimit)))
+        whole.setScreens([])
+        XCTAssertFalse(whole.isTruncated)
+    }
+
     func testAgreementOutranksOneSidedMatchesAndKeepsSemanticOnlySources() {
         let first = UUID(), shared = UUID(), semanticOnly = UUID()
         let ranked = RecallSearch.fusedMeetings(

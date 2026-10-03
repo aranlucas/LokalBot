@@ -154,6 +154,20 @@ for (const status of [307, 308]) {
   });
 }
 
+test("the provider key never reaches the environment shell commands inherit", async () => {
+  await withExtensionFixture(async ({ provider }) => {
+    expect(provider.apiKey).toBe("synthetic-token");
+    expect(process.env.LOKALBOT_LLM_API_KEY).toBeUndefined();
+    // pi's bash tool spawns each command with a copy of process.env.
+    const shell = Bun.spawnSync(["/usr/bin/env"], { env: { ...process.env } });
+    expect(shell.stdout.toString()).not.toContain("synthetic-token");
+    // pi evaluates the extension again for a new session.
+    let renewed: any;
+    lokalbotExtension({ registerProvider(_name: string, config: any) { renewed = config; }, on() {} } as any);
+    expect(renewed.apiKey).toBe("synthetic-token");
+  });
+});
+
 test("default workspace reads do not implicitly authorize the private library", async () => {
   await withExtensionFixture(async ({ workspace, library, call, approvals }) => {
     await writeFile(join(workspace, "draft.txt"), "synthetic draft");

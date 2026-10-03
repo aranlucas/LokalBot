@@ -313,6 +313,42 @@ final class UpcomingMeetingPreparationTests: XCTestCase {
         XCTAssertLessThanOrEqual(brief.count, 700)
     }
 
+    func testLongPriorSummariesLeaveRoomForDecisionsCommitmentsAndProjects() {
+        var priors: [Meeting] = []
+        for index in 0..<6 {
+            let start = now.addingTimeInterval(-Double(index + 1) * 86_400)
+            priors.append(Meeting(id: UUID(), title: "Atlas sync \(index)", appName: "Zoom", startedAt: start,
+                                  endedAt: start.addingTimeInterval(1_800), relativePath: "meetings/atlas-\(index)"))
+        }
+        let summary = String(String(repeating: "The staged rollout stays in review this week. ", count: 40).prefix(1_600))
+        let detail = " The owners confirmed the region list, the rollback plan, and the dashboard thresholds."
+        var decisions: [UpcomingMeetingReference] = []
+        var commitments: [UpcomingMeetingReference] = []
+        for index in 0..<5 {
+            decisions.append(.init(kind: .decision, text: "Decision \(index): keep region \(index) staged." + detail,
+                                   meeting: priors[0], index: index))
+            commitments.append(.init(kind: .commitment, text: "Commitment \(index): send the region \(index) report." + detail,
+                                     meeting: priors[1], index: index, owner: "Me", due: "Friday"))
+        }
+        var evidence = UpcomingMeetingEvidence(
+            event: event(id: "next", title: "Atlas review", startsIn: 600, duration: 1_800),
+            relatedMeetings: priors.map { .init(meeting: $0, summary: summary, participantMatches: 1, relevanceScore: 100) },
+            decisions: decisions,
+            commitments: commitments,
+            projects: (0..<3).map { .init(name: "Project \($0)", status: "Rollout in review." + detail, lastActiveDay: "2033-05-17") })
+        evidence.agenda = String(repeating: "Review the rollout. ", count: 60)
+
+        let context = evidence.promptContext
+
+        XCTAssertLessThanOrEqual(context.count, UpcomingMeetingEvidence.promptContextCharacters)
+        for index in 0..<5 {
+            XCTAssertTrue(context.contains("Decision \(index):"), "decision \(index) was cut")
+            XCTAssertTrue(context.contains("Commitment \(index):"), "commitment \(index) was cut")
+        }
+        XCTAssertTrue(context.contains("Project 2:"), "project context was cut")
+        for prior in priors { XCTAssertTrue(context.contains(prior.title), prior.title) }
+    }
+
     func testRemoteMainLLMIsNeverEligibleForPreMeetingGeneration() {
         var settings = AppSettings()
         settings.summarizerBackend = .openAICompatible

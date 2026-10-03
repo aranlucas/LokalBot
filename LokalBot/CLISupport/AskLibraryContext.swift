@@ -38,7 +38,13 @@ enum AskLibraryContext {
         return LibrarySearch.searchTerms(LibrarySearch.folded(question)).filter { !stopwords.contains($0) }
     }
 
-    static func build(question: String, meetings: [Meeting]) -> ContextBundle {
+    /// Meeting dates are the user's local days, like "today" in `messages`.
+    static func build(question: String, meetings: [Meeting], timeZone: TimeZone = .current) -> ContextBundle {
+        let dayFormatter = DateFormatter()
+        dayFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dayFormatter.timeZone = timeZone
+        dayFormatter.dateFormat = "yyyy-MM-dd"
+        let dayString = dayFormatter.string(from:)
         let byShortID = Dictionary(
             meetings.map { (SessionLookup.shortID($0.id), $0) },
             uniquingKeysWith: { first, _ in first })
@@ -153,25 +159,13 @@ enum AskLibraryContext {
             [
                 "role": "system",
                 "content": "You are LokalBot's meeting-library assistant. Answer the user's question using ONLY the meeting context provided. Cite the meetings you used by title and date. If the context does not contain the answer, reply exactly: I couldn't find that in your meetings. "
-                    + "Today is \(today.string(from: now)) (\(timeZone.identifier)); meeting dates in the context are UTC days.",
+                    + "Today is \(today.string(from: now)) (\(timeZone.identifier)); meeting dates in the context are days in that time zone.",
             ],
             [
                 "role": "user",
                 "content": "Meeting context:\n\n\(contextText)\n\nQuestion: \(question)",
             ],
         ]
-    }
-
-    private static let dayFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter
-    }()
-
-    private static func dayString(_ date: Date) -> String {
-        dayFormatter.string(from: date)
     }
 
     private struct ContextWriter {

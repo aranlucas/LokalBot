@@ -5,6 +5,23 @@ enum LibraryInputPolicy {
     static let maximumSearchHits = 500
     static let maximumQueryCharacters = 4_096
     static let maximumQuestionCharacters = 16_384
+
+    /// Start of a real local calendar day written YYYY-MM-DD. The CLI, MCP,
+    /// and the app all mean the user's day, not UTC's.
+    static func localDay(_ value: String, calendar: Calendar = .current) -> Date? {
+        let parts = value.split(separator: "-", omittingEmptySubsequences: false)
+        guard parts.count == 3,
+              parts[0].count == 4, parts[1].count == 2, parts[2].count == 2,
+              let year = Int(parts[0]), let month = Int(parts[1]), let day = Int(parts[2]),
+              let parsed = calendar.date(from: DateComponents(
+                calendar: calendar, timeZone: calendar.timeZone,
+                year: year, month: month, day: day)) else { return nil }
+        let components = calendar.dateComponents([.year, .month, .day], from: parsed)
+        guard components.year == year, components.month == month, components.day == day else {
+            return nil
+        }
+        return calendar.startOfDay(for: parsed)
+    }
 }
 
 /// Shared word search over on-disk meeting artifacts, so the CLI and MCP

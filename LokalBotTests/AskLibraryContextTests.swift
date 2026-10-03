@@ -3,6 +3,7 @@ import XCTest
 
 final class AskLibraryContextTests: XCTestCase {
     private var root: URL!
+    private let utc = TimeZone(identifier: "UTC")!
 
     override func setUpWithError() throws {
         root = FileManager.default.temporaryDirectory
@@ -49,7 +50,7 @@ final class AskLibraryContextTests: XCTestCase {
         let meetings = try SessionLookup.loadAllMeetings()
         let bundle = AskLibraryContext.build(
             question: "What did we decide about caching?",
-            meetings: meetings)
+            meetings: meetings, timeZone: utc)
         XCTAssertTrue(bundle.contextText.contains("## Snippets"))
         XCTAssertTrue(bundle.contextText.contains("Redis"))
         XCTAssertTrue(bundle.contextText.contains("- [transcript @00:00:00] Cache planning (2026-05-28):"))
@@ -59,7 +60,7 @@ final class AskLibraryContextTests: XCTestCase {
         let meetings = try SessionLookup.loadAllMeetings()
         let bundle = AskLibraryContext.build(
             question: "Summarize the Cache planning meeting",
-            meetings: meetings)
+            meetings: meetings, timeZone: utc)
         XCTAssertTrue(bundle.contextText.contains(
             "## Cache planning — 2026-05-28 — full summary"))
         XCTAssertTrue(bundle.contextText.contains("We chose Redis for the caching layer."))
@@ -97,7 +98,7 @@ final class AskLibraryContextTests: XCTestCase {
         let meetings = try SessionLookup.loadAllMeetings()
         let bundle = AskLibraryContext.build(
             question: "redis caching",
-            meetings: meetings)
+            meetings: meetings, timeZone: utc)
         let summaryLines = bundle.contextText.split(separator: "\n")
             .filter { $0.hasPrefix("- [summary] Cache planning (2026-05-28):") }
         XCTAssertEqual(summaryLines.count, 1)
@@ -177,6 +178,21 @@ final class AskLibraryContextTests: XCTestCase {
         XCTAssertEqual(
             bundle,
             AskLibraryContext.ContextBundle(contextText: "", citations: []))
+    }
+
+    func testMeetingDatesAreTheUsersLocalDays() throws {
+        let meetings = try SessionLookup.loadAllMeetings()
+        // Cache planning starts 2026-05-28 20:26 UTC: already May 29 in Tokyo.
+        let tokyo = try XCTUnwrap(TimeZone(identifier: "Asia/Tokyo"))
+        func date(in zone: TimeZone) -> String? {
+            AskLibraryContext.build(question: "Summarize the Cache planning meeting", meetings: meetings, timeZone: zone)
+                .citations.first { $0.title == "Cache planning" }?.date
+        }
+
+        XCTAssertEqual(date(in: tokyo), "2026-05-29")
+        XCTAssertEqual(date(in: utc), "2026-05-28")
+        let system = AskLibraryContext.messages(question: "Q?", contextText: "CTX", timeZone: tokyo)[0]["content"]!
+        XCTAssertTrue(system.contains("(Asia/Tokyo); meeting dates in the context are days in that time zone."))
     }
 
     func testMessagesShape() {

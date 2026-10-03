@@ -208,6 +208,47 @@ final class DailyMemoryExportServiceTests: XCTestCase {
         XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), original)
     }
 
+    func testCatchUpWritesAMissedDayOnceAndLeavesExistingFilesAlone() throws {
+        let configuration = DailyMemoryExportConfiguration(destinationDirectory: root, format: .markdown)
+        let url = try writtenURL(try service.export(day: day, configuration: configuration, pass: .catchUp))
+        let first = try String(contentsOf: url, encoding: .utf8)
+
+        source.value.digest = "A later digest."
+        XCTAssertEqual(try service.export(day: day, configuration: configuration, pass: .catchUp), .skipped)
+        XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), first)
+
+        let userDay = try XCTUnwrap(calendar.date(byAdding: .day, value: -1, to: day))
+        let userNote = root.appendingPathComponent("2026-07-13.md")
+        try "# My own note\n".write(to: userNote, atomically: true, encoding: .utf8)
+        XCTAssertEqual(try service.export(day: userDay, configuration: configuration, pass: .catchUp), .skipped)
+        XCTAssertEqual(try String(contentsOf: userNote, encoding: .utf8), "# My own note\n")
+    }
+
+    func testCatchUpSkipsADayWithNothingRecorded() throws {
+        source.value = DailyMemoryExportSnapshot(
+            day: day, digest: nil, meetings: [], savedMoments: [],
+            stats: ScreenMemoryDaySummary(trackedSeconds: 0, appCount: 0, activityBlockCount: 0,
+                                          screenshotCount: 0, savedMomentCount: 0),
+            appUsage: [])
+        let configuration = DailyMemoryExportConfiguration(destinationDirectory: root, format: .markdown)
+
+        XCTAssertEqual(try service.export(day: day, configuration: configuration, pass: .catchUp), .skipped)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: root.path))
+        // Today's note is still written when nothing happened.
+        _ = try writtenURL(try service.export(day: day, configuration: configuration))
+    }
+
+    func testOutOfDateDigestIsNamedInsteadOfShown() {
+        var snapshot = sampleSnapshot()
+        snapshot.digest = nil
+        snapshot.digestIsOutOfDate = true
+
+        let text = service.render(snapshot, format: .markdown)
+
+        XCTAssertTrue(text.contains("The day's digest is out of date."))
+        XCTAssertFalse(text.contains("No day digest was generated."))
+    }
+
     func testCancellationBeforeMutationCreatesNoExportFiles() async throws {
         let directory = root.appendingPathComponent("cancelled", isDirectory: true)
         let cancellingService = DailyMemoryExportService(
