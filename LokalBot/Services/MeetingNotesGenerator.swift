@@ -326,9 +326,25 @@ enum MeetingNotesGenerator {
             actions: value.outcomes.actionItems.count, rejections: reasons))
     }
 
+    /// Each part writes up to three TL;DR takeaways for its stretch of the
+    /// meeting. Concatenated, a long meeting's first bullets, which the recap
+    /// card, briefs, and digest read, came from its first parts only. Taking
+    /// every part's first takeaway, then every part's second, and so on keeps
+    /// every takeaway while the first bullets span the whole meeting.
+    static func interleavingTLDR(_ parts: [[SummaryClaimEvidence.Claim]]) -> [SummaryClaimEvidence.Claim] {
+        let takeaways = parts.map { part in part.filter { $0.section == "TL;DR" } }
+        var ordered: [SummaryClaimEvidence.Claim] = []
+        let rounds = takeaways.map(\.count).max() ?? 0
+        for round in 0..<rounds {
+            for part in takeaways where round < part.count { ordered.append(part[round]) }
+        }
+        for part in parts { ordered += part.filter { $0.section != "TL;DR" } }
+        return ordered
+    }
+
     private static func merged(_ checkpoint: Checkpoint, transcript: Transcript, template: NoteTemplate) -> Result {
         let parts = checkpoint.parts.keys.sorted { (Int($0) ?? 0) < (Int($1) ?? 0) }.compactMap { checkpoint.parts[$0] }
-        let claims = distinctClaims(parts.flatMap(\.claims))
+        let claims = distinctClaims(interleavingTLDR(parts.map(\.claims)))
         var outcomes = MeetingOutcomesGenerator.merge(parts.map(\.outcomes)).prioritizingActionItems()
         outcomes.transcriptRevision = transcript.evidenceRevision
         var renderedClaims = claims

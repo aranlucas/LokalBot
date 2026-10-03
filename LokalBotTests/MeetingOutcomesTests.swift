@@ -201,7 +201,7 @@ final class MeetingOutcomesTests: XCTestCase {
         XCTAssertEqual(MeetingOutcomes.load(from: folder), outcomes)
     }
 
-    func testActionPrioritizationKeepsMineAndSelectsOnlyTopOthersWithinTen() {
+    func testActionPrioritizationKeepsMineFirstAndRanksEveryOtherAction() {
         let mine = (1...6).map {
             MeetingOutcomes.ActionItem(text: "My action \($0)", owner: "Me", importance: 1)
         }
@@ -214,17 +214,17 @@ final class MeetingOutcomesTests: XCTestCase {
         let prioritized = MeetingOutcomes(actionItems: mine + others)
             .prioritizingActionItems()
 
-        XCTAssertEqual(prioritized.actionItems.count, 10)
-        XCTAssertEqual(prioritized.userActionItems.map(\.text), mine.map(\.text))
-        XCTAssertEqual(prioritized.otherActionItems.map(\.importance), [5, 5, 4, 4])
+        XCTAssertEqual(prioritized.actionItems.count, 13)
+        XCTAssertEqual(Array(prioritized.actionItems.prefix(6)).map(\.text), mine.map(\.text))
+        XCTAssertEqual(prioritized.otherActionItems.map(\.importance), [5, 5, 4, 4, 3, 2, 1])
 
         let fewerMine = MeetingOutcomes(actionItems: Array(mine.prefix(3)) + others)
             .prioritizingActionItems()
-        XCTAssertEqual(fewerMine.actionItems.count, 8)
-        XCTAssertEqual(fewerMine.otherActionItems.map(\.importance), [5, 5, 4, 4, 3])
+        XCTAssertEqual(fewerMine.actionItems.count, 10)
+        XCTAssertEqual(fewerMine.otherActionItems.map(\.importance), [5, 5, 4, 4, 3, 2, 1])
     }
 
-    func testActionPrioritizationNeverDropsMineEvenAboveNormalCeiling() {
+    func testActionPrioritizationKeepsOthersWhenTheUserOwnsManyActions() {
         let mine = (1...11).map {
             MeetingOutcomes.ActionItem(text: "My action \($0)", owner: "Me")
         }
@@ -233,15 +233,15 @@ final class MeetingOutcomesTests: XCTestCase {
             owner: "Them",
             importance: 5)
 
-        let prioritized = MeetingOutcomes(actionItems: mine + [other])
+        let prioritized = MeetingOutcomes(actionItems: [other] + mine)
             .prioritizingActionItems()
 
-        XCTAssertEqual(prioritized.actionItems.count, 11)
-        XCTAssertEqual(prioritized.userActionItems.count, 11)
-        XCTAssertTrue(prioritized.otherActionItems.isEmpty)
+        XCTAssertEqual(prioritized.actionItems.count, 12)
+        XCTAssertEqual(Array(prioritized.actionItems.prefix(11)), mine)
+        XCTAssertEqual(prioritized.otherActionItems.map(\.text), ["Other critical action"])
     }
 
-    func testOtherAndUnclearOwnersShareOneRankedLimit() {
+    func testOtherAndUnclearOwnersShareOneRankingAndAreAllKept() {
         let unclear = OutcomeAttribution(resolution: .unresolved, basis: .unclear)
         let candidates: [MeetingOutcomes.ActionItem] = [
             .init(id: "other-low", text: "Other low", owner: "Ana", importance: 2),
@@ -252,17 +252,18 @@ final class MeetingOutcomesTests: XCTestCase {
             .init(id: "other-high", text: "Other high", owner: "Ana", importance: 4),
             .init(id: "unclear-medium", text: "Unclear medium", importance: 3, attribution: unclear),
         ]
-        let rankedIDs = ["unclear-critical", "other-high", "unclear-high", "other-medium", "unclear-medium"]
-        for (userCount, remainingCount) in [(0, 5), (3, 5), (6, 4), (10, 0), (11, 0)] {
+        let rankedIDs = ["unclear-critical", "other-high", "unclear-high", "other-medium", "unclear-medium",
+                         "other-low", "unclear-low"]
+        for userCount in [0, 3, 6, 10, 11] {
             let mine = (0..<userCount).map {
                 MeetingOutcomes.ActionItem(text: "My action \($0)", owner: "Me", importance: 1)
             }
             let result = MeetingOutcomes(actionItems: candidates + mine).prioritizingActionItems()
 
             XCTAssertEqual(result.userActionItems, mine)
-            XCTAssertEqual(result.actionItems.count, userCount + remainingCount)
+            XCTAssertEqual(result.actionItems.count, userCount + rankedIDs.count)
             XCTAssertEqual(Array(result.actionItems.prefix(userCount)), mine)
-            XCTAssertEqual(result.actionItems.dropFirst(userCount).map(\.id), Array(rankedIDs.prefix(remainingCount)))
+            XCTAssertEqual(result.actionItems.dropFirst(userCount).map(\.id), rankedIDs)
             for action in result.unresolvedActionItems {
                 XCTAssertEqual(action, candidates.first { $0.id == action.id })
                 XCTAssertEqual(action.attribution?.resolution, .unresolved)
@@ -292,7 +293,7 @@ final class MeetingOutcomesTests: XCTestCase {
         XCTAssertEqual(result.unresolvedActionItems.map(\.text), ["Alpha", "Late"])
     }
 
-    func testLoadingExistingUnclearActionsAppliesSharedLimitWithoutRewritingEvidence() throws {
+    func testLoadingExistingUnclearActionsRanksEveryActionWithoutRewritingEvidence() throws {
         let folder = FileManager.default.temporaryDirectory
             .appendingPathComponent("lokalbot-unclear-outcome-limit-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
@@ -310,10 +311,12 @@ final class MeetingOutcomesTests: XCTestCase {
 
         let loaded = try XCTUnwrap(MeetingOutcomes.load(from: folder))
 
-        XCTAssertEqual(loaded.actionItems.count, 5)
-        XCTAssertEqual(loaded.actionItems.map(\.importance), [5, 5, 5, 5, 5])
-        XCTAssertEqual(loaded.unresolvedActionItems.count, 5)
-        XCTAssertTrue(loaded.actionItems.allSatisfy { $0.owner == nil && !$0.isForUser })
+        XCTAssertEqual(loaded.actionItems.count, 30)
+        XCTAssertEqual(Array(loaded.actionItems.prefix(5)).map(\.importance), [5, 5, 5, 5, 5])
+        XCTAssertEqual(loaded.actionItems.map(\.importance), loaded.actionItems.map(\.importance).sorted(by: >))
+        XCTAssertEqual(loaded.unresolvedActionItems.count, 27)
+        XCTAssertEqual(loaded.otherActionItems.count, 3)
+        XCTAssertFalse(loaded.actionItems.contains(where: \.isForUser))
         XCTAssertEqual(try Data(contentsOf: file), original)
     }
 
@@ -336,10 +339,10 @@ final class MeetingOutcomesTests: XCTestCase {
 
         let loaded = try XCTUnwrap(MeetingOutcomes.load(from: folder))
 
-        XCTAssertEqual(loaded.actionItems.count, 10)
+        XCTAssertEqual(loaded.actionItems.count, 13)
         XCTAssertEqual(loaded.userActionItems.count, 6)
-        XCTAssertEqual(loaded.otherActionItems.count, 4)
-        XCTAssertEqual(loaded.otherActionItems.map(\.importance), [5, 5, 5, 1])
+        XCTAssertEqual(Array(loaded.actionItems.prefix(6)).map(\.text), mine.map(\.text))
+        XCTAssertEqual(loaded.otherActionItems.map(\.importance), [5, 5, 5, 1, 1, 1, 1])
     }
 
     func testGroundedParseRejectsUnknownEvidenceAndResolvesKnownSegments() throws {

@@ -352,9 +352,46 @@ final class PersonalActionItemsTests: XCTestCase {
         XCTAssertEqual(result.rejected.map(\.reason), ["unsupported_commitment"], "Negated undertakings stay rejected")
     }
 
+    func testOffersAndNonEnglishCommitmentsKeepTheirTasksWithUnclearOwner() throws {
+        let english = Transcript(segments: [
+            microphone(0, "I can send you the numbers tomorrow morning."),
+            microphone(5, "Leave it with me, the contract review is mine."),
+            microphone(10, "The deck is already in the shared drive."),
+        ], engine: "fixture")
+        let englishResult = try validate(english, [
+            action("s1", text: "Send the numbers tomorrow morning"),
+            action("s2", text: "Review the contract"),
+            action("s3", text: "Share the deck"),
+        ])
+        XCTAssertEqual(englishResult.outcomes.actionItems.map(\.text),
+                       ["Send the numbers tomorrow morning", "Review the contract"])
+        XCTAssertTrue(englishResult.outcomes.actionItems.allSatisfy(\.ownershipIsUnclear))
+        XCTAssertEqual(englishResult.rejected.map(\.reason), ["unsupported_commitment"],
+                       "An English statement with no undertaking is still not a task")
+
+        let meetings: [(String, String, String)] = [
+            ("Te mando el informe del presupuesto mañana por la mañana.",
+             "Revisamos los números con todo el equipo durante la reunión de ayer.",
+             "Enviar el informe del presupuesto"),
+            ("Ich schicke dir die Zahlen morgen früh.",
+             "Wir haben gestern das Budget mit dem ganzen Team besprochen.",
+             "Die Zahlen schicken"),
+            ("Poslaću ti izveštaj sutra ujutru, odmah posle sastanka.",
+             "Juče smo sa celim timom pregledali budžet i plan za sledeći mesec.",
+             "Poslati izveštaj"),
+        ]
+        for (promise, context, task) in meetings {
+            let transcript = Transcript(segments: [microphone(0, promise), microphone(5, context)], engine: "fixture")
+            let result = try validate(transcript, [action("s1", text: task)])
+            XCTAssertEqual(result.outcomes.actionItems.map(\.text), [task], promise)
+            XCTAssertEqual(result.outcomes.actionItems.first?.ownershipIsUnclear, true, promise)
+            XCTAssertTrue(result.rejected.isEmpty, promise)
+        }
+    }
+
     // MARK: - Ranking
 
-    func testLikelyUserActionsRankAheadOfOtherParticipantsAndSurviveTheCap() {
+    func testLikelyUserActionsRankAheadOfOtherParticipants() {
         func citation(_ speaker: String, _ start: Double) -> OutcomeSourceCitation {
             .init(meetingID: nil, segmentID: "segment-\(start)", start: start, end: start + 1, speaker: speaker, excerpt: "")
         }
@@ -374,7 +411,7 @@ final class PersonalActionItemsTests: XCTestCase {
             citations: [citation("local 1", 40)], attribution: .init(resolution: .user, speakerID: "local 1", basis: .commitment))
         let ranked = MeetingOutcomes(actionItems: remote + [unclearRemote] + likely + [mine]).prioritizingActionItems()
         XCTAssertEqual(ranked.actionItems.map(\.text).prefix(3), ["Send the deck", "Likely mine 0", "Likely mine 1"])
-        XCTAssertEqual(ranked.actionItems.count, 8, "Five other or unclear actions fill the remaining room")
+        XCTAssertEqual(ranked.actionItems.count, 10, "Every other and unclear action is kept after the user's work")
         XCTAssertFalse(unclearRemote.isLikelyUserAction)
         XCTAssertFalse(remote[0].isLikelyUserAction)
     }

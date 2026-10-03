@@ -55,7 +55,8 @@ enum DreamPrompts {
     ONLY a JSON object of this exact shape:
     {"narrative": "...", "attention": ["..."], "repeated_work": ["..."], \
     "suggested_checks": ["..."], "frictions": ["..."], "top_actions": ["..."], \
-    "active_projects": [{"name": "...", "status": "...", "evidence": ["..."]}], \
+    "active_projects": [{"name": "...", "status": "...", "active_today": true, \
+    "evidence": ["..."]}], \
     "work_goals": [{"text": "...", "horizon": "...", "reinforced_today": true, \
     "expired": false}], \
     "recurring_patterns": ["..."]}
@@ -89,6 +90,9 @@ enum DreamPrompts {
     memory. Update statuses from the day's evidence, add new entries only with \
     clear evidence, keep entries you still believe active even if untouched \
     today, and drop an entry only when the evidence shows it finished.
+    - Every active project must include active_today. Set it to true only when \
+    evidence from the analyzed day shows work on that project. Set it to false \
+    when carrying a project forward solely from current memory.
     - Every work goal must include reinforced_today. Set it to true only when \
     evidence from the analyzed day directly reinforces that goal. Set it to \
     false when carrying a goal forward solely from current memory. Never infer \
@@ -123,9 +127,10 @@ enum DreamPrompts {
                         "properties": [
                             "name": ["type": "string"],
                             "status": ["type": "string"],
+                            "active_today": ["type": "boolean"],
                             "evidence": stringList,
                         ],
-                        "required": ["name", "status", "evidence"],
+                        "required": ["name", "status", "active_today", "evidence"],
                     ],
                 ],
                 "work_goals": [
@@ -201,7 +206,8 @@ enum DreamPrompts {
             projects.append(DreamMemoryUpdate.Project(
                 name: name,
                 status: status,
-                evidence: Array(evidence.prefix(DreamMemory.maxEvidencePerProject))))
+                evidence: Array(evidence.prefix(DreamMemory.maxEvidencePerProject)),
+                activeToday: project.activeToday))
         }
 
         var goals: [DreamMemoryUpdate.Goal] = []
@@ -235,6 +241,14 @@ enum DreamPrompts {
             let name: String
             let status: String
             let evidence: [String]
+            let activeToday: Bool?
+
+            enum CodingKeys: String, CodingKey {
+                case name
+                case status
+                case evidence
+                case activeToday = "active_today"
+            }
         }
 
         struct Goal: Decodable {

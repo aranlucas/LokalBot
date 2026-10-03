@@ -1,3 +1,4 @@
+import AppKit
 import CoreGraphics
 import CryptoKit
 import ImageIO
@@ -6,6 +7,33 @@ import XCTest
 
 @MainActor
 final class ScreenshotProcessingWorkerTests: XCTestCase {
+    func testScreenTextRecognitionReadsChineseAndJapanese() throws {
+        for line in ["周四上午十点团队会议", "金曜日までに予算報告書を送ってください"] {
+            let image = try Self.renderedText(line)
+            let recognized = ScreenshotImageProcessing.recognizeText(in: image)
+            XCTAssertTrue(recognized.contains(String(line.prefix(4))), "recognized: \(recognized)")
+        }
+    }
+
+    private static func renderedText(_ line: String) throws -> CGImage {
+        let width = 1_400
+        let height = 120
+        let context = try XCTUnwrap(CGContext(
+            data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.setFillColor(NSColor.white.cgColor)
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        NSGraphicsContext.saveGraphicsState()
+        defer { NSGraphicsContext.restoreGraphicsState() }
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 40),
+            .foregroundColor: NSColor.black,
+        ]
+        NSAttributedString(string: line, attributes: attributes).draw(at: CGPoint(x: 20, y: 40))
+        return try XCTUnwrap(context.makeImage())
+    }
+
     func testCaptureConsentRejectsPauseRoundTripAndSettingsChanges() {
         var settings = AppSettings()
         settings.trackingEnabled = true

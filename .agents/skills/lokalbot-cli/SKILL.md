@@ -47,7 +47,7 @@ lokalbot-cli search "auth refactor"
 lokalbot-cli search "auth refactor" --table --limit 20
 ```
 
-Transcript hits include a `timestamp` (HH:MM:SS) so the user can jump to that moment in the in-app player.
+A meeting matches when it contains every word, in any order, ignoring case and accents; when none does, the closest partial matches follow. Words of up to three letters or digits (`API`, `Q3`) match only whole words. Quote an exact phrase inside the query (`'"auth refactor"'`) to match only that phrase. Transcript hits include a `timestamp` (HH:MM:SS) so the user can jump to that moment in the in-app player.
 
 ## Action items
 

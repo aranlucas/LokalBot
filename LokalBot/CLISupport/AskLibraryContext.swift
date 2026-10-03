@@ -3,6 +3,9 @@ import Foundation
 /// Pure retrieval, citation, and prompt construction for `ask_library`.
 enum AskLibraryContext {
     static let maxSnippets = 12
+    /// Snippets one meeting may take before every other matching meeting has
+    /// had its turn; later slots go to the best remaining hits.
+    static let maxSnippetsPerMeetingFirstPass = 4
     static let maxTitleSummaryMatches = 4
     static let maxSummaryUTF8Bytes = 6 * 1_024
     static let maxSnippetLineUTF8Bytes = 1_024
@@ -19,19 +22,20 @@ enum AskLibraryContext {
         var citations: [Citation]
     }
 
+    /// The question's content words. Short names and acronyms ("Ana", "API",
+    /// "Q3") count; English function words and question framing do not.
     static func searchTerms(from question: String) -> [String] {
         let stopwords: Set<String> = [
-            "what", "when", "where", "which", "whom", "about", "does", "that",
-            "this", "with", "have", "from", "were", "they", "their", "them",
-            "will", "would", "should", "could", "meeting", "meetings",
-            "please", "tell",
+            "a", "an", "the", "and", "or", "but", "if", "of", "to", "in", "on", "at", "by", "for",
+            "with", "from", "about", "into", "is", "are", "was", "were", "be", "been", "am",
+            "do", "does", "did", "have", "has", "had", "will", "would", "should", "could", "can",
+            "may", "might", "must", "what", "when", "where", "which", "who", "whom", "whose",
+            "why", "how", "that", "this", "these", "those", "there", "it", "its", "i", "me", "my",
+            "we", "us", "our", "you", "your", "he", "him", "his", "she", "her", "they", "them",
+            "their", "any", "some", "all", "not", "so", "as", "than", "then", "also", "just",
+            "tell", "say", "said", "please", "meeting", "meetings",
         ]
-        var seen: Set<String> = []
-        return question.lowercased()
-            .components(separatedBy: CharacterSet.alphanumerics.inverted)
-            .filter {
-                $0.count >= 4 && !stopwords.contains($0) && seen.insert($0).inserted
-            }
+        return LibrarySearch.searchTerms(LibrarySearch.folded(question)).filter { !stopwords.contains($0) }
     }
 
     static func build(question: String, meetings: [Meeting]) -> ContextBundle {
@@ -72,36 +76,35 @@ enum AskLibraryContext {
             }
         }
 
+        // One search over every content word, so the rarest words rank the
+        // meetings instead of whichever word the question happened to start with.
+        let terms = searchTerms(from: question)
+        let hits = terms.isEmpty ? [] : (try? LibrarySearch.hits(
+            query: terms.joined(separator: " "),
+            limit: LibraryInputPolicy.maximumSearchHits,
+            meetings: meetings,
+            transcriptHitsPerMeeting: nil,
+            requireAllWords: false)) ?? []
         var snippetCount = 0
         var hasSnippetSection = false
-        var seenSnippets: Set<String> = []
-        search: for term in searchTerms(from: question) {
+        for hit in spreadAcrossMeetings(hits) {
             guard snippetCount < maxSnippets, !context.isFull else { break }
-            let hits = (try? LibrarySearch.hits(
-                query: term,
-                limit: maxSnippets,
-                meetings: meetings)) ?? []
-            for hit in hits {
-                guard snippetCount < maxSnippets, !context.isFull else { break search }
-                guard seenSnippets.insert("\(hit.meeting_id)|\(hit.snippet)").inserted else {
-                    continue
-                }
-                let stamp = hit.timestamp.map { " @\($0)" } ?? ""
-                let line = truncatedUTF8(
-                    "- [\(hit.match_kind)\(stamp)] \(hit.meeting_title): \(hit.snippet)",
-                    maxBytes: maxSnippetLineUTF8Bytes,
-                    marker: "…")
-                let prefix: String
-                if hasSnippetSection {
-                    prefix = "\n"
-                } else {
-                    prefix = context.text.isEmpty ? "## Snippets\n" : "\n\n## Snippets\n"
-                }
-                guard context.appendFragment(prefix + line) else { break search }
-                hasSnippetSection = true
-                snippetCount += 1
-                citedShortIDs.append(hit.meeting_id)
+            let stamp = hit.timestamp.map { " @\($0)" } ?? ""
+            let day = byShortID[hit.meeting_id].map { " (\(dayString($0.startedAt)))" } ?? ""
+            let line = truncatedUTF8(
+                "- [\(hit.match_kind)\(stamp)] \(hit.meeting_title)\(day): \(hit.snippet)",
+                maxBytes: maxSnippetLineUTF8Bytes,
+                marker: "…")
+            let prefix: String
+            if hasSnippetSection {
+                prefix = "\n"
+            } else {
+                prefix = context.text.isEmpty ? "## Snippets\n" : "\n\n## Snippets\n"
             }
+            guard context.appendFragment(prefix + line) else { break }
+            hasSnippetSection = true
+            snippetCount += 1
+            citedShortIDs.append(hit.meeting_id)
         }
 
         var seenIDs: Set<String> = []
@@ -121,11 +124,36 @@ enum AskLibraryContext {
             citations: citations)
     }
 
-    static func messages(question: String, contextText: String) -> [[String: String]] {
-        [
+    /// Distinct hits in rank order, except that no meeting takes more than
+    /// its first-pass share until every other matching meeting has had one.
+    static func spreadAcrossMeetings(_ hits: [SessionFormatter.SearchHit]) -> [SessionFormatter.SearchHit] {
+        var seen: Set<String> = []
+        var perMeeting: [String: Int] = [:]
+        var firstPass: [SessionFormatter.SearchHit] = []
+        var rest: [SessionFormatter.SearchHit] = []
+        for hit in hits where seen.insert("\(hit.meeting_id)|\(hit.snippet)").inserted {
+            let taken = perMeeting[hit.meeting_id, default: 0]
+            perMeeting[hit.meeting_id] = taken + 1
+            if taken < maxSnippetsPerMeetingFirstPass {
+                firstPass.append(hit)
+            } else {
+                rest.append(hit)
+            }
+        }
+        return firstPass + rest
+    }
+
+    static func messages(question: String, contextText: String, now: Date = Date(),
+                         timeZone: TimeZone = .current) -> [[String: String]] {
+        let today = DateFormatter()
+        today.locale = Locale(identifier: "en_US_POSIX")
+        today.timeZone = timeZone
+        today.dateFormat = "EEEE, yyyy-MM-dd"
+        return [
             [
                 "role": "system",
-                "content": "You are LokalBot's meeting-library assistant. Answer the user's question using ONLY the meeting context provided. Cite the meetings you used by title and date. If the context does not contain the answer, reply exactly: I couldn't find that in your meetings.",
+                "content": "You are LokalBot's meeting-library assistant. Answer the user's question using ONLY the meeting context provided. Cite the meetings you used by title and date. If the context does not contain the answer, reply exactly: I couldn't find that in your meetings. "
+                    + "Today is \(today.string(from: now)) (\(timeZone.identifier)); meeting dates in the context are UTC days.",
             ],
             [
                 "role": "user",

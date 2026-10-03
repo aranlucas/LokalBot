@@ -288,11 +288,12 @@ struct AppSettings: Codable, Equatable {
 
     // MARK: - Dreaming
 
-    /// Overnight retrospective: while the Mac is otherwise idle after
-    /// `dreamingHour`, compile the previous day's evidence into a morning
-    /// brief plus a structured local memory of active projects and goals,
-    /// shown on Today. On by default; everything it reads and writes stays
-    /// inside the storage root, and users can turn it off at any time.
+    /// Overnight retrospective: after `dreamingHour`, once the Mac is on AC
+    /// power and LokalBot is not recording or processing, compile the previous
+    /// day's evidence into a morning brief plus a structured local memory of
+    /// active projects and goals, shown on Today. On by default; everything it
+    /// reads and writes stays inside the storage root, and users can turn it
+    /// off at any time. Briefs and memory outlive screen retention.
     var dreamingEnabled: Bool = true
     /// Local wall-clock hour (0...23) after which the overnight dream may run.
     /// Nights the Mac slept through catch up at the next launch or wake.

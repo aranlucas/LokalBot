@@ -35,7 +35,7 @@ final class AskLibraryContextTests: XCTestCase {
         super.tearDown()
     }
 
-    func testSearchTermsDropStopwordsAndShortWords() {
+    func testSearchTermsDropStopwords() {
         XCTAssertEqual(
             AskLibraryContext.searchTerms(from: "What did we decide about caching?"),
             ["decide", "caching"])
@@ -52,7 +52,7 @@ final class AskLibraryContextTests: XCTestCase {
             meetings: meetings)
         XCTAssertTrue(bundle.contextText.contains("## Snippets"))
         XCTAssertTrue(bundle.contextText.contains("Redis"))
-        XCTAssertTrue(bundle.contextText.contains("- [transcript @00:00:00] Cache planning:"))
+        XCTAssertTrue(bundle.contextText.contains("- [transcript @00:00:00] Cache planning (2026-05-28):"))
     }
 
     func testBuildInlinesFullSummaryWhenQuestionNamesMeeting() throws {
@@ -99,8 +99,43 @@ final class AskLibraryContextTests: XCTestCase {
             question: "redis caching",
             meetings: meetings)
         let summaryLines = bundle.contextText.split(separator: "\n")
-            .filter { $0.hasPrefix("- [summary] Cache planning:") }
+            .filter { $0.hasPrefix("- [summary] Cache planning (2026-05-28):") }
         XCTAssertEqual(summaryLines.count, 1)
+    }
+
+    func testEveryContentWordRanksTheSnippetsNotJustTheFirst() throws {
+        try MeetingFixture.write([
+            .init(title: "Weekly sync", startedAt: Date(timeIntervalSince1970: 1_782_000_000),
+                  transcriptLines: (0..<15).map { "Pricing update number \($0)." }),
+            .init(title: "Sales review", startedAt: Date(timeIntervalSince1970: 1_775_000_000),
+                  transcriptLines: ["Enterprise customers get volume pricing next quarter."]),
+        ], under: root)
+        let meetings = try SessionLookup.loadAllMeetings()
+
+        let bundle = AskLibraryContext.build(
+            question: "What pricing did we offer enterprise customers?",
+            meetings: meetings)
+
+        let lines = bundle.contextText.split(separator: "\n").filter { $0.hasPrefix("- [") }
+        XCTAssertTrue(lines.first?.contains("Enterprise customers get volume pricing") == true, bundle.contextText)
+        XCTAssertEqual(lines.count, AskLibraryContext.maxSnippets)
+    }
+
+    func testShortNamesAndAcronymsAreSearchedAsWholeWords() throws {
+        try MeetingFixture.write([
+            .init(title: "Limits review", startedAt: Date(timeIntervalSince1970: 1_783_000_000),
+                  transcriptLines: ["Ana will cap the API at 50 requests a second."]),
+            .init(title: "Growth analysis", startedAt: Date(timeIntervalSince1970: 1_784_000_000),
+                  transcriptLines: ["Rapid growth in banana exports skewed the analysis."]),
+        ], under: root)
+        let meetings = try SessionLookup.loadAllMeetings()
+
+        XCTAssertEqual(AskLibraryContext.searchTerms(from: "What did Ana say about the API in Q3?"), ["ana", "api", "q3"])
+        let bundle = AskLibraryContext.build(question: "What did Ana say about the API?", meetings: meetings)
+
+        XCTAssertTrue(bundle.contextText.contains("Ana will cap the API"), bundle.contextText)
+        XCTAssertFalse(bundle.contextText.contains("Growth analysis"), bundle.contextText)
+        XCTAssertFalse(try LibrarySearch.hits(query: "ana", meetings: meetings).contains { $0.meeting_title == "Growth analysis" })
     }
 
     func testTitleSummaryMatchesAreRankedCappedAndBudgeted() throws {
@@ -153,5 +188,13 @@ final class AskLibraryContextTests: XCTestCase {
         XCTAssertEqual(messages[1]["role"], "user")
         XCTAssertTrue(messages[1]["content"]!.contains("CTX"))
         XCTAssertTrue(messages[1]["content"]!.hasSuffix("Question: Q?"))
+    }
+
+    func testMessagesTellTheModelTodaysDate() throws {
+        let now = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-10-02T09:30:00Z"))
+        let zone = try XCTUnwrap(TimeZone(identifier: "Europe/Belgrade"))
+        let messages = AskLibraryContext.messages(question: "What did we decide last Tuesday?", contextText: "CTX",
+                                                  now: now, timeZone: zone)
+        XCTAssertTrue(messages[0]["content"]!.contains("Today is Friday, 2026-10-02 (Europe/Belgrade)"))
     }
 }

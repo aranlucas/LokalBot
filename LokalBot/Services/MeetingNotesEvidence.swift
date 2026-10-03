@@ -1,9 +1,10 @@
 import Foundation
+import NaturalLanguage
 
 /// Shared compact evidence for narrative facts and actionable outcomes. Model
 /// IDs are local to this immutable snapshot; durable artifacts use stable IDs.
 struct MeetingNotesEvidence {
-    static let ownershipPolicyVersion = "action-evidence-v2"
+    static let ownershipPolicyVersion = "action-evidence-v3"
 
     struct Unit: Codable, Equatable {
         var source: String
@@ -46,12 +47,18 @@ struct MeetingNotesEvidence {
     let units: [Unit]
     let speakers: [String: Transcript.SpeakerDescriptor]
     let roster: String
+    /// English-only wording checks may veto a task only when the meeting is
+    /// mostly English.
+    let isEnglishMeeting: Bool
 
     init(transcript: Transcript) {
         // Likely echo repeats a remote participant; the remote segment carries
         // those words, so the echo is never shown or cited as evidence.
         let transcript = transcript.markingSuspectedEcho()
         self.transcript = transcript
+        let recognizer = NLLanguageRecognizer()
+        recognizer.processString(String(transcript.languageDetectionText.prefix(20_000)))
+        isEnglishMeeting = recognizer.dominantLanguage == .english
         let roster = transcript.speakerRoster
         let entries = roster.keys.sorted().enumerated().map { index, key in ("p\(index + 1)", roster[key]!) }
         speakers = Dictionary(uniqueKeysWithValues: entries)
@@ -201,7 +208,8 @@ struct MeetingNotesEvidence {
                   let importance = item["importance"] as? Int, (1...5).contains(importance) else {
                 reject(item, "invalid_action", kind: "actions"); continue
             }
-            let due = Self.spokenDue(rawDue, sourceIDs: Set(visible.keys))
+            let citedText = ids.compactMap { visible[$0]?.map(\.text).joined(separator: " ") }.joined(separator: " ")
+            let due = Self.spokenDue(rawDue, sourceIDs: Set(visible.keys), citedText: citedText)
             let quote = (item["quote"] as? String).map { raw -> String in
                 var value = normalized(raw)
                 // Some providers wrap a copied clause in quotation marks.
@@ -262,7 +270,13 @@ struct MeetingNotesEvidence {
                 // Unrecognized phrasing must not lose a task; it only loses
                 // the ownership claim. Negated, conditional, or questioned
                 // undertakings and fragments without one are still not tasks.
-                guard hasCitedCommitment || OutcomeEvidencePolicy.expressesUndertaking(visibleSource),
+                // The fragment check reads English wording, so it can only
+                // veto tasks in English meetings; elsewhere every quoted
+                // commitment would look like a fragment and be deleted.
+                let undertaking = hasCitedCommitment
+                    || OutcomeEvidencePolicy.expressesUndertaking(visibleSource)
+                    || OutcomeEvidencePolicy.offersToTakeOn(visibleSource)
+                guard undertaking || !isEnglishMeeting,
                       !OutcomeEvidencePolicy.isQualified(visibleSource) else {
                     reject(item, "unsupported_commitment", kind: "actions"); continue
                 }
@@ -336,11 +350,20 @@ struct MeetingNotesEvidence {
     /// The due date as spoken, or "" when there is none. The built-in
     /// Qwen3.5 4B sometimes copied a cited source ID ("s268") into `due`,
     /// which rendered as "due s268".
-    static func spokenDue(_ raw: String, sourceIDs: Set<String>) -> String {
+    static func spokenDue(_ raw: String, sourceIDs: Set<String>, citedText: String? = nil) -> String {
         let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         let bare = value.trimmingCharacters(in: CharacterSet(charactersIn: "[]()"))
         if sourceIDs.contains(bare) || bare.range(of: #"^[sS]\d+$"#, options: .regularExpression) != nil {
             return ""
+        }
+        // A year nobody said is the model's guess, not a deadline: an invented
+        // "2024-01-01" resolved into the past and topped Today as overdue. The
+        // action stays; only the unsupported due phrase goes.
+        if let citedText, let years = try? NSRegularExpression(pattern: #"(?<!\d)(?:19|20)\d{2}(?!\d)"#) {
+            for match in years.matches(in: value, range: NSRange(value.startIndex..., in: value)) {
+                guard let range = Range(match.range, in: value) else { continue }
+                if !citedText.contains(value[range]) { return "" }
+            }
         }
         return value
     }

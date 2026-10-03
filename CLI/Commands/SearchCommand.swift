@@ -4,18 +4,23 @@ import Foundation
 struct SearchCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "search",
-        abstract: "Substring search across titles, summaries, and transcripts.",
+        abstract: "Word search across titles, summaries, and transcripts.",
         discussion: """
-            Returns up to 50 hits ordered by meeting recency. Case-insensitive
-            substring match. JSON by default; pass --table for a quick scan.
+            Returns up to 50 hits. A meeting matches when it contains every
+            query word, in any order, ignoring case and accents; when none
+            does, meetings with the most words follow. Rare words weigh more
+            than common ones, exact-phrase hits come first, ties keep meeting
+            recency, and one meeting contributes at most five transcript
+            hits. Words of up to three letters or digits ("API", "Q3")
+            match only whole words. Quote the query ("…") to match only the
+            exact phrase. JSON by default; pass --table for a quick scan.
 
-            For agent use, prefer the in-app FTS5 index (richer ranking +
-            snippets) — this lightweight CLI search just walks the on-disk
-            artifacts so it works without launching the app.
+            This search walks the on-disk artifacts, so it works without
+            launching the app.
             """
     )
 
-    @Argument(help: "Query string. Substring match, case-insensitive.")
+    @Argument(help: "Words to find in any order; quote for an exact phrase.")
     var query: String
 
     @Option(name: .long, help: "Maximum number of hits to return.")

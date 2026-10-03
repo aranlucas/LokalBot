@@ -1,0 +1,102 @@
+{
+  "notes": "Synthetic workdays for the day-digest benchmark. Times are UTC. Each item lists lower-case keywords; a digest task line covers an item when it contains any of them. Sessions are separated by more than ten minutes, so each one-hour session is one digest segment.",
+  "days": [
+    {
+      "id": "parallel-morning",
+      "date": "2026-08-11",
+      "blocks": [
+        {"app": "Xcode", "title": "AuthRateLimiter.swift — LokalAuth", "start": "09:00", "end": "09:14"},
+        {"app": "Google Chrome", "title": "Pull request #118 · Prorate mid-cycle plan changes · billing-service", "start": "09:14", "end": "09:24"},
+        {"app": "Mail", "title": "Re: [Escalation] Acme Corp SSO login failures", "start": "09:24", "end": "09:33"},
+        {"app": "Xcode", "title": "AuthRateLimiterTests.swift — LokalAuth", "start": "09:33", "end": "09:47"},
+        {"app": "Google Chrome", "title": "Pull request #118 · Prorate mid-cycle plan changes · billing-service", "start": "09:47", "end": "09:54"},
+        {"app": "Mail", "title": "Re: [Escalation] Acme Corp SSO login failures", "start": "09:54", "end": "10:00"},
+        {"app": "Google Chrome", "title": "Search ranking v2 — design doc - Google Docs", "start": "11:00", "end": "12:00"},
+        {"app": "Figma", "title": "Onboarding v3 – Figma", "start": "14:00", "end": "14:20"},
+        {"app": "Slack", "title": "#incident-payments - Northwind - Slack", "start": "14:20", "end": "14:32"},
+        {"app": "Figma", "title": "Onboarding v3 – Figma", "start": "14:32", "end": "14:50"},
+        {"app": "Slack", "title": "#incident-payments - Northwind - Slack", "start": "14:50", "end": "15:00"}
+      ],
+      "contexts": [
+        {"id": 101, "at": "09:05", "app": "Xcode", "title": "AuthRateLimiter.swift — LokalAuth", "text": "File Edit View Navigate Editor Product Debug\nfunc shouldThrottle(ip: String, now: Date) -> Bool {\n  // sliding window: 5 failed logins per minute per IP\n  let window = attempts[ip, default: []].filter { now.timeIntervalSince($0) < 60 }\n  return window.count >= 5\n}\n// FIX: reset the counter after a successful login"},
+        {"id": 102, "at": "09:18", "app": "Google Chrome", "title": "Pull request #118 · Prorate mid-cycle plan changes · billing-service", "text": "billing-service / Pull requests / #118 Prorate mid-cycle plan changes\nFiles changed 4\nReview comment: proration is rounded to cents twice, once in ProrationCalculator and again in InvoiceLine. Round once.\nReview comment: add a test for an annual to monthly downgrade"},
+        {"id": 103, "at": "09:28", "app": "Mail", "title": "Re: [Escalation] Acme Corp SSO login failures", "text": "To: support-escalations@acme.example\nSubject: Re: [Escalation] Acme Corp SSO login failures\nHi Jordan, we traced the failed SSO logins to the SAML signing certificate we rotated on Monday. A fix that trusts both certificates ships tomorrow at 10:00 UTC.\nDraft — not sent"},
+        {"id": 104, "at": "09:40", "app": "Xcode", "title": "AuthRateLimiterTests.swift — LokalAuth", "text": "testResetsAfterSuccessfulLogin passed\ntestThrottlesSixthAttempt passed\nTest Suite 'AuthRateLimiterTests' passed: 18 tests, 0 failures"},
+        {"id": 105, "at": "09:50", "app": "Google Chrome", "title": "Pull request #118 · Prorate mid-cycle plan changes · billing-service", "text": "Review submitted: Request changes\n2 comments waiting for the author"},
+        {"id": 106, "at": "09:57", "app": "Mail", "title": "Re: [Escalation] Acme Corp SSO login failures", "text": "Sent: Re: [Escalation] Acme Corp SSO login failures\nInbox (12)  Flagged  Drafts"},
+        {"id": 107, "at": "11:20", "app": "Google Chrome", "title": "Search ranking v2 — design doc - Google Docs", "text": "Search ranking v2 — design doc\nProposal: BM25 baseline plus recency decay (half-life 30 days)\nOpen question: per-team boosts or global?\nComment from Lee: we need an offline eval set before launch"},
+        {"id": 108, "at": "11:50", "app": "Google Chrome", "title": "Search ranking v2 — design doc - Google Docs", "text": "Section 4: Rollout. Shadow traffic at 10% for one week; success metric: click-through on the first result up 5%"},
+        {"id": 109, "at": "14:10", "app": "Figma", "title": "Onboarding v3 – Figma", "text": "Onboarding v3 / Step 2 of 4: Connect your calendar\nVariant B: progress bar and skip link\nComponents: Button/Primary, Stepper"},
+        {"id": 110, "at": "14:25", "app": "Slack", "title": "#incident-payments - Northwind - Slack", "text": "#incident-payments\nDana: Stripe webhook retries are piling up, 4,200 queued\nMe: backoff is capped at 32s and the retry worker isn't draining. Roll back deploy 4512?\nDana: yes, rolling back now"},
+        {"id": 111, "at": "14:40", "app": "Figma", "title": "Onboarding v3 – Figma", "text": "Onboarding v3 / Step 3 of 4: Invite teammates\nVariant B approved by Maya for the usability test on Thursday"},
+        {"id": 112, "at": "14:55", "app": "Slack", "title": "#incident-payments - Northwind - Slack", "text": "#incident-payments\nDana: rollback of 4512 done, queue draining (1,100 left)\nMe: I'll write the postmortem tomorrow"}
+      ],
+      "items": [
+        {"id": "rate-limit", "label": "Fix the login rate limiter", "keywords": ["rate limit", "rate-limit", "ratelimit", "throttl", "authratelimiter"]},
+        {"id": "proration-review", "label": "Review PR #118 (billing proration)", "keywords": ["proration", "prorat", "#118", "pr 118", "request 118"]},
+        {"id": "acme-escalation", "label": "Answer the Acme SSO escalation", "keywords": ["acme", "saml", "single sign-on", "sso login", "sso escalation", "sso failure"]},
+        {"id": "search-ranking", "label": "Write the search ranking v2 design", "keywords": ["search ranking", "ranking v2", "bm25", "recency decay"]},
+        {"id": "onboarding-design", "label": "Design onboarding v3 in Figma", "keywords": ["onboarding", "figma", "mockup"]},
+        {"id": "webhook-incident", "label": "Handle the payments webhook incident", "keywords": ["webhook", "incident-payments", "payments incident", "4512", "rollback", "roll back", "rolled back"]}
+      ]
+    },
+    {
+      "id": "focused-day",
+      "date": "2026-08-12",
+      "blocks": [
+        {"app": "Terminal", "title": "psql — migrate_users", "start": "09:00", "end": "09:30"},
+        {"app": "Visual Studio Code", "title": "0042_users_pg16.sql — db-migrations", "start": "09:30", "end": "10:10"},
+        {"app": "TablePlus", "title": "users — prod-replica (Postgres 16)", "start": "10:10", "end": "10:40"},
+        {"app": "Terminal", "title": "psql — migrate_users", "start": "10:40", "end": "11:00"},
+        {"app": "Google Chrome", "title": "Q4 OKRs — Platform team - Google Docs", "start": "13:00", "end": "14:00"}
+      ],
+      "contexts": [
+        {"id": 201, "at": "09:10", "app": "Terminal", "title": "psql — migrate_users", "text": "$ pg_dump --table=users legacy > users.sql\n$ psql -h pg16-replica -f 0042_users_pg16.sql\nCREATE TABLE\nCOPY 1843221"},
+        {"id": 202, "at": "09:45", "app": "Visual Studio Code", "title": "0042_users_pg16.sql — db-migrations", "text": "-- 0042_users_pg16.sql\nALTER TABLE users ADD COLUMN email_normalized text GENERATED ALWAYS AS (lower(email)) STORED;\nCREATE UNIQUE INDEX CONCURRENTLY users_email_norm_idx ON users (email_normalized);"},
+        {"id": 203, "at": "10:20", "app": "TablePlus", "title": "users — prod-replica (Postgres 16)", "text": "users (Postgres 16): 1,843,221 rows\nemail_normalized | created_at | plan\nRow counts match legacy: 1,843,221 = 1,843,221"},
+        {"id": 204, "at": "10:50", "app": "Terminal", "title": "psql — migrate_users", "text": "$ ./verify_migration.sh users\nchecksum ok\nmigration 0042 complete; switching reads to pg16 at 11:30"},
+        {"id": 205, "at": "13:15", "app": "Google Chrome", "title": "Q4 OKRs — Platform team - Google Docs", "text": "Q4 OKRs — Platform team\nO1: Reliable payments. KR1: webhook delivery success at least 99.95%\nKR2: p95 checkout latency under 400 ms"},
+        {"id": 206, "at": "13:45", "app": "Google Chrome", "title": "Q4 OKRs — Platform team - Google Docs", "text": "O2: Faster search. KR1: ship ranking v2 to 100% of users\nComment: Sam suggested merging O1 KR2 into the checkout OKR"}
+      ],
+      "items": [
+        {"id": "pg16-migration", "label": "Migrate the users table to Postgres 16", "keywords": ["postgres", "pg16", "migrat", "users table", "0042"]},
+        {"id": "q4-okrs", "label": "Draft the Q4 platform OKRs", "keywords": ["okr", "objectives and key results", "key result"]}
+      ]
+    },
+    {
+      "id": "mixed-with-noise",
+      "date": "2026-08-13",
+      "blocks": [
+        {"app": "Xcode", "title": "CheckoutFlowTests.swift — ShopApp", "start": "09:00", "end": "09:25"},
+        {"app": "Slack", "title": "Priya Raman (DM) - Northwind - Slack", "start": "09:25", "end": "09:35"},
+        {"app": "Xcode", "title": "CheckoutFlowTests.swift — ShopApp", "start": "09:35", "end": "09:52"},
+        {"app": "Slack", "title": "Priya Raman (DM) - Northwind - Slack", "start": "09:52", "end": "10:00"},
+        {"app": "Google Chrome", "title": "Hacker News", "start": "10:30", "end": "10:45"},
+        {"app": "Google Chrome", "title": "lofi hip hop radio - YouTube", "start": "10:45", "end": "11:00"},
+        {"app": "Google Chrome", "title": "Release notes 2.4 - Notion", "start": "15:00", "end": "15:20"},
+        {"app": "Linear", "title": "Bug triage · ShopApp - Linear", "start": "15:20", "end": "15:35"},
+        {"app": "Google Chrome", "title": "1:1 with Sam - Notion", "start": "15:35", "end": "15:50"},
+        {"app": "Linear", "title": "Bug triage · ShopApp - Linear", "start": "15:50", "end": "16:00"}
+      ],
+      "contexts": [
+        {"id": 301, "at": "09:10", "app": "Xcode", "title": "CheckoutFlowTests.swift — ShopApp", "text": "testPlaceOrderShowsConfirmation failed (flaky, 3 of 10 runs)\nXCTAssertTrue failed - confirmation banner not found within 2s\nSuspect: animation not finished; replace sleep with waitForExistence(timeout: 5)"},
+        {"id": 302, "at": "09:30", "app": "Slack", "title": "Priya Raman (DM) - Northwind - Slack", "text": "Priya Raman: how does pagination work in the /v2/orders API? cursor or offset?\nMe: cursor. Pass next_cursor from the previous page; page size max 200"},
+        {"id": 303, "at": "09:45", "app": "Xcode", "title": "CheckoutFlowTests.swift — ShopApp", "text": "testPlaceOrderShowsConfirmation passed (20 of 20 runs)\nCommitted: Fix flaky CheckoutFlowTests by waiting for the banner"},
+        {"id": 304, "at": "09:55", "app": "Slack", "title": "Priya Raman (DM) - Northwind - Slack", "text": "Priya Raman: thanks! I'll update the client\nMe: I'll add the cursor example to the API docs"},
+        {"id": 305, "at": "10:35", "app": "Google Chrome", "title": "Hacker News", "text": "Hacker News  new | past | comments | ask | show | jobs\n1. Show HN: A tiny Lisp in 500 lines\n2. The economics of airline seats"},
+        {"id": 306, "at": "15:10", "app": "Google Chrome", "title": "Release notes 2.4 - Notion", "text": "Release notes 2.4\nApple Pay in checkout\nFaster order history\nFixed: crash when editing an address"},
+        {"id": 307, "at": "15:25", "app": "Linear", "title": "Bug triage · ShopApp - Linear", "text": "Bug triage · ShopApp\nSHOP-812 Crash on address edit. Priority: Urgent, assigned to me\nSHOP-815 Wrong currency symbol in receipts. Priority: High\nUntriaged: 14 to 3"},
+        {"id": 308, "at": "15:40", "app": "Google Chrome", "title": "1:1 with Sam - Notion", "text": "1:1 with Sam\nFeedback on the on-call rotation\nPromotion packet timeline: draft by September 1\nAsk: can Sam own the release checklist?"},
+        {"id": 309, "at": "15:55", "app": "Linear", "title": "Bug triage · ShopApp - Linear", "text": "SHOP-819 Duplicate push notifications. Priority: Medium, needs a repro"}
+      ],
+      "items": [
+        {"id": "flaky-test", "label": "Fix the flaky checkout UI test", "keywords": ["flaky", "checkoutflowtests", "checkout flow test", "placeorder", "confirmation banner"]},
+        {"id": "pagination-answer", "label": "Answer Priya about /v2/orders pagination", "keywords": ["pagination", "next_cursor", "priya", "/v2/orders", "orders api"]},
+        {"id": "release-notes", "label": "Write the 2.4 release notes", "keywords": ["release notes", "2.4"]},
+        {"id": "bug-triage", "label": "Triage ShopApp bugs in Linear", "keywords": ["triage", "linear", "shop-812", "bug report"]},
+        {"id": "sam-one-on-one", "label": "Prepare the 1:1 with Sam", "keywords": ["1:1", "one-on-one", "1-on-1", "with sam", "promotion packet"]}
+      ],
+      "noise": ["hacker news", "youtube", "lofi", "show hn", "lisp"]
+    }
+  ]
+}

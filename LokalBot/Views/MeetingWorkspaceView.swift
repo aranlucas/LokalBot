@@ -144,6 +144,7 @@ private struct MeetingWorkspaceDetail: View {
     @State private var reviewSpeakers: [MeetingSpeakerReviewItem] = []
     @State private var previousReviewProjection: MeetingOutcomeProjection?
     @State private var reviewLoadTask: Task<Void, Never>?
+    @State private var correctionReloadTask: Task<Void, Never>?
     @State private var attributionNeedsRefresh = false
     @State private var returningToReview = false
     @State private var speakerRenameDraft: WorkspaceSpeakerRenameDraft?
@@ -345,6 +346,9 @@ private struct MeetingWorkspaceDetail: View {
                     reviewing: tab == .review ? meeting : nil)
                 if saved {
                     reloadReviewProjection()
+                    // The correction also re-rendered the summary's action list.
+                    correctionReloadTask?.cancel()
+                    correctionReloadTask = Task { await reloadDocument() }
                     correction = nil
                     correctionError = nil
                 } else {
@@ -394,6 +398,7 @@ private struct MeetingWorkspaceDetail: View {
         }
         .onDisappear {
             reviewLoadTask?.cancel()
+            correctionReloadTask?.cancel()
             app.meetingPlaybackPositions[meeting.id] = player.currentTime
             app.meetingPlaybackSpeeds[meeting.id] = player.speed
             player.stop()

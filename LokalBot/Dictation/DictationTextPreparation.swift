@@ -8,6 +8,10 @@ enum DictationTextPreparation {
         let compositionModel: String?
     }
 
+    /// No thinking turn, a low temperature for faithful cleanup, and an output
+    /// ceiling well above a long dictated message.
+    static let composeOptions = TextGenerationOptions(maxTokens: 4_096, reasoningBudgetTokens: 0, temperature: 0.2)
+
     @MainActor
     static func prepare(
         speech: String,
@@ -25,7 +29,10 @@ enum DictationTextPreparation {
         let prompt = DictationComposePrompt.userPrompt(
             spokenText: speech, context: context,
             profile: DictationComposeProfile(personalization: settings.cotypingPersonalization))
-        let output = try await engine.generate(system: DictationComposePrompt.system, prompt: prompt, context: [])
+        // Someone is waiting to insert this text. Without options the built-in
+        // server would allow an 8K-token thinking turn before any visible text.
+        let output = try await engine.generate(system: DictationComposePrompt.system, prompt: prompt, context: [],
+                                               options: Self.composeOptions)
         try Task.checkCancellation()
         let text = DictationComposePrompt.normalizedOutput(output)
         guard !text.isEmpty else { throw DictationComposeError.emptyOutput }

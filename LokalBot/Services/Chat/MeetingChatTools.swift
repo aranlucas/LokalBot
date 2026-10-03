@@ -148,7 +148,7 @@ enum MeetingChatFormat {
     }
 
     static func meeting(_ meeting: Meeting, summary: String?, transcript: String?,
-                        include: String) -> String {
+                        include: String, transcriptContinuation: String? = nil) -> String {
         let want = include.lowercased()
         let all = want.contains("all")
         var lines = [
@@ -170,27 +170,49 @@ enum MeetingChatFormat {
             } else {
                 lines.append("No transcript available for this meeting yet.")
             }
+            if let transcriptContinuation {
+                lines.append("")
+                lines.append(transcriptContinuation)
+            }
         }
         return lines.joined(separator: "\n")
     }
 
-    static func transcriptObservation(_ transcript: Transcript, maximumCharacters: Int = 6_000)
-        -> (text: String, seconds: [TimeInterval]) {
+    /// One window of a structured transcript, starting at `start` seconds.
+    /// `nextStart` is where the following window begins when the rest did not
+    /// fit, so a long meeting is never presented to the model as complete.
+    static func transcriptObservation(_ transcript: Transcript, from start: TimeInterval = 0,
+                                      maximumCharacters: Int = 6_000)
+        -> (text: String, seconds: [TimeInterval], nextStart: TimeInterval?) {
         var text = ""
         var seconds: [TimeInterval] = []
+        var windowIsFull = false
         for display in Transcript.DisplayIndex(transcript: transcript).segments {
-            let start = display.segment.start
-            guard start.isFinite, start >= 0, Int(exactly: start.rounded(.towardZero)) != nil else { continue }
-            let header = "**[\(Transcript.stamp(start))] \(display.speakerLabel):** "
+            let segmentStart = display.segment.start
+            guard segmentStart.isFinite, segmentStart >= 0,
+                  Int(exactly: segmentStart.rounded(.towardZero)) != nil else { continue }
+            guard segmentStart >= start || display.segment.end > start else { continue }
+            if windowIsFull { return (text, seconds, segmentStart) }
             let separator = text.isEmpty ? "" : "\n\n"
-            let remaining = maximumCharacters - text.count - separator.count
-            guard remaining > header.count else { break }
-            let line = header + display.text
-            text += separator + String(line.prefix(remaining))
-            seconds.append(start)
-            if line.count > remaining { break }
+            let line = "**[\(Transcript.stamp(segmentStart))] \(display.speakerLabel):** " + display.text
+            if line.count <= maximumCharacters - text.count - separator.count {
+                text += separator + line
+                seconds.append(segmentStart)
+                continue
+            }
+            // The next window starts with this whole line. Only a line longer
+            // than a window is cut, and reading then moves past it.
+            guard text.isEmpty else { return (text, seconds, segmentStart) }
+            text = String(line.prefix(max(0, maximumCharacters - 1))) + "…"
+            seconds.append(segmentStart)
+            windowIsFull = true
         }
-        return (text, seconds)
+        return (text, seconds, nil)
+    }
+
+    static func transcriptContinuation(next: TimeInterval) -> String {
+        "[The transcript continues at \(Transcript.stamp(next)). To read on, call get_meeting with this id, "
+            + "include=transcript and from=\(Transcript.stamp(next)).]"
     }
 
     // MARK: - Screen / activity formatters
@@ -327,10 +349,11 @@ final class MeetingChatTools: ChatToolRunner {
             ]),
         ChatToolSpec(
             name: "get_meeting",
-            summary: "Read one meeting's summary or full transcript.",
+            summary: "Read one meeting's summary, or its transcript one window at a time.",
             arguments: [
                 .init(name: "id", description: "Meeting id from another tool's output, or 'latest' for the most recent.", required: true),
                 .init(name: "include", description: "What to return: 'summary' (default), 'transcript', or 'all'.", required: false),
+                .init(name: "from", description: "Transcript start time as HH:MM:SS, to continue a long transcript or jump to a search hit (default: the beginning).", required: false),
             ]),
         ChatToolSpec(
             name: "get_action_items",
@@ -435,15 +458,21 @@ final class MeetingChatTools: ChatToolRunner {
         let include = call.string("include") ?? "summary"
         var evidence = ChatEvidence()
         evidence.addMeeting(meeting.id)
+        var continuation: String?
         if include.lowercased().contains("all") || include.lowercased().contains("transcript"),
            let data = try? Data(contentsOf: folder.appendingPathComponent("transcript.json")),
            let structured = try? JSONDecoder().decode(Transcript.self, from: data) {
-            let observation = MeetingChatFormat.transcriptObservation(structured)
-            transcript = observation.text
+            let start = call.string("from").flatMap(ChatCitationParser.seconds(from:)) ?? 0
+            let observation = MeetingChatFormat.transcriptObservation(structured, from: start)
+            transcript = observation.text.isEmpty && start > 0
+                ? "No transcript lines at or after \(Transcript.stamp(start))."
+                : observation.text
+            continuation = observation.nextStart.map(MeetingChatFormat.transcriptContinuation(next:))
             for seconds in observation.seconds { evidence.addMeeting(meeting.id, seconds: seconds) }
         }
         let text = MeetingChatFormat.meeting(meeting, summary: summary,
-                                             transcript: transcript, include: include)
+                                             transcript: transcript, include: include,
+                                             transcriptContinuation: continuation)
         return ChatToolResult(text: text, summary: meeting.title, evidence: evidence)
     }
 

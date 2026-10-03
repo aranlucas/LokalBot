@@ -55,11 +55,62 @@ final class LibrarySearchTests: XCTestCase {
     }
 
     func testLimitCapsHits() throws {
-        XCTAssertEqual(try LibrarySearch.hits(query: "e", limit: 2).count, 2)
+        XCTAssertEqual(try LibrarySearch.hits(query: "planning").count, 2)
+        XCTAssertEqual(try LibrarySearch.hits(query: "planning", limit: 1).count, 1)
     }
 
     func testNoMatchReturnsEmpty() throws {
         XCTAssertTrue(try LibrarySearch.hits(query: "zzzznotthere").isEmpty)
+    }
+
+    func testWordsMatchInAnyOrderAndAQuotedQueryNeedsTheExactPhrase() throws {
+        try MeetingFixture.write([
+            .init(id: UUID(), title: "Pricing review", startedAt: Date(timeIntervalSince1970: 1_790_000_000),
+                  summary: "", transcriptLines: ["We made the final decision on pricing today."]),
+        ], under: root)
+        let loose = try LibrarySearch.hits(query: "pricing decision")
+        XCTAssertTrue(loose.contains { $0.snippet == "We made the final decision on pricing today." })
+        XCTAssertTrue(try LibrarySearch.hits(query: "\"pricing decision\"").isEmpty)
+        XCTAssertEqual(try LibrarySearch.hits(query: "\"decision on pricing\"").first?.match_kind, "transcript")
+    }
+
+    func testMatchingIgnoresAccentsAndSkipsApostropheFragments() throws {
+        try MeetingFixture.write([
+            .init(id: UUID(), title: "Sastanak", startedAt: Date(timeIntervalSince1970: 1_790_000_000),
+                  summary: "", transcriptLines: ["Poslaću izveštaj o budžetu sutra."]),
+        ], under: root)
+        XCTAssertEqual(try LibrarySearch.hits(query: "izvestaj budzetu").first?.snippet,
+                       "Poslaću izveštaj o budžetu sutra.")
+        XCTAssertEqual(LibrarySearch.searchTerms(LibrarySearch.folded("Don't send it")), ["don", "send", "it"])
+        XCTAssertEqual(LibrarySearch.searchTerms("e"), ["e"])
+    }
+
+    func testRareWordsOutrankCommonOnesAndOneMeetingCannotFillTheList() throws {
+        var lines: [String] = []
+        for index in 0..<12 { lines.append("We talked about the roadmap, item \(index).") }
+        try MeetingFixture.write([
+            .init(id: UUID(), title: "Long sync", startedAt: Date(timeIntervalSince1970: 1_795_000_000),
+                  summary: "", transcriptLines: lines),
+            .init(id: UUID(), title: "Vendor call", startedAt: Date(timeIntervalSince1970: 1_760_000_000),
+                  summary: "", transcriptLines: ["We talked about the Kafka migration plan."]),
+        ], under: root)
+        let hits = try LibrarySearch.hits(query: "what did we decide about the kafka migration")
+        XCTAssertEqual(hits.first?.meeting_title, "Vendor call", "the rare words lead, not the common ones")
+        let broad = try LibrarySearch.hits(query: "talked")
+        XCTAssertEqual(broad.filter { $0.meeting_title == "Long sync" }.count, LibrarySearch.maximumTranscriptHitsPerMeeting)
+        XCTAssertTrue(broad.contains { $0.meeting_title == "Vendor call" })
+    }
+
+    func testShortWordsMatchOnlyWholeWordsAndTheSnippetFindsThem() throws {
+        try MeetingFixture.write([
+            .init(id: UUID(), title: "Rapid growth", startedAt: Date(timeIntervalSince1970: 1_791_000_000),
+                  summary: "Rapid growth this quarter. " + String(repeating: "Filler. ", count: 20) + "The API limit stays at 50.",
+                  transcriptLines: ["Banana exports grew."]),
+        ], under: root)
+        let hits = try LibrarySearch.hits(query: "api")
+        XCTAssertEqual(hits.map(\.match_kind), ["summary"], "\"Rapid\" in the title is not the API")
+        XCTAssertTrue(hits.first?.snippet.contains("API limit") == true, hits.first?.snippet ?? "")
+        XCTAssertTrue(try LibrarySearch.hits(query: "ana").isEmpty, "\"Banana\" is not Ana")
     }
 
     func testUnicodeCaseExpansionUsesOriginalStringIndices() throws {

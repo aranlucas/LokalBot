@@ -971,6 +971,7 @@ final class ChatViewModel: ObservableObject {
                 dayScopeKey: dayScopeKey,
                 meetingIDs: meetingIDs, screenSnapshotIDs: screenSnapshotIDs)
             var agent = ChatAgent(engine: engine, runner: scopedTools)
+            agent.adaptLimits(to: engine)
             if scopes.contains(.screen) {
                 agent.initialEvidence.screenIDs = screenSnapshotIDs.map { attachedScreenIDs.intersection($0) }
                     ?? attachedScreenIDs

@@ -18,6 +18,57 @@ final class ScreenContextPrivacyTests: XCTestCase {
         XCTAssertTrue(result.text.contains("[REDACTED"))
     }
 
+    func testRedactsEnvStyleNamesProviderTokensAndURLPasswords() {
+        // Assembled at run time so the source never holds a token-shaped literal.
+        let stripe = "sk_" + "live_" + String(repeating: "a", count: 24)
+        let slack = "xox" + "b-" + String(repeating: "1", count: 12) + "-" + String(repeating: "b", count: 12)
+        let google = "AI" + "za" + String(repeating: "c", count: 35)
+        let fineGrained = "github_" + "pat_" + String(repeating: "d", count: 30)
+        let awsSecret = "wJalrXUtnFEMI" + "K7MDENGbPxRfiCY"
+        let source = """
+        DB_PASSWORD=hunter2222
+        aws_secret_access_key = \(awsSecret)
+        GITHUB_TOKEN: \(fineGrained)
+        STRIPE_KEY \(stripe)
+        slack \(slack) and \(google)
+        DATABASE_URL=postgres://admin:\("s3cret" + "Pass")@db.internal:5432/app
+        """
+
+        let result = ScreenContextPrivacy.redact(source)
+
+        for secret in ["hunter2222", awsSecret, fineGrained, stripe, slack, google, "s3cretPass"] {
+            XCTAssertFalse(result.text.contains(secret), "\(secret) survived:\n\(result.text)")
+        }
+        XCTAssertTrue(result.text.contains("DB_PASSWORD=[REDACTED]"), result.text)
+        XCTAssertTrue(result.text.contains("postgres://admin:[REDACTED]@db.internal:5432/app"), result.text)
+        XCTAssertEqual(result.count, 7)
+    }
+
+    func testRedactsCardNumbersAndIBANsOnlyWithValidChecksums() {
+        let source = "Visa 4111 1111 1111 1111, Amex 3782-822463-10005, MC 5555555555554444, IBAN DE89 3704 0044 0532 0130 00."
+
+        let result = ScreenContextPrivacy.redact(source)
+
+        XCTAssertEqual(result.text, "Visa [REDACTED_CARD], Amex [REDACTED_CARD], MC [REDACTED_CARD], IBAN [REDACTED_IBAN].")
+        XCTAssertEqual(result.count, 4)
+        XCTAssertFalse(ScreenContextPrivacy.isIBAN("DE89 3704 0044 0532 0130 01"))
+    }
+
+    func testKeepsOrdinaryNumbersAndSettingsReadable() {
+        let source = """
+        max_tokens: 4096
+        Order 4111 1111 1111 1112 shipped
+        Tracking 1234567890123
+        Call +1 415 555 0100
+        Password must have 8 characters
+        """
+
+        let result = ScreenContextPrivacy.redact(source)
+
+        XCTAssertEqual(result.text, source)
+        XCTAssertEqual(result.count, 0)
+    }
+
     func testPrivateWindowsAndDomainRulesFailClosed() {
         XCTAssertTrue(ScreenContextPrivacy.isPrivateWindow(title: "New Incognito Window"))
         XCTAssertTrue(ScreenContextPrivacy.isPrivateWindow(title: "InPrivate browsing"))
@@ -206,6 +257,28 @@ final class ScreenContextPrivacyTests: XCTestCase {
         webApp.sourceURL = nil
         webApp.focusedSecureField = true
         XCTAssertEqual(disposition(webApp), .init(keepsApp: true, keepsTitle: false))
+    }
+
+    func testPasswordManagersStayPrivateInAnyLanguageAndRulesCanNameBundleIDs() {
+        let passwords = ScreenContextPrivacy.Observation(
+            appName: "Passwörter", bundleIdentifier: "com.apple.Passwords",
+            windowTitle: "Bankkonto", sourceURL: nil, focusedSecureField: false)
+        XCTAssertFalse(ScreenContextPrivacy.permitsContent(passwords, excludedApps: [], excludedDomains: []),
+                       "the German Passwords app is skipped though no rule names it")
+        XCTAssertEqual(ScreenContextPrivacy.activityDisposition(
+            appName: "Trousseaux d'accès", bundleIdentifier: "com.apple.keychainaccess", observation: nil,
+            excludedApps: AppSettings().excludedAppList, excludedDomains: []),
+            .init(keepsApp: false, keepsTitle: false), "the default \"Keychain Access\" rule misses the French name")
+
+        let notes = ScreenContextPrivacy.Observation(
+            appName: "Notizen", bundleIdentifier: "com.apple.Notes",
+            windowTitle: "Ideas", sourceURL: nil, focusedSecureField: false)
+        XCTAssertFalse(ScreenContextPrivacy.permitsContent(notes, excludedApps: ["com.apple.Notes"], excludedDomains: []),
+                       "Choose App… stores the bundle identifier")
+        XCTAssertFalse(ScreenContextPrivacy.permitsContent(notes, excludedApps: ["com.apple"], excludedDomains: []))
+        XCTAssertTrue(ScreenContextPrivacy.permitsContent(notes, excludedApps: ["com.apple.Note"], excludedDomains: []))
+        XCTAssertTrue(ScreenContextPrivacy.permitsContent(notes, excludedApps: ["Notes"], excludedDomains: []),
+                      "a plain rule still matches the display name only")
     }
 
     func testPrivateWindowsStillRespectAppDomainAndSecureFieldExclusions() {

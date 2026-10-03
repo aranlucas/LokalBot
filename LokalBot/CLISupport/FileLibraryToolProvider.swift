@@ -73,7 +73,11 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                 ]),
             ToolDefinition(
                 name: "search_meetings",
-                description: "Case-insensitive substring search across meeting titles, summaries, and transcripts. Hits are recency-ordered with kind, snippet, and timestamp.",
+                description: "Word search across meeting titles, summaries, and transcripts. Meetings with every query word "
+                    + "(any order, case- and accent-insensitive) come first, then partial matches; rare words weigh more, "
+                    + "exact-phrase hits lead, and ties keep recency. Words of up to three letters or digits match "
+                    + "only whole words. Wrap the query in double quotes for an exact phrase. "
+                    + "Hits carry kind, snippet, and timestamp; one meeting gives at most five transcript hits.",
                 inputSchema: [
                     "type": "object",
                     "properties": [
@@ -142,7 +146,8 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                 ]),
             ToolDefinition(
                 name: "search_screen",
-                description: "Search locally captured screen text and window titles. Returns text snippets and context metadata only; never pixels or encrypted file paths. Requires the separate screen-memory permission.",
+                description: "Search locally captured screen text and window titles. Returns text snippets and context metadata only; never pixels or encrypted file paths. "
+                    + "Repeated captures of the same window and text count once. Requires the separate screen-memory permission.",
                 inputSchema: [
                     "type": "object",
                     "properties": [
@@ -155,11 +160,14 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                 ]),
             ToolDefinition(
                 name: "get_timeline",
-                description: "Get activity blocks and screen-context metadata for one local calendar day. No pixels or encrypted file paths are returned. Requires the separate screen-memory permission.",
+                description: "Get activity blocks and screen-context metadata for one local calendar day, oldest first. No pixels or encrypted file paths are returned. "
+                    + "A list cut at the limit sets activity_truncated or screenshots_truncated; call again with after set to its last ended_at or captured_at to continue. "
+                    + "Requires the separate screen-memory permission.",
                 inputSchema: [
                     "type": "object",
                     "properties": [
                         "day": ["type": "string", "description": "Local calendar day (YYYY-MM-DD); defaults to today."],
+                        "after": ["type": "string", "description": "Optional ISO 8601 time; return only what follows it within the day."],
                         "limit": ["type": "integer", "description": "Maximum activity blocks and screenshots (default 200, maximum 500)."],
                     ],
                 ]),
@@ -483,18 +491,23 @@ struct FileLibraryToolProvider: LibraryToolProvider {
                 return .text(encodeScreenMemory([ScreenMemorySearchHit]()))
             }
             let cutoff = screenAccessCutoff
+            // A window captured every few seconds repeats one snippet many
+            // times; read further and keep the most relevant copy of each.
+            var seen = Set<String>()
             let hits = try screenReader.search(ScreenMemorySearchRequest(
                 query: query,
                 start: scoped?.start ?? cutoff,
                 end: scoped?.end,
                 app: app,
-                limit: limit))
+                limit: limit * 4))
+                .filter { seen.insert("\($0.app)|\($0.windowTitle)|\($0.snippet)").inserted }
+                .prefix(limit)
             // Enforce the profile again on returned rows. The SQLite reader
             // already applies the bound, but this keeps the authorization
             // boundary intact for alternate readers and future refactors.
             let authorizedHits = cutoff.map { boundary in
                 hits.filter { $0.capturedAt >= boundary }
-            } ?? hits
+            } ?? Array(hits)
             return .text(encodeScreenMemory(authorizedHits))
         } catch {
             return screenMemoryFailure(error)
@@ -512,14 +525,21 @@ struct FileLibraryToolProvider: LibraryToolProvider {
         case .success(let value): limit = value
         case .failure(let result): return result
         }
+        var after: Date?
+        if let raw = arguments?["after"] {
+            guard let text = raw.stringValue, let value = ISO8601DateFormatter().date(from: text) else {
+                return .error(.invalidArguments, "\"after\" must be an ISO 8601 time such as 2026-05-27T14:30:00Z.")
+            }
+            after = value
+        }
         do {
-            guard let scoped = scopedInterval(interval) else {
+            guard let scoped = scopedInterval(interval), scoped.end > (after ?? scoped.start) else {
                 return .text(encodeScreenMemory(ScreenMemoryTimeline(
                     start: interval.start, end: interval.end,
                     activity: [], screenshots: [])))
             }
             return .text(encodeScreenMemory(try screenReader.timeline(
-                from: scoped.start, to: scoped.end, limit: limit)))
+                from: max(scoped.start, after ?? scoped.start), to: scoped.end, limit: limit)))
         } catch {
             return screenMemoryFailure(error)
         }

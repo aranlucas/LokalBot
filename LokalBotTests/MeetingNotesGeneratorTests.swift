@@ -124,6 +124,20 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertEqual(MeetingNotesEvidence.spokenDue("sprint 12", sourceIDs: []), "sprint 12")
     }
 
+    func testDueWithAYearNobodySaidIsDroppedButTheActionStays() async throws {
+        var invented = action()
+        invented["due"] = "2024-01-01"
+        let script = Script([.text(try response(notes: [note()], actions: [invented]))])
+        let result = try await generate(script)
+        XCTAssertEqual(result.outcomes.userActionItems.count, 1)
+        XCTAssertNil(result.outcomes.userActionItems[0].due)
+
+        let said = "I will ship the update by March 2027, not on Friday."
+        XCTAssertEqual(MeetingNotesEvidence.spokenDue("2024-01-01", sourceIDs: [], citedText: said), "")
+        XCTAssertEqual(MeetingNotesEvidence.spokenDue("March 2027", sourceIDs: [], citedText: said), "March 2027")
+        XCTAssertEqual(MeetingNotesEvidence.spokenDue("Friday", sourceIDs: [], citedText: said), "Friday")
+    }
+
     func testRepairKeepsValidRecordsAndOnlySendsRejectedSources() async throws {
         var transcript = transcript
         transcript.segments += (3..<12).map { index in
@@ -557,6 +571,49 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertEqual(result.outcomes.userActionItems.count, 1)
     }
 
+    func testFillerTheRepairFindsNoTaskInDoesNotLeaveNotesPartial() async throws {
+        var transcript = longTranscript()
+        transcript.segments[20] = .init(start: 100, end: 105, speaker: "me", text: "I'll be honest, the dependency worries me.",
+                                        attribution: .init(source: .microphone, identity: .user, method: .confirmation))
+        XCTAssertEqual(MeetingNotesEvidence(transcript: transcript).units.filter(\.isUserCommitment).map(\.source), ["s21"])
+        let script = Script([
+            .text(try response(notes: [note("s1", "The dependency needs review.")])),
+            // Asked again at temperature 0, the model gives the same answer.
+            .text(try response()), .text(try response()),
+        ])
+
+        let result = try await generate(script, transcript: transcript)
+
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 2, "a complete answer without a task is final")
+        XCTAssertTrue(calls[1].prompt.contains("missing_user_commitment"))
+        XCTAssertTrue(result.outcomes.userActionItems.isEmpty)
+        XCTAssertEqual(result.claims.count, 1)
+    }
+
+    func testACommitmentBesideSeveralOwnerUnclearTasksDoesNotLeaveNotesPartial() async throws {
+        var transcript = longTranscript()
+        transcript.segments[19] = .init(start: 95, end: 100, speaker: "them", text: "Someone should review the dependency.")
+        transcript.segments[20] = .init(start: 100, end: 105, speaker: "me", text: "I will take care of it.",
+                                        attribution: .init(source: .microphone, identity: .user, method: .confirmation))
+        transcript.segments[21] = .init(start: 105, end: 110, speaker: "them", text: "The migration plan should be updated.")
+        var reviewTask = action("s20", owner: "unknown")
+        reviewTask["text"] = "Review the dependency"
+        reviewTask["basis"] = "unclear"
+        var migrationTask = action("s22", owner: "unknown")
+        migrationTask["text"] = "Update the migration plan"
+        migrationTask["basis"] = "unclear"
+        let script = Script([
+            .text(try response(notes: [note("s1", "The dependency needs review.")], actions: [reviewTask, migrationTask])),
+        ])
+
+        let result = try await generate(script, transcript: transcript)
+
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 1, "proximity cannot choose between two tasks, so no repair is asked")
+        XCTAssertEqual(result.outcomes.unresolvedActionItems.count, 2)
+    }
+
     func testEmptySubstantialPartCannotReportComplete() async throws {
         let script = Script([.text(try response())])
         do {
@@ -738,6 +795,22 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         let calls = await script.recorded()
         XCTAssertEqual(calls.count, 2)
         XCTAssertTrue(FileManager.default.fileExists(atPath: output.appendingPathComponent(MeetingNotesPartial.fileName).path))
+    }
+
+    func testLongMeetingTakeawaysInterleaveSoTheFirstBulletsSpanEveryPart() {
+        func claim(_ section: String, _ text: String) -> SummaryClaimEvidence.Claim {
+            SummaryClaimEvidence.Claim(section: section, text: text, speakerID: "p1", segmentID: text, quote: text)
+        }
+        let parts = [
+            [claim("TL;DR", "opening 1"), claim("Key points", "early detail"), claim("TL;DR", "opening 2")],
+            [claim("TL;DR", "middle 1"), claim("Decisions", "middle decision")],
+            [claim("TL;DR", "closing 1"), claim("TL;DR", "closing 2"), claim("TL;DR", "closing 3")],
+        ]
+        let ordered = MeetingNotesGenerator.interleavingTLDR(parts)
+        XCTAssertEqual(ordered.filter { $0.section == "TL;DR" }.map(\.text),
+                       ["opening 1", "middle 1", "closing 1", "opening 2", "closing 2", "closing 3"])
+        XCTAssertEqual(ordered.filter { $0.section != "TL;DR" }.map(\.text), ["early detail", "middle decision"])
+        XCTAssertEqual(ordered.count, 8, "no takeaway or note is dropped")
     }
 
     func testOnlyKnownAlwaysReasoningProviderRaisesTheStructuredOutputFloor() {

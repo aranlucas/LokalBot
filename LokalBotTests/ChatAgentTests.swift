@@ -377,6 +377,82 @@ final class ChatAgentTests: XCTestCase {
         XCTAssertEqual(answer, ChatPrompt.fallbackAnswer)
     }
 
+    func testCurrentTimeGoesLastSoTheModelCanResolveRelativeDays() throws {
+        let now = try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-10-02T09:30:00Z"))
+        let zone = try XCTUnwrap(TimeZone(identifier: "Europe/Belgrade"))
+        let line = ChatPrompt.currentTimeLine(now: now, timeZone: zone)
+        XCTAssertTrue(line.hasPrefix("Current local time: Friday, 2 October 2026, 11:30 (Europe/Belgrade)."), line)
+        let prompt = ChatPrompt.systemPrompt(tools: [], libraryOverview: "The user has 2 recorded meetings.",
+                                             currentTime: line)
+        XCTAssertTrue(prompt.hasSuffix(line), "a changing line must not invalidate the cached prompt prefix")
+        XCTAssertFalse(ChatPrompt.systemPrompt(tools: [], libraryOverview: "").contains("Current local time"))
+    }
+
+    func testHistoryReplayIsBoundedByMessagesAndCharactersAndStartsWithAQuestion() {
+        var history: [ChatAgent.Turn] = []
+        for index in 0..<20 {
+            let role: ChatRole = index.isMultiple(of: 2) ? .user : .assistant
+            let turn = ChatAgent.Turn(role: role, text: "message \(index)")
+            history.append(turn)
+        }
+        let expected = (4..<20).map { "message \($0)" }
+        XCTAssertEqual(ChatAgent.replayedHistory(history, maxMessages: 16, maxCharacters: 12_000).map(\.text), expected)
+        XCTAssertEqual(ChatAgent.replayedHistory(history, maxMessages: 3, maxCharacters: 12_000).map(\.text),
+                       ["message 18", "message 19"], "an answer whose question was cut off is dropped")
+
+        let long: [ChatAgent.Turn] = [
+            .init(role: .user, text: "first question"),
+            .init(role: .assistant, text: String(repeating: "a", count: 11_990)),
+            .init(role: .user, text: "second question"),
+            .init(role: .assistant, text: "short answer"),
+        ]
+        XCTAssertEqual(ChatAgent.replayedHistory(long, maxMessages: 16, maxCharacters: 12_000).map(\.text),
+                       ["second question", "short answer"])
+    }
+
+    func testAppleIntelligenceKeepsTheSmallerAskLoop() {
+        var agent = ChatAgent(engine: AppleIntelligenceEngine(), runner: FakeRunner(specs: [], overview: "", results: [:]))
+        XCTAssertEqual(agent.maxSteps, 6)
+        agent.adaptLimits(to: AppleIntelligenceEngine())
+        XCTAssertEqual(agent.maxSteps, 4)
+        XCTAssertEqual(agent.historyWindow, 8)
+        XCTAssertEqual(agent.historyCharacters, 4_000)
+        var local = ChatAgent(engine: AppleIntelligenceEngine(), runner: FakeRunner(specs: [], overview: "", results: [:]))
+        local.adaptLimits(to: OllamaEngine(baseURL: URL(fileURLWithPath: "/"), model: "fixture"))
+        XCTAssertEqual(local.maxSteps, 6)
+    }
+
+    func testLongTranscriptReadsSayWhereTheyContinueAndLoseNoLines() throws {
+        var segments: [Transcript.Segment] = []
+        let filler = String(repeating: "word ", count: 60)
+        for index in 0..<30 {
+            let start = Double(index) * 60
+            let text = filler + "line \(index)."
+            let segment = Transcript.Segment(start: start, end: start + 50, speaker: "them 1", text: text)
+            segments.append(segment)
+        }
+        let transcript = Transcript(segments: segments, engine: "fixture")
+        let first = MeetingChatFormat.transcriptObservation(transcript)
+        XCTAssertLessThanOrEqual(first.text.count, 6_000)
+        let next = try XCTUnwrap(first.nextStart, "a cut transcript must say where it continues")
+        XCTAssertFalse(first.text.contains("line 29."))
+        XCTAssertTrue(MeetingChatFormat.transcriptContinuation(next: next).contains("from=\(Transcript.stamp(next))"))
+
+        var cursor: TimeInterval? = 0
+        var reads = 0
+        var combined = ""
+        while let start = cursor, reads < 10 {
+            let window = MeetingChatFormat.transcriptObservation(transcript, from: start)
+            combined += window.text + "\n\n"
+            cursor = window.nextStart
+            reads += 1
+        }
+        XCTAssertNil(cursor)
+        for index in 0..<30 {
+            XCTAssertTrue(combined.contains("line \(index)."), "missing line \(index)")
+        }
+    }
+
     // MARK: - Pure formatters
 
     func testLibraryOverviewEmptyAndPopulated() {
@@ -501,6 +577,14 @@ final class ChatAgentTests: XCTestCase {
                                                             arguments: ["id": "latest", "include": "transcript"]))
         XCTAssertTrue(latestTranscript.text.contains("Redis"), "get transcript: \(latestTranscript.text)")
         XCTAssertTrue(latestTranscript.evidence.contains(.init(meetingID: SessionLookup.shortID(meeting.id), seconds: 12)))
+        XCTAssertFalse(latestTranscript.text.contains("transcript continues"))
+
+        let later = await tools.run(ChatToolCall(name: "get_meeting",
+                                                 arguments: ["id": "latest", "include": "transcript", "from": "00:00:19"]))
+        XCTAssertTrue(later.text.contains("benchmark failover"), "get from: \(later.text)")
+        XCTAssertFalse(later.text.contains("eviction policy"), "get from: \(later.text)")
+        XCTAssertTrue(later.evidence.contains(.init(meetingID: SessionLookup.shortID(meeting.id), seconds: 20)))
+        XCTAssertFalse(later.evidence.contains(.init(meetingID: SessionLookup.shortID(meeting.id), seconds: 12)))
 
         let miss = await tools.run(ChatToolCall(name: "get_meeting", arguments: ["id": "zzzzzzzz"]))
         XCTAssertTrue(miss.text.contains("No meeting matches"), "miss: \(miss.text)")

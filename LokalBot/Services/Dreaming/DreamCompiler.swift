@@ -59,6 +59,10 @@ enum DreamCompiler {
     /// primary material.
     static let comparisonWindowDays = 14
     static let evidenceCharacterLimit = 24_000
+    /// The journal's share of the pack. Its raw activity log can run to
+    /// hundreds of KB; unbounded, it pushed app totals, saved moments, the
+    /// comparison window, and action handles past `evidenceCharacterLimit`.
+    static let digestCharacterLimit = 12_000
     static let maxOpenActions = 30
     /// Under five tracked minutes a day is treated as empty rather than worth
     /// waking a model for.
@@ -144,6 +148,21 @@ enum DreamCompiler {
             sources: sources)
     }
 
+    /// The journal's grounded sections (day summary, meetings, agent sessions,
+    /// time allocation), then as much of its raw activity log as still fits
+    /// `digestCharacterLimit`.
+    static func digestForDream(_ journal: String) -> String {
+        let marker = "\n## Full activity log"
+        let head = journal.range(of: marker).map { String(journal[..<$0.lowerBound]) } ?? journal
+        guard head.count < digestCharacterLimit else {
+            return String(head.prefix(digestCharacterLimit - 1)) + "…"
+        }
+        guard journal.count > digestCharacterLimit else { return journal }
+        let notice = "\n…(activity log truncated)"
+        let room = max(0, digestCharacterLimit - head.count - notice.count)
+        return head + String(journal.dropFirst(head.count).prefix(room)) + notice
+    }
+
     /// The prompt material: every evidence section rendered as labeled plain
     /// text, then sanitized and hard-capped like the summarizer's transcript
     /// input so an OCR-heavy day can't blow the context window.
@@ -173,7 +192,7 @@ enum DreamCompiler {
         }
 
         if let digest = evidence.digest {
-            sections.append("Day digest:\n" + digest)
+            sections.append("Day digest:\n" + digestForDream(digest))
         }
 
         if !evidence.appUsage.isEmpty {

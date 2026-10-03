@@ -334,6 +334,38 @@ final class MeetingIntegrityTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: url), original)
     }
 
+    /// Behaves like Parakeet: audio shorter than 0.3 s is an error.
+    private struct ShortAudioRejectingASR: TranscriptionEngine {
+        var displayName: String { "Short-audio fixture" }
+        var supportsStreaming: Bool { false }
+        func prepare(progress: ModelPreparationProgressHandler?) async throws {}
+        func transcribe(audio: URL, language: String?) async throws -> Transcript {
+            let duration = try SpanAudioReader(url: audio).duration
+            guard duration >= 0.3 else { throw TranscriptionEngineError.notLoaded }
+            return Transcript(segments: [.init(start: 0, end: duration, speaker: "", text: "Region words")],
+                              engine: displayName)
+        }
+    }
+
+    @MainActor func testASubSecondRegionTheEngineRejectsDoesNotFailTheTrack() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let url = folder.appendingPathComponent("raw.wav")
+        let writer = try WavWriter(url: url, sampleRate: 16_000)
+        try writer.append(Array(repeating: Float(0.3), count: 64_000))
+        try writer.finish()
+        let turns: [DiarizedSegment] = [
+            .init(start: 0, end: 2, speakerId: "A"),
+            .init(start: 2, end: 2.2, speakerId: "B"),
+            .init(start: 2.2, end: 4, speakerId: "A"),
+        ]
+        let transcript = try await AttributedTrackTranscriber.transcribe(url: url, duration: 4, diarization: turns,
+            source: .system, engine: ShortAudioRejectingASR(), language: nil, prompt: nil)
+        XCTAssertEqual(transcript.segments.map(\.start), [0, 2.2])
+        XCTAssertEqual(transcript.segments.map(\.text), ["Region words", "Region words"])
+    }
+
     func testAcousticSuspicionToleratesColorationWithoutAuthorizingDeletion() {
         let reference: [Float] = (0..<64_000).map { index in
             let t = Double(index) / 16_000

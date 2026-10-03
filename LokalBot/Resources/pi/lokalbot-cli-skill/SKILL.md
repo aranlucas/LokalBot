@@ -9,8 +9,8 @@ description: Query the user's LokalBot meeting library (transcripts, summaries, 
 meeting library. Output is JSON by default; add `--table` for human-readable.
 
 - `lokalbot-cli list [--limit N]` — recent meetings (id, title, date, duration)
-- `lokalbot-cli get <id>` — one meeting's metadata and summary
-- `lokalbot-cli search "<query>"` — full-text search across transcripts
+- `lokalbot-cli get <id> --include metadata,summary` — one meeting's metadata and summary (the default also includes the full transcript)
+- `lokalbot-cli search "<query>"` — word search across titles, summaries, and transcripts (any word order; quote an exact phrase)
 - `lokalbot-cli path <id>` — filesystem folder of a meeting (transcript.md, summary.md, audio)
 
 Prefer `search` over reading transcript files directly — transcripts can be

@@ -167,6 +167,15 @@ enum OutcomeEvidencePolicy {
             options: .regularExpression) != nil
     }
 
+    /// Offers that commit without a modal verb ("I can send you the numbers
+    /// tomorrow", "Leave it with me"). Like `expressesUndertaking`, this only
+    /// keeps a quoted task whose stricter commitment check failed; it never
+    /// establishes ownership.
+    static func offersToTakeOn(_ raw: String) -> Bool {
+        normalized(raw).range(of: #"\bi can (?!not\b)\w|\bleave (?:it|that|this) (?:with|to) me\b"#,
+                              options: .regularExpression) != nil
+    }
+
     /// Forward-looking wording ("we should", "I need to", "let me"). A task
     /// whose commitment claim failed is kept only when its own source still
     /// expresses an undertaking; a fragment cannot manufacture one.

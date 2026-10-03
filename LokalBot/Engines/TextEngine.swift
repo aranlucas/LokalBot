@@ -432,23 +432,7 @@ struct OllamaEngine: TextEngine {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let user = (context + [prompt]).joined(separator: "\n\n")
-        var body: [String: Any] = [
-            "model": model,
-            "stream": false,
-            "messages": [
-                ["role": "system", "content": system],
-                ["role": "user", "content": user],
-            ],
-        ]
-        if let schema { body["format"] = schema }
-        var generationOptions: [String: Any] = [:]
-        if let maxTokens = options?.maxTokens {
-            generationOptions["num_predict"] = max(1, maxTokens)
-        }
-        if let temperature = options?.temperature {
-            generationOptions["temperature"] = max(0, temperature)
-        }
-        if !generationOptions.isEmpty { body["options"] = generationOptions }
+        let body = Self.chatBody(model: model, system: system, user: user, schema: schema, options: options)
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await send(request, base: baseURL)
@@ -461,7 +445,40 @@ struct OllamaEngine: TextEngine {
               let content = message["content"] as? String else {
             throw TextEngineError.badResponse("unexpected /api/chat payload")
         }
+        // Same contract as the OpenAI-compatible path: a reply cut off by the
+        // output limit is an error the caller can retry, not a finished answer.
+        if json["done_reason"] as? String == "length" { throw TextEngineError.outputTruncated }
         return strippingReasoning(content)
+    }
+
+    static func chatBody(model: String, system: String, user: String,
+                         schema: [String: Any]?, options: TextGenerationOptions?) -> [String: Any] {
+        var body: [String: Any] = [
+            "model": model,
+            "stream": false,
+            "messages": [
+                ["role": "system", "content": system],
+                ["role": "user", "content": user],
+            ],
+        ]
+        if let schema { body["format"] = schema }
+        // Ollama's thinking models think by default, and those tokens count
+        // against `num_predict`. A zero budget turns the thinking turn off.
+        if options?.reasoningBudgetTokens == 0 { body["think"] = false }
+        // Notes and digests are planned for this window. Without `num_ctx`,
+        // Ollama uses its own default (4K on most Macs) and silently drops the
+        // start of a longer prompt, which is where the instructions are.
+        var generationOptions: [String: Any] = [
+            "num_ctx": MeetingSummaryGenerator.conservativeExternalContextTokens,
+        ]
+        if let maxTokens = options?.maxTokens {
+            generationOptions["num_predict"] = max(1, maxTokens)
+        }
+        if let temperature = options?.temperature {
+            generationOptions["temperature"] = max(0, temperature)
+        }
+        body["options"] = generationOptions
+        return body
     }
 
     /// Model names from `GET /api/tags`; empty array if the server is down.

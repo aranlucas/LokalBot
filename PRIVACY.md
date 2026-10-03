@@ -1,6 +1,6 @@
 # LokalBot Privacy Policy
 
-Effective: October 1, 2026
+Effective: October 2, 2026
 
 LokalBot is a local-first macOS application. It has no LokalBot account,
 analytics service, advertising SDK, or telemetry backend. The project does not
@@ -74,10 +74,15 @@ release library. An explicit storage-root override still selects that folder.
 
 Dream reports and durable work memory record their source dependencies.
 Deleting or correcting those sources retracts dependent facts, including pinned
-entries. Older memory without source attribution is conservatively retracted
-when evidence changes. If cleanup fails, a durable revocation record blocks
-that memory from further use until cleanup succeeds. Exported copies remain
-where you saved them.
+entries. Scheduled retention is not a deletion for this purpose: when screen
+text, activity titles, or coding-agent records expire, the Dream reports and
+work memory derived from them remain, so they can outlast the screen-retention
+window. **Clear work memory** under Settings → Overnight review deletes every
+report and all work memory, including pinned entries. Older memory without
+source attribution is conservatively retracted when its sources are deleted or
+corrected. If cleanup fails, a durable revocation record blocks that memory
+from further use until cleanup succeeds. Exported copies remain where you saved
+them.
 
 Unchanged, app-generated daily journals retract when their primary evidence is
 removed or corrected, including scheduled capture retention. Edited and legacy
@@ -252,9 +257,9 @@ default. A screen moment you explicitly save retains its encrypted pixels,
 captured text, and semantic search vector until you unsave or delete that
 moment. Excluded apps and domains and focused secure fields are skipped.
 Private and incognito browser windows are captured like any other window, so
-add a browser or site to the exclusions to keep it out. Detected credential
-text is redacted and
-causes the associated pixel payload to be dropped; no detector is perfect, so
+add a browser or site to the exclusions to keep it out. Detected credentials,
+payment card numbers, and IBANs are redacted and
+cause the associated pixel payload to be dropped; no detector is perfect, so
 exclude any source whose content should never be retained. Daily-memory exports
 and routine outputs are ordinary unencrypted Markdown files written only to
 folders you choose and remain there until you remove them. Routines have fixed

@@ -16,6 +16,17 @@ final class RecordingControllerTests: XCTestCase {
         XCTAssertFalse(MicRecorder.shouldRearmAfterDeviceEvent(isRecording: true, recovery: .recovering(attempt: 2)))
     }
 
+    func testADegradedMicrophoneKeepsBeingRetriedAtASlowPace() {
+        let now = Date(timeIntervalSince1970: 10_000)
+        XCTAssertTrue(RecordingController.shouldRetryDegradedMicrophone(lastAttemptAt: nil, now: now))
+        XCTAssertFalse(RecordingController.shouldRetryDegradedMicrophone(
+            lastAttemptAt: now.addingTimeInterval(-29), now: now))
+        XCTAssertTrue(RecordingController.shouldRetryDegradedMicrophone(
+            lastAttemptAt: now.addingTimeInterval(-RecordingController.degradedMicRetryInterval), now: now))
+        XCTAssertTrue(RecordingController.shouldRetryDegradedMicrophone(
+            lastAttemptAt: now.addingTimeInterval(-3_600), now: now), "an hour into a meeting it is still retried")
+    }
+
     func testFailedMetadataFinalizationReloadsLaterEditsAndFinishesOnlyOnce() throws {
         let (storage, meeting) = try makeFinalizationFixture()
         let metadata = meeting.folderURL(in: storage).appendingPathComponent("meta.json")

@@ -23,14 +23,18 @@ enum LanguageCode: String, Codable, CaseIterable, Identifiable, Hashable, Sendab
     case da
     case no
     case nn
+    case sr
     case th
     case vi
 
     var id: String { rawValue }
 
+    /// Serbian is not on Qwen3-ASR's list, but naming it explicitly measured
+    /// 14.1% against 17.1% WER on 1.7B and 44.3% against 54.2% on 0.6B, where
+    /// auto detection reads it as Croatian (Benchmarks/QwenSpanLength).
     static let transcriptionSupported: [LanguageCode] = [
         .en, .de, .es, .fr, .it, .nl, .pt, .pl, .sv, .da, .no, .tr,
-        .ru, .zh, .yue, .ja, .ko, .ar, .hi, .th, .vi,
+        .ru, .sr, .zh, .yue, .ja, .ko, .ar, .hi, .th, .vi,
     ]
 
     static let summaryPresets: [LanguageCode] = [
@@ -62,6 +66,7 @@ enum LanguageCode: String, Codable, CaseIterable, Identifiable, Hashable, Sendab
         case .da: return "Danish"
         case .no: return "Norwegian (Bokmål)"
         case .nn: return "Norwegian (Nynorsk)"
+        case .sr: return "Serbian"
         case .th: return "Thai"
         case .vi: return "Vietnamese"
         }

@@ -284,6 +284,10 @@ final class RecordingController: ObservableObject {
     private static let micCaptureInitialGrace: TimeInterval = 5
     private static let micCaptureStallGrace: TimeInterval = 5
     private static let micCaptureRestartCooldown: TimeInterval = 10
+    /// The microphone's own fast retries stop after about ten seconds. Keep
+    /// trying at this pace for the rest of the recording, as system audio
+    /// does, so an input that settles later still records the user's voice.
+    static let degradedMicRetryInterval: TimeInterval = 30
     private static let systemAudioInitialGrace: TimeInterval = 5
     private static let systemAudioSilentGrace: TimeInterval = 8
     /// The same wait, for a tap that has already written audible audio of its
@@ -298,9 +302,11 @@ final class RecordingController: ObservableObject {
     /// recording throughout either way.
     private static let provenSystemAudioSilentGrace: TimeInterval = 90
     private static let systemAudioReattachCooldown: TimeInterval = 10
-    /// Calendar event id + stop time of the last calendar-backed recording, so
-    /// the same scheduled meeting can't immediately re-record (helper-PID churn,
-    /// brief audio drops). See `MeetingMatcher.shouldSuppressRepeat`.
+    /// Calendar event id + stop time of the last calendar-backed recording the
+    /// user stopped, so detection cannot immediately restart a meeting they
+    /// ended. A call that ended on its own clears it; brief drops and helper
+    /// churn are absorbed by the detector's stop debounce and handoff. See
+    /// `MeetingMatcher.shouldSuppressRepeat`.
     private var lastCalendarEventID: String?
     private var lastCalendarEventEndedAt: Date?
     private static let calendarRepeatCooldown: TimeInterval = 5 * 60
@@ -687,7 +693,7 @@ final class RecordingController: ObservableObject {
         finalize(meeting, process: process, deferProcessing: deferProcessing)
         captureWarnings = []
         callObservationUnavailable = false
-        // The call may still be running; let it record again once verified.
+        // The call ended on its own; rejoining the same event records again.
         if allowsAutomaticRestart { lastCalendarEventEndedAt = nil }
     }
 
@@ -1125,6 +1131,10 @@ final class RecordingController: ObservableObject {
         systemAudioTapLedger.reset()
     }
 
+    static func shouldRetryDegradedMicrophone(lastAttemptAt: Date?, now: Date) -> Bool {
+        lastAttemptAt.map { now.timeIntervalSince($0) >= degradedMicRetryInterval } ?? true
+    }
+
     private func checkMicCapture(health: MicRecorder.CaptureHealth) {
         guard isRecording, let meeting = currentMeeting else { return }
         let now = Date()
@@ -1142,8 +1152,17 @@ final class RecordingController: ObservableObject {
             if !didWarnAboutMicCaptureStall {
                 didWarnAboutMicCaptureStall = true
                 onError(
-                    "Microphone capture could not recover (\(errorDescription)). "
-                        + "Recording is continuing with system audio when available.")
+                    "Microphone capture stopped (\(errorDescription)). LokalBot keeps trying to reconnect it; "
+                        + "recording continues with system audio when available.")
+            }
+            guard Self.shouldRetryDegradedMicrophone(lastAttemptAt: lastMicRestartAt, now: now) else { return }
+            lastMicRestartAt = now
+            do {
+                try micRecorder.restartCapture()
+                lokalbotLog("mic recorder recovered after degradation elapsed=\(String(format: "%.2fs", elapsed))")
+            } catch {
+                lokalbotLog(
+                    "mic recorder still unavailable elapsed=\(String(format: "%.2fs", elapsed)): \(error.localizedDescription)")
             }
             return
         }

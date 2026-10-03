@@ -17,6 +17,12 @@ enum QuickRecallApplicationIconResolver {
             cache.setObject(icon, forKey: key as NSString)
             return icon
         }
+        // Exclusion rules can name an app by bundle identifier.
+        if key.contains("."), let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: key) {
+            let icon = NSWorkspace.shared.icon(forFile: url.path)
+            cache.setObject(icon, forKey: key as NSString)
+            return icon
+        }
 
         let name = key.hasSuffix(".app") ? String(key.dropLast(4)) : key
         let roots = [
