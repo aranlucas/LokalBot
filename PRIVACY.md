@@ -355,9 +355,9 @@ the fact's source — at least half of the distinctive words of the meeting titl
 or project name appear in your draft, the window title, or the selected visible
 text — or the fact shares several distinctive words with your own draft or
 window title, one of them written as a name. Everyday wording, weekdays and
-months, and app names never count, and a fact that only repeats the draft is
-left out. Writing that names nothing distinctive is answered without opening the
-library.
+months, and app names never count, and a notes line that only restates its
+source's title, such as a heading, is left out. Writing that names nothing
+distinctive is answered without opening the library.
 
 Autocomplete reads current source files and checks for source changes before
 presenting or accepting a completion. Editing/deleting sources or revoking

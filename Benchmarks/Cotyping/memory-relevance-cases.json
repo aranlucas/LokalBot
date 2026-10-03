@@ -100,6 +100,24 @@
       "requiresMeetings": true,
       "requiresScreenMemory": false,
       "isWorkMemory": false
+    },
+    {
+      "id": "atlas-owner",
+      "title": "Atlas",
+      "text": "The Atlas owner is Priya.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "atlas-owner-outdated",
+      "title": "Atlas",
+      "text": "The Atlas owner is Nadja.",
+      "updatedAt": "2026-09-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
     }
   ],
   "cases": [
@@ -139,6 +157,16 @@
       "split": "development",
       "kind": "relevant",
       "expectedMemoryID": "sync-tamaris"
+    },
+    {
+      "id": "dev-answer-already-mentioned",
+      "prefix": "I spoke with Priya this morning. The Atlas owner is ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "expected": "Priya",
+      "split": "development",
+      "kind": "relevant",
+      "expectedMemoryID": "atlas-owner"
     },
     {
       "id": "held-get-back-friday",

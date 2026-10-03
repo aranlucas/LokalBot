@@ -136,17 +136,23 @@ struct CotypingInsertionCheck: Equatable, Sendable {
         // Typing may already have continued past the insertion.
         let window = String(text.suffix(tail.count + inserted.count + 64))
         if window.contains(tail + inserted) { return .confirmed }
-        // The insertion arrived and was edited before it could be read back.
-        // Between two accepts checked together, a partial text only means the
-        // second has not been published yet.
-        if count == 1, !tail.isEmpty, let before = window.range(of: tail, options: .backwards) {
-            let after = window[before.upperBound...]
-            if after.count * 2 >= inserted.count, inserted.hasPrefix(after) { return .confirmed }
-        }
+        // Until the timeout, anything less may only mean the app is still
+        // publishing. Part of the insertion is never counted as success: a
+        // field that drops the end of a long insertion is the failure to find.
         guard timedOut else { return .pending }
-        // Unchanged text means the app published nothing; anything else means
-        // the insertion landed wrongly.
-        return text.hasSuffix(tail) ? .unconfirmed : .mismatched
+        let after: Substring
+        if tail.isEmpty {
+            after = Substring(window)
+        } else if let before = window.range(of: tail, options: .backwards) {
+            after = window[before.upperBound...]
+        } else {
+            // The text that preceded the caret is no longer before it, so
+            // nothing can be said about what followed.
+            return .unconfirmed
+        }
+        // Nothing after it means the app published no change; anything else
+        // means the insertion did not arrive as sent.
+        return after.isEmpty ? .unconfirmed : .mismatched
     }
 
     /// Browsers publish a trailing space as a non-breaking space. That is not

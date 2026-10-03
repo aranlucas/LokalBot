@@ -392,6 +392,45 @@ final class CotypingCoordinatorTests: XCTestCase {
         XCTAssertEqual(stats.stats.live["chat"]?.insertionsConfirmed, 2)
     }
 
+    /// With no further key or focus change the check used to stay open, and
+    /// the text it compares stayed in memory.
+    func testAnInsertionCheckExpiresWithoutAnotherEvent() async throws {
+        let coordinator = makeCoordinator()
+        coordinator.insertionCheckExpiryMilliseconds = 40
+        coordinator.noteAcceptance(field: liveField("I wanted to follow"), inserted: " up", charsAccepted: 3)
+        XCTAssertNotNil(coordinator.pendingInsertionCheck)
+        try await Task.sleep(for: .milliseconds(400))
+        XCTAssertNil(coordinator.pendingInsertionCheck, "the compared text must not outlive the timeout")
+        XCTAssertEqual(stats.stats.live["other"]?.insertionsUnconfirmed, 1)
+        XCTAssertEqual(stats.stats.live["other"]?.insertionsConfirmed, 0)
+    }
+
+    func testAKeyThatChangesTheTextBeforeTheCaretClosesAnOpenCheck() {
+        let coordinator = makeCoordinator()
+        let before = liveField("I wanted to follow")
+        let backspace = CotypingInputEvent(kind: .textMutation, characters: "")
+
+        // Typing on leaves the check open: the inserted text is still there to read.
+        coordinator.noteAcceptance(field: before, inserted: " up", charsAccepted: 3)
+        coordinator.noteKey(CotypingInputEvent(kind: .textMutation, characters: " "), live: before)
+        XCTAssertNotNil(coordinator.pendingInsertionCheck)
+        coordinator.noteKey(CotypingInputEvent(kind: .textMutation, characters: "o"),
+                            live: liveField("I wanted to follow up o"))
+        XCTAssertNil(coordinator.pendingInsertionCheck)
+        XCTAssertEqual(stats.stats.live["other"]?.insertionsConfirmed, 1)
+
+        // Taking the text back, or moving the caret, means it can no longer be read back.
+        for key in [backspace, CotypingInputEvent(kind: .navigation, characters: ""),
+                    CotypingInputEvent(kind: .shortcut, characters: "", isUndo: true)] {
+            coordinator.noteAcceptance(field: before, inserted: " up", charsAccepted: 3)
+            coordinator.noteKey(key, live: before)
+            XCTAssertNil(coordinator.pendingInsertionCheck)
+        }
+        XCTAssertEqual(stats.stats.live["other"]?.insertionsUnconfirmed, 3)
+        XCTAssertEqual(stats.stats.live["other"]?.insertionsMismatched, 0)
+        XCTAssertEqual(stats.stats.live["other"]?.acceptsCorrected, 2, "the deletion and the undo")
+    }
+
     func testOnlyAnImmediateDeletionOrUndoCountsAsACorrection() {
         let coordinator = makeCoordinator()
         let field = liveField("I wanted to follow")

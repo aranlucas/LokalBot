@@ -157,8 +157,6 @@ final class CotypingLiveMeasureTests: XCTestCase {
         XCTAssertEqual(check.outcome(live: field("I wanted to follow up on it"), elapsedMilliseconds: 900), .confirmed)
         XCTAssertEqual(insertion(" soon ", after: "See you")
             .outcome(live: field("See you soon\u{00A0}"), elapsedMilliseconds: 40), .confirmed)
-        // Deleting part of it at once does not mean it never arrived.
-        XCTAssertEqual(check.outcome(live: field("I wanted to follow u"), elapsedMilliseconds: 300), .confirmed)
         // An empty field has no text before the caret to anchor on.
         XCTAssertEqual(insertion("Hello", after: "").outcome(live: field("Hello"), elapsedMilliseconds: 40), .confirmed)
     }
@@ -176,6 +174,22 @@ final class CotypingLiveMeasureTests: XCTestCase {
                        .unconfirmed)
         XCTAssertEqual(check.outcome(live: nil, elapsedMilliseconds: 10), .pending)
         XCTAssertEqual(check.outcome(live: nil, elapsedMilliseconds: late), .unconfirmed)
+    }
+
+    /// Half of a 16-character insertion used to count as confirmed.
+    func testATruncatedInsertionIsNotConfirmed() {
+        let check = insertion(" up on the time.", after: "I wanted to follow")
+        let truncated = field("I wanted to follow up on the")
+        let late = CotypingInsertionCheck.timeoutMilliseconds
+        XCTAssertEqual(check.outcome(live: truncated, elapsedMilliseconds: 50), .pending,
+                       "part of the text may only mean the app is still publishing")
+        XCTAssertEqual(check.outcome(live: truncated, elapsedMilliseconds: late), .mismatched)
+        XCTAssertEqual(check.outcome(live: field("I wanted to follow up on the time."), elapsedMilliseconds: late),
+                       .confirmed)
+        // Once the text that preceded the caret is gone, nothing can be said either way.
+        XCTAssertEqual(check.outcome(live: field("A different line"), elapsedMilliseconds: late), .unconfirmed)
+        XCTAssertEqual(insertion("Hello", after: "").outcome(live: field("Hel"), elapsedMilliseconds: late), .mismatched)
+        XCTAssertEqual(insertion("Hello", after: "").outcome(live: field(""), elapsedMilliseconds: late), .unconfirmed)
     }
 
     func testAcceptsSentBeforeTheAppPublishesAreCheckedTogether() {

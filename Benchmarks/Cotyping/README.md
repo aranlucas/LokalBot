@@ -101,7 +101,8 @@ with one of them but name no topic ("I'll get back to "), so the right behavior
 is to retrieve nothing and give the same suggestion as with memory off. Relevant
 drafts name a topic, including harder forms than the original fixture: a
 lowercase name, a fact filed under a generic meeting title, a title matched by
-two of its three words, and a name with diacritics.
+two of its three words, a name with diacritics, and a draft that already
+mentions the answer while an outdated version of the fact is also saved.
 
 ```sh
 uv run --no-project python -S Benchmarks/Cotyping/memory_replay.py \

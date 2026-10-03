@@ -1,10 +1,10 @@
 {
   "summary": {
-    "relevantCases": 2,
+    "relevantCases": 3,
     "offCorrect": 0,
-    "onCorrect": 2,
-    "exactSelections": 2,
-    "totalCases": 4,
+    "onCorrect": 3,
+    "exactSelections": 3,
+    "totalCases": 5,
     "controlCases": 2,
     "unchangedControls": 0,
     "distractorCases": 2,
@@ -14,8 +14,8 @@
     "abstentionRate": 0.0,
     "balancedRelevance": 0.5,
     "errors": 0,
-    "offMedianMs": 68.2956045,
-    "onMedianMs": 67.7652085
+    "offMedianMs": 66.224084,
+    "onMedianMs": 66.601167
   },
   "cases": [
     {
@@ -32,8 +32,8 @@
       "selectionCorrect": false,
       "unchanged": false,
       "error": null,
-      "offLatencyMs": 63.605667,
-      "onLatencyMs": 70.763667
+      "offLatencyMs": 64.491,
+      "onLatencyMs": 71.024917
     },
     {
       "id": "dev-closer-look",
@@ -49,8 +49,8 @@
       "selectionCorrect": false,
       "unchanged": false,
       "error": null,
-      "offLatencyMs": 68.469334,
-      "onLatencyMs": 72.775208
+      "offLatencyMs": 67.064166,
+      "onLatencyMs": 77.406375
     },
     {
       "id": "dev-ostrog",
@@ -66,8 +66,8 @@
       "selectionCorrect": true,
       "unchanged": false,
       "error": null,
-      "offLatencyMs": 68.121875,
-      "onLatencyMs": 49.373333
+      "offLatencyMs": 66.224084,
+      "onLatencyMs": 49.93525
     },
     {
       "id": "dev-tamaris-lowercase",
@@ -83,24 +83,42 @@
       "selectionCorrect": true,
       "unchanged": false,
       "error": null,
-      "offLatencyMs": 70.045917,
-      "onLatencyMs": 64.76675
+      "offLatencyMs": 67.932333,
+      "onLatencyMs": 66.601167
+    },
+    {
+      "id": "dev-answer-already-mentioned",
+      "kind": "relevant",
+      "expected": "Priya",
+      "offText": "a very nice",
+      "onText": "Priya.",
+      "offCorrect": false,
+      "onCorrect": true,
+      "memoryIDs": [
+        "atlas-owner"
+      ],
+      "selectionCorrect": true,
+      "unchanged": false,
+      "error": null,
+      "offLatencyMs": 65.331875,
+      "onLatencyMs": 40.420625
     }
   ],
   "manifest": {
     "appSHA256": "4652608c4a2d4558a3a3bcedda5c64429adda1a08f691df0e49d5a1a8b90a3b2",
     "modelFile": "gemma-4-E2B.i1-Q6_K.gguf",
     "modelSHA256": "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
-    "corpusSHA256": "5e994d07f3fbff553c6b769eefcaef395913cfea2c19ac515293f4cae0ed0495",
+    "corpusSHA256": "458c32d783ca48469d43230eb1c4daa7b1b06e2c17a7cc7ddf8b2ee7ca89db6d",
     "scriptSHA256": "aac7a146b39109006c196ea5599d17e08eb61bf7dff7a68aaf76951fa4f59983",
     "split": "development",
     "caseIDs": [
       "dev-get-back",
       "dev-closer-look",
       "dev-ostrog",
-      "dev-tamaris-lowercase"
+      "dev-tamaris-lowercase",
+      "dev-answer-already-mentioned"
     ],
-    "factCount": 11,
+    "factCount": 13,
     "settings": "production defaults",
     "context": "synthetic saved facts; no user library or learned examples",
     "metric": "first lexical word matches explicitly supplied fact; controls retrieve nothing and keep the memory-off suggestion"

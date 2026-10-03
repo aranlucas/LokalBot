@@ -14,8 +14,8 @@
     "abstentionRate": 0.1429,
     "balancedRelevance": 0.5715,
     "errors": 0,
-    "offMedianMs": 70.06658350000001,
-    "onMedianMs": 55.31725
+    "offMedianMs": 70.278917,
+    "onMedianMs": 55.468833000000004
   },
   "cases": [
     {
@@ -32,8 +32,8 @@
       "selectionCorrect": false,
       "unchanged": false,
       "error": null,
-      "offLatencyMs": 50.563208,
-      "onLatencyMs": 49.624166
+      "offLatencyMs": 49.717208,
+      "onLatencyMs": 53.065375
     },
     {
       "id": "held-call-noon",
@@ -49,8 +49,8 @@
       "selectionCorrect": false,
       "unchanged": false,
       "error": null,
-      "offLatencyMs": 69.86025,
-      "onLatencyMs": 49.279708
+      "offLatencyMs": 69.813584,
+      "onLatencyMs": 49.854333
     },
     {
       "id": "held-let-me-know",
@@ -66,8 +66,8 @@
       "selectionCorrect": false,
       "unchanged": false,
       "error": null,
-      "offLatencyMs": 50.957666,
-      "onLatencyMs": 56.06
+      "offLatencyMs": 51.710084,
+      "onLatencyMs": 55.980666
     },
     {
       "id": "held-send-contract",
@@ -81,8 +81,8 @@
       "selectionCorrect": true,
       "unchanged": true,
       "error": null,
-      "offLatencyMs": 43.6425,
-      "onLatencyMs": 43.631292
+      "offLatencyMs": 44.243292,
+      "onLatencyMs": 44.547125
     },
     {
       "id": "held-browser-window",
@@ -98,8 +98,8 @@
       "selectionCorrect": false,
       "unchanged": false,
       "error": null,
-      "offLatencyMs": 55.887,
-      "onLatencyMs": 82.102791
+      "offLatencyMs": 56.237958,
+      "onLatencyMs": 82.397208
     },
     {
       "id": "held-take-a-look",
@@ -115,8 +115,8 @@
       "selectionCorrect": false,
       "unchanged": false,
       "error": null,
-      "offLatencyMs": 70.272917,
-      "onLatencyMs": 74.035
+      "offLatencyMs": 70.74425,
+      "onLatencyMs": 74.658125
     },
     {
       "id": "held-serbian-follow-up",
@@ -132,8 +132,8 @@
       "selectionCorrect": false,
       "unchanged": false,
       "error": null,
-      "offLatencyMs": 74.647375,
-      "onLatencyMs": 60.7565
+      "offLatencyMs": 74.970958,
+      "onLatencyMs": 61.349542
     },
     {
       "id": "held-kamenari",
@@ -149,8 +149,8 @@
       "selectionCorrect": true,
       "unchanged": false,
       "error": null,
-      "offLatencyMs": 76.158667,
-      "onLatencyMs": 73.891292
+      "offLatencyMs": 76.349917,
+      "onLatencyMs": 75.075625
     },
     {
       "id": "held-perast",
@@ -166,8 +166,8 @@
       "selectionCorrect": true,
       "unchanged": false,
       "error": null,
-      "offLatencyMs": 76.139625,
-      "onLatencyMs": 54.5745
+      "offLatencyMs": 76.317459,
+      "onLatencyMs": 54.957
     },
     {
       "id": "held-lovcen",
@@ -183,8 +183,8 @@
       "selectionCorrect": true,
       "unchanged": false,
       "error": null,
-      "offLatencyMs": 68.157458,
-      "onLatencyMs": 49.232542
+      "offLatencyMs": 69.109792,
+      "onLatencyMs": 50.255166
     },
     {
       "id": "held-tamaris-date",
@@ -200,8 +200,8 @@
       "selectionCorrect": true,
       "unchanged": false,
       "error": null,
-      "offLatencyMs": 70.98075,
-      "onLatencyMs": 65.728334
+      "offLatencyMs": 71.804625,
+      "onLatencyMs": 65.638125
     },
     {
       "id": "held-jelena",
@@ -217,15 +217,15 @@
       "selectionCorrect": true,
       "unchanged": false,
       "error": null,
-      "offLatencyMs": 73.695416,
-      "onLatencyMs": 40.871333
+      "offLatencyMs": 75.725583,
+      "onLatencyMs": 41.378375
     }
   ],
   "manifest": {
     "appSHA256": "4652608c4a2d4558a3a3bcedda5c64429adda1a08f691df0e49d5a1a8b90a3b2",
     "modelFile": "gemma-4-E2B.i1-Q6_K.gguf",
     "modelSHA256": "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
-    "corpusSHA256": "5e994d07f3fbff553c6b769eefcaef395913cfea2c19ac515293f4cae0ed0495",
+    "corpusSHA256": "458c32d783ca48469d43230eb1c4daa7b1b06e2c17a7cc7ddf8b2ee7ca89db6d",
     "scriptSHA256": "aac7a146b39109006c196ea5599d17e08eb61bf7dff7a68aaf76951fa4f59983",
     "split": "heldout",
     "caseIDs": [
@@ -242,7 +242,7 @@
       "held-tamaris-date",
       "held-jelena"
     ],
-    "factCount": 11,
+    "factCount": 13,
     "settings": "production defaults",
     "context": "synthetic saved facts; no user library or learned examples",
     "metric": "first lexical word matches explicitly supplied fact; controls retrieve nothing and keep the memory-off suggestion"

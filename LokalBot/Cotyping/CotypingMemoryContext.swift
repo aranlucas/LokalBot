@@ -54,8 +54,6 @@ enum CotypingMemoryContext {
         var own: Set<String> = []
         /// `own` plus distinctive words from the selected visible text.
         var all: Set<String> = []
-        /// Every word of the draft and title, everyday wording included.
-        var written: Set<String> = []
         /// Words the draft or title writes as a name: a capital letter or digit
         /// that does not merely open a sentence.
         var named: Set<String> = []
@@ -77,7 +75,6 @@ enum CotypingMemoryContext {
             own = Set(draftWords.filter(CotypingMemoryContext.isDistinctive))
             own.formUnion(titleWords.filter(CotypingMemoryContext.isDistinctive))
             all = own.union(visibleWords.filter(CotypingMemoryContext.isDistinctive))
-            written = Set(draftWords).union(titleWords)
 
             let draftCapitals = CotypingMemoryContext.capitalizedTerms(in: draft)
             let titleCapitals = CotypingMemoryContext.capitalizedTerms(in: title)
@@ -199,9 +196,20 @@ enum CotypingMemoryContext {
         return shared > 0 && shared * 2 >= titleTerms.count ? shared : nil
     }
 
+    /// A line from notes that adds no word to its source's title: a heading or
+    /// the title itself. Judged against the title and never against the draft,
+    /// so a fact stays a fact when the draft already mentions its answer.
+    static func isHeading(_ text: String, of title: String) -> Bool {
+        let titleWords = Set(tokens(title))
+        return !tokens(text).contains { word in
+            (isTerm(word) || word.contains(where: \.isNumber)) && !titleWords.contains(word)
+        }
+    }
+
     /// Whether a saved fact has earned a place in the prompt, and how firmly.
     ///
-    /// - It must say something the draft does not already say.
+    /// - A notes line must not be a heading (see `isHeading`). Work-memory
+    ///   entries are statements already, even when one is its own title.
     /// - Its source is named (see `names`), or
     /// - the fact shares two distinctive words with the user's own draft or
     ///   window title, one of them written as a name, or three when none is.
@@ -209,12 +217,9 @@ enum CotypingMemoryContext {
     /// Everyday wording never counts as shared: two common words in a generic
     /// sentence used to be enough to borrow a date from an unrelated meeting.
     static func relevance(text: String, title: String, query: Query,
-                          allowBodyMatch: Bool = true) -> Relevance? {
-        let words = tokens(text)
-        guard words.contains(where: { word in
-            (isTerm(word) || word.contains(where: \.isNumber)) && !query.written.contains(word)
-        }) else { return nil }
-        let shared = Set(words.filter(isDistinctive)).intersection(query.own)
+                          allowBodyMatch: Bool = true, isStatement: Bool = false) -> Relevance? {
+        guard isStatement || !isHeading(text, of: title) else { return nil }
+        let shared = distinctiveTerms(text).intersection(query.own)
         if let named = names(title: title, query: query) {
             return Relevance(score: named * 3 + shared.count, named: true)
         }
@@ -247,7 +252,8 @@ enum CotypingMemoryContext {
                   now.timeIntervalSince(item.updatedAt) <= maxAge,
                   let text = sanitized(item.text), let title = sanitized(item.title),
                   let relevance = relevance(text: text, title: title, query: query,
-                                            allowBodyMatch: allowBodyMatch) else { continue }
+                                            allowBodyMatch: allowBodyMatch,
+                                            isStatement: item.isWorkMemory) else { continue }
             // Prefer short facts; keep the prompt budget independent of source size.
             var selected = item
             selected.text = PromptContextSanitizer.sanitize(text, maxCharacters: maxItemCharacters)

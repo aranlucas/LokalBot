@@ -11,8 +11,8 @@ unrelated fact in **6 of 7** cases before and **0 of 7** after, while relevant
 drafts kept **5 of 5**. The three earlier fixtures reproduce the recorded
 results row for row.
 
-**Built and tested from the working tree on top of `02be340`; not committed,
-installed or released.** Both memory settings still default off.
+**Measured on the signed Release build of this change (PR #160); not merged or
+released.** Both memory settings still default off.
 
 ## What changed
 
@@ -30,7 +30,9 @@ A saved fact reaches the prompt only when the writing is about it:
   frequent function words in German, French, Spanish and Serbian. The app's own
   name is dropped from its window title. These words can still be the detail a
   fact supplies ("in November").
-- **A fact that only repeats the draft is left out**, such as a notes heading.
+- **A notes line that only restates its source's title is left out**, such as
+  a heading. This is judged against the title and never against the draft, so
+  a draft that already mentions the answer still gets the current fact.
 - **Writing that names nothing distinctive opens no saved file.** The index is
   searched with distinctive words only, nearest the caret first.
 
@@ -39,12 +41,14 @@ the user's own wording.
 
 ## Measurement
 
-[memory-relevance-cases.json](../../memory-relevance-cases.json) holds 11
+[memory-relevance-cases.json](../../memory-relevance-cases.json) holds 13
 synthetic saved facts, most of them commitments from generically titled
-meetings, and 16 drafts: nine distractors that share everyday wording with a
-fact but name no topic, and seven relevant drafts (a lowercase name, a fact
+meetings, and 17 drafts: nine distractors that share everyday wording with a
+fact but name no topic, and eight relevant drafts (a lowercase name, a fact
 filed under a generic title, a three-word title matched by two words, a name
-with diacritics). Four cases are development and twelve held out.
+with diacritics, and a draft that already mentions the answer while an outdated
+version of the fact is also saved). Five cases are development and twelve held
+out.
 
 | Held-out, Gemma 4 E2B Base | Before | After |
 | --- | ---: | ---: |
@@ -67,8 +71,14 @@ Before the change the borrowed completions were:
 | `Javiću ti se sutra oko ` | `10:30` | `ugovora.` |
 | `Could you take a look at the flow ` | `and see if` | `and see if` (fact retrieved, output unchanged) |
 
-Development cases: recall 2/2 before and after; distractors left alone 0/2
+Development cases: recall 3/3 before and after; distractors left alone 0/2
 before, 2/2 after.
+
+The last development case was added after review. A first revision of this
+change dropped facts that "only repeat the draft", so the draft "I spoke with
+Priya this morning. The Atlas owner is " lost the current fact (owner Priya)
+and was completed with the outdated one ("Nadja."). The build before this change
+answered "Priya."; the final build does again.
 
 Both builds are Release executables run through
 [memory_replay.py](../../memory_replay.py) with the same model, seed and

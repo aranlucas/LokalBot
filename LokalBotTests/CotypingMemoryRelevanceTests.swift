@@ -79,12 +79,29 @@ final class CotypingMemoryRelevanceTests: XCTestCase {
         XCTAssertEqual(query.own, ["ostrog"])
     }
 
-    func testAFactThatOnlyRepeatsTheDraftIsLeftOut() {
-        let heading = fact("Atlas launch", title: "Atlas launch", id: "heading")
+    func testALineThatOnlyRestatesItsTitleIsLeftOut() {
+        let heading = fact("# Atlas launch", title: "Atlas launch", id: "heading")
         let detail = fact("Atlas launch moved to 14 October.", title: "Atlas launch", id: "detail")
         XCTAssertEqual(selected("The Atlas launch ", from: [heading, detail]), ["detail"])
         let section = fact("## Decisions", title: "Atlas launch", id: "section")
         XCTAssertEqual(selected("The Atlas launch ", from: [section]), [])
+        // A work-memory goal is its own title; it is a statement, not a heading.
+        var goal = fact("Ship the Kamenari pricing page ()", title: "Ship the Kamenari pricing page", id: "goal")
+        goal.isWorkMemory = true
+        XCTAssertEqual(selected("We still need to ship the Kamenari pricing page ", from: [goal]), ["goal"])
+    }
+
+    /// A draft that already mentions the answer must still get the current
+    /// fact. Judging "adds nothing" against the draft dropped it, and the
+    /// older version of the same topic then won.
+    func testAnAnswerAlreadyInTheDraftDoesNotLetAnOlderFactWin() {
+        let current = fact("Atlas owner is Priya.", title: "Atlas", id: "current")
+        var older = fact("Atlas owner is Nadja.", title: "Atlas", id: "older")
+        older.updatedAt = now.addingTimeInterval(-30 * 86_400)
+        XCTAssertEqual(selected("The Atlas owner is ", from: [older, current]), ["current"])
+        XCTAssertEqual(selected("I spoke with Priya this morning. The Atlas owner is ", from: [older, current]),
+                       ["current"])
+        XCTAssertEqual(selected("Priya, Nadja and I met. The Atlas owner is ", from: [older, current]), ["current"])
     }
 
     func testEverydayWordsCanStillBeTheDetailAFactSupplies() {

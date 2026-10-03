@@ -7,8 +7,7 @@ extension CotypingCoordinator {
     func handleKey(_ event: CotypingInputEvent) {
         guard isRunning else { return }
         discardRevokedMemoryContext()
-        noteKeyAfterAcceptance(event)
-        resolveInsertionCheck(live: focusTracker.focus.field)
+        noteKey(event, live: focusTracker.focus.field)
         switch event.kind {
         case .acceptance, .fullAcceptance:
             break // owned by the accept tap

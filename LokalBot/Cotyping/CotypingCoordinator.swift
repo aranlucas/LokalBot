@@ -73,6 +73,10 @@ final class CotypingCoordinator: ObservableObject {
     var pendingKeystrokeUptime: UInt64?
     /// The latest accept, until the host field shows whether it arrived.
     var pendingInsertionCheck: CotypingInsertionCheck?
+    /// Closes `pendingInsertionCheck` when no key or focus change does.
+    var insertionCheckExpiryTask: Task<Void, Never>?
+    /// How long an accept may wait to be read back. Tests shorten it.
+    var insertionCheckExpiryMilliseconds = CotypingInsertionCheck.timeoutMilliseconds
     /// The latest accept while the next key could still take it back.
     var acceptAwaitingNextKey: (surface: String, uptimeNanoseconds: UInt64)?
     var pendingInsertionConsumedCount: Int?

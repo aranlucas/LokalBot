@@ -42,17 +42,63 @@ extension CotypingCoordinator {
             pendingInsertionCheck = CotypingInsertionCheck(
                 field: field, inserted: inserted, surface: surface, startedUptimeNanoseconds: now)
         }
+        scheduleInsertionCheckExpiry()
     }
 
     /// Compares the pending accept with what the host field now holds.
-    func resolveInsertionCheck(live: CotypingField?) {
+    /// `expired` treats the wait as over whatever the clock says.
+    func resolveInsertionCheck(live: CotypingField?, expired: Bool = false) {
         guard let check = pendingInsertionCheck else { return }
+        let elapsed = Self.measuredMilliseconds(since: check.startedUptimeNanoseconds)
         let outcome = check.outcome(
             live: live,
-            elapsedMilliseconds: Self.measuredMilliseconds(since: check.startedUptimeNanoseconds))
+            elapsedMilliseconds: expired ? max(elapsed, CotypingInsertionCheck.timeoutMilliseconds) : elapsed)
         guard outcome != .pending else { return }
+        closeInsertionCheck(as: outcome)
+    }
+
+    /// Counts the pending accept and drops the text held to compare it.
+    private func closeInsertionCheck(as outcome: CotypingInsertionCheck.Outcome) {
+        guard let check = pendingInsertionCheck else { return }
         pendingInsertionCheck = nil
+        insertionCheckExpiryTask?.cancel()
+        insertionCheckExpiryTask = nil
         stats.recordInsertion(outcome, count: check.count, surface: check.surface)
+    }
+
+    /// An app that ignores an insertion publishes nothing, and typing may stop
+    /// there, so no key or focus change would ever close the check. This does,
+    /// which also bounds how long the compared text is kept.
+    private func scheduleInsertionCheckExpiry() {
+        insertionCheckExpiryTask?.cancel()
+        let delay = insertionCheckExpiryMilliseconds
+        insertionCheckExpiryTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(delay))
+            guard !Task.isCancelled, let self, self.pendingInsertionCheck != nil else { return }
+            // One last read, so an app that published late is not counted as silent.
+            let live = self.isRunning
+                ? await self.focusTracker.refreshNow().field
+                : self.focusTracker.focus.field
+            guard !Task.isCancelled else { return }
+            self.resolveInsertionCheck(live: live, expired: true)
+        }
+    }
+
+    /// Every observed key, with the field as last read.
+    func noteKey(_ event: CotypingInputEvent, live: CotypingField?) {
+        noteKeyAfterAcceptance(event)
+        resolveInsertionCheck(live: live)
+        // A key that takes text back or moves the caret changes what is before
+        // the caret, so an accept that is still unread can no longer be read
+        // back. Typing on leaves it readable: the inserted text is still there.
+        switch event.kind {
+        case .navigation, .shortcut:
+            closeInsertionCheck(as: .unconfirmed)
+        case .textMutation where event.isCorrection:
+            closeInsertionCheck(as: .unconfirmed)
+        case .acceptance, .fullAcceptance, .dismissal, .textMutation, .other:
+            break
+        }
     }
 
     /// The first key after an accept shows whether the accepted text was kept.
@@ -75,6 +121,8 @@ extension CotypingCoordinator {
     func resetMeasurementState() {
         pendingKeystrokeUptime = nil
         pendingInsertionCheck = nil
+        insertionCheckExpiryTask?.cancel()
+        insertionCheckExpiryTask = nil
         acceptAwaitingNextKey = nil
     }
 
