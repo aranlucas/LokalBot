@@ -273,7 +273,10 @@ struct AutocompleteExperienceView: View {
                         .foregroundStyle(status.tone == .off ? Color.secondary : Color.primary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .accessibilityElement(children: .combine)
+                // One element with an explicit label: combining the dot and the
+                // styled text left assistive technology with an empty label.
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("\(status.title): \(status.detail)")
                 .accessibilityIdentifier("autocomplete.rehearsal.context.\(status.id)")
             }
         }

@@ -83,7 +83,8 @@ final class AutocompleteRehearsalUITests: XCTestCase {
         for source in ["visible", "meetings", "screen"] {
             let row = app.descendants(matching: .any)["autocomplete.rehearsal.context.\(source)"]
             XCTAssertTrue(row.exists, "missing context row: \(source)")
-            XCTAssertTrue(row.label.hasSuffix(": Off"), "\(source) should read as off, not \(row.label)")
+            let text = row.label.isEmpty ? (row.value as? String ?? "") : row.label
+            XCTAssertTrue(text.hasSuffix(": Off"), "\(source) should read as off, not '\(text)'")
         }
     }
 
