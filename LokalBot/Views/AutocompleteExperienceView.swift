@@ -334,6 +334,9 @@ struct AutocompleteExperienceView: View {
     private func dismiss() {
         task?.cancel()
         rehearsal.dismiss()
+        // No suggestion is on screen any more, so there is nothing its
+        // context rows could describe.
+        contextUse = nil
         generating = false
     }
 }
