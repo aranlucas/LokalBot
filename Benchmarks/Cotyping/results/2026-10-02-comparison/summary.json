@@ -1,0 +1,85 @@
+{
+  "baselineSourceHead": "530bcc2cc1c28c28adf6db3899ab14d5d615fd46",
+  "model": "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
+  "hardware": "Apple M4 Max, 48 GiB",
+  "configuration": "Release, llama.cpp v0.5.0",
+  "boundary": "Engine only; no input monitoring, debounce, AX validation, or overlay",
+  "warmRule": "Runs 2-4, excluding first scenario in each process; nearest-rank p95. First complete run retained but excluded for Metal compilation.",
+  "variants": {
+    "before": {
+      "warmCompletion": {
+        "count": 81,
+        "meanMs": 42.18518518518518,
+        "p50Ms": 35,
+        "p95Ms": 53
+      },
+      "warmFirstPartial": {
+        "count": 78,
+        "meanMs": 33.26923076923077,
+        "p50Ms": 26.5,
+        "p95Ms": 39
+      },
+      "wordCompletion": {
+        "count": 36,
+        "meanMs": 35.77777777777778,
+        "p50Ms": 36.0,
+        "p95Ms": 53
+      },
+      "firstRequestMs": [
+        9402,
+        9352,
+        9392
+      ],
+      "safetyPassed": [
+        28,
+        28,
+        28,
+        28
+      ],
+      "wordCompletionPassed": [
+        12,
+        12,
+        12,
+        12
+      ]
+    },
+    "after": {
+      "warmCompletion": {
+        "count": 81,
+        "meanMs": 41.69135802469136,
+        "p50Ms": 35,
+        "p95Ms": 52
+      },
+      "warmFirstPartial": {
+        "count": 78,
+        "meanMs": 32.58974358974359,
+        "p50Ms": 26.0,
+        "p95Ms": 37
+      },
+      "wordCompletion": {
+        "count": 36,
+        "meanMs": 34.916666666666664,
+        "p50Ms": 36.5,
+        "p95Ms": 52
+      },
+      "firstRequestMs": [
+        9371,
+        9361,
+        9365
+      ],
+      "safetyPassed": [
+        28,
+        28,
+        28,
+        28
+      ],
+      "wordCompletionPassed": [
+        12,
+        12,
+        12,
+        12
+      ]
+    }
+  },
+  "allOutputsAndSuppressionsIdentical": true
+}

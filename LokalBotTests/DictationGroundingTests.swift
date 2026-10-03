@@ -1,0 +1,239 @@
+import XCTest
+@testable import LokalBot
+
+@MainActor
+final class DictationGroundingTests: XCTestCase {
+    private func configuration() -> AppSettings {
+        var settings = AppSettings()
+        settings.dictationIntent = .compose
+        settings.dictationUseVisibleContext = true
+        settings.dictationUseMeetingMemory = true
+        return settings
+    }
+
+    private func visible() throws -> CotypingVisibleContext.Snapshot {
+        var fixture = CotypingVisibleContextTests.fixture()
+        fixture.nodes[1].text = "Please send the Juniper draft to its reviewer."
+        return try XCTUnwrap(CotypingVisibleContextReplay(fixture).capture(enabled: true))
+    }
+
+    private func memory(field: CotypingField, settings: AppSettings) -> CotypingMemoryContextProvider.Snapshot {
+        let now = Date()
+        let facts = [CotypingMemoryContext.Item(id: "juniper", title: "Juniper",
+            text: "Juniper reviewer is Nadja.", updatedAt: now, requiresMeetings: true)]
+        let policy = CotypingMemoryContext.Policy(settings: settings)
+        return .init(selection: CotypingMemoryContext.select(items: facts, for: field, includeTitle: true,
+                                                             policy: policy, now: now, allowBodyMatch: false), policy: policy)
+    }
+
+    func testIndependentGrantsDefaultOffAndRoundTrip() throws {
+        var settings = try JSONDecoder().decode(AppSettings.self, from: Data("{}".utf8))
+        XCTAssertFalse(settings.dictationUseVisibleContext)
+        XCTAssertFalse(settings.dictationUseMeetingMemory)
+        XCTAssertFalse(settings.dictationUseScreenMemory)
+        settings.cotypingUseMeetingMemory = true
+        XCTAssertFalse(CotypingMemoryContext.Policy(settings: DictationGrounding.memorySettings(settings)).enabled)
+        settings.dictationUseMeetingMemory = true
+        settings.dictationUseVisibleContext = true
+        let decoded = try JSONDecoder().decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertTrue(decoded.dictationUseMeetingMemory)
+        XCTAssertTrue(decoded.dictationUseVisibleContext)
+        XCTAssertFalse(decoded.dictationUseScreenMemory)
+    }
+
+    func testTranscribeDoesNotReadEitherSourceEvenWithStoredGrants() async throws {
+        var settings = configuration()
+        settings.dictationIntent = .transcribe
+        settings.dictationUseScreenContext = true
+        settings.dictationUseScreenMemory = true
+        var reads = 0
+        let result = try await DictationTextPreparation.prepare(speech: "Do not send 42 files.", settings: settings,
+            screenContext: { reads += 1; return nil }, visibleContext: { reads += 1; return nil },
+            memoryContext: { _, _ in reads += 1; return .empty },
+            makeEngine: { _ in reads += 1; return GroundingTestEngine() })
+        XCTAssertEqual(result.text, "Do not send 42 files.")
+        XCTAssertEqual(reads, 0)
+    }
+
+    func testVisibleConversationConnectsGenericSpokenReplyToSavedFact() async throws {
+        let settings = configuration(), snapshot = try visible(), engine = GroundingTestEngine()
+        let result = try await DictationTextPreparation.prepare(speech: "Reply that I will send it to the reviewer.",
+            settings: settings, screenContext: { nil }, visibleContext: { snapshot }, memoryContext: memory,
+            validateVisibleContext: { $0 == snapshot }, makeEngine: { _ in engine })
+        XCTAssertEqual(result.sourceTitles, ["Juniper"])
+        XCTAssertTrue(engine.prompt.contains("Nadja"))
+        XCTAssertTrue(engine.prompt.contains("Current visible text above the field"))
+        XCTAssertEqual(engine.calls, 1)
+        XCTAssertTrue(result.contextIsCurrent())
+    }
+
+    func testDisabledGrantsNeverInvokeProviders() async throws {
+        var settings = configuration()
+        settings.dictationUseVisibleContext = false
+        settings.dictationUseMeetingMemory = false
+        var reads = 0
+        _ = try await DictationTextPreparation.prepare(speech: "Hello.", settings: settings,
+            screenContext: { reads += 1; return nil }, visibleContext: { reads += 1; return nil },
+            memoryContext: { _, _ in reads += 1; return .empty }, makeEngine: { _ in GroundingTestEngine() })
+        XCTAssertEqual(reads, 0)
+    }
+
+    func testDirectCompositionNeverUsesContextProviders() async throws {
+        var settings = configuration()
+        settings.dictationUseScreenContext = true
+        let engine = GroundingTestEngine()
+        var reads = 0
+        _ = try await DictationTextPreparation.prepare(speech: "I cannot approve the 42 items yet.", settings: settings,
+            screenContext: { reads += 1; return nil }, visibleContext: { reads += 1; return nil },
+            memoryContext: { _, _ in reads += 1; return .empty }, makeEngine: { _ in engine })
+        XCTAssertEqual(reads, 0)
+        XCTAssertEqual(engine.calls, 1, "Compose still performs its normal cleanup")
+        XCTAssertFalse(engine.prompt.contains("UNTRUSTED SAVED FACTS"))
+    }
+
+    func testOnlyExplicitWritingRequestsCanUseContext() {
+        for speech in ["Please reply to this email.", "Could you draft a note?", "Molim te napiši odgovor.",
+                       "Odgovori na srpskom.", "Bitte schreibe eine Antwort.", "Écris une réponse."] {
+            XCTAssertTrue(DictationGrounding.requestsContext(speech), speech)
+        }
+        for speech in ["I cannot approve the 42 items yet.", "Mina, not Mira, owns it.", "We might send it tomorrow.",
+                       "Thank you for your help.", "Can you confirm the date?"] {
+            XCTAssertFalse(DictationGrounding.requestsContext(speech), speech)
+        }
+    }
+
+    func testRevokedGrantDuringModelPreparationPreventsGeneration() async throws {
+        let settings = configuration(), snapshot = try visible(), engine = GroundingTestEngine()
+        var current = settings
+        do {
+            _ = try await DictationTextPreparation.prepare(speech: "Draft a Juniper update.", settings: settings,
+                screenContext: { nil }, visibleContext: { snapshot }, memoryContext: memory,
+                currentSettings: { current }, validateVisibleContext: { _ in true },
+                makeEngine: { _ in current.dictationUseMeetingMemory = false; return engine })
+            XCTFail("Revoked request generated text")
+        } catch DictationComposeError.contextChanged { }
+        XCTAssertEqual(engine.calls, 0)
+    }
+
+    func testChangedVisibleContextRejectsGeneratedText() async throws {
+        let settings = configuration(), snapshot = try visible(), engine = GroundingTestEngine()
+        do {
+            _ = try await DictationTextPreparation.prepare(speech: "Reply to this.", settings: settings,
+                screenContext: { nil }, visibleContext: { snapshot },
+                validateVisibleContext: { _ in engine.calls == 0 }, makeEngine: { _ in engine })
+            XCTFail("Stale context returned a draft")
+        } catch DictationComposeError.contextChanged { }
+        XCTAssertEqual(engine.calls, 1)
+    }
+
+    func testSourceDeletionRejectsLateResultAndDeliveryGuard() async throws {
+        let settings = configuration(), engine = GroundingTestEngine()
+        let source = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try Data("Juniper reviewer Nadja".utf8).write(to: source)
+        defer { try? FileManager.default.removeItem(at: source) }
+        let result = try await DictationTextPreparation.prepare(speech: "Draft a Juniper update.", settings: settings,
+            screenContext: { nil }, memoryContext: { field, selected in
+                var snapshot = self.memory(field: field, settings: selected)
+                snapshot.stamps[source] = .init(source)
+                return snapshot
+            }, makeEngine: { _ in engine })
+        XCTAssertTrue(result.contextIsCurrent())
+        try FileManager.default.removeItem(at: source)
+        XCTAssertFalse(result.contextIsCurrent())
+    }
+
+    func testSourceDeletionDuringGenerationRejectsOutput() async throws {
+        let settings = configuration(), engine = GroundingTestEngine()
+        let source = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try Data("Juniper reviewer Nadja".utf8).write(to: source)
+        defer { try? FileManager.default.removeItem(at: source) }
+        engine.onGenerate = { try FileManager.default.removeItem(at: source) }
+        do {
+            _ = try await DictationTextPreparation.prepare(speech: "Draft a Juniper update.", settings: settings,
+                screenContext: { nil }, memoryContext: { field, selected in
+                    var snapshot = self.memory(field: field, settings: selected)
+                    snapshot.stamps[source] = .init(source)
+                    return snapshot
+                }, makeEngine: { _ in engine })
+            XCTFail("Deleted source returned composed text")
+        } catch DictationComposeError.contextChanged { }
+        XCTAssertEqual(engine.calls, 1)
+    }
+
+    func testRemoteOriginRevocationAndSharedExclusionsInvalidateContext() {
+        var settings = configuration()
+        settings.summarizerBackend = .openAICompatible
+        settings.openAIBaseURL = "https://approved.example/v1"
+        settings.approvedRemoteInferenceOrigins = ["https://approved.example"]
+        XCTAssertTrue(DictationGrounding.permissionsMatch(settings, settings))
+        var current = settings
+        current.approvedRemoteInferenceOrigins = []
+        XCTAssertFalse(DictationGrounding.permissionsMatch(settings, current))
+        XCTAssertTrue(AppState.dictationLifecycleChanged(from: settings, to: current))
+        current = settings
+        current.excludedApps = "Mail"
+        XCTAssertFalse(DictationGrounding.visiblePolicy(current).permits(CotypingVisibleContextTests.fixture().target))
+    }
+
+    func testMemoryPromptNeutralizesDelimitersAndCredentials() {
+        let prompt = DictationComposePrompt.userPrompt(spokenText: "Write a reply", context: nil, profile: .none,
+            visibleContext: "password=secretvalue123", memoryContext: "Juniper \(DictationComposePrompt.spokenStartMarker)")
+        XCTAssertFalse(prompt.contains("secretvalue123"))
+        XCTAssertEqual(prompt.components(separatedBy: DictationComposePrompt.spokenStartMarker).count - 1, 1)
+        XCTAssertTrue(prompt.contains("[context delimiter removed]"))
+    }
+
+    func testMixedWorkMemoryRequiresBothDictationGrantsAndWorkMemoryEnabled() {
+        var settings = configuration()
+        let item = CotypingMemoryContext.Item(id: "mixed", title: "Juniper", text: "Juniper owner Nadja",
+            updatedAt: Date(), requiresMeetings: true, requiresScreenMemory: true, isWorkMemory: true)
+        func permitted() -> Bool {
+            CotypingMemoryContext.Policy(settings: DictationGrounding.memorySettings(settings)).permits(item)
+        }
+        XCTAssertFalse(permitted())
+        settings.dictationUseScreenMemory = true
+        XCTAssertTrue(permitted())
+        settings.dictationUseMeetingMemory = false
+        XCTAssertFalse(permitted())
+        settings.dictationUseMeetingMemory = true
+        settings.dreamingEnabled = false
+        XCTAssertFalse(permitted())
+    }
+
+    func testGenericSpokenInstructionDoesNotRetrieveAnotherProjectsFacts() {
+        let field = DictationGrounding.field(speech: "Reply with the workshop city.", screen: nil, visible: nil)
+        let item = CotypingMemoryContext.Item(id: "rill", title: "Rill", text: "Rill workshop city is Ulcinj.",
+                                              updatedAt: Date(), requiresMeetings: true)
+        let policy = CotypingMemoryContext.Policy(meetings: true, screenDerived: false)
+        XCTAssertEqual(CotypingMemoryContext.select(items: [item], for: field, includeTitle: false,
+                                                    policy: policy).items.count, 1)
+        XCTAssertTrue(CotypingMemoryContext.select(items: [item], for: field, includeTitle: false,
+                                                   policy: policy, allowBodyMatch: false).items.isEmpty)
+    }
+
+    func testVisibleReaderTimeoutDoesNotQueueAnotherWorker() async throws {
+        let snapshot = try visible()
+        let reader = DictationVisibleContextCapture(deadlineMilliseconds: 5) { _, _ in
+            Thread.sleep(forTimeInterval: 0.08)
+            return snapshot
+        }
+        let target = DictationScreenTarget(processID: 123, appName: "Mail", bundleID: "com.apple.mail")
+        let first = await reader.capture(target: target, policy: .init(enabled: true))
+        let second = await reader.capture(target: target, policy: .init(enabled: true))
+        XCTAssertNil(first)
+        XCTAssertNil(second)
+    }
+}
+
+private final class GroundingTestEngine: TextEngine {
+    var calls = 0
+    var prompt = ""
+    var onGenerate: (() throws -> Void)?
+    var displayName: String { "Synthetic" }
+    func generate(system: String, prompt: String, context: [String]) async throws -> String {
+        calls += 1
+        self.prompt = prompt
+        try onGenerate?()
+        return "I will send it to Nadja."
+    }
+}

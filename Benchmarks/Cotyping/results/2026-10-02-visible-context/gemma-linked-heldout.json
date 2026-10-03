@@ -1,0 +1,432 @@
+{
+  "summary": {
+    "neither": {
+      "factualCases": 4,
+      "correct": 0,
+      "firstWordCorrect": 0,
+      "visibleSelectionsCorrect": 4,
+      "memorySelectionsCorrect": 4,
+      "totalCases": 4,
+      "errors": 0,
+      "suppressed": 0,
+      "forbiddenReads": 0,
+      "medianMs": 49.457229,
+      "byKind": {
+        "combined": {
+          "cases": 4,
+          "correct": 0,
+          "staleFact": 0
+        },
+        "generic": {
+          "cases": 0,
+          "correct": 0,
+          "staleFact": 0
+        }
+      }
+    },
+    "visible": {
+      "factualCases": 4,
+      "correct": 0,
+      "firstWordCorrect": 0,
+      "visibleSelectionsCorrect": 4,
+      "memorySelectionsCorrect": 4,
+      "totalCases": 4,
+      "errors": 0,
+      "suppressed": 0,
+      "forbiddenReads": 0,
+      "medianMs": 75.89847950000001,
+      "byKind": {
+        "combined": {
+          "cases": 4,
+          "correct": 0,
+          "staleFact": 0
+        },
+        "generic": {
+          "cases": 0,
+          "correct": 0,
+          "staleFact": 0
+        }
+      }
+    },
+    "memory": {
+      "factualCases": 4,
+      "correct": 0,
+      "firstWordCorrect": 0,
+      "visibleSelectionsCorrect": 4,
+      "memorySelectionsCorrect": 4,
+      "totalCases": 4,
+      "errors": 0,
+      "suppressed": 0,
+      "forbiddenReads": 0,
+      "medianMs": 49.8289165,
+      "byKind": {
+        "combined": {
+          "cases": 4,
+          "correct": 0,
+          "staleFact": 0
+        },
+        "generic": {
+          "cases": 0,
+          "correct": 0,
+          "staleFact": 0
+        }
+      }
+    },
+    "both": {
+      "factualCases": 4,
+      "correct": 3,
+      "firstWordCorrect": 3,
+      "visibleSelectionsCorrect": 4,
+      "memorySelectionsCorrect": 4,
+      "totalCases": 4,
+      "errors": 0,
+      "suppressed": 0,
+      "forbiddenReads": 0,
+      "medianMs": 71.6113125,
+      "byKind": {
+        "combined": {
+          "cases": 4,
+          "correct": 3,
+          "staleFact": 0
+        },
+        "generic": {
+          "cases": 0,
+          "correct": 0,
+          "staleFact": 0
+        }
+      }
+    }
+  },
+  "controls": [],
+  "cases": [
+    {
+      "id": "held-nebula",
+      "kind": "combined",
+      "variant": "neither",
+      "text": "you.",
+      "expected": "Neda",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 50.931333,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "held-rill",
+      "kind": "combined",
+      "variant": "neither",
+      "text": "the park at",
+      "expected": "Ulcinj",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 55.253,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "held-teak",
+      "kind": "combined",
+      "variant": "neither",
+      "text": "you.",
+      "expected": "Pavel",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 21.289333,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "held-opaline",
+      "kind": "combined",
+      "variant": "neither",
+      "text": "the word \"conversation\"",
+      "expected": "Markdown",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 47.983125,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "held-nebula",
+      "kind": "combined",
+      "variant": "visible",
+      "text": "you.",
+      "expected": "Neda",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 61.075334,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "held-rill",
+      "kind": "combined",
+      "variant": "visible",
+      "text": "the city center",
+      "expected": "Ulcinj",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 74.464167,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "held-teak",
+      "kind": "combined",
+      "variant": "visible",
+      "text": "the Teak handoff",
+      "expected": "Pavel",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 78.580625,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "held-opaline",
+      "kind": "combined",
+      "variant": "visible",
+      "text": "the agreed export",
+      "expected": "Markdown",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 77.332792,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "held-nebula",
+      "kind": "combined",
+      "variant": "memory",
+      "text": "you.",
+      "expected": "Neda",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 51.801708,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "held-rill",
+      "kind": "combined",
+      "variant": "memory",
+      "text": "the park at",
+      "expected": "Ulcinj",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 55.378583,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "held-teak",
+      "kind": "combined",
+      "variant": "memory",
+      "text": "you.",
+      "expected": "Pavel",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 21.273875,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "held-opaline",
+      "kind": "combined",
+      "variant": "memory",
+      "text": "the word \"conversation\"",
+      "expected": "Markdown",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [],
+      "memoryIDs": [],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 47.856125,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "held-nebula",
+      "kind": "combined",
+      "variant": "both",
+      "text": "her.",
+      "expected": "Neda",
+      "correct": false,
+      "firstWordCorrect": false,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [
+        "memory-held-nebula"
+      ],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 56.711791,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "held-rill",
+      "kind": "combined",
+      "variant": "both",
+      "text": "Ulcinj.",
+      "expected": "Ulcinj",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [
+        "memory-held-rill"
+      ],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 67.927125,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "held-teak",
+      "kind": "combined",
+      "variant": "both",
+      "text": "Pavel about the",
+      "expected": "Pavel",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [
+        "memory-held-teak"
+      ],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 75.2955,
+      "error": null,
+      "suppression": null
+    },
+    {
+      "id": "held-opaline",
+      "kind": "combined",
+      "variant": "both",
+      "text": "Markdown for the",
+      "expected": "Markdown",
+      "correct": true,
+      "firstWordCorrect": true,
+      "staleFact": false,
+      "visibleIDs": [
+        "message"
+      ],
+      "memoryIDs": [
+        "memory-held-opaline"
+      ],
+      "visibleSelectionCorrect": true,
+      "memorySelectionCorrect": true,
+      "forbiddenReads": [],
+      "latencyMs": 83.219041,
+      "error": null,
+      "suppression": null
+    }
+  ],
+  "manifest": {
+    "appSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb",
+    "modelFile": "gemma-4-E2B.i1-Q6_K.gguf",
+    "modelSHA256": "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
+    "corpusSHA256": "f9afa87f4d0eddaf2b7d81fdf7493cde59817e2606e54470a33b70aec1840f2d",
+    "scriptSHA256": "dea80c674ccb4cb9bf7952e93f62fab235338ea5a24ab428682a886f27b48c8b",
+    "split": "heldout",
+    "caseIDs": [
+      "held-nebula",
+      "held-rill",
+      "held-teak",
+      "held-opaline"
+    ],
+    "settings": "production defaults (3 words, 5 tokens)",
+    "context": "synthetic AX regions and saved facts; no live user data",
+    "metric": "expected fact occurs as complete lexical words in the emitted continuation"
+  }
+}

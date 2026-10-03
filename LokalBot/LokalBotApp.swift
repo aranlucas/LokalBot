@@ -17,6 +17,18 @@ enum LokalBotMain {
 
     @MainActor
     static func main() {
+        // Explicit synthetic replay runs before migration, AppState, permissions,
+        // learning, or capture. Only the supplied fixture and model are read.
+        if case .cotypingReplay(let input, let model)? = HeadlessCommand.parse(CommandLine.arguments) {
+            Task { @MainActor in exit(await CotypingQualityReplay.run(input: input, model: model)) }
+            RunLoop.main.run()
+            return
+        }
+        if case .dictationReplay(let input, let endpoint)? = HeadlessCommand.parse(CommandLine.arguments) {
+            Task { @MainActor in exit(await DictationContextReplay.run(input: input, endpoint: endpoint)) }
+            RunLoop.main.run()
+            return
+        }
         routeStartup(
             migrate: { DataMigration.runIfNeeded() },
             launchApplication: {

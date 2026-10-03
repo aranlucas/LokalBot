@@ -6,6 +6,7 @@ extension CotypingCoordinator {
 
     func handleKey(_ event: CotypingInputEvent) {
         guard isRunning else { return }
+        discardRevokedMemoryContext()
         switch event.kind {
         case .acceptance, .fullAcceptance:
             break // owned by the accept tap
@@ -23,6 +24,18 @@ extension CotypingCoordinator {
 
     func handleFocusChange(_ focus: CotypingFocus) {
         guard isRunning else { return }
+        discardRevokedMemoryContext()
+        if let activeVisibleContext,
+           focus.field == nil || (focus.field?.visibleContextWasRequested == true
+                && focus.field?.visibleContext != activeVisibleContext) {
+            cancelPendingGenerationWork()
+            acceptedSuggestionBatch.discardLearningRecord()
+            clearSuggestion()
+            suggestionAnchorCache.removeAll()
+            self.activeVisibleContext = nil
+            lastSuggestion = nil
+            state = .idle
+        }
         // Drop a live suggestion when focus leaves the field/app it belongs to.
         if let session,
            CotypingSessionReconciler.shouldClearActiveSessionOnFocusChange(

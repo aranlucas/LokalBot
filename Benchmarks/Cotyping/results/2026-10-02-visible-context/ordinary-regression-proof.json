@@ -1,0 +1,18 @@
+{
+  "lfm": {
+    "cases": 178,
+    "identical": 178,
+    "differences": [],
+    "inputSHA256": "12971a70f2eb0c0527e5e45e495231a8648344ad05260b7b79cc1b04cbfb2a3a",
+    "baselineAppSHA256": "90759b77c750bfe14907907985e4a3c474e09bc0fac0d74ac7102a6bbf71490e",
+    "appSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb"
+  },
+  "gemma": {
+    "cases": 178,
+    "identical": 178,
+    "differences": [],
+    "inputSHA256": "12971a70f2eb0c0527e5e45e495231a8648344ad05260b7b79cc1b04cbfb2a3a",
+    "baselineAppSHA256": "90759b77c750bfe14907907985e4a3c474e09bc0fac0d74ac7102a6bbf71490e",
+    "appSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb"
+  }
+}

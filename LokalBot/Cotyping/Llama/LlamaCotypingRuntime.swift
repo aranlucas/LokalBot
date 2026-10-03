@@ -88,6 +88,7 @@ actor LlamaCotypingRuntime {
     /// The prompt most recently prefilled into the context (basis for the
     /// incremental KV-reuse probe against the next prompt).
     private var cachedTokens: [Int32] = []
+    private var tokenPrefixIndex: CotypingTokenPrefixIndex?
     private(set) var lastPrefillTokenCount: Int = 0
     /// True only for pure-attention models, whose per-position KV cells can be
     /// partially evicted (`seq_rm` at a non-zero p0). Recurrent/hybrid (SSM/Mamba)
@@ -265,6 +266,8 @@ actor LlamaCotypingRuntime {
     /// masquerade as the prompt represented by `cachedTokens`.
     func prefill(promptTokens: [Int32]) throws {
         guard let ctx, !promptTokens.isEmpty else { return }
+        let promptTokens = Self.boundedPromptTokens(
+            promptTokens, contextSize: Int(llama_n_ctx(ctx)), outputReserve: 120)
         decodeAbortState.beginDecode()
         defer { decodeAbortState.endDecode() }
         try Task.checkCancellation()
@@ -321,6 +324,7 @@ actor LlamaCotypingRuntime {
         loadedModelPath = nil
         cachedTokens = []
         supportsPartialReuse = false
+        tokenPrefixIndex = nil
         // Keep this path synchronous for memory pressure, but only remove the
         // generation that was actually freed. A reload may register before
         // this main-actor task gets its turn.
@@ -460,6 +464,9 @@ actor LlamaCotypingRuntime {
         onToken: @Sendable (String) -> Bool
     ) throws -> String {
         guard let ctx, let vocab, !promptTokens.isEmpty else { return "" }
+        let promptTokens = Self.boundedPromptTokens(
+            promptTokens, contextSize: Int(llama_n_ctx(ctx)),
+            outputReserve: maxTokens + requiredPrefixUTF8.count)
         guard let sampler = makeSampler(samplerSpecs) else { return "" }
         decodeAbortState.beginDecode()
         defer { decodeAbortState.endDecode() }
@@ -596,15 +603,24 @@ actor LlamaCotypingRuntime {
         return bestToken
     }
 
-    /// How many top-logit candidates to try before falling back to canonical
-    /// tokenization. Natural text puts a compatible piece in the top few.
+    /// Bound the physical prompt by tokens, not English character estimates.
+    /// Dense Unicode text can exceed the context even inside the character cap.
+    /// Keep the caret end and reserve space for healing plus visible generation.
+    nonisolated static func boundedPromptTokens(
+        _ tokens: [Int32], contextSize: Int, outputReserve: Int
+    ) -> [Int32] {
+        let limit = max(1, contextSize - max(0, outputReserve) - 1)
+        return tokens.count > limit ? Array(tokens.suffix(limit)) : tokens
+    }
+
+    /// How many global candidates to try before consulting the prefix index.
+    /// Natural text usually finds a compatible piece in this cheap first pass.
     private static let constrainedCandidateScanLimit = 64
 
     /// Highest-logit vocab token whose piece extends the remaining required
-    /// prefix (token healing). Scans candidates in descending logit order on a
-    /// copied logit buffer; when none of the top candidates match, falls back
-    /// to the canonical tokenization of the remaining bytes, whose first token
-    /// matches by construction (correct, just not logit-optimal).
+    /// prefix (token healing). Ranks a bounded set in one vocabulary pass,
+    /// without copying or changing native logits. Rare fragments use a cached
+    /// byte-prefix index to find the best compatible token in the full vocabulary.
     ///
     /// With `preferWordExtendingOvershoot`, a candidate that consumes the
     /// remaining bytes EXACTLY is parked while the scan continues for one whose
@@ -618,12 +634,11 @@ actor LlamaCotypingRuntime {
         let vocabularySize = llama_vocab_n_tokens(vocab)
         var exactBoundaryFallback: Int32?
         if let ctx, let logits = llama_get_logits_ith(ctx, -1), vocabularySize > 0 {
-            var scores = Array(UnsafeBufferPointer(start: logits, count: Int(vocabularySize)))
-            for _ in 0..<Self.constrainedCandidateScanLimit {
-                let candidate: Int32? = scores.withUnsafeBufferPointer {
-                    Self.argmaxToken(in: $0.baseAddress, vocabularySize: vocabularySize)
-                }
-                guard let candidate else { break }
+            let candidates = CotypingTokenCandidates.topTokens(
+                in: logits,
+                vocabularySize: vocabularySize,
+                limit: Self.constrainedCandidateScanLimit)
+            for candidate in candidates {
                 if !llama_vocab_is_eog(vocab, candidate) {
                     switch CotypingRequiredPrefixMatcher.match(
                         pieceBytes: pieceBytes(for: candidate), remaining: remaining) {
@@ -645,10 +660,21 @@ actor LlamaCotypingRuntime {
                         break
                     }
                 }
-                scores[Int(candidate)] = -.infinity
             }
         }
         if let exactBoundaryFallback { return exactBoundaryFallback }
+        if let ctx, let logits = llama_get_logits_ith(ctx, -1) {
+            if tokenPrefixIndex == nil {
+                tokenPrefixIndex = CotypingTokenPrefixIndex(vocabularySize: vocabularySize) { token in
+                    llama_vocab_is_eog(vocab, token) ? [] : pieceBytes(for: token)
+                }
+            }
+            if let compatible = tokenPrefixIndex?.bestToken(
+                in: logits, matching: remaining,
+                preferWordExtendingOvershoot: preferWordExtendingOvershoot) {
+                return compatible
+            }
+        }
         let text = String(decoding: remaining, as: UTF8.self)
         return tokenize(text, addBOS: false).first
     }

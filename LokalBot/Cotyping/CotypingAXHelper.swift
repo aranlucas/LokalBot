@@ -65,6 +65,7 @@ enum CotypingAXHelper {
         let lock = NSLock()
         var fieldStyles: [String: CotypingFieldStyle] = [:]
         var appReadPolicy = CotypingAppReadPolicy()
+        var visibleContextPolicy = CotypingVisibleContext.Policy()
         let surfaceCaptures = CotypingSurfaceCaptureSingleFlight()
         let urlCaptures = CotypingSurfaceCaptureSingleFlight()
         var primedWebAccessibilityPIDs: Set<pid_t> = []
@@ -88,6 +89,10 @@ enum CotypingAXHelper {
             cacheState.appReadPolicy = policy
             return changed
         }
+    }
+
+    static func configureVisibleContextPolicy(_ policy: CotypingVisibleContext.Policy) {
+        cacheState.withLock { cacheState.visibleContextPolicy = policy }
     }
 
     private static var appReadPolicy: CotypingAppReadPolicy {
@@ -237,7 +242,8 @@ enum CotypingAXHelper {
     /// behind `CotypingAXSnapshotExecutor`. Accept-key validation uses the bounded
     /// `resolveAcceptanceSnapshot(cachedField:)` path instead.
     static func resolveFocus(includeSurface: Bool = false, includeURL: Bool = false,
-                             includeStyle: Bool = false, includeLearningScope: Bool = false) -> CotypingFocus {
+                             includeStyle: Bool = false, includeLearningScope: Bool = false,
+                             includeVisibleContext: Bool = false) -> CotypingFocus {
         guard isTrusted else {
             return CotypingFocus(appName: "", bundleID: nil,
                                  capability: .unsupported("Accessibility permission needed."),
@@ -349,7 +355,7 @@ enum CotypingAXHelper {
         let isIntegratedTerminal = CotypingSurfaceClassifier.isIntegratedTerminal(
             domClassList: stringArrayAttribute(element, "AXDOMClassList"))
 
-        let field = CotypingField(
+        var field = CotypingField(
             appName: appName, bundleID: bundleID, processID: pid, role: role,
             focusIdentityKey: focusIdentityKey,
             precedingText: preceding, trailingText: trailing,
@@ -360,6 +366,20 @@ enum CotypingAXHelper {
             precedingTextIsTruncated: context.precedingIsTruncated,
             learningScopeKey: includeLearningScope
                 ? learningScopeKey(near: element, bundleID: bundleID) : nil)
+        if includeVisibleContext, !isIntegratedTerminal {
+            let policy = cacheState.withLock { cacheState.visibleContextPolicy }
+            field.visibleContextWasRequested = true
+            if policy.enabled, !ScreenContextPrivacy.isExcluded(
+                appName: appName, bundleIdentifier: bundleID, rules: policy.excludedApps) {
+                field.visibleContext = CotypingVisibleContext.capture(
+                    from: CotypingVisibleContextAXSource(
+                        field: element, processID: pid, appName: appName, bundleID: bundleID,
+                        focusIsCurrent: { focusedElement().map { CFEqual($0, element) } ?? false }),
+                    policy: policy)
+            }
+            // A policy revocation during a cross-process read drops its result.
+            if policy != cacheState.withLock({ cacheState.visibleContextPolicy }) { field.visibleContext = nil }
+        }
         return CotypingFocus(appName: appName, bundleID: bundleID, capability: .supported,
                              field: field, focusIdentityKey: focusIdentityKey, host: host)
     }

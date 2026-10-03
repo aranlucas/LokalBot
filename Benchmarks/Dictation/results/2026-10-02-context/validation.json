@@ -1,0 +1,55 @@
+{
+  "recordedAt": "2026-10-02T19:32:45.749983+00:00",
+  "builds": {
+    "Debug": "passed build-for-testing",
+    "Release": "passed build"
+  },
+  "nonUITests": {
+    "passed": 176,
+    "failed": 0,
+    "log": "validation-logs.tar.gz:non-ui-tests.log"
+  },
+  "pythonScorerTests": {
+    "passed": 9,
+    "failed": 0,
+    "command": "uv run --no-project python -S -m unittest discover -s Benchmarks/Dictation -p 'test_*.py' -v",
+    "evidence": "Passed in task execution before final model inference; stdout was not archived."
+  },
+  "strictSwiftLint": "passed with empty output",
+  "finalRuns": {
+    "development": {
+      "observations": 30,
+      "invarianceChecks": 2,
+      "boundaryFailures": 0,
+      "recomputedScoresMatch": true
+    },
+    "regression": {
+      "observations": 110,
+      "invarianceChecks": 9,
+      "boundaryFailures": 0,
+      "recomputedScoresMatch": true
+    },
+    "fresh-heldout": {
+      "observations": 100,
+      "invarianceChecks": 10,
+      "boundaryFailures": 0,
+      "recomputedScoresMatch": true
+    }
+  },
+  "finalSourceFreezeMatches": true,
+  "fixtureFreezeMatches": true,
+  "originalSemanticAndSourceReferencesUnchanged": true,
+  "runtimeReferenceLabelsExcluded": true,
+  "localUITestsRun": false,
+  "installed": false,
+  "committed": false,
+  "pushed": false,
+  "released": false,
+  "logs": {
+    "debug-build.log": "94cb76b2b54b32e574e779cac716f7fa34d579ad6859e9e18c1e761956b650c3",
+    "release-build.log": "a3120e583674aaf68f255ec390587f402b35c16ad4cec32f0dfab2bcc87aaa55",
+    "non-ui-tests.log": "de7441c34a273b2415661869ce852b07ed1a1fa8299ca2706411d4ea2029b589",
+    "strict-swiftlint.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "eval-driver.log": "86f9d0b506363a97eb9baea417dafe55c1c6e955eaa4f9f9235f5027c8c0b39e"
+  }
+}

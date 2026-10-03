@@ -67,6 +67,9 @@ struct CotypingField: Equatable, Sendable {
     /// Hash of a positively identified document, never inferred from a recipient
     /// name or generic window title. Nil means local learning must abstain.
     var learningScopeKey: String?
+    /// Only filled by an explicitly requested background context capture.
+    var visibleContext: CotypingVisibleContext.Snapshot?
+    var visibleContextWasRequested: Bool = false
 
     /// Content-only fingerprint used to detect "did the field actually change"
     /// across keystrokes and to drop stale async generations. Excludes the AX
@@ -120,7 +123,7 @@ struct CotypingConfiguration: Sendable, Equatable {
 
     static let standard = CotypingConfiguration(
         maxPrefixCharacters: 2500,
-        maxPrefixWords: 150,
+        maxPrefixWords: 500,
         maxResponseTokens: 26,
         maxResponseWords: 20,
         temperature: 0.1,

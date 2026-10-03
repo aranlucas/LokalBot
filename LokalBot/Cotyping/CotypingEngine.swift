@@ -27,6 +27,8 @@ enum CotypingRequestBuilder {
         personalization: CotypingPersonalization,
         generation: UInt64,
         clipboardContext: String? = nil,
+        memoryContext: String? = nil,
+        visibleContext: String? = nil,
         learnedExamples: [String] = [],
         wordPrefixIsValidWord: Bool = true
     ) -> CotypingRequest? {
@@ -54,6 +56,8 @@ enum CotypingRequestBuilder {
             languageHint: personalization.languageHint,
             extendedContext: personalization.extendedContext,
             clipboardContext: clipboardContext,
+            memoryContext: memoryContext,
+            visibleContext: visibleContext,
             learnedExamples: learnedExamples)
         return CotypingRequest(
             prompt: renderedPrompt.prompt,

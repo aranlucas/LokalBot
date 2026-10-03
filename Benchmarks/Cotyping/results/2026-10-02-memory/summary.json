@@ -1,0 +1,74 @@
+{
+  "lfm-development": {
+    "relevantCases": 6,
+    "offCorrect": 0,
+    "onCorrect": 6,
+    "exactSelections": 6,
+    "totalCases": 6,
+    "controlCases": 0,
+    "unchangedControls": 0,
+    "errors": 0,
+    "offMedianMs": 40.4922495,
+    "onMedianMs": 22.143979
+  },
+  "gemma-development": {
+    "relevantCases": 6,
+    "offCorrect": 0,
+    "onCorrect": 6,
+    "exactSelections": 6,
+    "totalCases": 6,
+    "controlCases": 0,
+    "unchangedControls": 0,
+    "errors": 0,
+    "offMedianMs": 72.93033349999999,
+    "onMedianMs": 45.6949375
+  },
+  "lfm-heldout": {
+    "relevantCases": 12,
+    "offCorrect": 0,
+    "onCorrect": 11,
+    "exactSelections": 22,
+    "totalCases": 22,
+    "controlCases": 10,
+    "unchangedControls": 10,
+    "errors": 0,
+    "offMedianMs": 23.703312,
+    "onMedianMs": 17.874958499999998
+  },
+  "gemma-heldout": {
+    "relevantCases": 12,
+    "offCorrect": 0,
+    "onCorrect": 12,
+    "exactSelections": 22,
+    "totalCases": 22,
+    "controlCases": 10,
+    "unchangedControls": 10,
+    "errors": 0,
+    "offMedianMs": 65.911625,
+    "onMedianMs": 41.320312
+  },
+  "lfm-ordinary": {
+    "checkpoints": 178,
+    "correct": 65,
+    "shown": 178,
+    "errors": 0,
+    "accuracy": 0.3651685393258427,
+    "coverage": 1.0,
+    "2WordAccuracy": 0.1232876712328767,
+    "3WordAccuracy": 0.03508771929824561,
+    "p50Ms": 27.454416,
+    "p95Ms": 73.50725
+  },
+  "gemma-ordinary": {
+    "checkpoints": 178,
+    "correct": 83,
+    "shown": 177,
+    "errors": 0,
+    "accuracy": 0.46629213483146065,
+    "coverage": 0.9943820224719101,
+    "2WordAccuracy": 0.15753424657534246,
+    "3WordAccuracy": 0.05263157894736842,
+    "p50Ms": 53.680375,
+    "p95Ms": 84.819917
+  }
+}

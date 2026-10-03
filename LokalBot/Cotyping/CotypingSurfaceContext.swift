@@ -167,21 +167,25 @@ enum CotypingSurfaceComposer {
             windowTitle: title, fieldPlaceholder: placeholder)
     }
 
-    /// Declarative conditioning lines for the prompt preface (a continuer
-    /// conditions on description, it doesn't obey commands).
+    /// Condition on the writing topic. Descriptions of the UI ("text being
+    /// typed", "the window is titled") pull small models toward talking about
+    /// buttons and fields instead of continuing the passage.
     static func prefaceLines(for surface: CotypingSurfaceContext) -> [String] {
-        var lines: [String] = []
         switch surface.surfaceClass {
-        case .email: lines.append("An email being written in \(surface.applicationName).")
-        case .chat: lines.append("A chat message being typed in \(surface.applicationName).")
-        case .browser, .other: lines.append("Text being typed in \(surface.applicationName).")
         case .codeEditor, .terminal: return []
+        case .email, .chat, .browser, .other: break
         }
-        if let title = surface.windowTitle { lines.append("The window is titled \"\(title)\".") }
-        if let placeholder = surface.fieldPlaceholder {
-            lines.append("The text field is labeled \"\(placeholder)\".")
+        if let title = surface.windowTitle {
+            let label = surface.surfaceClass == .email ? "Subject" : "Topic"
+            return ["\(label): \(title)"]
         }
-        return lines
+        // A channel name can still be useful when the host supplies no title.
+        // Generic labels such as Message, Reply and Search carry no topic.
+        if surface.surfaceClass == .chat, let placeholder = surface.fieldPlaceholder,
+           let channel = placeholder.range(of: "#") {
+            return ["Topic: \(placeholder[channel.lowerBound...])"]
+        }
+        return []
     }
 
     // MARK: - Sanitization

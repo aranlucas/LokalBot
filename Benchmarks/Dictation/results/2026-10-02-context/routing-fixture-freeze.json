@@ -1,0 +1,10 @@
+{
+  "createdAt": "2026-10-02T19:23:46.547290+00:00",
+  "scope": "Fixture and semantic reference freeze before any inference on this fresh supplement. Original context-cases.json is now a development/regression set. Reference labels never enter replay input.",
+  "files": {
+    "Benchmarks/Dictation/context-cases.json": "7063219ea6bd61a439b07ed8042142844e259f7fb81298b53872f1bcfdfff17c",
+    "Benchmarks/Dictation/context-routing-heldout.json": "0f59157ccb849487151c85288be1688a8742ec078e44b3232001347eaa95b6d6",
+    "Benchmarks/Dictation/context_replay.py": "b62e7713fc9787cce1624595cb55d4f82419311aa57f08e0c7ddde5b424db03f",
+    "Benchmarks/Dictation/test_context_replay.py": "36d831d5fb98763fdc679eb30834380fac9ffde4d46d0f4e20647b7ebfcc28ac"
+  }
+}

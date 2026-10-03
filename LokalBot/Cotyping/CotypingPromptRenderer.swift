@@ -5,11 +5,11 @@ import Foundation
 /// continuer*, not an instruction-follower. Persona / style / language are
 /// folded into a short conditioning preface (a model conditions on a
 /// description, it does not obey a command in this mode), and the caret prefix
-/// is the LAST thing in the prompt, trailing-trimmed so generation begins at a
-/// clean word boundary.
+/// is the LAST thing in the prompt, with its exact whitespace intact. Native
+/// token healing retokenizes the caret boundary without changing the user's text.
 ///
-/// LokalBot's recommended cotyping model is instruction-tuned rather than a base model, but
-/// raw `/v1/completions` still continues text from this prompt. The renderer
+/// The recommended Gemma model is a base text continuer. Instruction-tuned
+/// alternatives also continue this prompt through raw `/v1/completions`. The renderer
 /// therefore returns the exact conditioning preface separately as well, so the
 /// output boundary can suppress a partial or complete preface echo.
 enum CotypingPromptRenderer {
@@ -40,6 +40,8 @@ enum CotypingPromptRenderer {
         languageHint: String? = nil,
         extendedContext: String? = nil,
         clipboardContext: String? = nil,
+        memoryContext: String? = nil,
+        visibleContext: String? = nil,
         learnedExamples: [String] = []
     ) -> String {
         render(
@@ -50,6 +52,8 @@ enum CotypingPromptRenderer {
             languageHint: languageHint,
             extendedContext: extendedContext,
             clipboardContext: clipboardContext,
+            memoryContext: memoryContext,
+            visibleContext: visibleContext,
             learnedExamples: learnedExamples).prompt
     }
 
@@ -64,11 +68,25 @@ enum CotypingPromptRenderer {
         languageHint: String? = nil,
         extendedContext: String? = nil,
         clipboardContext: String? = nil,
+        memoryContext: String? = nil,
+        visibleContext: String? = nil,
         learnedExamples: [String] = []
     ) -> RenderedPrompt {
-        let prefix = trimmingTrailingWhitespace(prefixText)
+        let prefix = prefixText
 
-        var preface: [String] = surfaceLines
+        var preface: [String] = []
+        if let visible = nonEmpty(visibleContext) {
+            preface.append("Current visible text above the field: \(PromptContextSanitizer.sanitize(visible, maxCharacters: 420))")
+            preface.append(contentsOf: surfaceLines)
+            if let memory = nonEmpty(memoryContext) {
+                preface.append("Relevant saved facts: \(PromptContextSanitizer.sanitize(memory, maxCharacters: 180))")
+            }
+        } else {
+            preface = surfaceLines
+            if let memory = nonEmpty(memoryContext) {
+                preface.append("Relevant saved facts: \(PromptContextSanitizer.sanitize(memory, maxCharacters: 360))")
+            }
+        }
         if let persona = personaLine(userName) { preface.append(persona) }
         if let style = styleLine(styleNote) { preface.append(style) }
         if let language = nonEmpty(languageHint) { preface.append(language) }

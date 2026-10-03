@@ -52,6 +52,9 @@ extension CotypingCoordinator {
         generation &+= 1
         let work = generation
         clearSuggestion()
+        activeMemoryContext = .empty
+        activeVisibleContext = nil
+        memoryContextSources = []
         state = .debouncing
         let delay = CotypingDebouncePolicy.milliseconds(
             lastLatencyMilliseconds: lastLatencyMilliseconds,
@@ -150,7 +153,14 @@ extension CotypingCoordinator {
             break
         }
 
-        guard let request = buildRequest(for: field, settings: settings, generation: work) else {
+        let memory = await savedContext(for: field, settings: settings)
+        guard work == generation, isRunning, !Task.isCancelled,
+              memory.isCurrent(settings: settingsProvider()) else { return }
+        activeMemoryContext = memory
+        activeVisibleContext = field.visibleContext?.text == nil ? nil : field.visibleContext
+        memoryContextSources = memory.selection.sourceTitles
+        guard let request = buildRequest(for: field, settings: settings, generation: work,
+                                         memoryContext: memory.selection.text) else {
             state = .idle
             return
         }
@@ -227,7 +237,8 @@ extension CotypingCoordinator {
     private func buildRequest(
         for field: CotypingField,
         settings: AppSettings,
-        generation: UInt64
+        generation: UInt64,
+        memoryContext: String? = nil
     ) -> CotypingRequest? {
         var cfg = config
         cfg.maxResponseTokens = settings.cotypingMaxResponseTokens
@@ -245,6 +256,8 @@ extension CotypingCoordinator {
             field: field, config: cfg,
             personalization: settings.cotypingPersonalization, generation: generation,
             clipboardContext: clipboardSnippet,
+            memoryContext: memoryContext,
+            visibleContext: field.visibleContext?.text,
             learnedExamples: learnedExamples,
             wordPrefixIsValidWord: wordPrefixIsValidWord(for: field.precedingText))
     }
@@ -276,16 +289,18 @@ extension CotypingCoordinator {
     }
 
     private func refreshFocusForPrediction(settings: AppSettings) async -> CotypingFocus {
+        let includeVisibleContext = settings.cotypingUseVisibleContext
         let includeSurface = settings.cotypingUseAppContext
         let includeURL = !settings.cotypingExcludedDomainList.isEmpty
         let includeStyle = settings.cotypingMatchHostStyle
         let includeLearningScope = settings.cotypingUseLocalLearning
-        guard !includeSurface, !includeURL, !includeStyle, !includeLearningScope else {
+        guard !includeSurface, !includeURL, !includeStyle, !includeLearningScope, !includeVisibleContext else {
             return await focusTracker.refreshNow(
                 includeSurface: includeSurface,
                 includeURL: includeURL,
                 includeStyle: includeStyle,
-                includeLearningScope: includeLearningScope)
+                includeLearningScope: includeLearningScope,
+                includeVisibleContext: includeVisibleContext)
         }
         return await focusTracker.refreshIfStale(
             maxAgeMilliseconds: Self.freshSnapshotReuseWindowMilliseconds)
@@ -296,7 +311,8 @@ extension CotypingCoordinator {
         settings: AppSettings,
         work: UInt64
     ) async -> CotypingField? {
-        guard work == generation, isRunning else { return nil }
+        guard work == generation, isRunning, !discardRevokedMemoryContext() else { return nil }
+        let includeVisibleContext = settings.cotypingUseVisibleContext
         let includeSurface = settings.cotypingUseAppContext
         let includeURL = !settings.cotypingExcludedDomainList.isEmpty
         let includeStyle = settings.cotypingMatchHostStyle
@@ -305,10 +321,11 @@ extension CotypingCoordinator {
             includeSurface: includeSurface,
             includeURL: includeURL,
             includeStyle: includeStyle,
-            includeLearningScope: includeLearningScope) else {
+            includeLearningScope: includeLearningScope,
+            includeVisibleContext: includeVisibleContext) else {
             return nil
         }
-        guard work == generation, isRunning else { return nil }
+        guard work == generation, isRunning, !discardRevokedMemoryContext() else { return nil }
         if let reason = CotypingAvailability.disabledReason(
             enabled: settings.cotypingEnabled,
             excludedApps: settings.cotypingExcludedAppList,
@@ -319,7 +336,8 @@ extension CotypingCoordinator {
             state = .disabled(reason)
             return nil
         }
-        guard originalField.learningScopeKey == focus.field?.learningScopeKey,
+        guard activeVisibleContext == nil || activeVisibleContext == focus.field?.visibleContext,
+              originalField.learningScopeKey == focus.field?.learningScopeKey,
               CotypingSessionReconciler.isCurrentGenerationTarget(originalField, liveField: focus.field) else {
             return nil
         }
@@ -531,10 +549,17 @@ extension CotypingCoordinator {
 
     // MARK: - In-app preview
 
+    private func savedContext(for field: CotypingField, settings: AppSettings) async
+        -> CotypingMemoryContextProvider.Snapshot {
+        guard CotypingMemoryContext.Policy(settings: settings).enabled else { return .empty }
+        return await memoryContextProvider(field, settings)
+    }
+
     /// Runs the real pipeline (prompt + model + normalizer) on synthetic text for
     /// the in-app preview playground. No Accessibility / Input Monitoring needed.
     func previewSuggestion(precedingText: String, trailingText: String = "", sampleOnly: Bool = false) async throws -> String {
         let settings = settingsProvider()
+        let work = generation
         var cfg = config
         cfg.maxResponseTokens = settings.cotypingMaxResponseTokens
         cfg.maxResponseWords = settings.cotypingMaxWords
@@ -547,14 +572,23 @@ extension CotypingCoordinator {
                 for: field,
                 limit: settings.cotypingLearningExamplesInPrompt)
             : []
+        let memory = sampleOnly ? CotypingMemoryContextProvider.Snapshot.empty
+            : await savedContext(for: field, settings: settings)
+        guard !Task.isCancelled, work == generation,
+              memory.isCurrent(settings: settingsProvider()) else { return "" }
         guard let request = CotypingRequestBuilder.build(
             field: field, config: cfg,
             personalization: sampleOnly ? .none : settings.cotypingPersonalization, generation: 0,
+            memoryContext: memory.selection.text,
             learnedExamples: learnedExamples,
             wordPrefixIsValidWord: wordPrefixIsValidWord(for: precedingText)) else {
             return ""
         }
-        return try await engine.generate(request).text
+        let result = try await engine.generate(request).text
+        guard !Task.isCancelled, work == generation,
+              memory.isCurrent(settings: settingsProvider()) else { return "" }
+        if !sampleOnly { memoryContextSources = memory.selection.sourceTitles }
+        return result
     }
 
     func runQualityBenchmark() async -> CotypingBenchmarkSummary {

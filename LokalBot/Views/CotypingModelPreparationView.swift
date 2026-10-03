@@ -24,7 +24,7 @@ struct CotypingModelPreparationView: View {
             }
             if status.entry?.id == ModelCatalog.recommendedCotypingID {
                 HStack(spacing: 4) {
-                    Text("LFM uses its own commercial and redistribution terms.")
+                    Text("Gemma 4 uses the Apache 2.0 license.")
                     Link("Review license", destination: ModelCatalog.recommendedCotypingLicenseURL)
                         .buttonStyle(.workspaceLink)
                 }

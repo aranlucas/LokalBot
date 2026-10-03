@@ -1,0 +1,1448 @@
+{
+  "lfm": {
+    "development": {
+      "summary": {
+        "neither": {
+          "factualCases": 8,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 8,
+          "memorySelectionsCorrect": 8,
+          "totalCases": 8,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 26.7128125,
+          "byKind": {
+            "combined": {
+              "cases": 1,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 1,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 1,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 5,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "visible": {
+          "factualCases": 8,
+          "correct": 5,
+          "firstWordCorrect": 4,
+          "visibleSelectionsCorrect": 8,
+          "memorySelectionsCorrect": 8,
+          "totalCases": 8,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 28.1807915,
+          "byKind": {
+            "combined": {
+              "cases": 1,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 1,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 1,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 5,
+              "correct": 4,
+              "staleFact": 0
+            }
+          }
+        },
+        "memory": {
+          "factualCases": 8,
+          "correct": 2,
+          "firstWordCorrect": 2,
+          "visibleSelectionsCorrect": 8,
+          "memorySelectionsCorrect": 8,
+          "totalCases": 8,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 24.836875,
+          "byKind": {
+            "combined": {
+              "cases": 1,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 1,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 1,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 5,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "both": {
+          "factualCases": 8,
+          "correct": 7,
+          "firstWordCorrect": 5,
+          "visibleSelectionsCorrect": 8,
+          "memorySelectionsCorrect": 8,
+          "totalCases": 8,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 21.8285835,
+          "byKind": {
+            "combined": {
+              "cases": 1,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 1,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 1,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 5,
+              "correct": 4,
+              "staleFact": 0
+            }
+          }
+        }
+      },
+      "controls": [],
+      "manifest": {
+        "appSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb",
+        "modelFile": "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
+        "modelSHA256": "856aeee6d85ac684b1db8dee48795b44fc06731ecda03aee36ece682413a9b9a",
+        "corpusSHA256": "18b47798e5bb3e29717f141e04b0181f1b9a89f9efa27e48f06177e53e1dbfce",
+        "scriptSHA256": "dea80c674ccb4cb9bf7952e93f62fab235338ea5a24ab428682a886f27b48c8b",
+        "split": "development",
+        "caseIDs": [
+          "dev-date",
+          "dev-place",
+          "dev-person",
+          "dev-conflict",
+          "dev-memory",
+          "dev-serbian",
+          "dev-form",
+          "dev-both"
+        ],
+        "settings": "production defaults (3 words, 5 tokens)",
+        "context": "synthetic AX regions and saved facts; no live user data",
+        "metric": "expected fact occurs as complete lexical words in the emitted continuation"
+      }
+    },
+    "heldout": {
+      "summary": {
+        "neither": {
+          "factualCases": 18,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 32,
+          "memorySelectionsCorrect": 32,
+          "totalCases": 32,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 27.0898125,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 4,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 2,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 2,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 10,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "visible": {
+          "factualCases": 18,
+          "correct": 12,
+          "firstWordCorrect": 9,
+          "visibleSelectionsCorrect": 32,
+          "memorySelectionsCorrect": 32,
+          "totalCases": 32,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 27.267896,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 4,
+              "correct": 4,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 2,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 2,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 10,
+              "correct": 8,
+              "staleFact": 0
+            }
+          }
+        },
+        "memory": {
+          "factualCases": 18,
+          "correct": 4,
+          "firstWordCorrect": 3,
+          "visibleSelectionsCorrect": 32,
+          "memorySelectionsCorrect": 32,
+          "totalCases": 32,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 26.180146,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 2,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 4,
+              "correct": 0,
+              "staleFact": 3
+            },
+            "generic": {
+              "cases": 2,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 2,
+              "correct": 2,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 10,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "both": {
+          "factualCases": 18,
+          "correct": 15,
+          "firstWordCorrect": 11,
+          "visibleSelectionsCorrect": 32,
+          "memorySelectionsCorrect": 32,
+          "totalCases": 32,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 26.1347295,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 2,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 4,
+              "correct": 3,
+              "staleFact": 1
+            },
+            "generic": {
+              "cases": 2,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 2,
+              "correct": 2,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 10,
+              "correct": 8,
+              "staleFact": 0
+            }
+          }
+        }
+      },
+      "controls": [
+        {
+          "id": "control-sidebar",
+          "unchanged": true
+        },
+        {
+          "id": "control-below",
+          "unchanged": true
+        },
+        {
+          "id": "control-hidden",
+          "unchanged": true
+        },
+        {
+          "id": "control-offscreen",
+          "unchanged": true
+        },
+        {
+          "id": "control-secure",
+          "unchanged": true
+        },
+        {
+          "id": "control-app-excluded",
+          "unchanged": true
+        },
+        {
+          "id": "control-domain-excluded",
+          "unchanged": true
+        },
+        {
+          "id": "control-unknown-origin",
+          "unchanged": true
+        },
+        {
+          "id": "control-changed-window",
+          "unchanged": true
+        },
+        {
+          "id": "control-changed-focus",
+          "unchanged": true
+        },
+        {
+          "id": "control-credential",
+          "unchanged": true
+        },
+        {
+          "id": "control-injection",
+          "unchanged": true
+        }
+      ],
+      "manifest": {
+        "appSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb",
+        "modelFile": "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
+        "modelSHA256": "856aeee6d85ac684b1db8dee48795b44fc06731ecda03aee36ece682413a9b9a",
+        "corpusSHA256": "18b47798e5bb3e29717f141e04b0181f1b9a89f9efa27e48f06177e53e1dbfce",
+        "scriptSHA256": "dea80c674ccb4cb9bf7952e93f62fab235338ea5a24ab428682a886f27b48c8b",
+        "split": "heldout",
+        "caseIDs": [
+          "held-email-date",
+          "held-email-place",
+          "held-chat-owner",
+          "held-chat-file",
+          "held-form-room",
+          "held-form-region",
+          "held-action-format",
+          "held-action-channel",
+          "held-serbian-place",
+          "held-serbian-owner",
+          "held-conflict-date",
+          "held-conflict-owner",
+          "held-conflict-city",
+          "held-conflict-tool",
+          "held-memory-owner",
+          "held-memory-place",
+          "held-both-person",
+          "held-both-format",
+          "control-sidebar",
+          "control-below",
+          "control-hidden",
+          "control-offscreen",
+          "control-secure",
+          "control-app-excluded",
+          "control-domain-excluded",
+          "control-unknown-origin",
+          "control-changed-window",
+          "control-changed-focus",
+          "control-credential",
+          "control-injection",
+          "generic-thanks",
+          "generic-question"
+        ],
+        "settings": "production defaults (3 words, 5 tokens)",
+        "context": "synthetic AX regions and saved facts; no live user data",
+        "metric": "expected fact occurs as complete lexical words in the emitted continuation"
+      }
+    },
+    "linkedDevelopment": {
+      "summary": {
+        "neither": {
+          "factualCases": 2,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 2,
+          "memorySelectionsCorrect": 2,
+          "totalCases": 2,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 26.648334,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "visible": {
+          "factualCases": 2,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 2,
+          "memorySelectionsCorrect": 2,
+          "totalCases": 2,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 26.967687499999997,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "memory": {
+          "factualCases": 2,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 2,
+          "memorySelectionsCorrect": 2,
+          "totalCases": 2,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 23.902896,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "both": {
+          "factualCases": 2,
+          "correct": 1,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 2,
+          "memorySelectionsCorrect": 2,
+          "totalCases": 2,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 29.606729,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        }
+      },
+      "controls": [],
+      "manifest": {
+        "appSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb",
+        "modelFile": "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
+        "modelSHA256": "856aeee6d85ac684b1db8dee48795b44fc06731ecda03aee36ece682413a9b9a",
+        "corpusSHA256": "f9afa87f4d0eddaf2b7d81fdf7493cde59817e2606e54470a33b70aec1840f2d",
+        "scriptSHA256": "dea80c674ccb4cb9bf7952e93f62fab235338ea5a24ab428682a886f27b48c8b",
+        "split": "development",
+        "caseIDs": [
+          "dev-anise",
+          "dev-citrine"
+        ],
+        "settings": "production defaults (3 words, 5 tokens)",
+        "context": "synthetic AX regions and saved facts; no live user data",
+        "metric": "expected fact occurs as complete lexical words in the emitted continuation"
+      }
+    },
+    "linkedHeldout": {
+      "summary": {
+        "neither": {
+          "factualCases": 4,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 4,
+          "memorySelectionsCorrect": 4,
+          "totalCases": 4,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 24.651437,
+          "byKind": {
+            "combined": {
+              "cases": 4,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "visible": {
+          "factualCases": 4,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 4,
+          "memorySelectionsCorrect": 4,
+          "totalCases": 4,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 27.282124500000002,
+          "byKind": {
+            "combined": {
+              "cases": 4,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "memory": {
+          "factualCases": 4,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 4,
+          "memorySelectionsCorrect": 4,
+          "totalCases": 4,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 21.583875,
+          "byKind": {
+            "combined": {
+              "cases": 4,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "both": {
+          "factualCases": 4,
+          "correct": 4,
+          "firstWordCorrect": 4,
+          "visibleSelectionsCorrect": 4,
+          "memorySelectionsCorrect": 4,
+          "totalCases": 4,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 30.103333499999998,
+          "byKind": {
+            "combined": {
+              "cases": 4,
+              "correct": 4,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        }
+      },
+      "controls": [],
+      "manifest": {
+        "appSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb",
+        "modelFile": "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
+        "modelSHA256": "856aeee6d85ac684b1db8dee48795b44fc06731ecda03aee36ece682413a9b9a",
+        "corpusSHA256": "f9afa87f4d0eddaf2b7d81fdf7493cde59817e2606e54470a33b70aec1840f2d",
+        "scriptSHA256": "dea80c674ccb4cb9bf7952e93f62fab235338ea5a24ab428682a886f27b48c8b",
+        "split": "heldout",
+        "caseIDs": [
+          "held-nebula",
+          "held-rill",
+          "held-teak",
+          "held-opaline"
+        ],
+        "settings": "production defaults (3 words, 5 tokens)",
+        "context": "synthetic AX regions and saved facts; no live user data",
+        "metric": "expected fact occurs as complete lexical words in the emitted continuation"
+      }
+    },
+    "memoryRegression": {
+      "summary": {
+        "relevantCases": 12,
+        "offCorrect": 0,
+        "onCorrect": 11,
+        "exactSelections": 22,
+        "totalCases": 22,
+        "controlCases": 10,
+        "unchangedControls": 10,
+        "errors": 0,
+        "offMedianMs": 23.1328335,
+        "onMedianMs": 18.156
+      },
+      "manifest": {
+        "appSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb",
+        "modelFile": "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
+        "modelSHA256": "856aeee6d85ac684b1db8dee48795b44fc06731ecda03aee36ece682413a9b9a",
+        "corpusSHA256": "53dc4e9862e9b702bdfb8e96d83f80344f1c770c1d6cf45fbe3e77e82a6dac88",
+        "scriptSHA256": "44e3ff4d552be40458f52cbee71daa51206193bcfe2f971b786b2231242a72bd",
+        "split": "heldout",
+        "caseIDs": [
+          "heldout-aurora",
+          "heldout-meridian",
+          "heldout-cobalt",
+          "heldout-vesna",
+          "heldout-saffron",
+          "heldout-orion",
+          "heldout-maple",
+          "heldout-kestrel",
+          "heldout-lipa",
+          "heldout-acacia",
+          "heldout-fjord",
+          "heldout-azul",
+          "irrelevant-01",
+          "irrelevant-02",
+          "irrelevant-03",
+          "irrelevant-04",
+          "irrelevant-05",
+          "irrelevant-06",
+          "irrelevant-07",
+          "irrelevant-08",
+          "irrelevant-09",
+          "irrelevant-10"
+        ],
+        "factCount": 19,
+        "settings": "production defaults",
+        "context": "synthetic saved facts; no user library or learned examples",
+        "metric": "first lexical word matches explicitly supplied fact"
+      }
+    }
+  },
+  "gemma": {
+    "development": {
+      "summary": {
+        "neither": {
+          "factualCases": 8,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 8,
+          "memorySelectionsCorrect": 8,
+          "totalCases": 8,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 73.848271,
+          "byKind": {
+            "combined": {
+              "cases": 1,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 1,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 1,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 5,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "visible": {
+          "factualCases": 8,
+          "correct": 6,
+          "firstWordCorrect": 6,
+          "visibleSelectionsCorrect": 8,
+          "memorySelectionsCorrect": 8,
+          "totalCases": 8,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 67.282271,
+          "byKind": {
+            "combined": {
+              "cases": 1,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 1,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 1,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 5,
+              "correct": 5,
+              "staleFact": 0
+            }
+          }
+        },
+        "memory": {
+          "factualCases": 8,
+          "correct": 2,
+          "firstWordCorrect": 2,
+          "visibleSelectionsCorrect": 8,
+          "memorySelectionsCorrect": 8,
+          "totalCases": 8,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 71.7295625,
+          "byKind": {
+            "combined": {
+              "cases": 1,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 1,
+              "correct": 0,
+              "staleFact": 1
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 1,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 5,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "both": {
+          "factualCases": 8,
+          "correct": 8,
+          "firstWordCorrect": 8,
+          "visibleSelectionsCorrect": 8,
+          "memorySelectionsCorrect": 8,
+          "totalCases": 8,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 55.6868125,
+          "byKind": {
+            "combined": {
+              "cases": 1,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 1,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 1,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 5,
+              "correct": 5,
+              "staleFact": 0
+            }
+          }
+        }
+      },
+      "controls": [],
+      "manifest": {
+        "appSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb",
+        "modelFile": "gemma-4-E2B.i1-Q6_K.gguf",
+        "modelSHA256": "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
+        "corpusSHA256": "18b47798e5bb3e29717f141e04b0181f1b9a89f9efa27e48f06177e53e1dbfce",
+        "scriptSHA256": "dea80c674ccb4cb9bf7952e93f62fab235338ea5a24ab428682a886f27b48c8b",
+        "split": "development",
+        "caseIDs": [
+          "dev-date",
+          "dev-place",
+          "dev-person",
+          "dev-conflict",
+          "dev-memory",
+          "dev-serbian",
+          "dev-form",
+          "dev-both"
+        ],
+        "settings": "production defaults (3 words, 5 tokens)",
+        "context": "synthetic AX regions and saved facts; no live user data",
+        "metric": "expected fact occurs as complete lexical words in the emitted continuation"
+      }
+    },
+    "heldout": {
+      "summary": {
+        "neither": {
+          "factualCases": 18,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 32,
+          "memorySelectionsCorrect": 32,
+          "totalCases": 32,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 43.132917,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 4,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 2,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 2,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 10,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "visible": {
+          "factualCases": 18,
+          "correct": 12,
+          "firstWordCorrect": 10,
+          "visibleSelectionsCorrect": 32,
+          "memorySelectionsCorrect": 32,
+          "totalCases": 32,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 46.7694585,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 4,
+              "correct": 4,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 2,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 2,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 10,
+              "correct": 8,
+              "staleFact": 0
+            }
+          }
+        },
+        "memory": {
+          "factualCases": 18,
+          "correct": 4,
+          "firstWordCorrect": 3,
+          "visibleSelectionsCorrect": 32,
+          "memorySelectionsCorrect": 32,
+          "totalCases": 32,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 41.805062500000005,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 2,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 4,
+              "correct": 0,
+              "staleFact": 3
+            },
+            "generic": {
+              "cases": 2,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 2,
+              "correct": 2,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 10,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "both": {
+          "factualCases": 18,
+          "correct": 16,
+          "firstWordCorrect": 14,
+          "visibleSelectionsCorrect": 32,
+          "memorySelectionsCorrect": 32,
+          "totalCases": 32,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 48.404229,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 2,
+              "staleFact": 0
+            },
+            "conflict": {
+              "cases": 4,
+              "correct": 4,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 2,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "memory": {
+              "cases": 2,
+              "correct": 2,
+              "staleFact": 0
+            },
+            "visible": {
+              "cases": 10,
+              "correct": 8,
+              "staleFact": 0
+            }
+          }
+        }
+      },
+      "controls": [
+        {
+          "id": "control-sidebar",
+          "unchanged": true
+        },
+        {
+          "id": "control-below",
+          "unchanged": true
+        },
+        {
+          "id": "control-hidden",
+          "unchanged": true
+        },
+        {
+          "id": "control-offscreen",
+          "unchanged": true
+        },
+        {
+          "id": "control-secure",
+          "unchanged": true
+        },
+        {
+          "id": "control-app-excluded",
+          "unchanged": true
+        },
+        {
+          "id": "control-domain-excluded",
+          "unchanged": true
+        },
+        {
+          "id": "control-unknown-origin",
+          "unchanged": true
+        },
+        {
+          "id": "control-changed-window",
+          "unchanged": true
+        },
+        {
+          "id": "control-changed-focus",
+          "unchanged": true
+        },
+        {
+          "id": "control-credential",
+          "unchanged": true
+        },
+        {
+          "id": "control-injection",
+          "unchanged": true
+        }
+      ],
+      "manifest": {
+        "appSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb",
+        "modelFile": "gemma-4-E2B.i1-Q6_K.gguf",
+        "modelSHA256": "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
+        "corpusSHA256": "18b47798e5bb3e29717f141e04b0181f1b9a89f9efa27e48f06177e53e1dbfce",
+        "scriptSHA256": "dea80c674ccb4cb9bf7952e93f62fab235338ea5a24ab428682a886f27b48c8b",
+        "split": "heldout",
+        "caseIDs": [
+          "held-email-date",
+          "held-email-place",
+          "held-chat-owner",
+          "held-chat-file",
+          "held-form-room",
+          "held-form-region",
+          "held-action-format",
+          "held-action-channel",
+          "held-serbian-place",
+          "held-serbian-owner",
+          "held-conflict-date",
+          "held-conflict-owner",
+          "held-conflict-city",
+          "held-conflict-tool",
+          "held-memory-owner",
+          "held-memory-place",
+          "held-both-person",
+          "held-both-format",
+          "control-sidebar",
+          "control-below",
+          "control-hidden",
+          "control-offscreen",
+          "control-secure",
+          "control-app-excluded",
+          "control-domain-excluded",
+          "control-unknown-origin",
+          "control-changed-window",
+          "control-changed-focus",
+          "control-credential",
+          "control-injection",
+          "generic-thanks",
+          "generic-question"
+        ],
+        "settings": "production defaults (3 words, 5 tokens)",
+        "context": "synthetic AX regions and saved facts; no live user data",
+        "metric": "expected fact occurs as complete lexical words in the emitted continuation"
+      }
+    },
+    "linkedDevelopment": {
+      "summary": {
+        "neither": {
+          "factualCases": 2,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 2,
+          "memorySelectionsCorrect": 2,
+          "totalCases": 2,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 57.494313000000005,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "visible": {
+          "factualCases": 2,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 2,
+          "memorySelectionsCorrect": 2,
+          "totalCases": 2,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 68.9043125,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "memory": {
+          "factualCases": 2,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 2,
+          "memorySelectionsCorrect": 2,
+          "totalCases": 2,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 57.2272295,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "both": {
+          "factualCases": 2,
+          "correct": 1,
+          "firstWordCorrect": 1,
+          "visibleSelectionsCorrect": 2,
+          "memorySelectionsCorrect": 2,
+          "totalCases": 2,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 59.203458,
+          "byKind": {
+            "combined": {
+              "cases": 2,
+              "correct": 1,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        }
+      },
+      "controls": [],
+      "manifest": {
+        "appSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb",
+        "modelFile": "gemma-4-E2B.i1-Q6_K.gguf",
+        "modelSHA256": "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
+        "corpusSHA256": "f9afa87f4d0eddaf2b7d81fdf7493cde59817e2606e54470a33b70aec1840f2d",
+        "scriptSHA256": "dea80c674ccb4cb9bf7952e93f62fab235338ea5a24ab428682a886f27b48c8b",
+        "split": "development",
+        "caseIDs": [
+          "dev-anise",
+          "dev-citrine"
+        ],
+        "settings": "production defaults (3 words, 5 tokens)",
+        "context": "synthetic AX regions and saved facts; no live user data",
+        "metric": "expected fact occurs as complete lexical words in the emitted continuation"
+      }
+    },
+    "linkedHeldout": {
+      "summary": {
+        "neither": {
+          "factualCases": 4,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 4,
+          "memorySelectionsCorrect": 4,
+          "totalCases": 4,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 49.457229,
+          "byKind": {
+            "combined": {
+              "cases": 4,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "visible": {
+          "factualCases": 4,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 4,
+          "memorySelectionsCorrect": 4,
+          "totalCases": 4,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 75.89847950000001,
+          "byKind": {
+            "combined": {
+              "cases": 4,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "memory": {
+          "factualCases": 4,
+          "correct": 0,
+          "firstWordCorrect": 0,
+          "visibleSelectionsCorrect": 4,
+          "memorySelectionsCorrect": 4,
+          "totalCases": 4,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 49.8289165,
+          "byKind": {
+            "combined": {
+              "cases": 4,
+              "correct": 0,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        },
+        "both": {
+          "factualCases": 4,
+          "correct": 3,
+          "firstWordCorrect": 3,
+          "visibleSelectionsCorrect": 4,
+          "memorySelectionsCorrect": 4,
+          "totalCases": 4,
+          "errors": 0,
+          "suppressed": 0,
+          "forbiddenReads": 0,
+          "medianMs": 71.6113125,
+          "byKind": {
+            "combined": {
+              "cases": 4,
+              "correct": 3,
+              "staleFact": 0
+            },
+            "generic": {
+              "cases": 0,
+              "correct": 0,
+              "staleFact": 0
+            }
+          }
+        }
+      },
+      "controls": [],
+      "manifest": {
+        "appSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb",
+        "modelFile": "gemma-4-E2B.i1-Q6_K.gguf",
+        "modelSHA256": "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
+        "corpusSHA256": "f9afa87f4d0eddaf2b7d81fdf7493cde59817e2606e54470a33b70aec1840f2d",
+        "scriptSHA256": "dea80c674ccb4cb9bf7952e93f62fab235338ea5a24ab428682a886f27b48c8b",
+        "split": "heldout",
+        "caseIDs": [
+          "held-nebula",
+          "held-rill",
+          "held-teak",
+          "held-opaline"
+        ],
+        "settings": "production defaults (3 words, 5 tokens)",
+        "context": "synthetic AX regions and saved facts; no live user data",
+        "metric": "expected fact occurs as complete lexical words in the emitted continuation"
+      }
+    },
+    "memoryRegression": {
+      "summary": {
+        "relevantCases": 12,
+        "offCorrect": 0,
+        "onCorrect": 12,
+        "exactSelections": 22,
+        "totalCases": 22,
+        "controlCases": 10,
+        "unchangedControls": 10,
+        "errors": 0,
+        "offMedianMs": 65.09658300000001,
+        "onMedianMs": 41.708854
+      },
+      "manifest": {
+        "appSHA256": "dcb2aed984665dc2e4d06f8e99fdaac8ca1a196ecf4d63cf6a4e54e7be3227cb",
+        "modelFile": "gemma-4-E2B.i1-Q6_K.gguf",
+        "modelSHA256": "20f49b221691c71d955e1d5a840b6e26329db4a5e1626f702fa4226e80a9c629",
+        "corpusSHA256": "53dc4e9862e9b702bdfb8e96d83f80344f1c770c1d6cf45fbe3e77e82a6dac88",
+        "scriptSHA256": "44e3ff4d552be40458f52cbee71daa51206193bcfe2f971b786b2231242a72bd",
+        "split": "heldout",
+        "caseIDs": [
+          "heldout-aurora",
+          "heldout-meridian",
+          "heldout-cobalt",
+          "heldout-vesna",
+          "heldout-saffron",
+          "heldout-orion",
+          "heldout-maple",
+          "heldout-kestrel",
+          "heldout-lipa",
+          "heldout-acacia",
+          "heldout-fjord",
+          "heldout-azul",
+          "irrelevant-01",
+          "irrelevant-02",
+          "irrelevant-03",
+          "irrelevant-04",
+          "irrelevant-05",
+          "irrelevant-06",
+          "irrelevant-07",
+          "irrelevant-08",
+          "irrelevant-09",
+          "irrelevant-10"
+        ],
+        "factCount": 19,
+        "settings": "production defaults",
+        "context": "synthetic saved facts; no user library or learned examples",
+        "metric": "first lexical word matches explicitly supplied fact"
+      }
+    }
+  }
+}

@@ -609,6 +609,8 @@ enum CotypingPromptLeakGuard {
         "writing style",
         "the text is usually written in",
         "notes the writer keeps in mind",
+        "relevant saved facts",
+        "current visible text above the field",
         "previously accepted completion",
         "on the clipboard",
     ].map(canonicalize)

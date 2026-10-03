@@ -1,0 +1,30 @@
+run,modelFile,promptMode,settings,correct,checkpoints,accuracy,p50Ms,p95Ms,appSHA256
+screen-gemma-e2b-caret,gemma-4-E2B.i1-Q6_K.gguf,production,"{""appContext"": true}",235,770,0.3051948051948052,54.096083,74.794417,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-gemma-e2b-noapp,gemma-4-E2B.i1-Q6_K.gguf,production,"{""appContext"": false}",231,770,0.3,54.40075,60.41625,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-gemma-e2b-production,gemma-4-E2B.i1-Q6_K.gguf,production,"{""appContext"": true}",231,770,0.3,46.647959,69.137333,5b30fe6bc6968bdc893539c6336f6b9bc1edd8481e213eea6215af23cdc1a90b
+screen-gemma-e2b-tokens12,gemma-4-E2B.i1-Q6_K.gguf,production,"{""appContext"": true, ""maxTokens"": 12}",234,770,0.3038961038961039,63.532708,132.111333,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-gemma-e2b-topic,gemma-4-E2B.i1-Q6_K.gguf,topic,"{""appContext"": true}",263,770,0.34155844155844156,54.250834,68.140375,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-gemma-e4b-production,gemma-4-E4B-UD-Q5_K_XL.gguf,production,"{""appContext"": true}",228,770,0.2961038961038961,80.367375,115.164416,5b30fe6bc6968bdc893539c6336f6b9bc1edd8481e213eea6215af23cdc1a90b
+screen-gemma-e4b-topic,gemma-4-E4B-UD-Q5_K_XL.gguf,topic,"{""appContext"": true}",259,770,0.33636363636363636,93.695375,118.192916,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-gemma-final,gemma-4-E2B.i1-Q6_K.gguf,production,"{""appContext"": true}",263,770,0.34155844155844156,55.055125,68.91375,726afa188d020e84d3fa542a2eaae5b1ac5c634d31f0a358c815b80515010709
+screen-lfm-bare,LFM2.5-1.2B-Instruct-Q4_K_M.gguf,bare,"{""appContext"": true}",184,770,0.23896103896103896,19.909333,25.14375,5b30fe6bc6968bdc893539c6336f6b9bc1edd8481e213eea6215af23cdc1a90b
+screen-lfm-base-production,LFM2.5-1.2B-Base-Q4_K_M.gguf,production,"{""appContext"": true}",206,770,0.2675324675324675,26.944625,31.632208,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-lfm-base-topic,LFM2.5-1.2B-Base-Q4_K_M.gguf,topic,"{""appContext"": true}",229,770,0.2974025974025974,26.902583,28.009667,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-lfm-caret,LFM2.5-1.2B-Instruct-Q4_K_M.gguf,production,"{""appContext"": true}",221,770,0.287012987012987,27.282166,32.22375,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-lfm-final,LFM2.5-1.2B-Instruct-Q4_K_M.gguf,production,"{""appContext"": true}",232,770,0.3012987012987013,26.763417,28.092125,726afa188d020e84d3fa542a2eaae5b1ac5c634d31f0a358c815b80515010709
+screen-lfm-instruct,LFM2.5-1.2B-Instruct-Q4_K_M.gguf,instruct,"{""appContext"": true}",32,770,0.04155844155844156,27.562791,29.718125,5b30fe6bc6968bdc893539c6336f6b9bc1edd8481e213eea6215af23cdc1a90b
+screen-lfm-noapp,LFM2.5-1.2B-Instruct-Q4_K_M.gguf,production,"{""appContext"": false}",190,770,0.24675324675324675,21.060708,27.34925,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-lfm-prefill,LFM2.5-1.2B-Instruct-Q4_K_M.gguf,prefill,"{""appContext"": true}",184,770,0.23896103896103896,31.743375,32.922792,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-lfm-preserve,LFM2.5-1.2B-Instruct-Q4_K_M.gguf,preserve,"{""appContext"": true}",47,770,0.06103896103896104,21.769958,25.406833,5b30fe6bc6968bdc893539c6336f6b9bc1edd8481e213eea6215af23cdc1a90b
+screen-lfm-production,LFM2.5-1.2B-Instruct-Q4_K_M.gguf,production,"{""appContext"": true}",216,770,0.2805194805194805,25.369334,32.099083,5b30fe6bc6968bdc893539c6336f6b9bc1edd8481e213eea6215af23cdc1a90b
+screen-lfm-tokens12,LFM2.5-1.2B-Instruct-Q4_K_M.gguf,production,"{""appContext"": true, ""maxTokens"": 12}",221,770,0.287012987012987,30.003209,49.113625,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-lfm-topic,LFM2.5-1.2B-Instruct-Q4_K_M.gguf,topic,"{""appContext"": true}",232,770,0.3012987012987013,27.264708,28.120125,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-midword-baseline,LFM2.5-1.2B-Instruct-Q4_K_M.gguf,production,"{""appContext"": true}",441,732,0.6024590163934426,26.971458,32.296083,5b30fe6bc6968bdc893539c6336f6b9bc1edd8481e213eea6215af23cdc1a90b
+screen-midword-gemma-final,gemma-4-E2B.i1-Q6_K.gguf,production,"{""appContext"": true}",545,732,0.744535519125683,52.812791,78.871084,726afa188d020e84d3fa542a2eaae5b1ac5c634d31f0a358c815b80515010709
+screen-midword-lfm-final,LFM2.5-1.2B-Instruct-Q4_K_M.gguf,production,"{""appContext"": true}",478,732,0.6530054644808743,27.511417,33.388583,726afa188d020e84d3fa542a2eaae5b1ac5c634d31f0a358c815b80515010709
+screen-midword-topic-oldindex,LFM2.5-1.2B-Instruct-Q4_K_M.gguf,topic,"{""appContext"": true}",462,732,0.6311475409836066,26.803166,32.187333,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-qwen-base-caret,Qwen3.5-0.8B-Base.i1-Q6_K.gguf,production,"{""appContext"": true}",211,770,0.274025974025974,31.520458,36.470584,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-qwen-base-noapp,Qwen3.5-0.8B-Base.i1-Q6_K.gguf,production,"{""appContext"": false}",197,770,0.2558441558441558,28.285958,33.5185,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-qwen-base-production,Qwen3.5-0.8B-Base.i1-Q6_K.gguf,production,"{""appContext"": true}",203,770,0.2636363636363636,29.208875,32.565042,5b30fe6bc6968bdc893539c6336f6b9bc1edd8481e213eea6215af23cdc1a90b
+screen-qwen-base-tokens12,Qwen3.5-0.8B-Base.i1-Q6_K.gguf,production,"{""appContext"": true, ""maxTokens"": 12}",210,770,0.2727272727272727,30.338667,62.911833,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590
+screen-qwen-base-topic,Qwen3.5-0.8B-Base.i1-Q6_K.gguf,topic,"{""appContext"": true}",229,770,0.2974025974025974,32.392375,34.603292,db0b30a7e8363790d8103509815268ea7038a78ee3af37de8505c99f20bbc590

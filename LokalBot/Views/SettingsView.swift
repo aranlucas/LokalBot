@@ -365,6 +365,26 @@ struct SettingsView: View {
                     .settingTarget("settings.cotypingUseAppContext", selected: app.focusedSettingID)
                 Toggle("Use clipboard as temporary context", isOn: $app.settings.cotypingUseClipboard)
                     .settingTarget("settings.cotypingUseClipboard", selected: app.focusedSettingID)
+                Toggle(isOn: $app.settings.cotypingUseVisibleContext) {
+                    Text("Use visible text above the field")
+                    Text("Use nearby messages and labels to suggest relevant replies. Processed locally, never saved; capture exclusions apply.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .settingTarget("settings.cotypingUseVisibleContext", selected: app.focusedSettingID)
+                Toggle(isOn: $app.settings.cotypingUseMeetingMemory) {
+                    SettingsLabel("Use meeting and work memory",
+                                  help: "Use up to two relevant facts from recent meeting notes, decisions, and work memory to help with names and details. Processed on this Mac.")
+                }
+                .settingTarget("settings.cotypingUseMeetingMemory", selected: app.focusedSettingID)
+                Toggle(isOn: $app.settings.cotypingUseScreenMemory) {
+                    SettingsLabel("Use screen-derived work memory",
+                                  help: "Also allow relevant work memory derived from screen activity and daily journals. Mixed meeting and screen memories require both settings. Does not capture new screens.")
+                }
+                .settingTarget("settings.cotypingUseScreenMemory", selected: app.focusedSettingID)
+                if !app.cotyping.memoryContextSources.isEmpty {
+                    Text("Context used: " + app.cotyping.memoryContextSources.joined(separator: ", "))
+                        .settingsSecondary()
+                }
                 Toggle(isOn: $app.settings.cotypingUseLocalLearning) {
                     SettingsLabel("Learn locally from accepted completions",
                                   help: "Kept for 30 days and reused only in the same identified document. Mail, chat, unknown documents, and preview runs are excluded.")

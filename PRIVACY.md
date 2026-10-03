@@ -303,10 +303,75 @@ and unknown document contexts do not learn or reuse examples. Settings →
 Autocomplete → **Forget learned text** removes the stored examples and cancels
 pending learning writes.
 
-Dictation Compose context has its own opt-in and also honors the shared
-app/domain/private-window policy. It requires the verified focused window and
-field to remain unchanged and redacts credentials before creating prompts; this
-context path does not save pixels or OCR. Optional media pause uses macOS
+Autocomplete also has a separate, off-by-default **Use visible text above the
+field** setting. It reads Accessibility labels and messages in the focused
+field's column, up to 600 points above it, within the same visible window/pane.
+It selects at most three excerpts within 420 characters. Hidden/offscreen text,
+other inputs, sidebars, toolbars, secure fields, credential-bearing snippets,
+and excluded apps/sites do not enter the prompt. Unknown browser origins
+abstain. Shared capture exclusions and autocomplete exclusions both apply.
+This setting does not enable screen recording, screenshots, OCR, saved screen
+memory, or external access. Context is processed locally and held only in memory;
+context-grounded acceptances are excluded from saved learning. The setup preview
+never reads the screen. Before display, background validation reads the context
+again; while a suggestion is active it is polled for changes. Tab uses a recent
+validation (at most 600 ms old) and performs no screen traversal. A stalled
+validation, changed context/target, or revoked permission discards the suggestion.
+Apps that do not expose visible static text through Accessibility get ordinary
+autocomplete without this additional context.
+
+Autocomplete has separate, off-by-default **Use meeting and work memory** and
+**Use screen-derived work memory** settings. When enabled, it can include up to
+two short, relevant facts from the last 90 days in its local completion prompt.
+Meeting sources include current notes, summaries, and outcomes with saved
+corrections. With both relevant settings enabled, selected visible excerpts can
+also supply project names for this local lookup. Visible-context permission
+alone does not authorize saved-memory retrieval. Work memory includes attributed
+projects and goals; screen-derived
+memory can include distilled screen/activity and daily-journal facts, and also
+requires Work Memory to remain enabled. Facts combining meeting and screen
+sources require both autocomplete grants. Unattributed legacy memories are
+excluded. This does not enable new capture, read raw screenshot pixels or OCR,
+grant external-agent access, or send the context to a remote model.
+
+Autocomplete reads current source files and checks for source changes before
+presenting or accepting a completion. Editing/deleting sources or revoking
+access cancels affected pending and cached suggestions. No additional memory
+store is created, and memory-grounded accepted suggestions are not copied into
+autocomplete's learned examples. Text already accepted into another app remains
+there until you remove it. The setup sample never reads saved memory; a personal
+preview uses the enabled settings. Settings shows the titles of selected sources.
+
+Dictation Compose has three independent, off-by-default grants: **Use visible
+text above the field**, **Use meeting and work memory**, and **Use screen-derived
+work memory**. Autocomplete's grants do not enable these. Nearby text uses the
+same bounded Accessibility selection described above, with shared app/domain/
+private-window exclusions. No screenshots are needed for this setting. Saved
+facts use the current-source limits above; title matches in the spoken request
+or authorized screen context establish relevance. Mixed provenance requires both
+dictation memory grants, and Dream sources also require Work Memory to remain
+enabled. No new saved-memory store is created.
+
+These sources assist explicit Compose writing requests such as “reply” or “draft.”
+Directly dictated sentences do not invoke the nearby-text or saved-memory
+providers and get no added context. The existing **Use the focused window as
+context** option remains separate: when enabled, focused-window OCR may begin
+during recording before the spoken request is known. After ASR, directly dictated
+sentences cancel unused OCR and do not include it in the composition prompt.
+Transcribe never invokes any of these context providers or a rewrite model.
+
+Context requires the verified focused window and field to remain unchanged and
+credentials are redacted before prompts are created. Source edits/deletion,
+revoked grants and changed inference destinations invalidate pending composition;
+source and permission checks also guard delivery. The transcript remains available
+when a composition is rejected. Context is held in memory and this path does not
+save pixels or OCR. The configured local Compose model keeps this context on the
+Mac; if an approved remote Think endpoint is selected, it receives the spoken
+request and any enabled screen context or saved facts included in the prompt.
+Dictation displays that disclosure. Text already inserted into another app is
+not removed by later source deletion.
+
+Optional media pause uses macOS
 Automation for audible supported players and browsers. It pauses finite
 prerecorded media, excludes live MediaStream/infinite streams and supported
 conference domains, and resumes only marked elements. macOS controls whether

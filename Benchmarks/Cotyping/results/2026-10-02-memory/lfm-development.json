@@ -1,0 +1,138 @@
+{
+  "summary": {
+    "relevantCases": 6,
+    "offCorrect": 0,
+    "onCorrect": 6,
+    "exactSelections": 6,
+    "totalCases": 6,
+    "controlCases": 0,
+    "unchangedControls": 0,
+    "errors": 0,
+    "offMedianMs": 40.4922495,
+    "onMedianMs": 22.143979
+  },
+  "cases": [
+    {
+      "id": "dev-atlas",
+      "kind": "relevant",
+      "expected": "Priya",
+      "offText": "a software company",
+      "onText": "Priya.",
+      "offCorrect": false,
+      "onCorrect": true,
+      "memoryIDs": [
+        "dev-atlas"
+      ],
+      "selectionCorrect": true,
+      "unchanged": false,
+      "error": null,
+      "offLatencyMs": 50.566333,
+      "onLatencyMs": 22.561333
+    },
+    {
+      "id": "dev-lyra",
+      "kind": "relevant",
+      "expected": "Kotor",
+      "offText": "progress.",
+      "onText": "Kotor.",
+      "offCorrect": false,
+      "onCorrect": true,
+      "memoryIDs": [
+        "dev-lyra"
+      ],
+      "selectionCorrect": true,
+      "unchanged": false,
+      "error": null,
+      "offLatencyMs": 17.186917,
+      "onLatencyMs": 21.726625
+    },
+    {
+      "id": "dev-cedar",
+      "kind": "relevant",
+      "expected": "DuckDB",
+      "offText": "a comprehensive resource",
+      "onText": "DuckDB.",
+      "offCorrect": false,
+      "onCorrect": true,
+      "memoryIDs": [
+        "dev-cedar"
+      ],
+      "selectionCorrect": true,
+      "unchanged": false,
+      "error": null,
+      "offLatencyMs": 33.276709,
+      "onLatencyMs": 21.527416
+    },
+    {
+      "id": "dev-jasika",
+      "kind": "relevant",
+      "expected": "Milena",
+      "offText": "prirodno različit",
+      "onText": "Milena.",
+      "offCorrect": false,
+      "onCorrect": true,
+      "memoryIDs": [
+        "dev-jasika"
+      ],
+      "selectionCorrect": true,
+      "unchanged": false,
+      "error": null,
+      "offLatencyMs": 38.832458,
+      "onLatencyMs": 25.544792
+    },
+    {
+      "id": "dev-helix",
+      "kind": "relevant",
+      "expected": "Rafael",
+      "offText": "a critical component",
+      "onText": "Rafael.",
+      "offCorrect": false,
+      "onCorrect": true,
+      "memoryIDs": [
+        "dev-helix"
+      ],
+      "selectionCorrect": true,
+      "unchanged": false,
+      "error": null,
+      "offLatencyMs": 43.379417,
+      "onLatencyMs": 21.480458
+    },
+    {
+      "id": "dev-borealis",
+      "kind": "relevant",
+      "expected": "November",
+      "offText": "the middle of",
+      "onText": "November.",
+      "offCorrect": false,
+      "onCorrect": true,
+      "memoryIDs": [
+        "dev-borealis"
+      ],
+      "selectionCorrect": true,
+      "unchanged": false,
+      "error": null,
+      "offLatencyMs": 42.152041,
+      "onLatencyMs": 29.449917
+    }
+  ],
+  "manifest": {
+    "appSHA256": "721dfa2a577e0fb97fbb031022fd056a08c76da0b2869e6a91a9f82de274014d",
+    "modelFile": "LFM2.5-1.2B-Instruct-Q4_K_M.gguf",
+    "modelSHA256": "856aeee6d85ac684b1db8dee48795b44fc06731ecda03aee36ece682413a9b9a",
+    "corpusSHA256": "53dc4e9862e9b702bdfb8e96d83f80344f1c770c1d6cf45fbe3e77e82a6dac88",
+    "scriptSHA256": "44e3ff4d552be40458f52cbee71daa51206193bcfe2f971b786b2231242a72bd",
+    "split": "development",
+    "caseIDs": [
+      "dev-atlas",
+      "dev-lyra",
+      "dev-cedar",
+      "dev-jasika",
+      "dev-helix",
+      "dev-borealis"
+    ],
+    "factCount": 19,
+    "settings": "production defaults",
+    "context": "synthetic saved facts; no user library or learned examples",
+    "metric": "first lexical word matches explicitly supplied fact"
+  }
+}

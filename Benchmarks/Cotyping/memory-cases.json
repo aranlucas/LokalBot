@@ -1,0 +1,457 @@
+{
+  "asOf": "2026-10-02T12:00:00Z",
+  "description": "Original synthetic stored facts and separately specified draft checkpoints. Measures factual recall from relevant saved context, not general writing accuracy. Frozen before model evaluation.",
+  "memoryItems": [
+    {
+      "id": "dev-atlas",
+      "title": "Atlas",
+      "text": "The Atlas release owner is Priya.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "dev-lyra",
+      "title": "Lyra",
+      "text": "The Lyra planning meeting is in Kotor.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "dev-cedar",
+      "title": "Cedar",
+      "text": "The Cedar staging database is DuckDB.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "dev-jasika",
+      "title": "Jasika",
+      "text": "Vlasnik projekta Jasika je Milena.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "dev-helix",
+      "title": "Helix",
+      "text": "The Helix design reviewer is Rafael.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "dev-borealis",
+      "title": "Borealis",
+      "text": "The Borealis launch is in November.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "heldout-aurora",
+      "title": "Aurora",
+      "text": "The Aurora release owner is Nadja.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "heldout-meridian",
+      "title": "Meridian",
+      "text": "The Meridian workshop takes place in Tivat.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "heldout-cobalt",
+      "title": "Cobalt",
+      "text": "The Cobalt prototype uses SQLite.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "heldout-vesna",
+      "title": "Vesna",
+      "text": "Vlasnik projekta Vesna je Dragan.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "heldout-saffron",
+      "title": "Saffron",
+      "text": "The Saffron compliance reviewer is Elena.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "heldout-orion",
+      "title": "Orion",
+      "text": "The Orion rollout begins in December.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "heldout-maple",
+      "title": "Maple",
+      "text": "The Maple support coordinator is Leila.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "heldout-kestrel",
+      "title": "Kestrel",
+      "text": "The Kestrel documentation is written in Markdown.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "heldout-lipa",
+      "title": "Lipa",
+      "text": "Sastanak projekta Lipa održavamo u Budvi.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "heldout-acacia",
+      "title": "Acacia",
+      "text": "La responsable du projet Acacia est Camille.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "heldout-fjord",
+      "title": "Fjord",
+      "text": "Die Projektleiterin für Fjord heißt Johanna.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "heldout-azul",
+      "title": "Azul",
+      "text": "La responsable del proyecto Azul es Carmen.",
+      "updatedAt": "2026-10-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    },
+    {
+      "id": "outdated-atlas",
+      "title": "Atlas",
+      "text": "The Atlas release owner is Victor.",
+      "updatedAt": "2026-09-01T12:00:00Z",
+      "requiresMeetings": true,
+      "requiresScreenMemory": false,
+      "isWorkMemory": false
+    }
+  ],
+  "cases": [
+    {
+      "id": "dev-atlas",
+      "prefix": "The Atlas release owner is ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Atlas",
+      "expected": "Priya",
+      "split": "development",
+      "kind": "relevant",
+      "expectedMemoryID": "dev-atlas"
+    },
+    {
+      "id": "dev-lyra",
+      "prefix": "The Lyra planning meeting is in ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Lyra",
+      "expected": "Kotor",
+      "split": "development",
+      "kind": "relevant",
+      "expectedMemoryID": "dev-lyra"
+    },
+    {
+      "id": "dev-cedar",
+      "prefix": "The Cedar staging database is ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Cedar",
+      "expected": "DuckDB",
+      "split": "development",
+      "kind": "relevant",
+      "expectedMemoryID": "dev-cedar"
+    },
+    {
+      "id": "dev-jasika",
+      "prefix": "Vlasnik projekta Jasika je ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Jasika",
+      "expected": "Milena",
+      "split": "development",
+      "kind": "relevant",
+      "expectedMemoryID": "dev-jasika"
+    },
+    {
+      "id": "dev-helix",
+      "prefix": "The Helix design reviewer is ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Helix",
+      "expected": "Rafael",
+      "split": "development",
+      "kind": "relevant",
+      "expectedMemoryID": "dev-helix"
+    },
+    {
+      "id": "dev-borealis",
+      "prefix": "The Borealis launch is in ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Borealis",
+      "expected": "November",
+      "split": "development",
+      "kind": "relevant",
+      "expectedMemoryID": "dev-borealis"
+    },
+    {
+      "id": "heldout-aurora",
+      "prefix": "The Aurora release owner is ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Aurora",
+      "expected": "Nadja",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "heldout-aurora"
+    },
+    {
+      "id": "heldout-meridian",
+      "prefix": "The Meridian workshop takes place in ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Meridian",
+      "expected": "Tivat",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "heldout-meridian"
+    },
+    {
+      "id": "heldout-cobalt",
+      "prefix": "The Cobalt prototype uses ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Cobalt",
+      "expected": "SQLite",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "heldout-cobalt"
+    },
+    {
+      "id": "heldout-vesna",
+      "prefix": "Vlasnik projekta Vesna je ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Vesna",
+      "expected": "Dragan",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "heldout-vesna"
+    },
+    {
+      "id": "heldout-saffron",
+      "prefix": "The Saffron compliance reviewer is ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Saffron",
+      "expected": "Elena",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "heldout-saffron"
+    },
+    {
+      "id": "heldout-orion",
+      "prefix": "The Orion rollout begins in ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Orion",
+      "expected": "December",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "heldout-orion"
+    },
+    {
+      "id": "heldout-maple",
+      "prefix": "The Maple support coordinator is ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Maple",
+      "expected": "Leila",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "heldout-maple"
+    },
+    {
+      "id": "heldout-kestrel",
+      "prefix": "The Kestrel documentation is written in ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Kestrel",
+      "expected": "Markdown",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "heldout-kestrel"
+    },
+    {
+      "id": "heldout-lipa",
+      "prefix": "Sastanak projekta Lipa održavamo u ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Lipa",
+      "expected": "Budvi",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "heldout-lipa"
+    },
+    {
+      "id": "heldout-acacia",
+      "prefix": "La responsable du projet Acacia est ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Acacia",
+      "expected": "Camille",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "heldout-acacia"
+    },
+    {
+      "id": "heldout-fjord",
+      "prefix": "Die Projektleiterin für Fjord heißt ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Fjord",
+      "expected": "Johanna",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "heldout-fjord"
+    },
+    {
+      "id": "heldout-azul",
+      "prefix": "La responsable del proyecto Azul es ",
+      "appName": "Mail",
+      "bundleID": "com.apple.mail",
+      "windowTitle": "Azul",
+      "expected": "Carmen",
+      "split": "heldout",
+      "kind": "relevant",
+      "expectedMemoryID": "heldout-azul"
+    },
+    {
+      "id": "irrelevant-01",
+      "prefix": "Could you please send ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "heldout",
+      "kind": "irrelevant"
+    },
+    {
+      "id": "irrelevant-02",
+      "prefix": "Thanks for your help with ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "heldout",
+      "kind": "irrelevant"
+    },
+    {
+      "id": "irrelevant-03",
+      "prefix": "I will call you ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "heldout",
+      "kind": "irrelevant"
+    },
+    {
+      "id": "irrelevant-04",
+      "prefix": "Let me know if ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "heldout",
+      "kind": "irrelevant"
+    },
+    {
+      "id": "irrelevant-05",
+      "prefix": "The weather is ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "heldout",
+      "kind": "irrelevant"
+    },
+    {
+      "id": "irrelevant-06",
+      "prefix": "Have a great ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "heldout",
+      "kind": "irrelevant"
+    },
+    {
+      "id": "irrelevant-07",
+      "prefix": "Could we meet ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "heldout",
+      "kind": "irrelevant"
+    },
+    {
+      "id": "irrelevant-08",
+      "prefix": "I hope you are doing ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "heldout",
+      "kind": "irrelevant"
+    },
+    {
+      "id": "irrelevant-09",
+      "prefix": "Sounds good, I will ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "heldout",
+      "kind": "irrelevant"
+    },
+    {
+      "id": "irrelevant-10",
+      "prefix": "We should take a ",
+      "appName": "Notes",
+      "bundleID": "com.apple.Notes",
+      "split": "heldout",
+      "kind": "irrelevant"
+    }
+  ]
+}

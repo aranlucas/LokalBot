@@ -13,6 +13,14 @@ final class CotypingFocusTracker: ObservableObject {
 
     /// Fired (in addition to the publisher) whenever the focus changes.
     var onChange: ((CotypingFocus) -> Void)?
+    var needsVisibleContextValidation: () -> Bool = { false }
+    private var lastVisibleContext: CotypingVisibleContext.Snapshot?
+    private var lastVisibleContextCapture: UInt64?
+
+    func hasFreshVisibleContext(_ expected: CotypingVisibleContext.Snapshot) -> Bool {
+        guard lastVisibleContext == expected, let captured = lastVisibleContextCapture else { return false }
+        return DispatchTime.now().uptimeNanoseconds &- captured < 600_000_000
+    }
 
     private var timer: Timer?
     private var baseIntervalMs: Int
@@ -44,7 +52,7 @@ final class CotypingFocusTracker: ObservableObject {
     }
 
     private var effectiveIntervalMs: Int {
-        max(1, baseIntervalMs) * pollBackoff.captureStride
+        max(1, baseIntervalMs) * (needsVisibleContextValidation() ? 1 : pollBackoff.captureStride)
     }
 
     private func scheduleTimer() {
@@ -72,6 +80,8 @@ final class CotypingFocusTracker: ObservableObject {
         timerCaptureRequested = false
         scheduledIntervalMs = nil
         lastCaptureUptimeNanoseconds = nil
+        lastVisibleContext = nil
+        lastVisibleContextCapture = nil
         pollBackoff.reset()
         capabilityFlickerGate = CotypingFocusCapabilityFlickerGate()
         if focus != .none {
@@ -102,7 +112,8 @@ final class CotypingFocusTracker: ObservableObject {
                 let capture = await self.captureFocus(
                     includeSurface: false,
                     includeURL: false,
-                    includeStyle: false)
+                    includeStyle: false,
+                    includeVisibleContext: self.needsVisibleContextValidation())
                 guard !Task.isCancelled,
                       self.timer != nil,
                       self.timerCaptureGeneration == captureGeneration else { break }
@@ -124,14 +135,16 @@ final class CotypingFocusTracker: ObservableObject {
         includeSurface: Bool = false,
         includeURL: Bool = false,
         includeStyle: Bool = false,
-        includeLearningScope: Bool = false
+        includeLearningScope: Bool = false,
+        includeVisibleContext: Bool = false
     ) async -> CotypingFocus {
         pollBackoff.reset()
         let latest = await captureFocus(
             includeSurface: includeSurface,
             includeURL: includeURL,
             includeStyle: includeStyle,
-            includeLearningScope: includeLearningScope).focus
+            includeLearningScope: includeLearningScope,
+            includeVisibleContext: includeVisibleContext).focus
         rescheduleTimerIfNeeded()
         return latest
     }
@@ -142,7 +155,8 @@ final class CotypingFocusTracker: ObservableObject {
         includeSurface: Bool = false,
         includeURL: Bool = false,
         includeStyle: Bool = false,
-        includeLearningScope: Bool = false
+        includeLearningScope: Bool = false,
+        includeVisibleContext: Bool = false
     ) async -> CotypingFocus {
         guard Self.shouldRefreshCapture(
             lastCaptureUptimeNanoseconds: lastCaptureUptimeNanoseconds,
@@ -154,7 +168,8 @@ final class CotypingFocusTracker: ObservableObject {
             includeSurface: includeSurface,
             includeURL: includeURL,
             includeStyle: includeStyle,
-            includeLearningScope: includeLearningScope)
+            includeLearningScope: includeLearningScope,
+            includeVisibleContext: includeVisibleContext)
     }
 
     /// A validation capture fails closed on a whole-snapshot timeout. Callers
@@ -164,13 +179,15 @@ final class CotypingFocusTracker: ObservableObject {
         includeSurface: Bool = false,
         includeURL: Bool = false,
         includeStyle: Bool = false,
-        includeLearningScope: Bool = false
+        includeLearningScope: Bool = false,
+        includeVisibleContext: Bool = false
     ) async -> CotypingFocus? {
         let capture = await captureFocus(
             includeSurface: includeSurface,
             includeURL: includeURL,
             includeStyle: includeStyle,
-            includeLearningScope: includeLearningScope)
+            includeLearningScope: includeLearningScope,
+            includeVisibleContext: includeVisibleContext)
         return capture.completed ? capture.focus : nil
     }
 
@@ -178,21 +195,32 @@ final class CotypingFocusTracker: ObservableObject {
         includeSurface: Bool,
         includeURL: Bool,
         includeStyle: Bool,
-        includeLearningScope: Bool = false
+        includeLearningScope: Bool = false,
+        includeVisibleContext: Bool = false
     ) async -> (focus: CotypingFocus, completed: Bool) {
         var options: CotypingAXCaptureOptions = []
         if includeSurface { options.insert(.surface) }
         if includeURL { options.insert(.url) }
         if includeStyle { options.insert(.style) }
         if includeLearningScope { options.insert(.learningScope) }
+        if includeVisibleContext { options.insert(.visibleContext) }
         let lifecycleGeneration = captureLifecycleGeneration
         let capture = await snapshotExecutor.capture(options: options)
         guard lifecycleGeneration == captureLifecycleGeneration,
               !capture.timedOut,
               let latestRaw = capture.focus else {
+            if includeVisibleContext {
+                lastVisibleContext = nil
+                lastVisibleContextCapture = nil
+                onChange?(.none)
+            }
             return (focus, false)
         }
         lastCaptureUptimeNanoseconds = DispatchTime.now().uptimeNanoseconds
+        if includeVisibleContext {
+            lastVisibleContext = latestRaw.field?.visibleContext
+            lastVisibleContextCapture = lastCaptureUptimeNanoseconds
+        }
         let latest: CotypingFocus
         switch capabilityFlickerGate.evaluate(latestRaw) {
         case .apply:

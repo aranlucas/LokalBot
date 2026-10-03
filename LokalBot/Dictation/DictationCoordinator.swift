@@ -53,6 +53,7 @@ final class DictationCoordinator: ObservableObject {
     private let makeTextEngine: (AppSettings) async throws -> TextEngine
     private let screenContextProvider:
         (DictationScreenTarget, DictationScreenCapturePolicy) async -> DictationScreenContext?
+    private let memoryContextProvider: (CotypingField, AppSettings) async -> CotypingMemoryContextProvider.Snapshot
     private let canStart: () -> Bool
     private let onBusy: () -> Void
     private let onError: (String) -> Void
@@ -87,6 +88,7 @@ final class DictationCoordinator: ObservableObject {
     private var activeAudioURL: URL?
     private var pausedMediaSession: MediaPlaybackController.PauseSession?
     private var deliveryTarget: DictationDeliveryTarget?
+    private var contextTarget: DictationScreenTarget?
     private var pendingFinishSource: String?
     private var generation = 0
 
@@ -99,6 +101,7 @@ final class DictationCoordinator: ObservableObject {
         onError: @escaping (String) -> Void,
         onMicPermissionDenied: @escaping () -> Void = {},
         focusSnapshotExecutor: DictationFocusSnapshotExecutor = .shared,
+        memoryContextProvider: @escaping (CotypingField, AppSettings) async -> CotypingMemoryContextProvider.Snapshot = { _, _ in .empty },
         screenContextProvider: @escaping (
             DictationScreenTarget,
             DictationScreenCapturePolicy
@@ -111,6 +114,7 @@ final class DictationCoordinator: ObservableObject {
         self.settingsProvider = settingsProvider
         self.makeTextEngine = makeTextEngine
         self.screenContextProvider = screenContextProvider
+        self.memoryContextProvider = memoryContextProvider
         self.canStart = canStart
         self.onBusy = onBusy
         self.onError = onError
@@ -195,6 +199,9 @@ final class DictationCoordinator: ObservableObject {
 
     func applySettings() {
         let config = settingsProvider()
+        if let activeConfig, !DictationGrounding.permissionsMatch(activeConfig, config) {
+            discardScreenContext()
+        }
         if config.dictationEnabled {
             isShortcutMonitoringActive = inputMonitor.start()
             if !isShortcutMonitoringActive {
@@ -288,6 +295,7 @@ final class DictationCoordinator: ObservableObject {
             }
         }
         deliveryTarget = nil
+        contextTarget = nil
         pendingFinishSource = nil
         captureStatus = ""
         lastTranscript = nil
@@ -328,6 +336,10 @@ final class DictationCoordinator: ObservableObject {
             if let pendingMediaCleanup { await pendingMediaCleanup.value }
             guard self.generation == session, !Task.isCancelled else { return }
             self.deliveryTarget = capturedDeliveryTarget
+            if let screenTarget, DictationScreenPrivacy.allowsCapture(focus: focusCapture, target: screenTarget) {
+                self.contextTarget = screenTarget
+                self.contextTarget?.focusIdentityKey = focusCapture.snapshot?.focusIdentityKey
+            }
             var localMediaSession: MediaPlaybackController.PauseSession?
             var candidateAudioURL: URL?
             do {
@@ -551,18 +563,35 @@ final class DictationCoordinator: ObservableObject {
             }
             let contextTask = screenContextTask
             screenContextTask = nil
-            if config.dictationIntent == .transcribe { contextTask?.cancel() }
+            if config.dictationIntent == .transcribe || !DictationGrounding.requestsContext(spokenText) { contextTask?.cancel() }
             let prepared = try await DictationTextPreparation.prepare(
                 speech: spokenText, settings: config,
-                screenContext: { await contextTask?.value }, makeEngine: makeTextEngine)
+                screenContext: { await contextTask?.value },
+                visibleContext: { [self] in
+                    guard let contextTarget else { return nil }
+                    return await DictationVisibleContextCapture.shared.capture(
+                        target: contextTarget, policy: DictationGrounding.visiblePolicy(config))
+                }, memoryContext: memoryContextProvider, currentSettings: settingsProvider,
+                validateVisibleContext: { [self] expected in
+                    guard let contextTarget else { return false }
+                    return await DictationVisibleContextCapture.shared.capture(
+                        target: contextTarget, policy: DictationGrounding.visiblePolicy(settingsProvider())) == expected
+                }, validateScreenContext: { [self] context in
+                    guard let contextTarget, let identity = context.identity else { return false }
+                    let current = settingsProvider()
+                    return await DictationScreenContextCapture.shared.contextStillMatches(
+                        contextTarget, identity: identity, policy: .init(
+                            excludedApps: current.excludedAppList, excludedDomains: current.excludedScreenDomainList))
+                }, makeEngine: makeTextEngine)
             guard generation == session else { return }
+            guard prepared.contextIsCurrent() else { throw DictationComposeError.contextChanged }
             let text = prepared.text
-            lastComposedText = text
             lastEngine = prepared.compositionModel.map { "\(transcript.engine) → \($0)" } ?? transcript.engine
             switch await deliver(
                 text,
                 mode: config.dictationOutputMode,
-                generation: session
+                generation: session,
+                contextIsCurrent: prepared.contextIsCurrent
             ) {
             case .inserted, .copied, .displayed:
                 break
@@ -573,8 +602,12 @@ final class DictationCoordinator: ObservableObject {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(text, forType: .string)
             case .cancelled:
+                if generation == session, !prepared.contextIsCurrent() {
+                    throw DictationComposeError.contextChanged
+                }
                 return
             }
+            lastComposedText = text
             complete()
             lokalbotLog(
                 "dictation composed source=\(source) chars=\(text.count) "
@@ -606,15 +639,16 @@ final class DictationCoordinator: ObservableObject {
     private func deliver(
         _ text: String,
         mode: DictationOutputMode,
-        generation session: Int
+        generation session: Int,
+        contextIsCurrent: () -> Bool = { true }
     ) async -> DeliveryResult {
-        guard !Task.isCancelled, generation == session else { return .cancelled }
+        guard !Task.isCancelled, generation == session, contextIsCurrent() else { return .cancelled }
         switch mode {
         case .showInLokalBot:
             return .displayed
         case .pasteIntoFocusedApp:
             let targetMatches = await deliveryTargetMatchesCurrentFocus()
-            guard !Task.isCancelled, generation == session else { return .cancelled }
+            guard !Task.isCancelled, generation == session, contextIsCurrent() else { return .cancelled }
             guard targetMatches else {
                 NSPasteboard.general.clearContents()
                 return NSPasteboard.general.setString(text, forType: .string)

@@ -14,6 +14,7 @@ extension CotypingCoordinator {
             selfBundleID: selfBundleID)
         let privacySettingsChanged = appliedPrivacySettings != privacySettings
         appliedPrivacySettings = privacySettings
+        CotypingAXHelper.configureVisibleContextPolicy(privacySettings.visibleContextPolicy)
         let appReadPolicyChanged = CotypingAXHelper.configureAppReadPolicy(
             privacySettings.appReadPolicy)
         let shouldRefreshFocus = isRunning
@@ -22,6 +23,10 @@ extension CotypingCoordinator {
             cancelPendingGenerationWork()
             acceptedSuggestionBatch.discardLearningRecord()
             clearSuggestion()
+            activeMemoryContext = .empty
+            activeVisibleContext = nil
+            memoryContextSources = []
+            suggestionAnchorCache.removeAll()
         }
         guard settings.cotypingEnabled else { stop(reason: "Cotyping is off."); return }
         guard CotypingAXHelper.isTrusted else {
@@ -52,6 +57,31 @@ extension CotypingCoordinator {
         try await learningStore.forgetAll()
     }
 
+    /// Drop both visible and cached text before source deletion/correction or
+    /// permission revocation. Accepted facts are not copied into local learning.
+    func invalidateMemoryContext() {
+        guard CotypingMemoryContext.Policy(settings: settingsProvider()).enabled
+                || !activeMemoryContext.selection.items.isEmpty else { return }
+        cancelPendingGenerationWork()
+        acceptedSuggestionBatch.discardLearningRecord()
+        clearSuggestion()
+        suggestionAnchorCache.removeAll()
+        activeSuggestionRequestFingerprint = nil
+        activeMemoryContext = .empty
+        activeVisibleContext = nil
+        memoryContextSources = []
+        lastSuggestion = nil
+        lastAcceptedTail = nil
+        if !isDisabledState { state = .idle }
+    }
+
+    @discardableResult
+    func discardRevokedMemoryContext() -> Bool {
+        guard !activeMemoryContext.isCurrent(settings: settingsProvider()) else { return false }
+        invalidateMemoryContext()
+        return true
+    }
+
     private func start() {
         guard !isRunning else { return }
         wireIfNeeded()
@@ -70,6 +100,9 @@ extension CotypingCoordinator {
         focusTracker.stop()
         inputMonitor.stop()
         isRunning = false
+        activeMemoryContext = .empty
+        activeVisibleContext = nil
+        memoryContextSources = []
         if let reason { state = .disabled(reason) } else { state = .idle }
     }
 
@@ -91,6 +124,10 @@ extension CotypingCoordinator {
         guard !wired else { return }
         wired = true
         focusTracker.onChange = { [weak self] focus in self?.handleFocusChange(focus) }
+        focusTracker.needsVisibleContextValidation = { [weak self] in
+            guard let self else { return false }
+            return self.activeVisibleContext != nil && (self.session != nil || self.generationTask != nil)
+        }
         inputMonitor.onKey = { [weak self] event in self?.handleKey(event) }
         inputMonitor.onAcceptKey = { [weak self] scope in self?.acceptFromTap(scope) ?? false }
         inputMonitor.acceptGate = { [weak self] in

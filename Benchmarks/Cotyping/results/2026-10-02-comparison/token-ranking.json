@@ -1,0 +1,62 @@
+[
+  {
+    "afterMedianMs" : 0.058208999999999997,
+    "afterP95Ms" : 0.066875000000000004,
+    "beforeMedianMs" : 0.020625000000000001,
+    "beforeP95Ms" : 0.021208000000000001,
+    "identicalCandidates" : true,
+    "matchingCandidateRank" : 1,
+    "samples" : 20,
+    "vocabularySize" : 65536
+  },
+  {
+    "afterMedianMs" : 0.057667000000000003,
+    "afterP95Ms" : 0.057791000000000002,
+    "beforeMedianMs" : 0.13758400000000001,
+    "beforeP95Ms" : 0.14316699999999999,
+    "identicalCandidates" : true,
+    "matchingCandidateRank" : 8,
+    "samples" : 20,
+    "vocabularySize" : 65536
+  },
+  {
+    "afterMedianMs" : 0.067500000000000004,
+    "afterP95Ms" : 0.076916999999999999,
+    "beforeMedianMs" : 1.083917,
+    "beforeP95Ms" : 1.1103749999999999,
+    "identicalCandidates" : true,
+    "matchingCandidateRank" : 64,
+    "samples" : 20,
+    "vocabularySize" : 65536
+  },
+  {
+    "afterMedianMs" : 0.21020800000000001,
+    "afterP95Ms" : 0.21979199999999999,
+    "beforeMedianMs" : 0.080000000000000002,
+    "beforeP95Ms" : 0.082667000000000004,
+    "identicalCandidates" : true,
+    "matchingCandidateRank" : 1,
+    "samples" : 20,
+    "vocabularySize" : 262144
+  },
+  {
+    "afterMedianMs" : 0.24445900000000001,
+    "afterP95Ms" : 0.253417,
+    "beforeMedianMs" : 0.54716699999999996,
+    "beforeP95Ms" : 0.54883400000000004,
+    "identicalCandidates" : true,
+    "matchingCandidateRank" : 8,
+    "samples" : 20,
+    "vocabularySize" : 262144
+  },
+  {
+    "afterMedianMs" : 0.23300000000000001,
+    "afterP95Ms" : 0.25566699999999998,
+    "beforeMedianMs" : 4.271458,
+    "beforeP95Ms" : 4.3008329999999999,
+    "identicalCandidates" : true,
+    "matchingCandidateRank" : 64,
+    "samples" : 20,
+    "vocabularySize" : 262144
+  }
+]

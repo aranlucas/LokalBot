@@ -1,0 +1,18 @@
+{
+  "unitTests": 218,
+  "unitFailures": 0,
+  "unitLogSHA256": "8ad2169d1aa9bbf003a0a4a5090c56955ad933be8b5d34100e8f2981f62aa8da",
+  "pythonTests": 12,
+  "pythonFailures": 0,
+  "releaseBuild": "succeeded",
+  "debugBuildForTesting": "succeeded",
+  "swiftlintStrict": "passed",
+  "diffCheck": "passed",
+  "sourceFreezeMatches": true,
+  "unchangedOrdinaryCheckpointsPerModel": 178,
+  "uiTests": "not run locally",
+  "installed": false,
+  "released": false,
+  "committed": false,
+  "appSHA256": "90759b77c750bfe14907907985e4a3c474e09bc0fac0d74ac7102a6bbf71490e"
+}

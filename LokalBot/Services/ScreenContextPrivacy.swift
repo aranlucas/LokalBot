@@ -126,7 +126,7 @@ enum ScreenContextPrivacy {
         }
     }
 
-    private static func isBrowser(_ observation: Observation) -> Bool {
+    static func isBrowser(_ observation: Observation) -> Bool {
         let identifier = observation.bundleIdentifier?.lowercased() ?? ""
         let browserIdentifiers = [
             "com.apple.safari", "com.google.chrome", "org.chromium.chromium",

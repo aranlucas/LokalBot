@@ -233,7 +233,7 @@ struct ModelPickerSheet: View {
         let all = role == .autocomplete
             ? ModelCatalog.keystrokeScaleEntries(custom: app.settings.customBuiltInModels,
                                                  keeping: app.settings.cotypingBuiltInModelID)
-            : ModelCatalog.selectableEntries(custom: app.settings.customBuiltInModels)
+            : ModelCatalog.mainLLMEntries(custom: app.settings.customBuiltInModels)
         return all.filter { entry in
             (!installedOnly || ModelCatalog.localURL(for: entry, storage: app.storage) != nil)
                 && (query.isEmpty || "\(entry.displayName) \(entry.id)".localizedCaseInsensitiveContains(query))
