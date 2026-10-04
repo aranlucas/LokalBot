@@ -11,12 +11,17 @@ struct ScreenAccessibilitySnapshot: Codable, Equatable, Sendable {
     var windowFrame: CGRect?
     var hasWebContent: Bool = false
     var containsSecureField: Bool = false
+    /// Other sites' pages framed inside the window, sanitized; nil when none.
+    var framedURLs: [String]?
+    /// Some web content's address could not be read; nil when all could.
+    var hasUnattributedWebContent: Bool?
 
     func privacyObservation(appName: String, bundleIdentifier: String?) -> ScreenContextPrivacy.Observation {
         .init(appName: appName, bundleIdentifier: bundleIdentifier,
               windowTitle: windowTitle, sourceURL: sourceURL,
               focusedSecureField: focusedSecureField, hasWebContent: hasWebContent,
-              containsSecureField: containsSecureField)
+              containsSecureField: containsSecureField, framedURLs: framedURLs ?? [],
+              hasUnattributedWebContent: hasUnattributedWebContent ?? false)
     }
 }
 
@@ -214,14 +219,10 @@ final class ScreenAccessibilityReader: @unchecked Sendable {
         var visited = Set<CFHashCode>()
         var parts: [String] = []
         var seenText = Set<String>()
-        var sourceURLs = Set<String>()
         let document = textualValue(attribute(window, kAXDocumentAttribute as String))
-        if let document, ScreenContextPrivacy.sanitizedURL(document) != nil {
-            sourceURLs.insert(document)
-        }
+        var webAreaURLs: [String?] = []
         var hasWebContent = false
         var containsSecureField = false
-        var hasUnknownWebURL = false
         var totalCharacters = 0
         let started = ContinuousClock.now
         let maximumDuration = Duration.milliseconds(140)
@@ -263,12 +264,7 @@ final class ScreenAccessibilityReader: @unchecked Sendable {
                 hasWebContent = true
                 // A link URL is not the document's origin. Only a web area's
                 // own URL (or the window document) can establish that origin.
-                if let url = urlString(attribute(element, kAXURLAttribute as String)),
-                   ScreenContextPrivacy.sanitizedURL(url) != nil {
-                    sourceURLs.insert(url)
-                } else {
-                    hasUnknownWebURL = true
-                }
+                webAreaURLs.append(urlString(attribute(element, kAXURLAttribute as String)))
             }
             if !hidden, let children = (attribute(element, kAXVisibleChildrenAttribute as String)
                 ?? attribute(element, kAXChildrenAttribute as String)) as? [AXUIElement] {
@@ -301,15 +297,62 @@ final class ScreenAccessibilityReader: @unchecked Sendable {
         }
         noteTextReadFailure(nil, processID: processID, includeText: includeText)
         let text = parts.joined(separator: "\n")
+        let address = pageAddress(document: document, webAreaURLs: webAreaURLs)
         return ScreenAccessibilitySnapshot(
             text: text,
-            sourceURL: !hasUnknownWebURL && sourceURLs.count == 1 ? sourceURLs.first : nil,
+            sourceURL: address.sourceURL,
             documentName: ScreenContextPrivacy.sanitizedDocumentName(document),
             focusedSecureField: settledFocus.focus,
             windowTitle: windowTitle,
             windowFrame: windowFrame,
             hasWebContent: hasWebContent,
-            containsSecureField: containsSecureField)
+            containsSecureField: containsSecureField,
+            framedURLs: address.framedURLs.isEmpty ? nil : address.framedURLs,
+            hasUnattributedWebContent: address.hasUnattributedWebContent ? true : nil)
+    }
+
+    struct PageAddress: Equatable, Sendable {
+        /// The page's own address, as read.
+        var sourceURL: String?
+        /// Other sites' pages framed inside it, sanitized.
+        var framedURLs: [String]
+        /// A web area whose address could not be read.
+        var hasUnattributedWebContent: Bool
+    }
+
+    /// Chrome exposes every frame of a page as its own web area: the page,
+    /// about:blank editors, and other sites' embeds. The window's document,
+    /// else the outermost web area, is the page; other addresses are kept for
+    /// site exclusions instead of making the page's own address unknown.
+    /// `webAreaURLs` lists web areas outermost first.
+    static func pageAddress(document: String?, webAreaURLs: [String?]) -> PageAddress {
+        var page = document.flatMap { ScreenContextPrivacy.sanitizedURL($0) == nil ? nil : $0 }
+        var framed: [String] = []
+        var unattributed = false
+        for (index, raw) in webAreaURLs.enumerated() {
+            guard let raw, !raw.isEmpty else {
+                unattributed = true
+                continue
+            }
+            // about:blank and about:srcdoc frames take their embedder's
+            // origin, and a data: frame holds content its embedder supplied.
+            let scheme = URL(string: raw)?.scheme?.lowercased() ?? ""
+            if scheme == "about" || scheme == "data" { continue }
+            // A blob: address carries the origin that created it.
+            let address = scheme == "blob" ? String(raw.dropFirst("blob:".count)) : raw
+            guard let sanitized = ScreenContextPrivacy.sanitizedURL(address) else {
+                unattributed = true
+                continue
+            }
+            if page == nil, index == 0 {
+                page = raw
+                continue
+            }
+            if sanitized != ScreenContextPrivacy.sanitizedURL(page), !framed.contains(sanitized) {
+                framed.append(sanitized)
+            }
+        }
+        return PageAddress(sourceURL: page, framedURLs: framed, hasUnattributedWebContent: unattributed)
     }
 
     /// The focused-field state across one read. Chrome reports no focused

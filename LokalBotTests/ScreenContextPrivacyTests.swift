@@ -193,6 +193,64 @@ final class ScreenContextPrivacyTests: XCTestCase {
                        "Focus moving into a secure field during capture discards the pixels")
     }
 
+    /// Since the 2026-09-24 privacy fixes, any second web area or one without
+    /// an address made the page's own address unknown. Chrome exposes every
+    /// frame as a web area, so almost no Chrome capture kept its URL.
+    func testPageKeepsItsAddressWhenChromeExposesFramesAsWebAreas() {
+        typealias Reader = ScreenAccessibilityReader
+        let gmail = Reader.pageAddress(
+            document: "https://mail.google.com/mail/u/0/#inbox",
+            webAreaURLs: [
+                "https://mail.google.com/mail/u/0/#inbox", "about:blank",
+                "https://accounts.google.com/RotateCookiesPage?og_pid=23",
+                "https://mail.google.com/mail/u/0/?ui=2&view=bsp",
+            ])
+        XCTAssertEqual(gmail, .init(
+            sourceURL: "https://mail.google.com/mail/u/0/#inbox",
+            framedURLs: ["https://accounts.google.com/RotateCookiesPage"],
+            hasUnattributedWebContent: false))
+
+        let review = Reader.pageAddress(
+            document: "https://github.com/acme/app/pull/1/files#diff-abc",
+            webAreaURLs: ["https://github.com/acme/app/pull/1/files", "data:text/html,<p>preview</p>"])
+        XCTAssertEqual(review.sourceURL, "https://github.com/acme/app/pull/1/files#diff-abc",
+                       "the same page read with and without its fragment is one address")
+        XCTAssertEqual(review.framedURLs, [])
+
+        let app = Reader.pageAddress(document: nil, webAreaURLs: ["https://app.slack.com/client/T1/C2"])
+        XCTAssertEqual(app.sourceURL, "https://app.slack.com/client/T1/C2")
+
+        let unreadable = Reader.pageAddress(
+            document: nil, webAreaURLs: [nil, "https://ads.example/frame", "blob:https://evil.test/1f2e"])
+        XCTAssertNil(unreadable.sourceURL, "a framed page never stands in for the page itself")
+        XCTAssertEqual(unreadable.framedURLs, ["https://ads.example/frame", "https://evil.test/1f2e"])
+        XCTAssertTrue(unreadable.hasUnattributedWebContent)
+    }
+
+    func testFramedPagesAreHeldToSiteExclusions() {
+        var observation = ScreenContextPrivacy.Observation(
+            appName: "Google Chrome", bundleIdentifier: "com.google.Chrome",
+            windowTitle: "Roadmap", sourceURL: "https://docs.example/roadmap", focusedSecureField: false,
+            hasWebContent: true, framedURLs: ["https://widgets.example/embed"])
+        func allowed(_ rules: [String]) -> Bool {
+            ScreenContextPrivacy.permitsContent(observation, excludedApps: [], excludedDomains: rules)
+        }
+        XCTAssertTrue(allowed([]))
+        XCTAssertTrue(allowed(["private.test"]), "frames from other allowed sites do not hide the page")
+        XCTAssertFalse(allowed(["widgets.example"]), "an excluded site keeps the window out wherever it is framed")
+        observation.hasUnattributedWebContent = true
+        XCTAssertTrue(allowed([]))
+        XCTAssertFalse(allowed(["private.test"]),
+                       "an unreadable framed address cannot establish it is outside an exclusion")
+    }
+
+    func testWebAddressesAreNotDocumentNames() {
+        XCTAssertNil(ScreenContextPrivacy.sanitizedDocumentName("https://www.google.com/search?q=private+matter"))
+        XCTAssertNil(ScreenContextPrivacy.sanitizedDocumentName("https://mail.google.com/mail/u/0/#inbox"))
+        XCTAssertNil(ScreenContextPrivacy.sanitizedDocumentName("app://-/index.html"))
+        XCTAssertEqual(ScreenContextPrivacy.sanitizedDocumentName("/Users/alice/Notes/Plan.md"), "Plan.md")
+    }
+
     func testReadKeepsOnlyAnUnknownFocusThatTurnsOutPlain() {
         XCTAssertTrue(ScreenAccessibilityReader.settledFocus(before: nil, after: false) == (true, false),
                       "Chrome exposes focus only after its tree is read")
