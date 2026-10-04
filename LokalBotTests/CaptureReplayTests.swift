@@ -85,6 +85,119 @@ final class CaptureReplayTests: XCTestCase {
         XCTAssertLessThan(ended.first ?? .infinity, 720)
     }
 
+    /// 2026-10-03: Meet's page after the first call was not recognized as an
+    /// end, so that call stayed bound but unverified, and the next meeting, in
+    /// another room, was never detected. A verified call in another room must
+    /// end the stale session and start its own, with its calendar event.
+    func testCallInAnotherRoomReplacesAnUnverifiedCall() async throws {
+        let replay = try replay("meet-room-change-after-unrecognized-end")
+        let detector = MeetingDetector()
+        detector.calendar = ReplayCalendar(candidates: [
+            meeting("first", from: -77, to: 1_723, room: "bcd-fghj-klm", replay: replay),
+            meeting("weekly", from: 1_723, to: 5_323, room: "npq-rstv-wxz", replay: replay),
+        ])
+        detector.calendarEnabled = true
+        var started: [(at: TimeInterval, context: MeetingDetectionContext)] = []
+        var ended: [TimeInterval] = []
+        var verified: [TimeInterval: Bool] = [:]
+        detector.onMeetingStarted = { started.append((replay.clock.elapsed, $0)) }
+        detector.onMeetingEnded = { _ in ended.append(replay.clock.elapsed) }
+        for second in stride(from: 0.0, through: 1_830, by: 2) {
+            await replay.clock.advance(to: second)
+            await detector.tickForTesting()
+            verified[second] = detector.verifiesActiveCall
+        }
+        XCTAssertEqual(started.count, 2, "the first call, then the call in the other room")
+        XCTAssertLessThan(started.first?.at ?? .infinity, 10)
+        XCTAssertEqual(ended.count, 1, "the stale session ends once")
+        XCTAssertGreaterThanOrEqual(ended.first ?? 0, 1_807, "an unrecognized page alone never ends a call")
+        XCTAssertLessThan(ended.first ?? .infinity, 1_815)
+        let replacement = try XCTUnwrap(started.last)
+        XCTAssertGreaterThanOrEqual(replacement.at, ended.first ?? .infinity)
+        XCTAssertEqual(replacement.context.detectedApp?.meetingURL?.absoluteString,
+                       "https://meet.google.com/npq-rstv-wxz")
+        XCTAssertEqual(replacement.context.calendarEvent?.externalID, "weekly")
+        XCTAssertEqual(verified[1_680], true)
+        XCTAssertEqual(verified[1_700], false, "a manual start must not join the unverified call")
+        XCTAssertEqual(verified[1_830], true)
+    }
+
+    /// The same evening's manual Start from the menu bar: while the first call
+    /// is unverified, the recording must neither join its session (whose later
+    /// end would stop it) nor be labeled with its room.
+    func testManualStartDoesNotJoinAnUnverifiedCall() async throws {
+        let replay = try replay("meet-room-change-after-unrecognized-end")
+        let app = AppState()
+        for second in stride(from: 0.0, through: 1_700, by: 2) {
+            await replay.clock.advance(to: second)
+            await app.detector.tickForTesting()
+            guard second == 100 else { continue }
+            let verified = try XCTUnwrap(app.recordingContext(for: app.detector.activeApp))
+            XCTAssertEqual(verified.detectedApp?.meetingURL?.absoluteString, "https://meet.google.com/bcd-fghj-klm")
+            if app.settings.autoRecordMode != .manual {
+                XCTAssertEqual(verified.detectorSessionID, app.detector.activeSessionID)
+            }
+        }
+        let context = try XCTUnwrap(app.recordingContext(for: app.detector.activeApp))
+        XCTAssertNotNil(app.detector.activeSessionID, "the first call is still bound")
+        XCTAssertNil(context.detectorSessionID)
+        XCTAssertNil(context.detectedApp?.meetingURL)
+        XCTAssertEqual(context.detectedApp?.bundleID, "com.google.Chrome", "the browser's audio is still captured")
+    }
+
+    /// Back-to-back events on one Meet link: the call never ends, so the next
+    /// event must split the recording, as it does for a native app. An event
+    /// in another room means the current call is running over and must not.
+    func testNextEventInTheSameRoomSplitsTheCall() async throws {
+        for (nextRoom, splits) in [("bcd-fghj-klm", true), ("npq-rstv-wxz", false)] {
+            let replay = try replay("meet-same-room-back-to-back")
+            let detector = MeetingDetector()
+            detector.calendar = ReplayCalendar(candidates: [
+                meeting("first", from: -77, to: 1_723, room: "bcd-fghj-klm", replay: replay),
+                meeting("second", from: 1_723, to: 5_323, room: nextRoom, replay: replay),
+            ])
+            detector.calendarEnabled = true
+            var sessions: [UUID?] = []
+            var switched: [(at: TimeInterval, context: MeetingDetectionContext)] = []
+            detector.onMeetingStarted = { sessions.append($0.detectorSessionID) }
+            detector.onMeetingSwitched = { switched.append((replay.clock.elapsed, $0)) }
+            detector.onMeetingEnded = { _ in XCTFail("the call never ends") }
+            for second in stride(from: 0.0, through: 1_800, by: 2) {
+                await replay.clock.advance(to: second)
+                await detector.tickForTesting()
+            }
+            XCTAssertEqual(sessions.count, 1, nextRoom)
+            guard splits else {
+                XCTAssertTrue(switched.isEmpty, "an event in another room does not split the call")
+                continue
+            }
+            XCTAssertEqual(switched.count, 1)
+            XCTAssertEqual(switched.first?.context.reason, "calendar-handoff")
+            XCTAssertEqual(switched.first?.context.calendarEvent?.externalID, "second")
+            XCTAssertEqual(switched.first?.context.detectorSessionID, sessions.first ?? nil)
+            XCTAssertGreaterThanOrEqual(switched.first?.at ?? 0, 1_723)
+            XCTAssertLessThan(switched.first?.at ?? .infinity, 1_727)
+            CaptureEnvironment.reset()
+        }
+    }
+
+    private func meeting(_ id: String, from start: TimeInterval, to end: TimeInterval, room: String,
+                         replay: ReplayCaptureEnvironment) -> CalendarMeetingCandidate {
+        let origin = replay.clock.now().addingTimeInterval(-replay.clock.elapsed)
+        return CalendarMeetingCandidate(
+            provider: "eventkit", externalID: id, title: id,
+            startDate: origin.addingTimeInterval(start), endDate: origin.addingTimeInterval(end),
+            meetingURL: URL(string: "https://meet.google.com/\(room)?authuser=1"), sourceCalendarTitle: nil)
+    }
+
+    private final class ReplayCalendar: CalendarEventProviding {
+        let authorizationStatus = CalendarAuthorizationStatus.fullAccess
+        let candidates: [CalendarMeetingCandidate]
+        init(candidates: [CalendarMeetingCandidate]) { self.candidates = candidates }
+        func requestAccess(_ completion: @escaping (Bool) -> Void) { completion(true) }
+        func meetingCandidates(now: Date) -> [CalendarMeetingCandidate] { candidates }
+    }
+
     /// Teams (#49/#56): a launch sound must not start a meeting; sustained call
     /// audio must, after the native-audio confirmation window.
     func testTeamsLaunchBlipDoesNotStartAMeetingButTheCallDoes() async throws {

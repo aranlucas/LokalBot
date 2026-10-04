@@ -1,0 +1,10 @@
+{
+  "header": {"schemaVersion": 1, "macOSVersion": "27.0", "origin": "reconstructed",
+             "scenario": "meet-same-room-back-to-back", "scrubberVersion": 1, "recordedAt": "2026-10-03T00:00:00Z"},
+  "events": [
+    {"t": 0, "query": "runningApps", "apps": [{"processIdentifier": 501, "bundleIdentifier": "com.google.Chrome", "localizedName": "Google Chrome"}]},
+    {"t": 0, "query": "frontmost", "app": {"processIdentifier": 501, "bundleIdentifier": "com.google.Chrome", "localizedName": "Google Chrome"}},
+    {"t": 0, "query": "audioProcesses", "processes": [{"id": 502, "name": "Google Chrome Helper", "bundleID": "com.google.Chrome.helper", "objectID": 90, "isRunningOutput": true}]},
+    {"t": 0, "query": "browserSnapshot", "processID": 501, "browser": {"url": "https://meet.google.com/bcd-fghj-klm", "state": "inCall"}}
+  ]
+}

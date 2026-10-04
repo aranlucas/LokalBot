@@ -36,6 +36,11 @@ final class MeetingIntegrityTests: XCTestCase {
         XCTAssertEqual(BrowserMeetingSession.state(buttons: ["Leave call", "Turn on microphone (⌘D)"], messages: []), .inCall)
         XCTAssertEqual(BrowserMeetingSession.state(buttons: ["Leave call (⌘⇧H)", "Turn on microphone"], messages: []), .inCall)
         XCTAssertEqual(BrowserMeetingSession.state(buttons: ["Leave call", "Turn on microphone"], messages: ["You left the meeting"]), .ended)
+        // Meet's post-call page ends the call by its actions, whatever its heading says.
+        XCTAssertEqual(BrowserMeetingSession.state(buttons: ["Rejoin", "Return to home screen"], messages: ["You left the call"]), .ended)
+        XCTAssertEqual(BrowserMeetingSession.state(buttons: ["Rejoin"], messages: []), .unavailable)
+        XCTAssertEqual(BrowserMeetingSession.state(
+            buttons: ["Leave call", "Turn off microphone", "Rejoin", "Return to home screen"], messages: []), .inCall)
         let first = URL(string: "https://meet.google.com/abc-defg-hij")!
         let second = URL(string: "https://meet.google.com/klm-nopq-rst")!
         let now = Date(timeIntervalSince1970: 100)

@@ -219,6 +219,17 @@ final class MeetingDetector {
     private var browserPollGeneration = 0
     private var browserPollTask: Task<Void, Never>?
     private var browserSnapshots: [pid_t: BrowserMeetingSession.Snapshot] = [:]
+    /// Calls in rooms other than the bound one, read only while the bound
+    /// call cannot be verified. See `handOffIfAnotherRoomIsInCall`.
+    private var otherRoomSnapshots: [pid_t: BrowserMeetingSession.Snapshot] = [:]
+
+    /// Whether the active session's call is still proven: always for a native
+    /// app session, and for a browser call until its observation is lost. A
+    /// manual recording joins only a proven session.
+    var verifiesActiveCall: Bool {
+        guard let activeApp else { return false }
+        return !Self.browsers.contains(activeApp.bundleID) || browserLifecycle.lostAt == nil
+    }
 
     private var micListener: AudioObjectPropertyListenerBlock?
     private var listenedDevice = AudioObjectID(kAudioObjectUnknown)
@@ -259,6 +270,7 @@ final class MeetingDetector {
         browserPollTask?.cancel()
         browserPollTask = nil
         browserSnapshots = [:]
+        otherRoomSnapshots = [:]
         timer?.cancel()
         timer = nil
         pendingStop?.cancel()
@@ -348,19 +360,34 @@ final class MeetingDetector {
         let boundApp = activeApp
         let eventURL = calendarEnabled ? calendar?.activeCandidate(now: environment.clock.now())?.meetingURL : nil
         let expectedURL = boundApp?.meetingURL ?? eventURL
-        let pids = environment.workspace.runningApplications().filter {
-            guard let bundleID = $0.bundleIdentifier, Self.browsers.contains(bundleID) else { return false }
+        let browserApps = environment.workspace.runningApplications().filter {
+            $0.bundleIdentifier.map(Self.browsers.contains) ?? false
+        }
+        let pids = browserApps.filter {
             // Once bound, unrelated browsers cannot delay the call's evidence
             // or make a valid observation expire before it reaches the detector.
-            if let boundApp, Self.browsers.contains(boundApp.bundleID) {
-                return bundleID == boundApp.bundleID
-            }
-            return true
+            guard let boundApp, Self.browsers.contains(boundApp.bundleID) else { return true }
+            return $0.bundleIdentifier == boundApp.bundleID
         }.map(\.processIdentifier)
-        guard !pids.isEmpty else { browserSnapshots = [:]; applyTick(); return }
+        // A bound call that stopped proving itself must not hide a verified
+        // call in another room, so these reads look past the binding.
+        let otherRoomPIDs = boundApp != nil && !verifiesActiveCall ? browserApps.map(\.processIdentifier) : []
+        let otherRoomURL = Self.otherRoom(eventURL, than: boundApp?.meetingURL)
+        guard !pids.isEmpty || !otherRoomPIDs.isEmpty else {
+            browserSnapshots = [:]
+            otherRoomSnapshots = [:]
+            applyTick()
+            return
+        }
         browserPollTask = Task { @MainActor [weak self] in
-            let started = CaptureEnvironment.current.clock.now()
+            let clock = CaptureEnvironment.current.clock
+            let started = clock.now()
             let observations = await BrowserMeetingSession.observe(processIDs: pids, expectedURL: expectedURL)
+            let otherRoomsStarted = clock.now()
+            var otherRooms: [pid_t: BrowserMeetingSession.Snapshot] = [:]
+            if !otherRoomPIDs.isEmpty {
+                otherRooms = await BrowserMeetingSession.observe(processIDs: otherRoomPIDs, expectedURL: otherRoomURL)
+            }
             guard let self, !Task.isCancelled, generation == self.browserPollGeneration else { return }
             self.browserPollTask = nil
             guard self.activeApp == boundApp,
@@ -369,9 +396,19 @@ final class MeetingDetector {
                 return
             }
             // A slow/unresponsive browser is uncertainty, never fresh call evidence.
-            self.browserSnapshots = self.environment.clock.now().timeIntervalSince(started) < 2 ? observations : [:]
+            self.browserSnapshots = otherRoomsStarted.timeIntervalSince(started) < 2 ? observations : [:]
+            self.otherRoomSnapshots = clock.now().timeIntervalSince(otherRoomsStarted) < 2 ? otherRooms : [:]
             self.applyTick()
         }
+    }
+
+    /// The calendar event's room when it differs from the bound one, so a
+    /// calendar-backed handoff reads only that room. Nil reads any single
+    /// verified call. Calendar links can carry query parameters.
+    nonisolated static func otherRoom(_ eventURL: URL?, than boundURL: URL?) -> URL? {
+        guard let room = eventURL.flatMap({ BrowserMeetingSession.meetURL($0.absoluteString) }),
+              room != boundURL?.absoluteString else { return nil }
+        return URL(string: room)
     }
 
     private func applyTick() {
@@ -793,7 +830,60 @@ final class MeetingDetector {
             pendingStop?.cancel()
             pendingStop = nil
             scheduleStopIfNeeded(now: now, immediately: true, reason: reason, confident: confident)
+            return
         }
+        if verifiesActiveCall {
+            browserStart = .init()
+            splitAtCalendarHandoff(app, now: now)
+        } else {
+            handOffIfAnotherRoomIsInCall(from: app, now: now)
+        }
+    }
+
+    /// Back-to-back events can share one room. While the bound call still
+    /// holds its window, the next event on that room's link starts a new
+    /// meeting, as it does for a native app. An event in another room does
+    /// not: the current call is running over.
+    private func splitAtCalendarHandoff(_ app: DetectedApp, now: Date) {
+        guard calendarEnabled, let room = app.meetingURL?.absoluteString,
+              let event = calendar?.activeCandidate(now: now),
+              event.meetingURL.flatMap({ BrowserMeetingSession.meetURL($0.absoluteString) }) == room else { return }
+        let previousEventID = activeCalendarEvent?.externalID
+        activeCalendarEvent = event
+        guard MeetingMatcher.shouldSplitForCalendarHandoff(activeEventID: previousEventID,
+                                                           nextEventID: event.externalID) else { return }
+        onMeetingSwitched?(MeetingDetectionContext(
+            detectedApp: app,
+            calendarEvent: event,
+            confidence: MeetingMatcher.confidence(hasApp: true, hasCalendar: true),
+            reason: "calendar-handoff",
+            detectorSessionID: activeSessionID))
+    }
+
+    /// A bound call that stopped proving itself cannot hide a verified call in
+    /// another room: the user has moved on, and the new room is a new meeting
+    /// with the same start rules as any other. The old room's last evidence
+    /// stays diagnostic, so nothing is trimmed from its recording.
+    private func handOffIfAnotherRoomIsInCall(from app: DetectedApp, now: Date) {
+        let calendarEvent = calendarEnabled ? calendar?.activeCandidate(now: now) : nil
+        let backingEvent = Self.otherRoom(calendarEvent?.meetingURL, than: app.meetingURL) == nil ? nil : calendarEvent
+        guard let replacement = Self.browserMeeting(in: environment.workspace.runningApplications(),
+                                                    calendarEvent: backingEvent,
+                                                    calendarEnabled: calendarEnabled,
+                                                    requireCalendarForBrowser: requireCalendarForBrowser,
+                                                    snapshots: otherRoomSnapshots),
+              replacement.meetingURL != app.meetingURL else {
+            browserStart = .init()
+            return
+        }
+        guard startConfirmed(app: replacement, calendarBacked: backingEvent != nil, now: now),
+              let sessionID = activeSessionID else { return }
+        lokalbotLog("detector ending meeting reason=browser-room-changed confident=true")
+        pendingStop?.cancel()
+        pendingStop = nil
+        completeMeetingEnd(sessionID: sessionID)
+        lokalbotLog("detector confirmed app=\(replacement.bundleID) in another room")
+        beginMeeting(app: replacement, calendarEvent: calendarEvent, now: now)
     }
 
     /// Audio-monitor events must pass the same sustained call-state gate.
