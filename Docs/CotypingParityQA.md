@@ -38,6 +38,12 @@ LokalBot defaults:
   `CotypingGhostFontSizing`). Wrapped lines line up with the field's text edge.
   A re-read of the field that leaves out its font keeps the suggestion's font,
   so the ghost never changes size mid-line.
+- The caret is the trailing edge of the character before it
+  (`CotypingCaretGeometry`). TextEdit and Telegram on macOS 26 report the
+  empty range at the caret one line above where it is drawn, which put the
+  ghost on the line above the text; the character before the caret is reported
+  on its own line. Measured live on 2026-10-04 by reading the ghost window's
+  bounds, since the ghost itself is hidden from screen capture.
 - The word the next accept keypress takes is drawn a little stronger than the
   rest of the suggestion, inline and in the popup.
 

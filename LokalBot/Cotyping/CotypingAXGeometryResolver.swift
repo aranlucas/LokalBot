@@ -32,6 +32,12 @@ enum CotypingAXGeometryResolver {
         if allowBoundsForRange,
            let rect = boundsForRange(element, location: caretLocation, length: 0),
            rect.width.isFinite, rect.height.isFinite, rect.height > 0 {
+            if let caret = CotypingCaretGeometry.caret(
+                emptyRangeRect: rect,
+                previousCharacterRect: previousCharacterRect(element, caretLocation: caretLocation, fieldText: fieldText),
+                isRightToLeft: isRightToLeft) {
+                return (cocoaRect(fromAX: caret), true)
+            }
             return (cocoaRect(fromAX: rect), true)
         }
         // Web engines (Chromium / WebKit / Electron) ignore NSRange-based
@@ -93,6 +99,19 @@ enum CotypingAXGeometryResolver {
         }
         walk(element, depth: 0)
         return leaves
+    }
+
+    /// Bounds of the character just before the caret, in AX coordinates, or
+    /// nil at the start of the text or of a line.
+    private static func previousCharacterRect(
+        _ element: AXUIElement, caretLocation: Int, fieldText: String
+    ) -> CGRect? {
+        let text = fieldText as NSString
+        guard caretLocation > 0, caretLocation <= text.length else { return nil }
+        let range = text.rangeOfComposedCharacterSequence(at: caretLocation - 1)
+        guard NSMaxRange(range) == caretLocation,
+              text.substring(with: range).rangeOfCharacter(from: .newlines) == nil else { return nil }
+        return boundsForRange(element, location: range.location, length: range.length)
     }
 
     private static func boundsForRange(_ element: AXUIElement, location: Int, length: Int) -> CGRect? {
@@ -177,5 +196,25 @@ enum CotypingAXGeometryResolver {
             let key = NSDeviceDescriptionKey("NSScreenNumber")
             return (screen.deviceDescription[key] as? NSNumber)?.uint32Value == displayID
         }
+    }
+}
+
+/// Picks the caret from what an AppKit text view reports. TextEdit and
+/// Telegram on macOS 26 report the empty range at the caret one line above
+/// where it is drawn (measured 2026-10-04: TextEdit at y 190 for a line at
+/// y 204, above the field's own top edge), with the right x. The character
+/// before the caret is reported where it is drawn, and its trailing edge is
+/// the caret, so the ghost sits on the line being typed.
+nonisolated enum CotypingCaretGeometry {
+    /// Both rects in AX coordinates (top-left origin). Nil keeps the empty
+    /// range's rect.
+    static func caret(emptyRangeRect: CGRect, previousCharacterRect: CGRect?, isRightToLeft: Bool) -> CGRect? {
+        guard let character = previousCharacterRect,
+              character.width.isFinite, character.height.isFinite,
+              character.width > 0, character.height > 0,
+              // One glyph, not a whole line or a stale frame.
+              character.width <= character.height * 3 else { return nil }
+        let x = isRightToLeft ? character.minX : character.maxX
+        return CGRect(x: x, y: character.minY, width: 0, height: character.height)
     }
 }

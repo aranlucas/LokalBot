@@ -91,3 +91,31 @@ final class CotypingTextLeafCaretTests: XCTestCase {
         XCTAssertEqual(rect?.origin.x, 1100)
     }
 }
+
+/// TextEdit and Telegram report the empty range at the caret one line above
+/// where it is drawn; the character before the caret is reported where it is.
+final class CotypingCaretGeometryTests: XCTestCase {
+    func testTheCaretIsTheTrailingEdgeOfTheCharacterBeforeIt() {
+        // AX coordinates, top-left origin: the empty range sits a line high.
+        let empty = CGRect(x: 721, y: 189.5, width: 3, height: 14)
+        let character = CGRect(x: 714, y: 203.5, width: 7, height: 14)
+        XCTAssertEqual(
+            CotypingCaretGeometry.caret(emptyRangeRect: empty, previousCharacterRect: character, isRightToLeft: false),
+            CGRect(x: 721, y: 203.5, width: 0, height: 14))
+        XCTAssertEqual(
+            CotypingCaretGeometry.caret(emptyRangeRect: empty, previousCharacterRect: character, isRightToLeft: true),
+            CGRect(x: 714, y: 203.5, width: 0, height: 14))
+    }
+
+    func testTheEmptyRangeIsKeptWithoutAUsableCharacter() {
+        let empty = CGRect(x: 40, y: 100, width: 1, height: 14)
+        XCTAssertNil(CotypingCaretGeometry.caret(emptyRangeRect: empty, previousCharacterRect: nil, isRightToLeft: false))
+        // A whole line or an empty rect is not one character.
+        XCTAssertNil(CotypingCaretGeometry.caret(
+            emptyRangeRect: empty, previousCharacterRect: CGRect(x: 40, y: 100, width: 400, height: 14),
+            isRightToLeft: false))
+        XCTAssertNil(CotypingCaretGeometry.caret(
+            emptyRangeRect: empty, previousCharacterRect: CGRect(x: 40, y: 100, width: 0, height: 0),
+            isRightToLeft: false))
+    }
+}
