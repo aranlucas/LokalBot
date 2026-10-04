@@ -30,9 +30,11 @@ enum CotypingRequestBuilder {
         memoryContext: String? = nil,
         visibleContext: String? = nil,
         learnedExamples: [String] = [],
-        wordPrefixIsValidWord: Bool = true
+        wordPrefixIsValidWord: Bool = true,
+        allowsBlankPrefix: Bool = false
     ) -> CotypingRequest? {
-        guard CotypingPrefixWindow.shouldGenerate(for: field.precedingText) else { return nil }
+        // A blank field gets no suggestion; its prompt can still be prefilled.
+        guard allowsBlankPrefix || CotypingPrefixWindow.shouldGenerate(for: field.precedingText) else { return nil }
         let prefix = CotypingPrefixWindow.truncatedPrefix(
             from: field.precedingText,
             maxCharacters: config.maxPrefixCharacters,

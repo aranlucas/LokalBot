@@ -16,7 +16,6 @@ final class CotypingSettingsTests: XCTestCase {
         settings.cotypingMaxWords = 12
         settings.cotypingMultiLine = true
         settings.cotypingDebounceMs = 500
-        settings.cotypingStreamSuggestionsWhileGenerating = true
         settings.cotypingAcceptGranularity = .phrase
         settings.cotypingFullAcceptKey = .rightArrow
         settings.cotypingAutoAcceptTrailingPunctuation = true
@@ -36,7 +35,6 @@ final class CotypingSettingsTests: XCTestCase {
         XCTAssertEqual(decoded.cotypingMaxWords, 12)
         XCTAssertTrue(decoded.cotypingMultiLine)
         XCTAssertEqual(decoded.cotypingDebounceMs, 500)
-        XCTAssertTrue(decoded.cotypingStreamSuggestionsWhileGenerating)
         XCTAssertEqual(decoded.cotypingAcceptGranularity, .phrase)
         XCTAssertEqual(decoded.cotypingFullAcceptKey, .rightArrow)
         XCTAssertTrue(decoded.cotypingAutoAcceptTrailingPunctuation)
@@ -104,9 +102,6 @@ final class CotypingSettingsTests: XCTestCase {
         XCTAssertTrue(settings.cotypingEnabled)
         XCTAssertEqual(settings.cotypingMaxWords, AppSettings().cotypingMaxWords)
         XCTAssertEqual(settings.cotypingDebounceMs, AppSettings().cotypingDebounceMs)
-        XCTAssertEqual(
-            settings.cotypingStreamSuggestionsWhileGenerating,
-            AppSettings().cotypingStreamSuggestionsWhileGenerating)
         XCTAssertFalse(settings.cotypingAutoAcceptTrailingPunctuation)
         XCTAssertFalse(settings.cotypingAddSpaceAfterAccept)
         XCTAssertTrue(settings.cotypingUseLocalLearning)
@@ -145,7 +140,6 @@ final class CotypingSettingsTests: XCTestCase {
         let settings = AppSettings()
         XCTAssertEqual(settings.cotypingMaxWords, 4)
         XCTAssertEqual(settings.cotypingDebounceMs, 160)
-        XCTAssertFalse(settings.cotypingStreamSuggestionsWhileGenerating)
         XCTAssertFalse(settings.cotypingAutoAcceptTrailingPunctuation)
         XCTAssertFalse(settings.cotypingAddSpaceAfterAccept)
         XCTAssertEqual(settings.cotypingMaxResponseTokens, 6)

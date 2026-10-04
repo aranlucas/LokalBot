@@ -4,87 +4,10 @@ import CoreGraphics
 /// frame geometry is deterministic and unit-testable. All rects are in global
 /// Cocoa (bottom-left origin) coordinates.
 nonisolated enum CotypingOverlayGeometry {
-    /// Gap between the caret and the suggestion / screen edges.
+    /// Gap between the caret and the popup / screen edges.
     static let gap: CGFloat = 2
-    /// Space kept clear at the field's trailing edge; the inline layout wraps
-    /// ghost text at the same line.
-    static let inlineTrailingInset: CGFloat = 8
     static let reanchorDriftTolerance: CGFloat = 6
     static let backwardDriftHoldWindowMilliseconds = 300
-
-    /// Inline ghost frame: the suggestion sits just right of the caret with its
-    /// line box centered on the caret's vertical center. The panel height tracks
-    /// the ghost text's own line height — never the host caret height, which
-    /// varies between AppKit (`AXBoundsForRange`) and WebKit/Chromium
-    /// (`AXBoundsForTextMarkerRange`) providers — so vertical placement is
-    /// consistent across apps. Clamps to the visible frame's right/bottom edges.
-    static func inlineFrame(
-        caret: CGRect, textSize: CGSize, lineHeight: CGFloat, visible: CGRect?
-    ) -> CGRect {
-        let height = max(textSize.height, lineHeight, 1)
-        let width = max(textSize.width, 8)
-        var x = caret.maxX + gap
-        if let visible, x + width > visible.maxX {
-            x = max(visible.minX + gap, visible.maxX - width - gap)
-        }
-        var y = caret.midY - height / 2
-        if let visible, y < visible.minY { y = visible.minY + gap }
-        return CGRect(x: x, y: y, width: width, height: height)
-    }
-
-    /// Frame for a same-line inline ghost after accepting its leading text. The
-    /// caller falls back to a fresh caret anchor when the slide would overflow.
-    static func advancedInlineFrame(
-        from frame: CGRect,
-        insertedTextSize: CGSize,
-        remainingTextSize: CGSize,
-        lineHeight: CGFloat,
-        visible: CGRect?
-    ) -> CGRect? {
-        let shift = insertedTextSize.width
-        guard shift.isFinite, shift > 0,
-              frame.origin.x.isFinite, frame.origin.y.isFinite else {
-            return nil
-        }
-        let height = max(remainingTextSize.height, lineHeight, 1)
-        let width = max(remainingTextSize.width, 8)
-        var advanced = CGRect(
-            x: frame.minX + shift,
-            y: frame.midY - height / 2,
-            width: width,
-            height: height)
-        if let visible {
-            guard advanced.minX >= visible.minX + gap,
-                  advanced.maxX <= visible.maxX - gap else {
-                return nil
-            }
-            if advanced.minY < visible.minY {
-                advanced.origin.y = visible.minY + gap
-            }
-        }
-        return advanced
-    }
-
-    /// Frame for a same-line inline ghost after words are appended to it. The
-    /// leading edge stays where it is, so text already on screen does not move.
-    /// Nil when the longer text no longer fits beside the caret; the caller
-    /// then lays the ghost out afresh, with wrapping.
-    static func extendedInlineFrame(
-        from frame: CGRect,
-        textSize: CGSize,
-        inputFrame: CGRect?,
-        visible: CGRect?
-    ) -> CGRect? {
-        guard frame.origin.x.isFinite, frame.origin.y.isFinite,
-              textSize.width.isFinite, textSize.width > 0 else {
-            return nil
-        }
-        var extended = frame
-        extended.size.width = max(ceil(textSize.width), frame.width)
-        if let inputFrame, extended.maxX > inputFrame.maxX - inlineTrailingInset { return nil }
-        if let visible, extended.maxX > visible.maxX - gap { return nil }
-        return extended
-    }
 
     /// CoTabby-style post-accept stability rule for inline ghosts. Hold small
     /// same-text drift, and briefly hold larger backward jumps because AX often

@@ -1,44 +1,54 @@
 import AppKit
-import SwiftUI
 
-/// The floating ghost text. Trimmed port of Cotabby's `OverlayController`: one
-/// borderless, non-activating, click-through `NSPanel` positioned at the caret
-/// in global Cocoa coordinates. It never becomes key/main, so the host app keeps
-/// keyboard focus while the suggestion is shown.
+/// The floating ghost text. One borderless, non-activating, click-through
+/// `NSPanel` at the caret in global Cocoa coordinates. It never becomes key or
+/// main, so the host app keeps keyboard focus while a suggestion shows.
+///
+/// Inline suggestions are drawn in the field's own font, starting at the caret
+/// on the field's baseline. Accepting or topping up an inline suggestion moves
+/// it from the layout already on screen, without waiting for another
+/// Accessibility read.
 @MainActor
 final class CotypingOverlayController {
     private var panel: CotypingOverlayPanel?
-    private var hosting: NSHostingView<CotypingGhostView>?
+    private var ghostView: CotypingGhostTextView?
     private(set) var isVisible = false
     private(set) var acceptanceText: String?
     private let sampler = CotypingBackgroundSampler()
     private var sampleGeneration = 0
     private var samplingInFlight = false
-    private var fontStabilizer = CotypingGhostFontSizeStabilizer()
-    private var lastInlineRender: InlineRenderState?
+    private var inline: InlineState?
 
-    private struct InlineRenderState {
+    /// What the visible inline ghost was laid out from.
+    private struct InlineState {
         var text: String
-        var frame: CGRect
-        var sourceStyle: CotypingFieldStyle?
-        var renderStyle: CotypingFieldStyle?
-        var lineHeight: CGFloat
-        var lineCount: Int
-        var visibleFrame: CGRect?
+        var layout: CotypingInlineGhostLayout
+        var caretRect: CGRect
         var inputFrameRect: CGRect?
-        var caretIsExact: Bool
-        var backgroundLuminance: CGFloat?
+        var precedingLine: String
+        var visible: CGRect?
+        var style: CotypingFieldStyle?
+        var emphasisLength: Int
+        var luminance: CGFloat?
     }
 
+    /// Room around the glyph boxes so antialiased edges are never clipped.
+    private static let inlinePadding: CGFloat = 2
+    private static let chromePadding = CGSize(width: 8, height: 4)
+    private static let mirrorPointSizes: ClosedRange<CGFloat> = 11...17
+
+    /// - Parameter emphasisLength: characters of `text` the next accept takes;
+    ///   nil when one accept takes all of it.
     func show(
         text: String,
         caretRect: CGRect,
         inputFrameRect: CGRect? = nil,
-        focusIdentityKey: String? = nil,
         style: CotypingFieldStyle? = nil,
         placement: CotypingOverlayPlacement = .inlineDefault,
         acceptanceText: String? = nil,
-        isRightToLeft: Bool = false
+        isRightToLeft: Bool = false,
+        precedingText: String = "",
+        emphasisLength: Int? = nil
     ) {
         guard !text.isEmpty,
               caretRect.origin.x.isFinite, caretRect.origin.y.isFinite,
@@ -46,216 +56,94 @@ final class CotypingOverlayController {
             hide()
             return
         }
-        let panel = ensurePanel()
-        guard let hosting else { return }
-
-        let mode = placement.mode
-        sampleGeneration += 1
-        let generation = sampleGeneration
-        let bundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+        let font = CotypingGhostFontSizing.font(
+            for: style, caretHeight: caretRect.height, caretIsExact: placement.caretIsExact)
         let visible = screenVisibleFrame(containing: caretRect)
-        let stabilizedCaretHeight = fontStabilizer.stabilizedCaretHeight(
-            caretRect.height,
-            focusSessionKey: Self.fontSessionKey(
-                focusIdentityKey: focusIdentityKey,
-                inputFrameRect: inputFrameRect,
-                caretRect: caretRect))
-        let renderStyle = CotypingGhostFontSizing.renderStyle(
-            from: style,
-            caretHeight: stabilizedCaretHeight,
-            caretIsExact: placement.caretIsExact)
-        let mirrorLayout = mode.isMirror
-            ? CotypingGhostTextLayout.mirrorLayout(text: text, style: renderStyle, visible: visible)
-            : nil
-        let inlineLayout = mode == .inline
-            ? CotypingInlineGhostLayout.make(
-                text: text,
-                caretRect: caretRect,
-                inputFrameRect: inputFrameRect,
-                style: renderStyle,
-                visible: visible,
-                isRightToLeft: isRightToLeft)
-            : nil
-        let displayText = mirrorLayout?.displayText ?? text
-        // Inline ghosts contrast against the real host pixels (sampled below);
-        // mirror sits on its own pill, so it keeps the appearance-based color.
-        let cachedLuminance = mode.isMirror ? nil : sampler.cachedLuminance(forApp: bundleID)
-        hosting.rootView = CotypingGhostView(
-            text: displayText, style: renderStyle, showsChrome: mode.isMirror,
-            inlineLayout: inlineLayout,
-            backgroundLuminance: cachedLuminance)
-        hosting.layoutSubtreeIfNeeded()
-
-        let fitting = hosting.fittingSize
-        let measured = CotypingGhostStyle.measuredTextSize(text, style: renderStyle)
-
-        // Inline placement tracks the ghost text's own line box centered on the
-        // caret's vertical center — never the host caret height, which differs
-        // between AppKit (AXBoundsForRange) and WebKit/Chromium
-        // (AXBoundsForTextMarkerRange) providers — so vertical alignment stays
-        // consistent across apps. Mirror keeps its chrome pill one line below.
-        let frame: CGRect
-        switch mode {
+        let emphasis = emphasisLength ?? text.count
+        sampleGeneration += 1
+        switch placement.mode {
         case .inline:
-            let font = CotypingGhostStyle.resolvedFont(from: renderStyle)
-            let lineHeight = inlineLayout?.lineHeight ?? ceil(font.ascender - font.descender)
-            if let inlineLayout {
-                let estimatedContent = CotypingInlineGhostLayout.estimatedContentSize(
-                    for: inlineLayout,
-                    style: renderStyle)
-                let contentSize = CGSize(
-                    width: max(fitting.width, estimatedContent.width),
-                    height: max(fitting.height, estimatedContent.height))
-                frame = inlineLayout.panelFrame(
-                    for: contentSize,
-                    caretRect: caretRect,
-                    visible: visible)
-            } else {
-                let textSize = CGSize(
-                    width: max(fitting.width, measured.width),
-                    height: max(fitting.height, measured.height))
-                frame = CotypingOverlayGeometry.inlineFrame(
-                    caret: caretRect, textSize: textSize,
-                    lineHeight: lineHeight, visible: visible)
+            let bundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
+            let precedingLine = String(precedingText.split(separator: "\n", omittingEmptySubsequences: false).last ?? "")
+            let state = InlineState(
+                text: text,
+                layout: .make(
+                    text: text, font: font, caretRect: caretRect, inputFrameRect: inputFrameRect,
+                    precedingLine: precedingLine, visible: visible, isRightToLeft: isRightToLeft),
+                caretRect: caretRect, inputFrameRect: inputFrameRect, precedingLine: precedingLine,
+                visible: visible, style: style, emphasisLength: emphasis,
+                luminance: sampler.cachedLuminance(forApp: bundleID))
+            guard presentInline(state) else {
+                hide()
+                return
             }
-            lastInlineRender = InlineRenderState(
-                text: text, frame: frame.integral, sourceStyle: style, renderStyle: renderStyle,
-                lineHeight: lineHeight,
-                lineCount: inlineLayout?.lines.count ?? 1,
-                visibleFrame: visible, inputFrameRect: inputFrameRect,
-                caretIsExact: placement.caretIsExact,
-                backgroundLuminance: cachedLuminance)
+            if state.luminance == nil { sampleBackground(behind: caretRect, forApp: bundleID) }
         case .mirror:
-            let mirrorSize = mirrorLayout?.textSize ?? measured
-            let content = CGSize(
-                width: max(fitting.width, mirrorSize.width + 16),
-                height: max(fitting.height, mirrorSize.height + 8))
-            frame = CotypingOverlayGeometry.mirrorFrame(
-                caret: caretRect, content: content, visible: visible)
-            lastInlineRender = nil
-        }
-        guard frame.origin.x.isFinite, frame.origin.y.isFinite else { hide(); return }
-
-        panel.setFrame(frame.integral, display: true)
-        panel.hasShadow = mode.isMirror
-        panel.orderFrontRegardless()
-        isVisible = true
-        self.acceptanceText = acceptanceText ?? text
-        // First suggestion in this app (no cached luminance): sample the real
-        // background asynchronously and refine the color. The generation token
-        // drops stale captures; the in-flight guard avoids a capture storm.
-        if !mode.isMirror, cachedLuminance == nil, !samplingInFlight {
-            samplingInFlight = true
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                defer { self.samplingInFlight = false }
-                let luminance = await self.sampler.sampleLuminance(at: caretRect, forApp: bundleID)
-                guard generation == self.sampleGeneration, self.isVisible,
-                      let hosting = self.hosting, let luminance else { return }
-                hosting.rootView = CotypingGhostView(
-                    text: text, style: renderStyle, showsChrome: false,
-                    inlineLayout: inlineLayout,
-                    backgroundLuminance: luminance)
-                self.lastInlineRender?.backgroundLuminance = luminance
+            inline = nil
+            guard presentMirror(
+                text: text, font: font, caretRect: caretRect, visible: visible,
+                emphasisLength: emphasis, isRightToLeft: isRightToLeft) else {
+                hide()
+                return
             }
         }
+        self.acceptanceText = acceptanceText ?? text
     }
 
-    /// Slides a visible inline ghost by the accepted text width, avoiding the
-    /// short AX re-anchor jitter after word-by-word acceptance.
+    /// Moves a visible inline ghost past text that was just accepted or typed,
+    /// as the host will show it, without waiting for the host's new caret.
     @discardableResult
     func advanceInline(
         to remainingText: String,
         insertedText: String,
-        isRightToLeft: Bool = false
+        isRightToLeft: Bool = false,
+        emphasisLength: Int? = nil
     ) -> Bool {
         guard isVisible,
-              !isRightToLeft,
+              var state = inline,
+              state.layout.isRightToLeft == isRightToLeft,
               !remainingText.isEmpty,
               !insertedText.isEmpty,
-              var render = lastInlineRender,
-              render.lineCount == 1,
-              let hosting,
-              render.text.hasPrefix(insertedText),
-              String(render.text.dropFirst(insertedText.count)) == remainingText else {
+              state.text.hasPrefix(insertedText),
+              String(state.text.dropFirst(insertedText.count)) == remainingText,
+              let firstLine = state.layout.lines.first,
+              firstLine.offset == 0,
+              firstLine.origin.x == (isRightToLeft ? state.caretRect.minX : state.caretRect.maxX) else {
             return false
         }
-        let renderedInsertedSize = CotypingGhostStyle.measuredTextSize(insertedText, style: render.renderStyle)
-        let hostInsertedWidth = render.caretIsExact
-            ? CotypingInsertedTextAdvance.width(of: insertedText, style: render.sourceStyle)
-            : nil
-        let insertedSize = CGSize(
-            width: ceil(hostInsertedWidth ?? renderedInsertedSize.width),
-            height: renderedInsertedSize.height)
-        hosting.rootView = CotypingGhostView(
-            text: remainingText, style: render.renderStyle, showsChrome: false,
-            backgroundLuminance: render.backgroundLuminance)
-        hosting.layoutSubtreeIfNeeded()
-        let remainingMeasured = CotypingGhostStyle.measuredTextSize(remainingText, style: render.renderStyle)
-        let remainingSize = CGSize(
-            width: max(hosting.fittingSize.width, remainingMeasured.width),
-            height: max(hosting.fittingSize.height, remainingMeasured.height))
-        guard let advancedFrame = CotypingOverlayGeometry.advancedInlineFrame(
-            from: render.frame, insertedTextSize: insertedSize,
-            remainingTextSize: remainingSize, lineHeight: render.lineHeight,
-            visible: render.visibleFrame)
-        else {
-            return false
-        }
-
-        sampleGeneration += 1
-        panel?.setFrame(advancedFrame.integral, display: true)
-        render.text = remainingText
-        render.frame = advancedFrame.integral
-        lastInlineRender = render
-        acceptanceText = remainingText
-        return true
+        let inserted = CotypingInlineGhostLayout.displayText(insertedText)
+        // Only text on the caret's own line moves the caret along that line.
+        guard inserted.count <= firstLine.text.count else { return false }
+        let advance = CotypingInlineGhostLayout.width(of: inserted, font: state.layout.font)
+        state.caretRect.origin.x += isRightToLeft ? -advance : advance
+        state.precedingLine += insertedText
+        state.text = remainingText
+        state.emphasisLength = emphasisLength ?? remainingText.count
+        state.layout = relayout(state)
+        return presentInline(state)
     }
 
-    /// Grows a visible same-line inline ghost in place when words are appended
-    /// to it. Returns false when the longer text no longer fits beside the
-    /// caret; the caller then lays it out afresh, with wrapping.
+    /// Adds words to the end of a visible inline ghost. Words already on
+    /// screen keep their places.
     @discardableResult
-    func extendInline(to text: String) -> Bool {
+    func extendInline(to text: String, emphasisLength: Int? = nil) -> Bool {
         guard isVisible,
-              var render = lastInlineRender,
-              render.lineCount == 1,
-              let hosting,
-              text.count > render.text.count,
-              text.hasPrefix(render.text),
-              !text.contains(where: \.isNewline) else {
+              var state = inline,
+              text.count > state.text.count,
+              text.hasPrefix(state.text) else {
             return false
         }
-        hosting.rootView = CotypingGhostView(
-            text: text, style: render.renderStyle, showsChrome: false,
-            backgroundLuminance: render.backgroundLuminance)
-        hosting.layoutSubtreeIfNeeded()
-        let measured = CotypingGhostStyle.measuredTextSize(text, style: render.renderStyle)
-        let size = CGSize(
-            width: max(hosting.fittingSize.width, measured.width),
-            height: max(hosting.fittingSize.height, measured.height))
-        guard let frame = CotypingOverlayGeometry.extendedInlineFrame(
-            from: render.frame, textSize: size,
-            inputFrame: render.inputFrameRect, visible: render.visibleFrame)
-        else {
-            hosting.rootView = CotypingGhostView(
-                text: render.text, style: render.renderStyle, showsChrome: false,
-                backgroundLuminance: render.backgroundLuminance)
-            return false
-        }
-
-        sampleGeneration += 1
-        panel?.setFrame(frame.integral, display: true)
-        render.text = text
-        render.frame = frame.integral
-        lastInlineRender = render
+        state.text = text
+        state.emphasisLength = emphasisLength ?? state.emphasisLength
+        state.layout = relayout(state)
+        guard presentInline(state) else { return false }
         acceptanceText = text
         return true
     }
 
-    /// Returns true when a delayed post-accept AX refresh should keep the
-    /// current inline geometry instead of re-presenting against likely stale
-    /// host caret coordinates.
+    /// Whether a re-read caret is close enough to the visible ghost to leave it
+    /// where it is. Hosts often publish an insertion before its caret moves,
+    /// so a short backward jump right after an accept is held too.
     func shouldHoldInlineReanchor(
         text: String,
         caretRect: CGRect,
@@ -267,29 +155,20 @@ final class CotypingOverlayController {
     ) -> Bool {
         guard isVisible,
               placement.mode == .inline,
-              let render = lastInlineRender,
-              render.text == text,
-              render.sourceStyle == style else {
+              let state = inline,
+              state.text == text,
+              let current = state.layout.lines.first else {
             return false
         }
-        let visible = screenVisibleFrame(containing: caretRect)
-        let layout = CotypingInlineGhostLayout.make(
-            text: text,
-            caretRect: caretRect,
-            inputFrameRect: inputFrameRect,
-            style: render.renderStyle,
-            visible: visible,
-            isRightToLeft: isRightToLeft)
-        let targetSize = CotypingInlineGhostLayout.estimatedContentSize(
-            for: layout,
-            style: render.renderStyle)
-        let target = layout.panelFrame(
-            for: targetSize,
-            caretRect: caretRect,
-            visible: visible).integral
+        let font = CotypingGhostFontSizing.font(
+            for: style ?? state.style, caretHeight: caretRect.height, caretIsExact: placement.caretIsExact)
+        let target = CotypingInlineGhostLayout.make(
+            text: text, font: font, caretRect: caretRect, inputFrameRect: inputFrameRect,
+            visible: screenVisibleFrame(containing: caretRect), isRightToLeft: isRightToLeft)
+        guard let targetLine = target.lines.first else { return false }
         return CotypingOverlayGeometry.shouldHoldInlineReanchor(
-            currentFrame: render.frame,
-            targetFrame: target,
+            currentFrame: CGRect(origin: current.origin, size: .zero),
+            targetFrame: CGRect(origin: targetLine.origin, size: .zero),
             millisecondsSinceLastAcceptance: millisecondsSinceLastAcceptance,
             isRightToLeft: isRightToLeft)
     }
@@ -298,22 +177,116 @@ final class CotypingOverlayController {
         panel?.orderOut(nil)
         isVisible = false
         acceptanceText = nil
-        lastInlineRender = nil
+        inline = nil
+        sampleGeneration += 1
     }
 
-    private static func fontSessionKey(
-        focusIdentityKey: String?,
-        inputFrameRect: CGRect?,
-        caretRect: CGRect
-    ) -> String {
-        if let focusIdentityKey, !focusIdentityKey.isEmpty {
-            return focusIdentityKey
+    // MARK: - Presentation
+
+    private func relayout(_ state: InlineState) -> CotypingInlineGhostLayout {
+        .make(
+            text: state.text, font: state.layout.font, caretRect: state.caretRect,
+            inputFrameRect: state.inputFrameRect, precedingLine: state.precedingLine,
+            visible: state.visible, isRightToLeft: state.layout.isRightToLeft)
+    }
+
+    private func presentInline(_ state: InlineState) -> Bool {
+        let box = state.layout.bounds
+        guard !state.layout.lines.isEmpty, !box.isNull,
+              box.origin.x.isFinite, box.origin.y.isFinite else { return false }
+        let frame = box.insetBy(dx: -Self.inlinePadding, dy: -Self.inlinePadding).integral
+        let color = CotypingGhostStyle.resolvedGhostColor(
+            from: state.style, isDarkEnvironment: Self.prefersDarkEnvironment,
+            measuredLuminance: state.luminance)
+        let emphasis = CotypingInlineGhostLayout.displayText(String(state.text.prefix(state.emphasisLength))).count
+        present(frame: frame, content: CotypingGhostTextView.Content(
+            lines: state.layout.lines.map {
+                .init(text: $0.text, offset: $0.offset,
+                      origin: CGPoint(x: $0.origin.x - frame.minX, y: $0.origin.y - frame.minY))
+            },
+            font: state.layout.font,
+            emphasisLength: emphasis,
+            color: color,
+            emphasisColor: color.withAlphaComponent(CotypingGhostStyle.emphasisOpacity),
+            isRightToLeft: state.layout.isRightToLeft))
+        inline = state
+        acceptanceText = state.text
+        return true
+    }
+
+    /// A popup one line below the caret, for carets with text after them on
+    /// the line or without exact geometry.
+    private func presentMirror(
+        text: String, font fieldFont: NSFont, caretRect: CGRect, visible: CGRect?,
+        emphasisLength: Int, isRightToLeft: Bool
+    ) -> Bool {
+        let size = min(Self.mirrorPointSizes.upperBound, max(Self.mirrorPointSizes.lowerBound, fieldFont.pointSize))
+        let font = NSFont(descriptor: fieldFont.fontDescriptor, size: size) ?? .systemFont(ofSize: size)
+        let lines = CotypingGhostTextLayout.wrappedLines(
+            text: text, font: font, maxWidth: CotypingGhostTextLayout.mirrorTextWidthBudget(visible: visible))
+        guard !lines.isEmpty else { return false }
+        let lineHeight = NSLayoutManager().defaultLineHeight(for: font)
+        let widest = lines.map { CotypingInlineGhostLayout.width(of: $0, font: font) }.max() ?? 0
+        let content = CGSize(
+            width: ceil(widest) + Self.chromePadding.width * 2,
+            height: ceil(lineHeight * CGFloat(lines.count)) + Self.chromePadding.height * 2)
+        let frame = CotypingOverlayGeometry.mirrorFrame(caret: caretRect, content: content, visible: visible).integral
+        // Center each glyph box in its line, top line first.
+        let glyphBox = font.ascender - font.descender
+        var offset = 0
+        var drawn: [CotypingGhostTextView.Line] = []
+        for (index, line) in lines.enumerated() {
+            let lineTop = frame.height - Self.chromePadding.height - lineHeight * CGFloat(index)
+            let baseline = lineTop - (lineHeight - glyphBox) / 2 - font.ascender
+            let x = isRightToLeft ? frame.width - Self.chromePadding.width : Self.chromePadding.width
+            drawn.append(.init(text: line, offset: offset, origin: CGPoint(x: x, y: baseline)))
+            offset += line.count + 1
         }
-        if let rect = inputFrameRect?.integral {
-            return "frame:\(Int(rect.minX)):\(Int(rect.minY)):\(Int(rect.width)):\(Int(rect.height))"
+        let leading = text.prefix { $0.isWhitespace }.count
+        let emphasis = CotypingInlineGhostLayout.displayText(
+            String(text.prefix(emphasisLength).dropFirst(leading))).count
+        present(frame: frame, content: CotypingGhostTextView.Content(
+            lines: drawn, font: font, emphasisLength: emphasis,
+            color: .secondaryLabelColor, emphasisColor: .labelColor,
+            isRightToLeft: isRightToLeft, showsChrome: true))
+        return true
+    }
+
+    private func present(frame: CGRect, content: CotypingGhostTextView.Content) {
+        let panel = ensurePanel()
+        guard let ghostView else { return }
+        panel.appearance = NSApp.effectiveAppearance
+        panel.hasShadow = content.showsChrome
+        panel.setFrame(frame, display: false)
+        ghostView.frame = CGRect(origin: .zero, size: frame.size)
+        ghostView.content = content
+        ghostView.displayIfNeeded()
+        if !isVisible || !panel.isVisible { panel.orderFrontRegardless() }
+        isVisible = true
+    }
+
+    /// The first suggestion in an app is drawn against the field's reported
+    /// colors; the real pixels behind it are then sampled once and the color
+    /// corrected if it would be hard to read.
+    private func sampleBackground(behind caretRect: CGRect, forApp bundleID: String?) {
+        guard !samplingInFlight else { return }
+        samplingInFlight = true
+        let generation = sampleGeneration
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.samplingInFlight = false }
+            let luminance = await self.sampler.sampleLuminance(at: caretRect, forApp: bundleID)
+            guard generation == self.sampleGeneration, self.isVisible,
+                  var state = self.inline, let luminance else { return }
+            state.luminance = luminance
+            _ = self.presentInline(state)
         }
-        let rect = caretRect.integral
-        return "caret:\(Int(rect.minX)):\(Int(rect.minY))"
+    }
+
+    /// Whether the system is in dark mode. The overlay panel's appearance can
+    /// lag the active app, so consult AppKit's effective appearance.
+    private static var prefersDarkEnvironment: Bool {
+        NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
     }
 
     /// Visible frame of the screen containing `rect`, or nil if none matches.
@@ -336,14 +309,12 @@ final class CotypingOverlayController {
         panel.animationBehavior = .none
         panel.level = NSWindow.Level(rawValue: NSWindow.Level.statusBar.rawValue + 2)
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
-        // Keep our ephemeral ghost out of screenshots, recordings, and our own
-        // background sampling.
+        // Keep the ghost out of screenshots, recordings, and background sampling.
         panel.sharingType = .none
-
-        let hosting = NSHostingView(rootView: CotypingGhostView(text: ""))
-        panel.contentView = hosting
+        let view = CotypingGhostTextView(frame: .zero)
+        panel.contentView = view
         self.panel = panel
-        self.hosting = hosting
+        ghostView = view
         return panel
     }
 }

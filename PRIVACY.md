@@ -325,11 +325,13 @@ This setting does not enable screen recording, screenshots, OCR, saved screen
 memory, or external access. Context is processed locally and held only in memory;
 context-grounded acceptances are excluded from saved learning. The setup preview
 never reads the screen: with this setting on, the rehearsal in Settings uses its
-own synthetic sample conversation as the nearby text. Before display, background
-validation reads the context again; while a suggestion is active it is polled
-for changes. Tab uses a recent validation (at most 600 ms old) and performs no
-screen traversal. A stalled validation, changed context/target, or revoked
-permission discards the suggestion.
+own synthetic sample conversation as the nearby text. The nearby text is read
+when the field gets focus and refreshed in the background at most every three
+seconds while you type, so a suggestion may use text that changed in the last
+few seconds. It is held for the focused field only and forgotten when focus
+leaves it or moves to another field. Turning the setting off or excluding
+the app or site forgets it at once and discards any suggestion that used it.
+Tab performs no screen traversal.
 Apps that do not expose visible static text through Accessibility get ordinary
 autocomplete without this additional context.
 

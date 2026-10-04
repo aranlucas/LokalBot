@@ -1,124 +1,94 @@
 import AppKit
-import SwiftUI
+import CoreText
 
-/// The inline ghost text. Keep this visually close to host text instead of a
-/// separate popup pill; CotypingRenderMode controls when popup placement is
-/// necessary.
-struct CotypingGhostView: View {
-    let text: String
-    var style: CotypingFieldStyle?
-    var showsChrome = false
-    var inlineLayout: CotypingInlineGhostLayout?
-    /// Average luminance (0…1) of the host pixels behind the ghost, sampled from
-    /// the screen when available; lets the color contrast with the real
-    /// background instead of guessing from AX/appearance.
-    var backgroundLuminance: CGFloat?
-
-    /// Matches the host field's font family at a clamped size; falls back to the
-    /// system font at the field's (clamped) size — never a fixed 13 pt.
-    private var font: Font {
-        if let nsFont = CotypingGhostStyle.font(from: style) { return Font(nsFont) }
-        return .system(size: CotypingGhostStyle.clampedPointSize(style?.fontPointSize))
-    }
-    /// The ghost color as a concrete sRGB color, so it paints identically no
-    /// matter what appearance the borderless overlay panel resolves to. Contrasts
-    /// against the real background sampled from the screen (`backgroundLuminance`)
-    /// when available, else the host field's colors / system appearance.
-    private var color: Color {
-        Color(nsColor: CotypingGhostStyle.resolvedGhostColor(
-            from: style, isDarkEnvironment: Self.prefersDarkEnvironment,
-            measuredLuminance: backgroundLuminance))
+/// Draws a suggestion's lines at exact baselines. Plain AppKit drawing keeps
+/// the ghost on the field's own baseline and avoids a SwiftUI layout pass on
+/// every keystroke. The word the next accept takes is drawn a little stronger
+/// than the rest, so it is clear what Tab will insert.
+final class CotypingGhostTextView: NSView {
+    struct Line: Equatable {
+        let text: String
+        /// Where `text` starts in the displayed suggestion, in characters.
+        let offset: Int
+        /// The baseline's leading end in view coordinates (its right end for
+        /// right-to-left text).
+        let origin: CGPoint
     }
 
-    /// Whether the system is in dark mode. The overlay panel's appearance can
-    /// lag the active app, so consult AppKit's effective system appearance when
-    /// the host field reports no colors to derive from.
-    private static var prefersDarkEnvironment: Bool {
-        NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+    struct Content: Equatable {
+        var lines: [Line]
+        var font: NSFont
+        /// Characters from the start of the suggestion the next accept takes.
+        var emphasisLength: Int
+        var color: NSColor
+        var emphasisColor: NSColor
+        var isRightToLeft = false
+        /// Popup placement draws its own background.
+        var showsChrome = false
     }
 
-    @ViewBuilder
-    var body: some View {
-        if showsChrome {
-            textView
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color(nsColor: .windowBackgroundColor))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .strokeBorder(Color(nsColor: .separatorColor), lineWidth: 1)
-                )
-        } else {
-            textView
+    var content: Content? {
+        didSet { if content != oldValue { needsDisplay = true } }
+    }
+
+    override var isFlipped: Bool { false }
+    override var isOpaque: Bool { false }
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard let content, let context = NSGraphicsContext.current?.cgContext else { return }
+        if content.showsChrome {
+            let shape = NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 7, yRadius: 7)
+            NSColor.windowBackgroundColor.setFill()
+            shape.fill()
+            NSColor.separatorColor.setStroke()
+            shape.lineWidth = 1
+            shape.stroke()
+        }
+        context.saveGState()
+        defer { context.restoreGState() }
+        context.textMatrix = .identity
+        for line in content.lines {
+            let ctLine = CTLineCreateWithAttributedString(attributed(line, content: content))
+            let width = CGFloat(CTLineGetTypographicBounds(ctLine, nil, nil, nil))
+            context.textPosition = CGPoint(
+                x: content.isRightToLeft ? line.origin.x - width : line.origin.x,
+                y: line.origin.y)
+            CTLineDraw(ctLine, context)
         }
     }
 
-    @ViewBuilder
-    private var textView: some View {
-        if !showsChrome, let inlineLayout {
-            inlineTextView(layout: inlineLayout)
-        } else {
-            singleTextView
+    private func attributed(_ line: Line, content: Content) -> NSAttributedString {
+        let text = NSMutableAttributedString(string: line.text, attributes: [
+            .font: content.font,
+            NSAttributedString.Key(kCTForegroundColorAttributeName as String): content.color.cgColor,
+        ])
+        let emphasized = min(line.text.count, max(0, content.emphasisLength - line.offset))
+        if emphasized > 0 {
+            let end = line.text.index(line.text.startIndex, offsetBy: emphasized)
+            text.addAttribute(
+                NSAttributedString.Key(kCTForegroundColorAttributeName as String),
+                value: content.emphasisColor.cgColor,
+                range: NSRange(line.text.startIndex..<end, in: line.text))
         }
-    }
-
-    private var singleTextView: some View {
-        Text(attributedText)
-            .multilineTextAlignment(.leading)
-            .lineLimit(showsChrome ? nil : 1)
-            .truncationMode(.tail)
-            .fixedSize(horizontal: true, vertical: true)
-    }
-
-    private func inlineTextView(layout: CotypingInlineGhostLayout) -> some View {
-        let alignment: HorizontalAlignment = layout.isRightToLeft ? .trailing : .leading
-        return VStack(alignment: alignment, spacing: 0) {
-            ForEach(layout.lines) { line in
-                Text(line.text)
-                    .font(font)
-                    .foregroundStyle(color)
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: true)
-                    .padding(layout.isRightToLeft ? .trailing : .leading, line.leadingIndent)
-            }
-        }
-        .fixedSize(horizontal: true, vertical: true)
-    }
-
-    private var attributedText: AttributedString {
-        guard showsChrome else {
-            var attributed = AttributedString(text)
-            attributed.foregroundColor = color
-            attributed.font = font
-            return attributed
-        }
-        return styledChromeText
-    }
-
-    private var styledChromeText: AttributedString {
-        var attributed = AttributedString(text)
-        attributed.foregroundColor = color
-        attributed.font = font
-        let prefix = CotypingGhostHighlight.acceptancePrefix(in: text)
-        guard !prefix.isEmpty, text.hasPrefix(prefix) else {
-            return attributed
-        }
-        let characters = attributed.characters
-        let end = characters.index(characters.startIndex, offsetBy: prefix.count)
-        let range = characters.startIndex..<end
-        attributed[range].foregroundColor = .primary
-        attributed[range].font = .system(size: CotypingGhostStyle.clampedPointSize(style?.fontPointSize), weight: .semibold)
-        return attributed
+        return text
     }
 }
 
 nonisolated enum CotypingGhostHighlight {
-    static func acceptancePrefix(in text: String) -> String {
+    /// The part of `text` the next accept keypress takes, with the user's
+    /// word-or-phrase and punctuation settings.
+    static func acceptancePrefix(
+        in text: String,
+        granularity: CotypingAcceptGranularity = .word,
+        autoAcceptTrailingPunctuation: Bool = true
+    ) -> String {
         guard !text.isEmpty else { return "" }
-        let chunk = CotypingAcceptanceChunker.nextWord(in: text)
+        let chunk = switch granularity {
+        case .word:
+            CotypingAcceptanceChunker.nextWord(in: text, autoAcceptTrailingPunctuation: autoAcceptTrailingPunctuation)
+        case .phrase:
+            CotypingAcceptanceChunker.nextPhrase(in: text, autoAcceptTrailingPunctuation: autoAcceptTrailingPunctuation)
+        }
         return text.hasPrefix(chunk) ? chunk : ""
     }
 }

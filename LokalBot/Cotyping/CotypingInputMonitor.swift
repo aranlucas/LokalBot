@@ -41,6 +41,9 @@ struct CotypingInputEvent: Equatable, Sendable {
 final class CotypingInputMonitor {
     /// Fired for every observed keyDown (not the accept key consumption itself).
     var onKey: ((CotypingInputEvent) -> Void)?
+    /// Fired on every left mouse button press: a click may move focus or the
+    /// caret. The event itself is not read.
+    var onPointerDown: (() -> Void)?
     /// Invoked by the accept tap with the scope of the key that fired (next
     /// chunk vs whole). Returns `true` if it acted (key swallowed); else passthrough.
     var onAcceptKey: ((CotypingAcceptScope) -> Bool)?
@@ -79,6 +82,7 @@ final class CotypingInputMonitor {
     func start() -> Bool {
         guard !isRunning else { return true }
         let mask = CGEventMask(1 << CGEventType.keyDown.rawValue)
+            | CGEventMask(1 << CGEventType.leftMouseDown.rawValue)
         guard let tap = CGEvent.tapCreate(
             tap: .cgSessionEventTap, place: .headInsertEventTap, options: .listenOnly,
             eventsOfInterest: mask, callback: cotypingObserverCallback,
@@ -158,6 +162,10 @@ final class CotypingInputMonitor {
     fileprivate func handleObserver(type: CGEventType, event: CGEvent) {
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             if let observerTap { CGEvent.tapEnable(tap: observerTap, enable: true) }
+            return
+        }
+        if type == .leftMouseDown {
+            onPointerDown?()
             return
         }
         guard type == .keyDown else { return }

@@ -24,6 +24,14 @@ final class LlamaCotypingRuntimeTests: XCTestCase {
 
     private let standardSpecs = LlamaSamplerSpec.specs(from: .standard)
 
+    /// A memory warning while suggestions are coming leaves the model loaded,
+    /// so the next keystroke does not wait for a reload.
+    func testAMemoryWarningFreesTheModelOnlyAfterAMinuteIdle() {
+        XCTAssertTrue(LlamaCotypingRuntime.isIdle(lastUsedUptime: nil, now: 100))
+        XCTAssertFalse(LlamaCotypingRuntime.isIdle(lastUsedUptime: 90, now: 100))
+        XCTAssertTrue(LlamaCotypingRuntime.isIdle(lastUsedUptime: 30, now: 100))
+    }
+
     func testArgmaxTokenChoosesLargestFiniteLogit() {
         let logits: [Float] = [-3.0, .nan, 0.4, 1.2, -0.1]
         let token = logits.withUnsafeBufferPointer { buffer in

@@ -7,8 +7,7 @@ extension CotypingCoordinator {
     func acceptFromTap(_ scope: CotypingAcceptScope) -> Bool {
         guard isRunning, !discardRevokedMemoryContext() else { return false }
         if let activeVisibleContext,
-           !CotypingVisibleContext.Policy(settings: settingsProvider()).permits(activeVisibleContext.target)
-                || !focusTracker.hasFreshVisibleContext(activeVisibleContext) {
+           !CotypingVisibleContext.Policy(settings: settingsProvider()).permits(activeVisibleContext.target) {
             clearSuggestion()
             state = .idle
             return false
@@ -23,11 +22,6 @@ extension CotypingCoordinator {
             clearSuggestion()
             state = .idle
             return false
-        }
-        if freezeStreamedSuggestionForAcceptance() {
-            // The model was still writing when the key came, so there is more
-            // to say: what was accepted from can be topped up like any other.
-            current.isOpenEnded = CotypingSuggestionExtension.isOpenEnded(current.fullText, wordLimit: 1)
         }
         let live = CotypingAXHelper.resolveAcceptanceSnapshot(
             cachedField: focusTracker.focus.field)
@@ -126,7 +120,8 @@ extension CotypingCoordinator {
             if !overlay.advanceInline(
                 to: remainingText,
                 insertedText: insertionText,
-                isRightToLeft: CotypingTextDirectionDetector.isRightToLeft(liveField.precedingText)) {
+                isRightToLeft: CotypingTextDirectionDetector.isRightToLeft(liveField.precedingText),
+                emphasisLength: acceptEmphasisLength(for: remainingText)) {
                 showOverlay(text: remainingText, field: live.field ?? current.field)
             }
             syncAcceptInterception()
@@ -201,10 +196,10 @@ extension CotypingCoordinator {
     func present(
         _ newSession: CotypingSession,
         overlayText: String,
-        acceptanceText: String? = nil,
-        streamedWork: UInt64? = nil
+        acceptanceText: String? = nil
     ) {
-        startSession(newSession, streamedWork: streamedWork)
+        pendingInsertionConsumedCount = nil
+        session = newSession
         showOverlay(text: overlayText, field: newSession.field, acceptanceText: acceptanceText)
         markReady(acceptanceText ?? overlayText)
         noteSuggestionShown(newSession)
@@ -218,16 +213,6 @@ extension CotypingCoordinator {
         state = .ready(text: text)
     }
 
-    private func startSession(_ newSession: CotypingSession, streamedWork: UInt64?) {
-        pendingInsertionConsumedCount = nil
-        session = newSession
-        if let streamedWork {
-            streamAcceptanceFence.markPresented(work: streamedWork)
-        } else {
-            streamAcceptanceFence.reset()
-        }
-    }
-
     func clearSuggestion() {
         if let completed = acceptedSuggestionBatch.complete() {
             stats.suggestionCompleted()
@@ -239,25 +224,9 @@ extension CotypingCoordinator {
         }
         session = nil
         cancelSuggestionExtension()
-        streamAcceptanceFence.reset()
         pendingInsertionConsumedCount = nil
         overlay.hide()
-        pendingStreamPartial = nil
-        streamValidationGeneration &+= 1
-        streamValidationTask?.cancel()
-        streamValidationTask = nil
         syncAcceptInterception()
-    }
-
-    /// Returns whether a stream was still running and has been stopped.
-    private func freezeStreamedSuggestionForAcceptance() -> Bool {
-        guard streamAcceptanceFence.consumeForAcceptance() != nil else { return false }
-        cancelPendingGenerationWork()
-        pendingStreamPartial = nil
-        streamValidationGeneration &+= 1
-        streamValidationTask?.cancel()
-        streamValidationTask = nil
-        return true
     }
 
     private func syncAcceptInterception() {

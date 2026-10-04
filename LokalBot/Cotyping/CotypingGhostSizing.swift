@@ -1,93 +1,41 @@
 import AppKit
 
+/// Picks the font a suggestion is drawn in: the field's own font at its own
+/// size when Accessibility reports one, so the ghost reads as the next
+/// characters of the line, and otherwise the system font sized from the caret.
 nonisolated enum CotypingGhostFontSizing {
-    static let minimumGhostFontSize: CGFloat = 14
-    static let maximumGhostFontSize: CGFloat = 24
-    static let maximumEstimatedGhostFontSize: CGFloat = 16
-    static let fontToLineHeightRatio: CGFloat = 0.78
-    static let absoluteMinimumPointSize: CGFloat = 9
+    static let minimumPointSize: CGFloat = 8
+    static let maximumPointSize: CGFloat = 48
+    /// An estimated caret comes from the field frame and says little about the
+    /// text, so a size guessed from it stays modest.
+    static let maximumEstimatedPointSize: CGFloat = 16
+    /// The system font's glyph box is about 1.2 times its point size, and web
+    /// engines report a caret about as tall as that box.
+    static let pointSizePerCaretHeight: CGFloat = 1 / 1.2
 
-    struct FieldFontMetrics: Equatable {
-        let pointSize: CGFloat
-        let ascender: CGFloat
-        let descender: CGFloat
+    static func font(for style: CotypingFieldStyle?, caretHeight: CGFloat, caretIsExact: Bool) -> NSFont {
+        let size = min(maximumPointSize, max(minimumPointSize, pointSize(
+            for: style, caretHeight: caretHeight, caretIsExact: caretIsExact)))
+        return style?.fontName.flatMap { NSFont(name: $0, size: size) } ?? .systemFont(ofSize: size)
     }
 
-    static func pointSize(
-        caretHeight: CGFloat,
-        fieldMetrics: FieldFontMetrics?,
-        caretIsExact: Bool,
-        sizeMultiplier: CGFloat = 1
-    ) -> CGFloat {
-        let maximum = caretIsExact ? maximumGhostFontSize : maximumEstimatedGhostFontSize
-        let ratio = metricRatio(fieldMetrics) ?? fontToLineHeightRatio
-        let autoSize = min(maximum, max(minimumGhostFontSize, caretHeight * ratio))
-        return max(absoluteMinimumPointSize, autoSize * max(sizeMultiplier, 0))
-    }
-
-    static func renderStyle(
-        from style: CotypingFieldStyle?,
-        caretHeight: CGFloat,
-        caretIsExact: Bool
-    ) -> CotypingFieldStyle? {
-        let referenceFont = style.flatMap(CotypingGhostStyle.font(from:))
-        let metrics = referenceFont.map {
-            FieldFontMetrics(
-                pointSize: $0.pointSize,
-                ascender: $0.ascender,
-                descender: $0.descender)
+    static func pointSize(for style: CotypingFieldStyle?, caretHeight: CGFloat, caretIsExact: Bool) -> CGFloat {
+        guard let reported = style?.fontPointSize, reported.isFinite, reported > 0 else {
+            guard caretHeight.isFinite, caretHeight > 0 else { return NSFont.systemFontSize }
+            let estimate = caretHeight * pointSizePerCaretHeight
+            return caretIsExact ? estimate : min(estimate, maximumEstimatedPointSize)
         }
-        let size = pointSize(
-            caretHeight: caretHeight,
-            fieldMetrics: metrics,
-            caretIsExact: caretIsExact)
-        return CotypingFieldStyle(
-            fontName: style?.fontName,
-            fontPointSize: size,
-            colorHex: style?.colorHex,
-            backgroundColorHex: style?.backgroundColorHex)
-    }
-
-    private static func metricRatio(_ metrics: FieldFontMetrics?) -> CGFloat? {
-        guard let metrics, metrics.pointSize > 0 else { return nil }
-        let glyphBoxHeight = metrics.ascender - metrics.descender
-        guard glyphBoxHeight > 0 else { return nil }
-        return metrics.pointSize / glyphBoxHeight
-    }
-}
-
-nonisolated struct CotypingGhostFontSizeStabilizer {
-    private var sessionKey: String?
-    private var minCaretHeight: CGFloat?
-
-    mutating func stabilizedCaretHeight(_ caretHeight: CGFloat, focusSessionKey: String) -> CGFloat {
-        guard caretHeight > 0 else {
-            return caretHeight
-        }
-        if sessionKey != focusSessionKey {
-            sessionKey = focusSessionKey
-            minCaretHeight = caretHeight
-            return caretHeight
-        }
-        let stabilized = min(caretHeight, minCaretHeight ?? caretHeight)
-        minCaretHeight = stabilized
-        return stabilized
-    }
-}
-
-nonisolated enum CotypingInsertedTextAdvance {
-    static func width(of text: String, style: CotypingFieldStyle?) -> CGFloat? {
-        guard !text.isEmpty,
-              let style,
-              let pointSize = style.fontPointSize,
-              pointSize.isFinite,
-              pointSize > 0 else {
-            return nil
-        }
-        let font = style.fontName.flatMap { NSFont(name: $0, size: pointSize) }
-            ?? NSFont.systemFont(ofSize: pointSize)
-        let width = (text as NSString).size(withAttributes: [.font: font]).width
-        guard width.isFinite, width > 0 else { return nil }
-        return width
+        // Zoomed pages and documents report the unzoomed size. Only a caret far
+        // outside the font's own glyph box, beyond what line spacing explains,
+        // is read as zoom.
+        guard caretIsExact, caretHeight.isFinite, caretHeight > 0 else { return reported }
+        let reference = style?.fontName.flatMap { NSFont(name: $0, size: reported) }
+            ?? .systemFont(ofSize: reported)
+        let glyphBox = reference.ascender - reference.descender
+        guard glyphBox > 0 else { return reported }
+        let ratio = caretHeight / glyphBox
+        if ratio < 0.8 { return reported * ratio }
+        if ratio > 2.4 { return reported * ratio / 1.2 }
+        return reported
     }
 }

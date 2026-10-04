@@ -7,19 +7,26 @@ import ScreenCaptureKit
 /// SDKs, so this is the supported way to read what's actually on screen.
 ///
 /// The overlay panel sets `sharingType = .none`, so a capture never includes our
-/// own ghost. Results are cached briefly per app, so repeat suggestions in one
-/// field reuse the measurement instead of re-capturing on every keystroke.
+/// own ghost. Results are cached per app and light or dark mode: a field's
+/// background rarely changes, and a fresh capture would recolor the ghost a
+/// moment after it appears.
 @MainActor
 final class CotypingBackgroundSampler {
     private var cache: [String: (luminance: CGFloat, at: Date)] = [:]
-    private static let cacheTTL: TimeInterval = 8
+    private static let cacheTTL: TimeInterval = 300
 
     /// A still-fresh luminance for `bundleID`, used to color the ghost instantly
     /// (no capture, no flash) for repeat suggestions in the same app.
     func cachedLuminance(forApp bundleID: String?) -> CGFloat? {
-        guard let bundleID, let hit = cache[bundleID],
+        guard let key = Self.key(bundleID), let hit = cache[key],
               Date().timeIntervalSince(hit.at) < Self.cacheTTL else { return nil }
         return hit.luminance
+    }
+
+    private static func key(_ bundleID: String?) -> String? {
+        guard let bundleID else { return nil }
+        let dark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        return bundleID + (dark ? "/dark" : "/light")
     }
 
     /// Capture the strip behind `caretRect` and return its average luminance
@@ -28,7 +35,7 @@ final class CotypingBackgroundSampler {
     func sampleLuminance(at caretRect: CGRect, forApp bundleID: String?) async -> CGFloat? {
         guard CGPreflightScreenCaptureAccess(),
               let luminance = await Self.captureLuminance(at: caretRect) else { return nil }
-        if let bundleID { cache[bundleID] = (luminance, Date()) }
+        if let key = Self.key(bundleID) { cache[key] = (luminance, Date()) }
         return luminance
     }
 

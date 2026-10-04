@@ -9,15 +9,22 @@ import Foundation
 @MainActor
 final class CotypingSpellChecker {
     private let documentTag = NSSpellChecker.uniqueSpellDocumentTag()
+    /// Each keystroke asks several times about the same text; the language
+    /// is recognized once.
+    private var lastVerdict: (window: String, applies: Bool)?
 
     /// Whether typo/known-word verdicts are meaningful for the text at the
     /// caret. False when the context is confidently in a language macOS has no
     /// dictionary for (Serbian, Croatian, Montenegrin, …) — every spell-gated
     /// policy must stand down instead of flagging the whole language.
     func verdictsApply(context: String) -> Bool {
-        CotypingSpellLanguageGate.spellVerdictsApply(
-            context: context,
+        let window = context.suffix(CotypingSpellLanguageGate.contextWindowCharacters)
+        if let lastVerdict, lastVerdict.window == window { return lastVerdict.applies }
+        let applies = CotypingSpellLanguageGate.spellVerdictsApply(
+            context: String(window),
             availableLanguages: NSSpellChecker.shared.availableLanguages)
+        lastVerdict = (String(window), applies)
+        return applies
     }
 
     /// True when the whole word is misspelled (range must start at 0 and span the

@@ -13,10 +13,6 @@ enum CotypingSeamGuard {
     private static let junkRunLength = 4
     private static let minimumSeamWordLength = 4
 
-    static func allowsStreamedPartial(precedingText: String, completion: String) -> Bool {
-        !introducesJunkPunctuationRun(precedingText: precedingText, completion: completion)
-    }
-
     static func verdict(
         precedingText: String,
         completion: String,
@@ -105,22 +101,5 @@ enum CotypingSeamGuard {
                 return false
             }
         }
-    }
-}
-
-/// Decides whether a streamed cumulative partial may replace the currently
-/// rendered ghost text. Async hops can deliver older partials late, and the
-/// normalizer can trim a longer raw stream into a different visible prefix, so
-/// streamed UI updates are monotonic: first text may render, then only strict
-/// visible extensions may replace it.
-enum CotypingStreamedGhostTextPolicy {
-    static func isRenderableExtension(candidate: String, currentlyRendered: String?) -> Bool {
-        guard !candidate.isEmpty else {
-            return false
-        }
-        guard let currentlyRendered, !currentlyRendered.isEmpty else {
-            return true
-        }
-        return candidate.count > currentlyRendered.count && candidate.hasPrefix(currentlyRendered)
     }
 }

@@ -1,3 +1,4 @@
+import Accelerate
 import Foundation
 import LlamaCore
 
@@ -90,6 +91,8 @@ actor LlamaCotypingRuntime {
     private var cachedTokens: [Int32] = []
     private var tokenPrefixIndex: CotypingTokenPrefixIndex?
     private(set) var lastPrefillTokenCount: Int = 0
+    /// When a suggestion was last generated, for the memory-pressure policy.
+    private var lastUsedUptime: TimeInterval?
     /// True only for pure-attention models, whose per-position KV cells can be
     /// partially evicted (`seq_rm` at a non-zero p0). Recurrent/hybrid (SSM/Mamba)
     /// models cannot rewind their rolling state to a prefix, so they full-reprefill.
@@ -340,8 +343,22 @@ actor LlamaCotypingRuntime {
     /// Frees the model + context under memory pressure. The next `generate`
     /// call lazily reloads via `loadIfNeeded` (or the engine routes to HTTP if
     /// reload fails). Keeps cotyping from OOMing the app under a large model.
-    func handleMemoryPressure() {
+    ///
+    /// A warning while someone is typing leaves the model loaded: dropping it
+    /// would make their next keystroke wait for a reload. Critical pressure,
+    /// or a warning after a minute without suggestions, frees it.
+    func handleMemoryPressure(isCritical: Bool = true) {
+        guard isCritical || Self.isIdle(lastUsedUptime: lastUsedUptime, now: ProcessInfo.processInfo.systemUptime) else {
+            return
+        }
         unload()
+    }
+
+    nonisolated static let idleUnloadSeconds: TimeInterval = 60
+
+    nonisolated static func isIdle(lastUsedUptime: TimeInterval?, now: TimeInterval) -> Bool {
+        guard let lastUsedUptime else { return true }
+        return now - lastUsedUptime >= idleUnloadSeconds
     }
 
     /// Runs one priming decode so Metal pipelines are hot before the first real
@@ -464,6 +481,7 @@ actor LlamaCotypingRuntime {
         onToken: @Sendable (String) -> Bool
     ) throws -> String {
         guard let ctx, let vocab, !promptTokens.isEmpty else { return "" }
+        lastUsedUptime = ProcessInfo.processInfo.systemUptime
         let promptTokens = Self.boundedPromptTokens(
             promptTokens, contextSize: Int(llama_n_ctx(ctx)),
             outputReserve: maxTokens + requiredPrefixUTF8.count)
@@ -585,11 +603,24 @@ actor LlamaCotypingRuntime {
         return llama_vocab_is_eog(vocab, token)
     }
 
+    /// Runs once per generated token over the whole vocabulary (262k entries
+    /// for Gemma), so it is vectorized. The vector maximum is wrong when a
+    /// NaN is present, which the sum reveals; the scalar scan below then
+    /// decides, as it does when every logit is -infinity.
     nonisolated static func argmaxToken(
         in logits: UnsafePointer<Float>?,
         vocabularySize: Int32
     ) -> Int32? {
         guard let logits, vocabularySize > 0 else { return nil }
+        let count = vDSP_Length(vocabularySize)
+        var sum: Float = 0
+        vDSP_sve(logits, 1, &sum, count)
+        var maximum: Float = 0
+        var maximumIndex: vDSP_Length = 0
+        vDSP_maxvi(logits, 1, &maximum, &maximumIndex, count)
+        if !sum.isNaN, maximum > -Float.infinity, maximumIndex < count {
+            return Int32(maximumIndex)
+        }
         var bestToken: Int32?
         var bestLogit = -Float.infinity
         for index in 0..<Int(vocabularySize) {

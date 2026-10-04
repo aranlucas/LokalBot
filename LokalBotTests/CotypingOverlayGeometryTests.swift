@@ -5,57 +5,6 @@ import XCTest
 final class CotypingOverlayGeometryTests: XCTestCase {
     private let screen = CGRect(x: 0, y: 0, width: 1440, height: 900)
 
-    /// The core consistency property: two AX providers reporting the same line
-    /// center with different caret heights (AppKit line box vs WebKit marker
-    /// bounds) must place the ghost at the identical vertical center and height.
-    func testInlineCentersOnCaretRegardlessOfCaretHeight() {
-        let shortCaret = CotypingOverlayGeometry.inlineFrame(
-            caret: CGRect(x: 100, y: 500, width: 0, height: 14),   // midY 507
-            textSize: CGSize(width: 60, height: 16), lineHeight: 16, visible: screen)
-        let tallCaret = CotypingOverlayGeometry.inlineFrame(
-            caret: CGRect(x: 100, y: 497, width: 0, height: 20),   // midY 507
-            textSize: CGSize(width: 60, height: 16), lineHeight: 16, visible: screen)
-        XCTAssertEqual(shortCaret.midY, 507, accuracy: 0.5)
-        XCTAssertEqual(tallCaret.midY, 507, accuracy: 0.5)
-        XCTAssertEqual(shortCaret.height, tallCaret.height)
-    }
-
-    func testInlineAnchorsRightOfCaretWithGap() {
-        let frame = CotypingOverlayGeometry.inlineFrame(
-            caret: CGRect(x: 100, y: 500, width: 0, height: 16),
-            textSize: CGSize(width: 60, height: 16), lineHeight: 16, visible: screen)
-        XCTAssertEqual(frame.minX, 102)
-        XCTAssertEqual(frame.width, 60)
-    }
-
-    func testAdvancedInlineFrameSlidesByAcceptedTextWidth() throws {
-        let frame = CotypingOverlayGeometry.inlineFrame(
-            caret: CGRect(x: 100, y: 500, width: 0, height: 16),
-            textSize: CGSize(width: 160, height: 16), lineHeight: 16, visible: screen)
-        let advanced = try XCTUnwrap(CotypingOverlayGeometry.advancedInlineFrame(
-            from: frame,
-            insertedTextSize: CGSize(width: 42, height: 16),
-            remainingTextSize: CGSize(width: 118, height: 16),
-            lineHeight: 16,
-            visible: screen))
-
-        XCTAssertEqual(advanced.minX, frame.minX + 42, accuracy: 0.5)
-        XCTAssertEqual(advanced.midY, frame.midY, accuracy: 0.5)
-        XCTAssertEqual(advanced.width, 118)
-    }
-
-    func testAdvancedInlineFrameFallsBackWhenSlideWouldOverflow() {
-        let frame = CGRect(x: 1340, y: 500, width: 90, height: 16)
-        let advanced = CotypingOverlayGeometry.advancedInlineFrame(
-            from: frame,
-            insertedTextSize: CGSize(width: 50, height: 16),
-            remainingTextSize: CGSize(width: 70, height: 16),
-            lineHeight: 16,
-            visible: screen)
-
-        XCTAssertNil(advanced)
-    }
-
     func testInlineReanchorHoldsSmallSameTextDrift() {
         XCTAssertTrue(CotypingOverlayGeometry.shouldHoldInlineReanchor(
             currentFrame: CGRect(x: 120, y: 500, width: 100, height: 16),
@@ -99,148 +48,6 @@ final class CotypingOverlayGeometryTests: XCTestCase {
             currentFrame: CGRect(x: 120, y: 500, width: 100, height: 16),
             targetFrame: CGRect(x: 120, y: 512, width: 100, height: 16),
             millisecondsSinceLastAcceptance: 80))
-    }
-
-    func testInlineClampsToRightEdgeInsteadOfOverflowing() {
-        let frame = CotypingOverlayGeometry.inlineFrame(
-            caret: CGRect(x: 1400, y: 500, width: 0, height: 16),
-            textSize: CGSize(width: 200, height: 16), lineHeight: 16, visible: screen)
-        XCTAssertLessThanOrEqual(frame.maxX, screen.maxX)
-    }
-
-    func testInlineUsesLineHeightFloorWhenTextHeightUnreliable() {
-        let frame = CotypingOverlayGeometry.inlineFrame(
-            caret: CGRect(x: 10, y: 500, width: 0, height: 40),
-            textSize: CGSize(width: 60, height: 0), lineHeight: 18, visible: nil)
-        XCTAssertEqual(frame.height, 18)
-    }
-
-    func testGhostFontSizingDerivesFromCaretHeight() {
-        let size = CotypingGhostFontSizing.pointSize(
-            caretHeight: 20,
-            fieldMetrics: nil,
-            caretIsExact: true)
-
-        XCTAssertEqual(size, 15.6, accuracy: 0.1)
-    }
-
-    func testGhostFontSizingCapsEstimatedCaretFrames() {
-        let size = CotypingGhostFontSizing.pointSize(
-            caretHeight: 80,
-            fieldMetrics: nil,
-            caretIsExact: false)
-
-        XCTAssertEqual(size, CotypingGhostFontSizing.maximumEstimatedGhostFontSize)
-    }
-
-    func testGhostRenderStylePreservesHostColorsWhileReplacingPointSize() throws {
-        let base = CotypingFieldStyle(
-            fontName: NSFont.systemFont(ofSize: 13).fontName,
-            fontPointSize: 13,
-            colorHex: "123456",
-            backgroundColorHex: "ABCDEF")
-        let render = try XCTUnwrap(CotypingGhostFontSizing.renderStyle(
-            from: base,
-            caretHeight: 24,
-            caretIsExact: true))
-
-        XCTAssertEqual(render.fontName, base.fontName)
-        XCTAssertNotEqual(render.fontPointSize, base.fontPointSize)
-        XCTAssertEqual(render.colorHex, "123456")
-        XCTAssertEqual(render.backgroundColorHex, "ABCDEF")
-    }
-
-    func testGhostFontSizeStabilizerKeepsSmallestCaretHeightPerField() {
-        var stabilizer = CotypingGhostFontSizeStabilizer()
-
-        XCTAssertEqual(stabilizer.stabilizedCaretHeight(18, focusSessionKey: "field-a"), 18)
-        XCTAssertEqual(stabilizer.stabilizedCaretHeight(44, focusSessionKey: "field-a"), 18)
-        XCTAssertEqual(stabilizer.stabilizedCaretHeight(22, focusSessionKey: "field-b"), 22)
-    }
-
-    func testInsertedTextAdvanceUsesHostPointSizeInsteadOfGhostFloor() throws {
-        let hostFont = NSFont.systemFont(ofSize: 11)
-        let sourceStyle = CotypingFieldStyle(fontName: hostFont.fontName, fontPointSize: 11)
-        let renderStyle = CotypingFieldStyle(fontName: hostFont.fontName, fontPointSize: 14)
-
-        let hostAdvance = try XCTUnwrap(CotypingInsertedTextAdvance.width(
-            of: "follow",
-            style: sourceStyle))
-        let ghostAdvance = CotypingGhostStyle.measuredTextSize("follow", style: renderStyle).width
-
-        XCTAssertLessThan(hostAdvance, ghostAdvance)
-    }
-
-    func testInsertedTextAdvanceReturnsNilWithoutUsableHostSize() {
-        XCTAssertNil(CotypingInsertedTextAdvance.width(
-            of: "follow",
-            style: CotypingFieldStyle(fontName: NSFont.systemFont(ofSize: 13).fontName)))
-        XCTAssertNil(CotypingInsertedTextAdvance.width(
-            of: "",
-            style: CotypingFieldStyle(fontName: NSFont.systemFont(ofSize: 13).fontName, fontPointSize: 13)))
-    }
-
-    func testInlineLayoutWrapsInsideInputFrame() {
-        let font = NSFont.systemFont(ofSize: 13)
-        let inputFrame = CGRect(x: 40, y: 480, width: 240, height: 28)
-        let caret = CGRect(x: 178, y: 492, width: 1, height: 16)
-        let layout = CotypingInlineGhostLayout.make(
-            text: "confirm renewal timing before customer update",
-            caretRect: caret,
-            inputFrameRect: inputFrame,
-            font: font,
-            visible: screen,
-            isRightToLeft: false)
-
-        XCTAssertGreaterThan(layout.lines.count, 1)
-        XCTAssertGreaterThan(layout.lines[0].leadingIndent, 0)
-
-        let contentSize = CotypingInlineGhostLayout.estimatedContentSize(
-            for: layout,
-            style: CotypingFieldStyle(fontName: font.fontName, fontPointSize: font.pointSize))
-        let frame = layout.panelFrame(for: contentSize, caretRect: caret, visible: screen)
-        XCTAssertGreaterThanOrEqual(frame.minX, inputFrame.minX + 8 - 0.5)
-        XCTAssertLessThanOrEqual(frame.maxX, inputFrame.maxX - 8 + 0.5)
-    }
-
-    func testInlineLayoutStartsOverflowBelowCaretWhenFirstLineHasNoRoom() {
-        let font = NSFont.systemFont(ofSize: 13)
-        let inputFrame = CGRect(x: 40, y: 480, width: 180, height: 28)
-        let caret = CGRect(x: 214, y: 492, width: 1, height: 16)
-        let layout = CotypingInlineGhostLayout.make(
-            text: "confirm renewal timing",
-            caretRect: caret,
-            inputFrameRect: inputFrame,
-            font: font,
-            visible: screen,
-            isRightToLeft: false)
-
-        XCTAssertLessThan(layout.topLineCenterOffsetFromCaret, 0)
-        XCTAssertEqual(layout.lines.first?.leadingIndent, 0)
-    }
-
-    func testInlineLayoutMirrorsAnchorForRTLText() {
-        let font = NSFont.systemFont(ofSize: 13)
-        let inputFrame = CGRect(x: 40, y: 480, width: 260, height: 28)
-        let caret = CGRect(x: 158, y: 492, width: 1, height: 16)
-        // Long enough to exceed the ~104pt first-line budget so the layout
-        // exercises the wrap path, where the mirrored anchor produces indent.
-        let words = "\u{05d0}\u{05d1}\u{05d2} \u{05d3}\u{05d4}\u{05d5} \u{05d6}\u{05d7}\u{05d8} \u{05d9}\u{05da}\u{05db}"
-        let layout = CotypingInlineGhostLayout.make(
-            text: "\(words) \(words)",
-            caretRect: caret,
-            inputFrameRect: inputFrame,
-            font: font,
-            visible: screen,
-            isRightToLeft: true)
-
-        XCTAssertTrue(layout.isRightToLeft)
-        XCTAssertGreaterThan(layout.lines[0].leadingIndent, 0)
-        let contentSize = CotypingInlineGhostLayout.estimatedContentSize(
-            for: layout,
-            style: CotypingFieldStyle(fontName: font.fontName, fontPointSize: font.pointSize))
-        let frame = layout.panelFrame(for: contentSize, caretRect: caret, visible: screen)
-        XCTAssertLessThanOrEqual(frame.maxX, inputFrame.maxX - 8 + 0.5)
     }
 
     func testMirrorSitsBelowCaretAndFlipsAboveWhenNoRoom() {
@@ -317,33 +124,177 @@ final class CotypingOverlayGeometryTests: XCTestCase {
         XCTAssertEqual(converted.height, 20)
     }
 
-    /// Appended words widen the ghost to the right; they never move it.
-    func testAnExtendedInlineGhostKeepsItsLeadingEdge() {
-        let frame = CGRect(x: 300, y: 500, width: 80, height: 18)
-        let input = CGRect(x: 100, y: 100, width: 600, height: 500)
-        let screen = CGRect(x: 0, y: 0, width: 1440, height: 900)
-        let extended = CotypingOverlayGeometry.extendedInlineFrame(
-            from: frame, textSize: CGSize(width: 180.4, height: 18), inputFrame: input, visible: screen)
-        XCTAssertEqual(extended, CGRect(x: 300, y: 500, width: 181, height: 18))
-        // A shorter measurement never shrinks what is already drawn.
-        XCTAssertEqual(
-            CotypingOverlayGeometry.extendedInlineFrame(
-                from: frame, textSize: CGSize(width: 40, height: 18), inputFrame: input, visible: screen)?.width,
-            80)
+    // MARK: - Inline layout
+
+    private let helvetica = NSFont(name: "Helvetica", size: 12)!
+
+    func testTheGhostStartsExactlyAtTheCaret() {
+        let caret = CGRect(x: 200, y: 500, width: 1, height: 14)
+        let layout = CotypingInlineGhostLayout.make(
+            text: "low up", font: helvetica, caretRect: caret,
+            inputFrameRect: CGRect(x: 40, y: 480, width: 600, height: 40), visible: screen, isRightToLeft: false)
+        XCTAssertEqual(layout.lines.map(\.text), ["low up"])
+        XCTAssertEqual(layout.lines[0].origin.x, caret.maxX)
     }
 
-    func testAnExtensionThatLeavesTheFieldOrTheScreenIsRefused() {
-        let frame = CGRect(x: 300, y: 500, width: 80, height: 18)
-        let input = CGRect(x: 100, y: 100, width: 400, height: 500)
-        // 300 + 195 passes the field's right edge less its inset.
-        XCTAssertNil(CotypingOverlayGeometry.extendedInlineFrame(
-            from: frame, textSize: CGSize(width: 195, height: 18), inputFrame: input, visible: nil))
-        XCTAssertNotNil(CotypingOverlayGeometry.extendedInlineFrame(
-            from: frame, textSize: CGSize(width: 190, height: 18), inputFrame: input, visible: nil))
-        let screen = CGRect(x: 0, y: 0, width: 450, height: 900)
-        XCTAssertNil(CotypingOverlayGeometry.extendedInlineFrame(
-            from: frame, textSize: CGSize(width: 150, height: 18), inputFrame: nil, visible: screen))
-        XCTAssertNil(CotypingOverlayGeometry.extendedInlineFrame(
-            from: frame, textSize: CGSize(width: CGFloat.infinity, height: 18), inputFrame: nil, visible: nil))
+    /// AppKit text reports a caret one default line tall; the ghost sits on
+    /// that line's baseline, not on its center.
+    func testAnAppKitCaretPutsTheGhostOnTheFieldBaseline() {
+        let lineHeight = NSLayoutManager().defaultLineHeight(for: helvetica)
+        let baselineOffset = NSLayoutManager().defaultBaselineOffset(for: helvetica)
+        let caret = CGRect(x: 200, y: 500, width: 0, height: lineHeight)
+        XCTAssertEqual(
+            CotypingInlineGhostLayout.firstBaseline(caretRect: caret, font: helvetica),
+            caret.maxY - baselineOffset, accuracy: 0.01)
+    }
+
+    /// Web engines report about the glyph box; its center is the line's center.
+    func testAWebCaretCentersTheGlyphBox() {
+        let font = NSFont.systemFont(ofSize: 15)
+        let caret = CGRect(x: 200, y: 500, width: 1, height: 24)
+        let baseline = CotypingInlineGhostLayout.firstBaseline(caretRect: caret, font: font)
+        XCTAssertEqual(baseline + (font.ascender + font.descender) / 2, caret.midY, accuracy: 0.01)
+    }
+
+    func testTheGhostUsesTheFieldsOwnFontAndSize() {
+        let style = CotypingFieldStyle(fontName: "Helvetica", fontPointSize: 12)
+        let font = CotypingGhostFontSizing.font(for: style, caretHeight: 14, caretIsExact: true)
+        XCTAssertEqual(font.fontName, "Helvetica")
+        XCTAssertEqual(font.pointSize, 12)
+    }
+
+    func testAZoomedFieldScalesTheReportedSize() {
+        let style = CotypingFieldStyle(fontName: "Helvetica", fontPointSize: 12)
+        XCTAssertEqual(CotypingGhostFontSizing.pointSize(for: style, caretHeight: 6, caretIsExact: true), 6, accuracy: 0.01)
+        XCTAssertEqual(CotypingGhostFontSizing.pointSize(for: style, caretHeight: 6, caretIsExact: false), 12)
+    }
+
+    func testWithoutAReportedSizeTheCaretSizesTheSystemFont() {
+        XCTAssertEqual(CotypingGhostFontSizing.pointSize(for: nil, caretHeight: 18, caretIsExact: true), 15, accuracy: 0.01)
+        XCTAssertEqual(
+            CotypingGhostFontSizing.pointSize(for: nil, caretHeight: 40, caretIsExact: false),
+            CotypingGhostFontSizing.maximumEstimatedPointSize)
+        XCTAssertEqual(CotypingGhostFontSizing.font(for: nil, caretHeight: 2, caretIsExact: true).pointSize,
+                       CotypingGhostFontSizing.minimumPointSize)
+    }
+
+    func testWrappedLinesLineUpWithTheFieldsText() {
+        let input = CGRect(x: 40, y: 480, width: 300, height: 60)
+        let typed = "Hello there, thanks for"
+        let textEdge: CGFloat = 46
+        let caret = CGRect(
+            x: textEdge + CotypingInlineGhostLayout.width(of: typed, font: helvetica), y: 520, width: 0, height: 14)
+        let layout = CotypingInlineGhostLayout.make(
+            text: " the quick follow up on the renewal timing and the customer update",
+            font: helvetica, caretRect: caret, inputFrameRect: input,
+            precedingLine: "Earlier paragraph.\n" + typed, visible: screen, isRightToLeft: false)
+
+        XCTAssertGreaterThan(layout.lines.count, 1)
+        XCTAssertEqual(layout.lines[0].origin.x, caret.maxX)
+        XCTAssertTrue(layout.lines[0].text.hasPrefix(" the"))
+        for line in layout.lines.dropFirst() {
+            XCTAssertEqual(line.origin.x, textEdge, accuracy: 0.01)
+            XCTAssertFalse(line.text.hasPrefix(" "))
+            XCTAssertLessThanOrEqual(line.origin.x + line.width, input.maxX - CotypingInlineGhostLayout.fieldInset + 0.5)
+        }
+        let pitch = CotypingInlineGhostLayout.linePitch(caretRect: caret, font: helvetica)
+        XCTAssertEqual(layout.lines[0].origin.y - layout.lines[1].origin.y, pitch, accuracy: 0.01)
+        // Every character is drawn once, in order.
+        let drawn = layout.lines.map(\.text).joined(separator: " ")
+        XCTAssertEqual(drawn, " the quick follow up on the renewal timing and the customer update")
+    }
+
+    func testAWrappedParagraphFallsBackToTheFieldInset() {
+        let input = CGRect(x: 40, y: 480, width: 200, height: 60)
+        let caret = CGRect(x: 210, y: 520, width: 0, height: 14)
+        let layout = CotypingInlineGhostLayout.make(
+            text: " and then some more words here", font: helvetica, caretRect: caret, inputFrameRect: input,
+            precedingLine: String(repeating: "a long paragraph that already wrapped ", count: 3),
+            visible: screen, isRightToLeft: false)
+        XCTAssertEqual(layout.lines.last?.origin.x, input.minX + CotypingInlineGhostLayout.fieldInset)
+    }
+
+    func testAWordThatDoesNotFitStartsOnTheNextLine() {
+        let input = CGRect(x: 40, y: 480, width: 180, height: 60)
+        let caret = CGRect(x: 205, y: 520, width: 0, height: 14)
+        let layout = CotypingInlineGhostLayout.make(
+            text: " confirm renewal", font: helvetica, caretRect: caret, inputFrameRect: input,
+            visible: screen, isRightToLeft: false)
+        XCTAssertEqual(layout.lines.first?.text, "confirm renewal")
+        XCTAssertEqual(layout.lines.first?.offset, 1)
+        XCTAssertLessThan(layout.lines[0].origin.y, CotypingInlineGhostLayout.firstBaseline(caretRect: caret, font: helvetica))
+    }
+
+    func testRightToLeftTextRunsFromTheCaretTowardTheLeft() {
+        let input = CGRect(x: 40, y: 480, width: 260, height: 60)
+        let caret = CGRect(x: 158, y: 520, width: 1, height: 14)
+        let word = "\u{05d0}\u{05d1}\u{05d2} \u{05d3}\u{05d4}\u{05d5}"
+        let layout = CotypingInlineGhostLayout.make(
+            text: Array(repeating: word, count: 6).joined(separator: " "), font: helvetica, caretRect: caret,
+            inputFrameRect: input, visible: screen, isRightToLeft: true)
+        XCTAssertEqual(layout.lines[0].origin.x, caret.minX)
+        XCTAssertGreaterThan(layout.lines.count, 1)
+        XCTAssertGreaterThanOrEqual(layout.lines[0].origin.x - layout.lines[0].width, input.minX + 7.5)
+        XCTAssertEqual(layout.lines[1].origin.x, input.maxX - CotypingInlineGhostLayout.fieldInset)
+    }
+
+    /// A top-up appends words; words already on screen keep their places.
+    func testAppendingWordsNeverMovesWordsAlreadyShown() {
+        let input = CGRect(x: 40, y: 480, width: 260, height: 60)
+        let caret = CGRect(x: 200, y: 520, width: 0, height: 14)
+        func layout(_ text: String) -> CotypingInlineGhostLayout {
+            .make(text: text, font: helvetica, caretRect: caret, inputFrameRect: input,
+                  visible: screen, isRightToLeft: false)
+        }
+        let before = layout(" follow up on")
+        let after = layout(" follow up on the renewal timing")
+        for (shown, extended) in zip(before.lines, after.lines) {
+            XCTAssertEqual(extended.origin, shown.origin)
+            XCTAssertTrue(extended.text.hasPrefix(shown.text))
+        }
+    }
+
+    func testDisplayTextKeepsALeadingSpaceAndCollapsesRuns() {
+        XCTAssertEqual(CotypingInlineGhostLayout.displayText("  up   on\tthis"), " up on this")
+        XCTAssertEqual(CotypingInlineGhostLayout.displayText("done\n next"), "done\n next")
+        XCTAssertGreaterThan(CotypingInlineGhostLayout.width(of: " up", font: helvetica),
+                             CotypingInlineGhostLayout.width(of: "up", font: helvetica))
+    }
+}
+
+/// Draws the ghost view offscreen and finds where its ink lands.
+@MainActor
+final class CotypingGhostTextViewTests: XCTestCase {
+    private func inkRows(_ content: CotypingGhostTextView.Content, size: CGSize) throws -> (top: Int, bottom: Int, left: Int) {
+        let view = CotypingGhostTextView(frame: CGRect(origin: .zero, size: size))
+        view.content = content
+        let rep = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        view.cacheDisplay(in: view.bounds, to: rep)
+        // Bitmap rows count down from the top; view points count up.
+        let scale = Double(rep.pixelsHigh) / size.height
+        var highest = Int.min, lowest = Int.max, left = Int.max
+        for y in 0..<rep.pixelsHigh {
+            for x in 0..<rep.pixelsWide where (rep.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.3 {
+                let pointY = Int((Double(rep.pixelsHigh - y) / scale).rounded(.down))
+                highest = max(highest, pointY)
+                lowest = min(lowest, pointY)
+                left = min(left, Int(Double(x) / scale))
+            }
+        }
+        XCTAssertNotEqual(lowest, Int.max, "nothing was drawn")
+        return (highest, lowest, left)
+    }
+
+    /// "HELLO" has no descenders, so its ink starts on the baseline and rises
+    /// to about the cap height, beginning at the line's origin.
+    func testTheGhostIsDrawnOnTheRequestedBaseline() throws {
+        let font = NSFont(name: "Helvetica", size: 20)!
+        let content = CotypingGhostTextView.Content(
+            lines: [.init(text: "HELLO", offset: 0, origin: CGPoint(x: 10, y: 12))],
+            font: font, emphasisLength: 0, color: .black, emphasisColor: .black)
+        let ink = try inkRows(content, size: CGSize(width: 120, height: 40))
+        XCTAssertEqual(ink.bottom, 12, accuracy: 1)
+        XCTAssertEqual(ink.top, 12 + Int(font.capHeight), accuracy: 2)
+        XCTAssertEqual(ink.left, 10, accuracy: 2)
     }
 }

@@ -30,6 +30,22 @@ final class CotypingPrefixWindowTests: XCTestCase {
             from: text, maxCharacters: 2500, maxWords: 3), "1. Review\n  2. ")
     }
 
+    /// Typing on at the end of a long draft keeps the window's start in
+    /// place, so the model does not read the whole window again per keystroke.
+    func testALongDraftsWindowStartStaysPutWhileTyping() {
+        let sentence = "We reviewed the onboarding funnel again this week. "
+        let draft = String(repeating: sentence, count: 80) + "The next step is to share"
+        var starts = Set<String>()
+        for typed in ["", " t", " the", " the res", " the results"] {
+            let window = CotypingPrefixWindow.truncatedPrefix(from: draft + typed, maxCharacters: 2500, maxWords: 500)
+            XCTAssertTrue(window.hasPrefix("We reviewed"))
+            XCTAssertTrue(window.hasSuffix("share" + typed))
+            XCTAssertLessThanOrEqual(window.count, 2500)
+            starts.insert(String(window.prefix(200)))
+        }
+        XCTAssertEqual(starts.count, 1)
+    }
+
     func testZeroBudgetDoesNotCrashOrRetainContext() {
         XCTAssertEqual(CotypingPrefixWindow.truncatedPrefix(from: "hello", maxCharacters: 0, maxWords: 3), "")
         XCTAssertEqual(CotypingPrefixWindow.truncatedPrefix(from: "hello", maxCharacters: 3, maxWords: 0), "")

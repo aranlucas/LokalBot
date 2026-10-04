@@ -61,7 +61,8 @@ extension CotypingCoordinator {
         work: UInt64
     ) async {
         guard var extended = extendedSession(adding: addition, to: original, settings: settings) else { return }
-        if !overlay.extendInline(to: extended.remainingText) {
+        if !overlay.extendInline(
+            to: extended.remainingText, emphasisLength: acceptEmphasisLength(for: extended.remainingText)) {
             // A popup or a wrapped ghost is laid out afresh, at the live caret,
             // and only once the app shows the words accepted so far.
             let focus = await focusTracker.refreshNow()

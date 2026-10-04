@@ -44,9 +44,10 @@ extension CotypingCoordinator {
         guard isRunning else { return }
         discardRevokedMemoryContext()
         resolveInsertionCheck(live: focus.field)
-        if let activeVisibleContext,
-           focus.field == nil || (focus.field?.visibleContextWasRequested == true
-                && focus.field?.visibleContext != activeVisibleContext) {
+        // Text read from the screen is forgotten as soon as focus leaves the
+        // field it was read for.
+        CotypingAXHelper.forgetVisibleContext(exceptFor: focus.field?.focusIdentityKey)
+        if activeVisibleContext != nil, focus.field == nil {
             cancelPendingGenerationWork()
             acceptedSuggestionBatch.discardLearningRecord()
             clearSuggestion()
@@ -221,7 +222,8 @@ extension CotypingCoordinator {
         if !overlay.advanceInline(
             to: remainingText,
             insertedText: typedCharacters,
-            isRightToLeft: CotypingTextDirectionDetector.isRightToLeft(current.field.precedingText)) {
+            isRightToLeft: CotypingTextDirectionDetector.isRightToLeft(current.field.precedingText),
+            emphasisLength: acceptEmphasisLength(for: remainingText)) {
             showOverlay(text: remainingText, field: current.field)
         }
         markReady(remainingText)

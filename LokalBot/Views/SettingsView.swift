@@ -453,9 +453,6 @@ struct SettingsView: View {
                 DisclosureGroup("Advanced", isExpanded: Binding(
                     get: { writingAdvancedExpanded || app.focusedSettingID != nil },
                     set: { writingAdvancedExpanded = $0 })) {
-                    Toggle("Stream partial suggestions",
-                           isOn: $app.settings.cotypingStreamSuggestionsWhileGenerating)
-                    .settingTarget("settings.cotypingStreamSuggestionsWhileGenerating", selected: app.focusedSettingID)
                     Toggle("Use fast in-process runtime",
                            isOn: $app.settings.cotypingInProcessRuntime)
                     .settingTarget("settings.cotypingInProcessRuntime", selected: app.focusedSettingID)

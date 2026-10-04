@@ -280,15 +280,19 @@ final class CotypingEngineSelector: CotypingCompleting {
         didLogLocalFailure = false
     }
 
+    /// The model server is streamed even here: its client stops reading at
+    /// the same decode boundary as the in-process runtime.
     func generate(_ request: CotypingRequest) async throws -> CotypingNormalizationResult {
-        guard let engine = try await localIfEligible() else { return try await http.generate(request) }
+        guard let engine = try await localIfEligible() else {
+            return try await http.generateStreaming(request) { _ in }
+        }
         do {
             let result = try await engine.generate(request)
             noteLocalSuccess()
             return result
         } catch let error as LlamaRuntimeError {
             await handleLocalFailure(error)
-            return try await http.generate(request)
+            return try await http.generateStreaming(request) { _ in }
         }
     }
 
