@@ -201,6 +201,18 @@ enum MeetingMatcher {
         return activeEventID != nextEventID
     }
 
+    enum SwitchAction: Equatable { case split, start, ignore }
+
+    /// What automatic recording does when the detector moves to another app or
+    /// calendar event within one session. The recording that owns the session
+    /// splits. With nothing recording (the user stopped the previous event),
+    /// the next calendar event is a new meeting and records; a recording the
+    /// session does not own is left alone.
+    static func switchAction(reason: String, ownsRecording: Bool, recordingActive: Bool) -> SwitchAction {
+        if ownsRecording { return .split }
+        return reason == "calendar-handoff" && !recordingActive ? .start : .ignore
+    }
+
     /// The recording title: the calendar event's title when titling is on and it
     /// has one, else the app-derived "<App> meeting", else "Manual recording".
     static func recordingTitle(calendarTitle: String?, useCalendarTitles: Bool, appName: String?) -> String {

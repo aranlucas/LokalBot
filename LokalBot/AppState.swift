@@ -1064,9 +1064,15 @@ final class AppState: ObservableObject {
             switch self.settings.autoRecordMode {
             case .automatic:
                 RecordingNotifier.shared.invalidateMeetingDetections()
-                guard let sessionID = context.detectorSessionID,
-                      self.recording.detectorSessionID == sessionID else { return }
-                self.recording.splitForCalendarHandoff(context)
+                guard let sessionID = context.detectorSessionID else { return }
+                switch MeetingMatcher.switchAction(
+                    reason: context.reason,
+                    ownsRecording: self.recording.detectorSessionID == sessionID,
+                    recordingActive: self.recording.isRecording || self.recording.isStarting) {
+                case .split: self.recording.splitForCalendarHandoff(context)
+                case .start: self.startRecording(context: context, source: "detector")
+                case .ignore: break
+                }
             case .ask:
                 if self.recording.isRecording || self.recording.isStarting {
                     RecordingNotifier.shared.invalidateMeetingDetections()
@@ -1405,7 +1411,7 @@ final class AppState: ObservableObject {
     /// detection is enabled and authorized — so menu and command entry points
     /// get calendar titling too.
     func recordingContext(for detectedApp: MeetingDetector.DetectedApp?) -> MeetingDetectionContext? {
-        guard let detectedApp else { return nil }
+        guard let detectedApp = manualSource(detectedApp) else { return nil }
         let event = (settings.calendarDetectionEnabled && calendar.hasAccess)
             ? calendar.activeCandidate(now: Date()) : nil
         return MeetingDetectionContext(
@@ -1417,11 +1423,22 @@ final class AppState: ObservableObject {
     }
 
     /// A recording the user starts for the call the detector is tracking joins
-    /// that session, so the call's end stops it. Manual mode leaves every stop
-    /// to the user.
+    /// that session, so the call's end stops it. A call the detector can no
+    /// longer verify may already be over, so a recording never joins it.
+    /// Manual mode leaves every stop to the user.
     private func detectorSession(following detectedApp: MeetingDetector.DetectedApp?) -> UUID? {
-        guard settings.autoRecordMode != .manual, let detectedApp, detectedApp == detector.activeApp else { return nil }
+        guard settings.autoRecordMode != .manual, let detectedApp, detectedApp == detector.activeApp,
+              detector.verifiesActiveCall else { return nil }
         return detector.activeSessionID
+    }
+
+    /// The detector's browser call keeps its app (and its audio) for a manual
+    /// start, but not its room while that call is unverified: the user may
+    /// already be in another one, which the calendar link names better.
+    private func manualSource(_ detectedApp: MeetingDetector.DetectedApp?) -> MeetingDetector.DetectedApp? {
+        guard var detectedApp else { return nil }
+        if detectedApp == detector.activeApp, !detector.verifiesActiveCall { detectedApp.meetingURL = nil }
+        return detectedApp
     }
 
     /// A user can explicitly start the scheduled event from Today's upcoming
@@ -1430,7 +1447,7 @@ final class AppState: ObservableObject {
     /// app is already visible, otherwise RecordingController safely records
     /// the microphone when no meeting app is visible yet.
     func recordingContext(for calendarEvent: CalendarMeetingCandidate) -> MeetingDetectionContext {
-        let detectedApp = detector.activeApp ?? MeetingDetector.visibleBrowserMeeting()
+        let detectedApp = manualSource(detector.activeApp) ?? MeetingDetector.visibleBrowserMeeting()
         return MeetingDetectionContext(
             detectedApp: detectedApp,
             calendarEvent: calendarEvent,

@@ -255,14 +255,16 @@ enum BrowserMeetingSession {
              "you were removed from the meeting", "the meeting has ended"].contains($0.lowercased())
         }
         if ended { return .ended }
-        let leaveLabels = ["leave call", "leave meeting", "hang up"]
-        let leave = buttons.contains { label in
-            leaveLabels.contains { action in
-                label == action || label.hasPrefix("\(action) ") || label.hasPrefix("\(action)(")
-            }
+        func offers(_ action: String) -> Bool {
+            buttons.contains { $0 == action || $0.hasPrefix("\(action) ") || $0.hasPrefix("\(action)(") }
         }
+        let leave = ["leave call", "leave meeting", "hang up"].contains(where: offers)
         let microphone = buttons.contains { $0.hasPrefix("turn off microphone") || $0.hasPrefix("turn on microphone") }
-        return leave && microphone ? .inCall : .unavailable
+        if leave && microphone { return .inCall }
+        // Meet's page after a call offers to rejoin it or go home, whatever its
+        // heading says (left, removed, ended by the host). With the call
+        // controls gone, that pair is end evidence where the wording is not.
+        return !leave && offers("rejoin") && offers("return to home screen") ? .ended : .unavailable
     }
 
     static func snapshot(processID: pid_t, expectedURL: URL? = nil) -> Snapshot? {
@@ -430,10 +432,11 @@ enum BrowserMeetingSession {
                     url = valid
                     inDocument = true
                 }
-                if inDocument && ["AXButton", "AXStaticText", "AXHeading"].contains(role) {
+                if inDocument && ["AXButton", "AXLink", "AXStaticText", "AXHeading"].contains(role) {
                     let labels = [kAXTitleAttribute, kAXDescriptionAttribute, kAXValueAttribute]
                         .compactMap { fields[$0] as? String }.filter { $0.count <= 160 }
-                    if role == "AXButton" { buttons += labels } else { messages += labels }
+                    // Post-call actions may be links rather than buttons.
+                    if role == "AXButton" || role == "AXLink" { buttons += labels } else { messages += labels }
                 }
                 let children = fields[kAXChildrenAttribute] as? [AXUIElement] ?? []
                 guard budget.allowsChildren(children.count) else { issue = .pageTooLarge; continue windowLoop }

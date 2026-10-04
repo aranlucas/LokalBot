@@ -218,6 +218,18 @@ final class CalendarDetectionTests: XCTestCase {
             nextEventID: nil))
     }
 
+    func testNextCalendarEventRecordsAfterTheUserStoppedThePreviousOne() {
+        XCTAssertEqual(MeetingMatcher.switchAction(
+            reason: "calendar-handoff", ownsRecording: true, recordingActive: true), .split)
+        XCTAssertEqual(MeetingMatcher.switchAction(
+            reason: "calendar-handoff", ownsRecording: false, recordingActive: false), .start)
+        XCTAssertEqual(MeetingMatcher.switchAction(
+            reason: "calendar-handoff", ownsRecording: false, recordingActive: true), .ignore,
+            "a recording the session does not own is left alone")
+        XCTAssertEqual(MeetingMatcher.switchAction(
+            reason: "meeting-app-handoff", ownsRecording: false, recordingActive: false), .ignore)
+    }
+
     // MARK: - Titling
 
     func testRecordingTitlePrefersCalendar() {
