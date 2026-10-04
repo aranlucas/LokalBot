@@ -49,6 +49,34 @@ final class CaptureReplayTests: XCTestCase {
                       "the transient read must be retried and the text stored")
     }
 
+    private func captureFramedPage(excludingDomains domains: String) async throws -> [ActivityStore.Screenshot] {
+        let replay = try replay("chrome-page-with-framed-site")
+        let store = store()
+        var settings = AppSettings()
+        settings.trackingEnabled = true
+        settings.screenContextCaptureMode = .accessibleText
+        settings.screenshotsEnabled = false
+        settings.excludedScreenDomains = domains
+        let service = ScreenshotService(
+            store: store, storage: StorageManager(), sampler: ActivitySampler(store: store),
+            now: { replay.clock.now() }, settings: { settings })
+        await service.captureIfAppropriate(trigger: .appSwitch)
+        return store.screenshots(in: nil, includingMissingFiles: true).filter { $0.app == "Google Chrome" }
+    }
+
+    /// Chrome exposes framed pages as their own web areas; the page keeps its
+    /// address under unrelated site exclusions.
+    func testFramedPageKeepsItsAddress() async throws {
+        let captures = try await captureFramedPage(excludingDomains: "thr.xmpl")
+        XCTAssertEqual(captures.first?.sourceURL, "https://dcs.xmpl/d/kd")
+    }
+
+    /// An excluded site framed inside another page still keeps the window out.
+    func testFramedExcludedSiteKeepsTheWindowOut() async throws {
+        let captures = try await captureFramedPage(excludingDomains: "wdgts.xmpl")
+        XCTAssertTrue(captures.isEmpty, "the framed site's text would be stored with the page")
+    }
+
     /// #109: a browser window with web content and no readable address keeps
     /// its app name; it must not become Private.
     func testBrowserTimeKeepsItsAppName() async throws {

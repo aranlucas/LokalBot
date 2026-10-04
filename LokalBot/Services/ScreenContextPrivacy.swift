@@ -16,6 +16,10 @@ enum ScreenContextPrivacy {
         var hasWebContent: Bool = false
         /// Any inspected element of the window is a secure field.
         var containsSecureField: Bool = false
+        /// Other sites' pages framed inside the window.
+        var framedURLs: [String] = []
+        /// Some web content's address could not be read.
+        var hasUnattributedWebContent: Bool = false
     }
 
     /// Whether the focused-field state allows screen capture. Some apps
@@ -52,16 +56,22 @@ enum ScreenContextPrivacy {
         } else {
             guard observation.focusedSecureField == false else { return false }
         }
-        guard !isExcluded(sourceURL: observation.sourceURL, rules: excludedDomains) else {
+        // Framed pages' text and pixels are captured with the window, so an
+        // excluded site keeps the whole window out wherever it appears.
+        guard !isExcluded(sourceURL: observation.sourceURL, rules: excludedDomains),
+              !observation.framedURLs.contains(where: { isExcluded(sourceURL: $0, rules: excludedDomains) }) else {
             return false
         }
-        // A browser with an unreadable address cannot establish that it is
-        // outside a configured exclusion. Native documents need no web URL.
+        // A browser with an unreadable address, its own or a framed page's,
+        // cannot establish that it is outside a configured exclusion. Native
+        // documents need no web URL.
         let hasDomainRules = excludedDomains.contains {
             !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
         if hasDomainRules, observation.hasWebContent || isBrowser(observation) {
-            guard sanitizedURL(observation.sourceURL) != nil else { return false }
+            guard sanitizedURL(observation.sourceURL) != nil, !observation.hasUnattributedWebContent else {
+                return false
+            }
         }
         return true
     }
@@ -336,6 +346,10 @@ enum ScreenContextPrivacy {
         if let url = URL(string: raw), url.isFileURL {
             return String(url.lastPathComponent.prefix(300))
         }
+        // A web or app address is kept, sanitized, as the source URL. Its last
+        // path piece is no document name and would keep the query and fragment
+        // ("search?q=…", "#inbox") that the source URL drops.
+        if let url = URL(string: raw), url.scheme != nil, url.host != nil { return nil }
         return String(URL(fileURLWithPath: raw).lastPathComponent.prefix(300))
     }
 

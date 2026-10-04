@@ -278,8 +278,11 @@ focused or a site exclusion cannot be ruled out.
 
 Browsers, web-based apps, and private or incognito windows are tracked and
 captured like native apps; there is no separate private-window setting.
-App/domain exclusions and secure-field checks always apply, and a browser whose
-address cannot be read is skipped while site exclusions are configured.
+App/domain exclusions and secure-field checks always apply. A site exclusion
+also covers pages framed inside another page, so a window that frames an
+excluded site is skipped, and while site exclusions are configured a browser
+window is skipped when its address, or a framed page's, cannot be read. Web
+addresses are kept without credentials, query, or fragment.
 Accessibility text is limited to visible-character
 ranges and fully visible static labels within the window/scroll viewport; whole
 document values, selected text, help, and descriptions are not collected. If an

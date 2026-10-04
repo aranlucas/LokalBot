@@ -61,6 +61,7 @@ struct CaptureTraceScrubber {
         if var read = event.read, var snapshot = read.snapshot {
             snapshot.text = scrubText(snapshot.text)
             snapshot.sourceURL = snapshot.sourceURL.map(scrubURL)
+            snapshot.framedURLs = snapshot.framedURLs?.map(scrubURL)
             snapshot.documentName = snapshot.documentName.map(scrubText)
             snapshot.windowTitle = snapshot.windowTitle.map(scrubText)
             read.snapshot = snapshot

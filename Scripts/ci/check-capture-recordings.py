@@ -67,6 +67,8 @@ def violations(trace, name):
         for field in ("text", "documentName", "windowTitle"):
             check(snapshot.get(field), "text", f"{where} {field}")
         check(snapshot.get("sourceURL"), "url", f"{where} sourceURL")
+        for url in snapshot.get("framedURLs") or []:
+            check(url, "url", f"{where} framedURLs")
         check((event.get("browser") or {}).get("url"), "url", f"{where} browser url")
         for window in event.get("windows") or []:
             check(window.get("title"), "text", f"{where} window title")
