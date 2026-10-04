@@ -616,8 +616,7 @@ struct HeadlessCommandRunner {
             let summary = await CotypingBenchmarkRunner.run(
                 engine: app.cotypingEngine,
                 config: config,
-                personalization: settings.cotypingPersonalization,
-                streamPartials: settings.cotypingStreamSuggestionsWhileGenerating)
+                personalization: settings.cotypingPersonalization)
             print(summary.jsonReport())
             await app.cotypingEngine.unload()
             await LlamaServer.shared.stop()

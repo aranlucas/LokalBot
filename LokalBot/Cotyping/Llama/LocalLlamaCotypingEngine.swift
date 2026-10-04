@@ -18,8 +18,10 @@ final class LocalLlamaCotypingEngine: CotypingCompleting {
 
         let source = DispatchSource.makeMemoryPressureSource(
             eventMask: [.warning, .critical], queue: .global(qos: .utility))
-        source.setEventHandler { [runtime] in
-            Task { await runtime.handleMemoryPressure() }
+        // The handler's hold on the source ends when deinit cancels it.
+        source.setEventHandler { [runtime, source] in
+            let isCritical = source.data.contains(.critical)
+            Task { await runtime.handleMemoryPressure(isCritical: isCritical) }
         }
         source.resume()
         self.memoryPressureSource = source
@@ -73,7 +75,7 @@ final class LocalLlamaCotypingEngine: CotypingCompleting {
     }
 
     func generate(_ request: CotypingRequest) async throws -> CotypingNormalizationResult {
-        try await run(request) { _ in }
+        try await run(request, onPartial: nil)
     }
 
     func generateStreaming(
@@ -83,9 +85,11 @@ final class LocalLlamaCotypingEngine: CotypingCompleting {
         try await run(request, onPartial: onPartial)
     }
 
+    /// `onPartial` is nil when nobody watches the suggestion form; it is then
+    /// normalized once at the end instead of after every token.
     private func run(
         _ request: CotypingRequest,
-        onPartial: @escaping @Sendable (CotypingNormalizationResult) -> Void
+        onPartial: (@Sendable (CotypingNormalizationResult) -> Void)?
     ) async throws -> CotypingNormalizationResult {
         inflightPrewarmTask?.cancel()
         inflightPrewarmTask = nil
@@ -125,8 +129,7 @@ final class LocalLlamaCotypingEngine: CotypingCompleting {
             ) { piece in
                 if Task.isCancelled { return false }
                 accumulator.append(piece)
-                let result = CotypingTextNormalizer.normalizeDetailed(accumulator.raw, for: request)
-                onPartial(result)
+                onPartial?(CotypingTextNormalizer.normalizeDetailed(accumulator.raw, for: request))
                 // Native decode-stop at the SAME boundary the HTTP path stops at.
                 if CotypingDecodeStopPolicy.verdict(
                     accumulated: accumulator.raw,

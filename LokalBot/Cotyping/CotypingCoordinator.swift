@@ -42,6 +42,8 @@ final class CotypingCoordinator: ObservableObject {
     let settingsProvider: () -> AppSettings
     let memoryContextProvider: (CotypingField, AppSettings) async -> CotypingMemoryContextProvider.Snapshot
     var activeMemoryContext = CotypingMemoryContextProvider.Snapshot.empty
+    /// The newest saved-memory lookup for the field being typed in.
+    var memoryLookup = CotypingMemoryLookup()
     var activeVisibleContext: CotypingVisibleContext.Snapshot?
     /// Live flag from AppState — cotyping stays quiet while a meeting records.
     let isMeetingRecordingActive: () -> Bool
@@ -56,17 +58,15 @@ final class CotypingCoordinator: ObservableObject {
     var generationTask: Task<Void, Never>?
     var focusPrewarmTask: Task<Void, Never>?
     var focusPrewarmFieldIdentity: String?
+    /// A focus read right after a click or an app switch, so a newly focused
+    /// field is prepared before the first keystroke instead of at the next
+    /// (possibly backed-off) poll.
+    var focusRefreshTask: Task<Void, Never>?
+    var workspaceObserver: NSObjectProtocol?
     var hostPublishPollGeneration: UInt64 = 0
     var hostPublishPollTask: Task<Void, Never>?
     var wired = false
     var lastLatencyMilliseconds: Int?
-    var pendingStreamPartial: PendingStreamPartial?
-    var streamValidationTask: Task<Void, Never>?
-    var streamValidationGeneration: UInt64 = 0
-    /// The visible session came from this still-running stream. The first accept
-    /// freezes that exact reviewed prefix and invalidates the stream so a later
-    /// final callback cannot reset consumedCount or re-offer accepted text.
-    var streamAcceptanceFence = CotypingStreamAcceptanceFence()
     var lastAcceptedTail: AcceptedSuggestionTail?
     var lastAcceptanceAt: Date?
     /// When the keystroke that asked for the next suggestion was observed.
@@ -97,7 +97,7 @@ final class CotypingCoordinator: ObservableObject {
     let clipboardRelevanceFilter = CotypingClipboardRelevanceFilter()
     nonisolated static let hostPublishWaitCeilingMs = 400
     nonisolated static let hostPublishFirstPollIntervalMs = 10
-    nonisolated static let hostPublishPollIntervalMs = 30
+    nonisolated static let hostPublishPollIntervalMs = 15
     nonisolated static let freshSnapshotReuseWindowMilliseconds = 30
 
     init(
@@ -124,12 +124,6 @@ final class CotypingCoordinator: ObservableObject {
         self.inserter = CotypingInserter(suppressionController: suppressionController)
     }
 
-    struct PendingStreamPartial {
-        var result: CotypingNormalizationResult
-        var work: UInt64
-        var field: CotypingField
-    }
-
     struct AcceptedSuggestionTail {
         var text: String
         var precedingText: String
@@ -151,25 +145,5 @@ struct CotypingPrivacySettings: Equatable, Sendable {
         excludedDomains = settings.cotypingExcludedDomainList
         memoryPolicy = CotypingMemoryContext.Policy(settings: settings)
         visibleContextPolicy = CotypingVisibleContext.Policy(settings: settings)
-    }
-}
-
-/// Tracks whether the currently visible session is backed by an in-flight
-/// stream. Consuming the fence is one-shot: the first accept freezes that
-/// reviewed partial, while later accepts operate on the already-frozen session.
-struct CotypingStreamAcceptanceFence: Equatable, Sendable {
-    private(set) var presentedWork: UInt64?
-
-    mutating func markPresented(work: UInt64) {
-        presentedWork = work
-    }
-
-    mutating func consumeForAcceptance() -> UInt64? {
-        defer { presentedWork = nil }
-        return presentedWork
-    }
-
-    mutating func reset() {
-        presentedWork = nil
     }
 }

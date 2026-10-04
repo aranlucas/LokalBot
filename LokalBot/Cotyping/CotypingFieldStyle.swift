@@ -60,39 +60,10 @@ enum CotypingTextColorCodec {
 /// always using the system font + a fixed gray. Ported in spirit from Cotabby's
 /// overlay styling. Pure given AppKit; all fallbacks are explicit and testable.
 enum CotypingGhostStyle {
-    static let minPointSize: CGFloat = 9
-    static let maxPointSize: CGFloat = 28
-    static let defaultPointSize: CGFloat = 13
     /// Ghost opacity relative to the host text color — reads as a suggestion, not typed text.
-    static let ghostOpacity: CGFloat = 0.45
-
-    /// Clamps a host-reported point size to a sane range so a giant field font
-    /// can't blow up the ghost and a tiny one can't vanish; default when nil.
-    static func clampedPointSize(_ size: CGFloat?) -> CGFloat {
-        guard let size else { return defaultPointSize }
-        return min(maxPointSize, max(minPointSize, size))
-    }
-
-    /// Ghost font matching the host family at the clamped size, or nil (caller
-    /// falls back to the system font at the clamped / default size).
-    static func font(from style: CotypingFieldStyle?) -> NSFont? {
-        guard let style, let name = style.fontName else { return nil }
-        return NSFont(name: name, size: clampedPointSize(style.fontPointSize))
-    }
-
-    /// Concrete AppKit font used for measuring and rendering fallback sizing.
-    /// `NSHostingView.fittingSize` can briefly report a near-zero width after a
-    /// SwiftUI root view swap; measuring the text directly keeps the panel wide
-    /// enough even when the completion begins with a leading space.
-    static func resolvedFont(from style: CotypingFieldStyle?) -> NSFont {
-        font(from: style) ?? .systemFont(ofSize: clampedPointSize(style?.fontPointSize))
-    }
-
-    static func measuredTextSize(_ text: String, style: CotypingFieldStyle?) -> CGSize {
-        guard !text.isEmpty else { return .zero }
-        let size = (text as NSString).size(withAttributes: [.font: resolvedFont(from: style)])
-        return CGSize(width: ceil(size.width), height: ceil(size.height))
-    }
+    static let ghostOpacity: CGFloat = 0.4
+    /// The word the next accept takes is drawn a little stronger than the rest.
+    static let emphasisOpacity: CGFloat = 0.62
 
     /// Dimmed host text color so the suggestion reads as a hint, or nil (caller
     /// falls back to the secondary label color).

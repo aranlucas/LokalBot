@@ -30,34 +30,6 @@ final class CotypingFieldStyleTests: XCTestCase {
         XCTAssertNotNil(CotypingTextColorCodec.nsColor(fromHex: "FFFFFF"))
     }
 
-    func testClampedPointSize() {
-        XCTAssertEqual(CotypingGhostStyle.clampedPointSize(nil), 13)
-        XCTAssertEqual(CotypingGhostStyle.clampedPointSize(8), 9)      // below floor
-        XCTAssertEqual(CotypingGhostStyle.clampedPointSize(50), 28)    // above ceiling
-        XCTAssertEqual(CotypingGhostStyle.clampedPointSize(16), 16)    // in range
-    }
-
-    func testFontFromStyleClampsSize() {
-        // "Helvetica" is always present on macOS.
-        let font = CotypingGhostStyle.font(from: CotypingFieldStyle(fontName: "Helvetica", fontPointSize: 50))
-        XCTAssertEqual(font?.pointSize, 28)
-        XCTAssertEqual(font?.fontName, "Helvetica")
-    }
-
-    func testFontNilForUnknownNameOrNoStyle() {
-        XCTAssertNil(CotypingGhostStyle.font(from: nil))
-        XCTAssertNil(CotypingGhostStyle.font(from: CotypingFieldStyle(fontName: "Definitely-Not-A-Font")))
-    }
-
-    func testMeasuredTextSizeCoversLeadingSpaceSuggestion() {
-        let size = CotypingGhostStyle.measuredTextSize(
-            " up on this",
-            style: CotypingFieldStyle(fontName: "Helvetica", fontPointSize: 12))
-
-        XCTAssertGreaterThan(size.width, 20)
-        XCTAssertGreaterThan(size.height, 8)
-    }
-
     func testGhostColorDimsHostColor() {
         let color = CotypingGhostStyle.ghostColor(from: CotypingFieldStyle(colorHex: "336699"))
         XCTAssertEqual(color?.alphaComponent ?? 0, CotypingGhostStyle.ghostOpacity, accuracy: 0.001)

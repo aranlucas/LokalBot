@@ -176,7 +176,7 @@ final class CotypingVisibleContextTests: XCTestCase {
     }
 
     @MainActor
-    func testContextSnapshotFlowsThroughBackgroundExecutorAndExpiresOnStop() async throws {
+    func testContextSnapshotFlowsThroughBackgroundExecutor() async throws {
         let snapshot = try XCTUnwrap(CotypingVisibleContextReplay(Self.fixture()).capture(enabled: true))
         let executor = CotypingAXSnapshotExecutor { options in
             var field = CotypingField(appName: "Mail", processID: 123, role: "AXTextArea",
@@ -187,12 +187,10 @@ final class CotypingVisibleContextTests: XCTestCase {
             return CotypingFocus(appName: "Mail", capability: .supported, field: field)
         }
         let tracker = CotypingFocusTracker(snapshotExecutor: executor)
-        XCTAssertFalse(tracker.hasFreshVisibleContext(snapshot))
-        let focus = await tracker.refreshForValidation(includeVisibleContext: true)
-        XCTAssertEqual(focus?.field?.visibleContext, snapshot)
-        XCTAssertTrue(tracker.hasFreshVisibleContext(snapshot))
-        tracker.stop()
-        XCTAssertFalse(tracker.hasFreshVisibleContext(snapshot))
+        let focus = await tracker.refreshNow(includeVisibleContext: true)
+        XCTAssertEqual(focus.field?.visibleContext, snapshot)
+        let quick = await tracker.refreshForValidation()
+        XCTAssertNil(quick?.field?.visibleContext)
     }
 
     @MainActor
@@ -202,11 +200,69 @@ final class CotypingVisibleContextTests: XCTestCase {
             return .none
         }
         let tracker = CotypingFocusTracker(snapshotExecutor: executor)
-        var cleared = false
-        tracker.onChange = { focus in cleared = focus == .none }
-        let result = await tracker.refreshForValidation(includeVisibleContext: true)
+        let result = await tracker.refreshForValidation()
         XCTAssertNil(result)
-        XCTAssertTrue(cleared)
+    }
+
+    /// The text above a field is read once per field and then refreshed in
+    /// the background: a keystroke gets the previous read instead of waiting.
+    func testAStaleFieldContextIsServedWhileItRefreshesInTheBackground() {
+        let now = LockedValue<TimeInterval>(0)
+        let cache = CotypingFieldContextCache<String>(label: "test", maxAge: 3, clock: { now.value })
+        let reads = LockedValue(0)
+        func read() -> String {
+            reads.update { $0 += 1 }
+            return "read \(reads.value)"
+        }
+        XCTAssertEqual(cache.value(forKey: "field") { read() }, "read 1")
+        now.update { $0 = 2 }
+        XCTAssertEqual(cache.value(forKey: "field") { read() }, "read 1")
+        XCTAssertEqual(reads.value, 1)
+        now.update { $0 = 5 }
+        XCTAssertEqual(cache.value(forKey: "field") { read() }, "read 1")
+        cache.waitForRefreshes()
+        XCTAssertEqual(cache.value(forKey: "field") { read() }, "read 2")
+        XCTAssertEqual(reads.value, 2)
+    }
+
+    /// An empty field has no font to read yet; the first typed character's
+    /// font must be read then, not hidden behind a remembered failure.
+    func testAFontThatCouldNotBeReadIsNotRemembered() {
+        let now = LockedValue<TimeInterval>(0)
+        let cache = CotypingFieldContextCache<String>(label: "test", maxAge: 5, clock: { now.value })
+        XCTAssertNil(cache.valueIfReadable(forKey: "field") { nil })
+        XCTAssertEqual(cache.valueIfReadable(forKey: "field") { "Helvetica 12" }, "Helvetica 12")
+        now.update { $0 = 10 }
+        XCTAssertEqual(cache.valueIfReadable(forKey: "field") { nil }, "Helvetica 12")
+        cache.waitForRefreshes()
+        XCTAssertEqual(cache.cachedValue(forKey: "field"), "Helvetica 12")
+    }
+
+    func testLeavingAFieldForgetsTheOthers() {
+        let cache = CotypingFieldContextCache<String>(label: "test", maxAge: 3)
+        _ = cache.value(forKey: "a") { "text above a" }
+        _ = cache.value(forKey: "b") { "text above b" }
+        cache.removeAll(except: "b")
+        XCTAssertNil(cache.cachedValue(forKey: "a"))
+        XCTAssertEqual(cache.cachedValue(forKey: "b"), "text above b")
+        cache.removeAll(except: nil)
+        XCTAssertNil(cache.cachedValue(forKey: "b"))
+    }
+
+    func testForgottenFieldContextCannotBeRestoredByAReadInFlight() {
+        let now = LockedValue<TimeInterval>(0)
+        let cache = CotypingFieldContextCache<String>(label: "test", maxAge: 3, clock: { now.value })
+        _ = cache.value(forKey: "field") { "before" }
+        now.update { $0 = 5 }
+        let gate = DispatchSemaphore(value: 0)
+        _ = cache.value(forKey: "field") {
+            gate.wait()
+            return "read before the grant was withdrawn"
+        }
+        cache.removeAll()
+        gate.signal()
+        cache.waitForRefreshes()
+        XCTAssertNil(cache.cachedValue(forKey: "field"))
     }
 
     func testAutocompleteURLExclusionKeepsItsHostWideMeaning() {
@@ -283,5 +339,19 @@ final class CotypingVisibleContextTests: XCTestCase {
         XCTAssertFalse(CotypingVisibleContext.Policy(settings: settings).permits(Self.fixture().target))
         XCTAssertFalse(settings.cotypingUseMeetingMemory)
         XCTAssertFalse(settings.cotypingUseScreenMemory)
+    }
+}
+
+/// A value shared with a cache's clock or background reads.
+private final class LockedValue<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: Value
+
+    init(_ value: Value) { stored = value }
+
+    var value: Value { lock.withLock { stored } }
+
+    func update(_ change: (inout Value) -> Void) {
+        lock.withLock { change(&stored) }
     }
 }

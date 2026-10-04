@@ -39,6 +39,8 @@ enum CotypingAXHelper {
     private static let indexForTextMarkerAttribute = "AXIndexForTextMarker" as CFString
     private static let stringForRangeAttribute = "AXStringForRange" as CFString
     private static let numberOfCharactersAttribute = "AXNumberOfCharacters" as CFString
+    private static let previousTextMarkerAttribute = "AXPreviousTextMarkerForTextMarker" as CFString
+    private static let attributedStringForMarkerRangeAttribute = "AXAttributedStringForTextMarkerRange" as CFString
 
     private static let systemWide: AXUIElement = {
         let element = AXUIElementCreateSystemWide()
@@ -55,15 +57,18 @@ enum CotypingAXHelper {
     /// True when the process holds the Accessibility grant (no prompt).
     static var isTrusted: Bool { AXIsProcessTrusted() }
 
-    /// Per-element cache of resolved field styles so the focus poll (every ~200 ms)
-    /// doesn't re-read `AXAttributedStringForRange` for a field it already styled.
-    /// Keyed by the element's stable `AXIdentifier`; cleared wholesale at 64 entries.
-    /// Mutable caches are boxed behind a lock because routine reads now happen
-    /// on the snapshot queue while the event-tap acceptance check remains a
-    /// synchronous main-thread read.
+    /// Mutable caches are boxed behind a lock because routine reads happen on
+    /// the snapshot queue while the event-tap acceptance check remains a
+    /// synchronous main-thread read. A field's font, document scope and the
+    /// text above it are cached per focused field, so a keystroke reads only
+    /// the field itself.
     private final class CacheState: @unchecked Sendable {
         let lock = NSLock()
-        var fieldStyles: [String: CotypingFieldStyle] = [:]
+        let fieldStyles = CotypingFieldContextCache<CotypingFieldStyle>(label: "field-style", maxAge: 5)
+        let learningScopes = CotypingFieldContextCache<String?>(label: "learning-scope", maxAge: 30)
+        /// Nearby text is held for the focused field only.
+        let visibleContexts = CotypingFieldContextCache<CotypingVisibleContext.Snapshot?>(
+            label: "visible-context", maxAge: 3, maxEntries: 1)
         var appReadPolicy = CotypingAppReadPolicy()
         var visibleContextPolicy = CotypingVisibleContext.Policy()
         let surfaceCaptures = CotypingSurfaceCaptureSingleFlight()
@@ -92,7 +97,17 @@ enum CotypingAXHelper {
     }
 
     static func configureVisibleContextPolicy(_ policy: CotypingVisibleContext.Policy) {
-        cacheState.withLock { cacheState.visibleContextPolicy = policy }
+        let changed = cacheState.withLock {
+            defer { cacheState.visibleContextPolicy = policy }
+            return cacheState.visibleContextPolicy != policy
+        }
+        if changed { cacheState.visibleContexts.removeAll() }
+    }
+
+    /// Forgets nearby text read from the screen for any field but the
+    /// focused one.
+    static func forgetVisibleContext(exceptFor focusIdentityKey: String? = nil) {
+        cacheState.visibleContexts.removeAll(except: focusIdentityKey)
     }
 
     private static var appReadPolicy: CotypingAppReadPolicy {
@@ -351,10 +366,14 @@ enum CotypingAXHelper {
         // Per-site rules: read the tab URL only when domains are configured (it
         // costs an extra bounded ancestor walk), gated by the coordinator.
         let host = includeURL ? surfaceCapture.urlString.flatMap(CotypingBrowserDomain.host(fromURLString:)) : nil
-        // Host field font/color — read (cached per element) only when matching is
+        // Host field font/color — read (cached per field) only when matching is
         // enabled, so the overlay can mimic the field instead of a fixed style.
-        let resolvedStyle = includeStyle && !usesMarkerSelection
-            ? resolveFieldStyle(for: element, caretLocation: caret, textLength: nsValue.length)
+        let resolvedStyle = includeStyle
+            ? cacheState.fieldStyles.valueIfReadable(forKey: focusIdentityKey) {
+                usesMarkerSelection
+                    ? resolveMarkerFieldStyle(for: element)
+                    : resolveFieldStyle(for: element, caretLocation: caret, textLength: nsValue.length)
+            }
             : nil
         let isIntegratedTerminal = CotypingSurfaceClassifier.isIntegratedTerminal(
             domClassList: stringArrayAttribute(element, "AXDOMClassList"))
@@ -369,17 +388,24 @@ enum CotypingAXHelper {
             windowTitle: surfaceTitle, fieldPlaceholder: surfacePlaceholder, fieldStyle: resolvedStyle,
             precedingTextIsTruncated: context.precedingIsTruncated,
             learningScopeKey: includeLearningScope
-                ? learningScopeKey(near: element, bundleID: bundleID) : nil)
+                ? cacheState.learningScopes.value(forKey: focusIdentityKey) {
+                    learningScopeKey(near: element, bundleID: bundleID)
+                } : nil)
         if includeVisibleContext, !isIntegratedTerminal {
             let policy = cacheState.withLock { cacheState.visibleContextPolicy }
             field.visibleContextWasRequested = true
             if policy.enabled, !ScreenContextPrivacy.isExcluded(
                 appName: appName, bundleIdentifier: bundleID, rules: policy.excludedApps) {
-                field.visibleContext = CotypingVisibleContext.capture(
-                    from: CotypingVisibleContextAXSource(
-                        field: element, processID: pid, appName: appName, bundleID: bundleID,
-                        focusIsCurrent: { focusedElement().map { CFEqual($0, element) } ?? false }),
-                    policy: policy)
+                // Walking the window takes tens of milliseconds, so it runs once
+                // per field and then in the background, never per keystroke.
+                field.visibleContext = cacheState.visibleContexts.value(forKey: focusIdentityKey) {
+                    let snapshot = CotypingVisibleContext.capture(
+                        from: CotypingVisibleContextAXSource(
+                            field: element, processID: pid, appName: appName, bundleID: bundleID,
+                            focusIsCurrent: { focusedElement().map { CFEqual($0, element) } ?? false }),
+                        policy: policy)
+                    return policy == cacheState.withLock({ cacheState.visibleContextPolicy }) ? snapshot : nil
+                }
             }
             // A policy revocation during a cross-process read drops its result.
             if policy != cacheState.withLock({ cacheState.visibleContextPolicy }) { field.visibleContext = nil }
@@ -539,12 +565,6 @@ enum CotypingAXHelper {
     /// cross-process call, so it is cached and gated behind `includeStyle`.
     private static func resolveFieldStyle(for element: AXUIElement, caretLocation: Int, textLength: Int) -> CotypingFieldStyle? {
         guard textLength > 0 else { return nil }
-        let identifier = stringAttribute(element, kAXIdentifierAttribute as String)
-        if let identifier,
-           !identifier.isEmpty,
-           let cached = cacheState.withLock({ cacheState.fieldStyles[identifier] }) {
-            return cached
-        }
         // Prefer the character just before the caret (what the user is extending),
         // then the first character; clamp so an off-by-one caret never reads OOB.
         let clampedCaret = min(max(caretLocation - 1, 0), textLength - 1)
@@ -557,13 +577,21 @@ enum CotypingAXHelper {
             resolved = style
             break
         }
-        if let identifier, !identifier.isEmpty, let resolved {
-            cacheState.withLock {
-                cacheState.fieldStyles[identifier] = resolved
-                if cacheState.fieldStyles.count > 64 { cacheState.fieldStyles.removeAll() }
-            }
-        }
         return resolved
+    }
+
+    /// The font and color of the character before the caret in a web field,
+    /// which exposes text only through opaque text markers.
+    private static func resolveMarkerFieldStyle(for element: AXUIElement) -> CotypingFieldStyle? {
+        guard let selection = copyOpaqueAttribute(selectedTextMarkerRangeAttribute, on: element),
+              let caret = copyOpaqueParameterized(startMarkerForRangeAttribute, parameter: selection, on: element),
+              let previous = copyOpaqueParameterized(
+                previousTextMarkerAttribute, parameter: caret, on: element),
+              let range = markerRange(from: previous, to: caret, on: element),
+              let attributed = copyOpaqueParameterized(
+                attributedStringForMarkerRangeAttribute, parameter: range, on: element) as? NSAttributedString,
+              attributed.length > 0 else { return nil }
+        return extractFieldStyle(from: attributed.attributes(at: attributed.length - 1, effectiveRange: nil))
     }
 
     private static func attributedString(forRange range: NSRange, on element: AXUIElement) -> NSAttributedString? {
@@ -589,6 +617,7 @@ enum CotypingAXHelper {
             if let size = fontInfo["AXFontSize"] as? NSNumber { fontPointSize = CGFloat(size.doubleValue) }
         }
         let foregroundHex = colorAttribute(in: attributes, forKey: .foregroundColor)
+            ?? colorAttribute(in: attributes, forKey: NSAttributedString.Key("AXForegroundColor"))
         // Web/AX content sometimes reports the fill under an `AXBackgroundColor`
         // run attribute rather than the AppKit `.backgroundColor` key.
         let backgroundHex = colorAttribute(in: attributes, forKey: .backgroundColor)

@@ -26,14 +26,51 @@ LokalBot defaults:
   request and the model-server floor; after the first latency sample, the
   in-process route uses 20/25/55 ms adaptive tiers. The settings label states
   that distinction instead of implying a fixed local delay.
-- Streaming partial suggestions default off, matching Cotypist/Cotabby.
+- A suggestion appears whole, as in Cotypist. There is no streaming of
+  partial suggestions: each partial needed its own Accessibility re-read and
+  made the ghost grow word by word.
 - Suggestions appear instantly with no fade-in animation, and ghost text is
   always bare, matching Cotypist's understated inline presentation — the accept
   shortcut is configured (and discoverable) in Settings, never displayed beside
   the suggestion.
-- Popup/mirror suggestions highlight the next word-sized accept chunk at stronger
-  weight/contrast, matching Cotabby's preview card cue for what the next accept
-  keypress will insert.
+- Inline ghost text is drawn in the field's own font at its own size, starting
+  exactly at the caret on the field's baseline (`CotypingInlineGhostLayout`,
+  `CotypingGhostFontSizing`). Wrapped lines line up with the field's text edge.
+  A re-read of the field that leaves out its font keeps the suggestion's font,
+  so the ghost never changes size mid-line.
+- The word the next accept keypress takes is drawn a little stronger than the
+  rest of the suggestion, inline and in the popup.
+
+## Keystroke latency
+
+Each keystroke reads the field once to see the host publish it, builds the
+prompt from context cached per field, runs the model, and reads the field once
+more before painting. Nothing else waits on the keystroke:
+
+- The field's font, its document scope and the text above it are cached per
+  focused field (`CotypingFieldContextCache`) and refreshed in the background.
+  Walking the window for visible text takes tens of milliseconds.
+- Saved-memory lookups read the library (about 47 ms with 101 meetings) and run
+  in the background; a suggestion uses the newest finished lookup for its field
+  (`CotypingMemoryLookup`). Lookups and learned-example ranking use finished
+  words only, so a half-typed word never changes the prompt.
+- A long draft's context window starts at a sentence or paragraph boundary
+  (`CotypingPrefixWindow`), so the model reuses what it already read instead of
+  reading about 450 tokens again per keystroke.
+- Focusing a field reads it as the first keystroke will and prefills that
+  prompt, so the first suggestion only adds what was typed.
+- A memory-pressure warning leaves the model loaded while suggestions are being
+  made; critical pressure, or a warning after a minute idle, frees it.
+
+Model time per suggestion, measured with
+`CotypingTypingLatencyBenchmarkTests` (Gemma 4 E2B Q6_K, Release, M4 Max):
+
+| Typing | Before | After |
+| --- | ---: | ---: |
+| Short reply, no context | 60 ms | 61 ms |
+| Short reply, context changing per word | 60 ms | 59 ms |
+| End of a long draft | 257 ms | 60 ms |
+| Saved-memory lookup on the keystroke | 47 ms | 0 ms |
 - Completion token budget follows Cotypist/Cotabby's English baseline: `ceil(words * 1.3)`, floor 5, doubled for multi-line up to 120.
 - The dedicated cotyping `llama-server` launches with a 2048-token context window, matching Cotypist/Cotabby's local llama runtime configuration.
 - Focus polling uses a 200 ms active cadence, then stretches after

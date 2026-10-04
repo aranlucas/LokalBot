@@ -42,13 +42,4 @@ final class CotypingSeamGuardTests: XCTestCase {
             isKnownWord: { $0 == "afternoon" })
         XCTAssertEqual(verdict, .allow)
     }
-
-    func testStreamedPartialUsesPunctuationOnlyGuard() {
-        XCTAssertFalse(CotypingSeamGuard.allowsStreamedPartial(
-            precedingText: "Thanks",
-            completion: " !!!!"))
-        XCTAssertTrue(CotypingSeamGuard.allowsStreamedPartial(
-            precedingText: "I am gre",
-            completion: "atful"))
-    }
 }

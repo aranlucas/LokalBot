@@ -440,10 +440,6 @@ struct AppSettings: Codable, Equatable {
     /// minimum pause on the model-server fallback. Once local latency is known,
     /// the in-process route switches to its documented adaptive tiers.
     var cotypingDebounceMs: Int = Self.defaultCotypingDebounceMs
-    /// Paint partial suggestions token-by-token while the model is decoding.
-    /// Off by default to match Cotypist/Cotabby's shipped behavior: suggestions
-    /// appear once, fully formed, after normalization.
-    var cotypingStreamSuggestionsWhileGenerating: Bool = false
     /// How much the primary accept key takes (the full-accept key always takes all).
     var cotypingAcceptGranularity: CotypingAcceptGranularity = .word
     /// Primary accept key (next word/phrase) and the full-accept key (whole tail).
@@ -783,7 +779,6 @@ struct AppSettings: Codable, Equatable {
         case cotypingSettingsVersion
         case cotypingMaxWords
         case cotypingDebounceMs
-        case cotypingStreamSuggestionsWhileGenerating
         case cotypingAcceptGranularity
         case cotypingAcceptKey
         case cotypingFullAcceptKey
@@ -965,7 +960,6 @@ struct AppSettings: Codable, Equatable {
                 cotypingDebounceMs,
                 decodedSettingsVersion: Self.currentCotypingSettingsVersion),
             forKey: .cotypingDebounceMs)
-        try c.encode(cotypingStreamSuggestionsWhileGenerating, forKey: .cotypingStreamSuggestionsWhileGenerating)
         try c.encode(cotypingAcceptGranularity, forKey: .cotypingAcceptGranularity)
         try c.encode(cotypingAcceptKey, forKey: .cotypingAcceptKey)
         try c.encode(cotypingFullAcceptKey, forKey: .cotypingFullAcceptKey)
@@ -1132,9 +1126,6 @@ struct AppSettings: Codable, Equatable {
         cotypingDebounceMs = Self.migratedCotypingDebounceMs(
             decode(.cotypingDebounceMs, defaults.cotypingDebounceMs),
             decodedSettingsVersion: cotypingSettingsVersion)
-        cotypingStreamSuggestionsWhileGenerating = decode(
-            .cotypingStreamSuggestionsWhileGenerating,
-            defaults.cotypingStreamSuggestionsWhileGenerating)
         cotypingAcceptGranularity = decode(
             .cotypingAcceptGranularity, defaults.cotypingAcceptGranularity)
         cotypingAcceptKey = decode(.cotypingAcceptKey, defaults.cotypingAcceptKey)

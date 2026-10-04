@@ -1,3 +1,4 @@
+import AppKit
 import CoreGraphics
 import Foundation
 
@@ -24,6 +25,7 @@ extension CotypingCoordinator {
             acceptedSuggestionBatch.discardLearningRecord()
             clearSuggestion()
             activeMemoryContext = .empty
+            memoryLookup.reset()
             activeVisibleContext = nil
             memoryContextSources = []
             memoryContextSearched = false
@@ -61,6 +63,7 @@ extension CotypingCoordinator {
     /// Drop both visible and cached text before source deletion/correction or
     /// permission revocation. Accepted facts are not copied into local learning.
     func invalidateMemoryContext() {
+        memoryLookup.reset()
         guard CotypingMemoryContext.Policy(settings: settingsProvider()).enabled
                 || !activeMemoryContext.selection.items.isEmpty else { return }
         cancelPendingGenerationWork()
@@ -92,19 +95,44 @@ extension CotypingCoordinator {
             return
         }
         focusTracker.start()
+        workspaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refreshFocusSoon() }
+        }
         isRunning = true
         state = .idle
+    }
+
+    /// Reads focus shortly after a click or an app switch, once the app has
+    /// moved it.
+    func refreshFocusSoon() {
+        guard isRunning else { return }
+        focusRefreshTask?.cancel()
+        focusRefreshTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(80))
+            guard let self, !Task.isCancelled, self.isRunning else { return }
+            await self.focusTracker.refreshNow()
+        }
     }
 
     func stop(reason: String? = nil) {
         cancelPendingGenerationWork()
         clearSuggestion()
+        focusRefreshTask?.cancel()
+        focusRefreshTask = nil
+        CotypingAXHelper.forgetVisibleContext()
+        if let workspaceObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(workspaceObserver)
+            self.workspaceObserver = nil
+        }
         focusTracker.stop()
         inputMonitor.stop()
         isRunning = false
         escapePause = nil
         resetMeasurementState()
         activeMemoryContext = .empty
+        memoryLookup.reset()
         activeVisibleContext = nil
         memoryContextSources = []
         memoryContextSearched = false
@@ -129,11 +157,8 @@ extension CotypingCoordinator {
         guard !wired else { return }
         wired = true
         focusTracker.onChange = { [weak self] focus in self?.handleFocusChange(focus) }
-        focusTracker.needsVisibleContextValidation = { [weak self] in
-            guard let self else { return false }
-            return self.activeVisibleContext != nil && (self.session != nil || self.generationTask != nil)
-        }
         inputMonitor.onKey = { [weak self] event in self?.handleKey(event) }
+        inputMonitor.onPointerDown = { [weak self] in self?.refreshFocusSoon() }
         inputMonitor.onAcceptKey = { [weak self] scope in self?.acceptFromTap(scope) ?? false }
         inputMonitor.onDismissKey = { [weak self] in self?.dismissFromTap() ?? false }
         inputMonitor.acceptGate = { [weak self] in

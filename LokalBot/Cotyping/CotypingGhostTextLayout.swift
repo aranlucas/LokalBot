@@ -9,36 +9,6 @@ nonisolated enum CotypingGhostTextLayout {
     static let maxMirrorLines = 4
     private static let screenMargin: CGFloat = 24
 
-    struct Layout: Equatable {
-        let lines: [String]
-        let textSize: CGSize
-
-        var displayText: String { lines.joined(separator: "\n") }
-    }
-
-    static func mirrorLayout(
-        text: String,
-        style: CotypingFieldStyle?,
-        visible: CGRect?,
-        maxLines: Int = maxMirrorLines
-    ) -> Layout {
-        let font = CotypingGhostStyle.resolvedFont(from: style)
-        let maxWidth = mirrorTextWidthBudget(visible: visible)
-        let lines = wrappedLines(
-            text: text,
-            font: font,
-            maxWidth: maxWidth,
-            maxLines: maxLines)
-        let lineHeight = ceil(font.ascender - font.descender)
-        let widestLine = lines
-            .map { measuredWidth($0, font: font) }
-            .max() ?? minMirrorTextWidth
-        let textSize = CGSize(
-            width: ceil(min(maxWidth, max(widestLine, minMirrorTextWidth))),
-            height: ceil(max(CGFloat(lines.count), 1) * max(lineHeight, 1)))
-        return Layout(lines: lines, textSize: textSize)
-    }
-
     static func wrappedLines(
         text: String,
         font: NSFont,
@@ -87,7 +57,7 @@ nonisolated enum CotypingGhostTextLayout {
         return result
     }
 
-    private static func mirrorTextWidthBudget(visible: CGRect?) -> CGFloat {
+    static func mirrorTextWidthBudget(visible: CGRect?) -> CGFloat {
         guard let visible else { return maxMirrorTextWidth }
         let screenBudget = visible.width - (screenMargin * 2)
         return min(maxMirrorTextWidth, max(minMirrorTextWidth, screenBudget))

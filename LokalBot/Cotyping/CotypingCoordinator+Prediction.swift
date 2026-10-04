@@ -31,17 +31,25 @@ extension CotypingCoordinator {
             excludedDomains: settings.cotypingExcludedDomainList,
             suggestInIntegratedTerminals: settings.cotypingSuggestInIntegratedTerminals,
             selfBundleID: selfBundleID,
-            focus: focus) == nil,
-              let request = buildRequest(for: field, settings: settings, generation: generation)
-        else {
+            focus: focus) == nil else {
             return
         }
 
         focusPrewarmFieldIdentity = fieldIdentity
         focusPrewarmTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(50))
-            guard !Task.isCancelled else { return }
-            try? await self?.engine.prewarm(for: request)
+            guard let self, !Task.isCancelled else { return }
+            // Read the field as the first keystroke will, which also caches its
+            // font and the text above it, and have the model read that prompt
+            // now, so the first suggestion only adds what was typed.
+            let settings = self.settingsProvider()
+            let live = await self.refreshFocusForPrediction(settings: settings)
+            guard !Task.isCancelled, let field = live.field,
+                  CotypingFieldIdentity.prewarm(for: field) == fieldIdentity,
+                  let request = self.buildRequest(
+                    for: field, settings: settings, generation: self.generation, allowsBlankPrefix: true)
+            else { return }
+            try? await self.engine.prewarm(for: request)
         }
     }
 
@@ -155,9 +163,12 @@ extension CotypingCoordinator {
             break
         }
 
-        let memory = await savedContext(for: field, settings: settings)
-        guard work == generation, isRunning, !Task.isCancelled,
-              memory.isCurrent(settings: settingsProvider()) else { return }
+        var memory = latestSavedContext(for: field, settings: settings)
+        if !memory.isCurrent(settings: settingsProvider()) {
+            // A source changed or was withdrawn since the lookup: look again.
+            memoryLookup.reset()
+            memory = .empty
+        }
         activeMemoryContext = memory
         activeVisibleContext = field.visibleContext?.text == nil ? nil : field.visibleContext
         memoryContextSources = memory.selection.sourceTitles
@@ -181,15 +192,8 @@ extension CotypingCoordinator {
         state = .generating
         let start = Date()
         do {
-            // Stream: paint ghost text as tokens arrive instead of waiting for the
-            // whole completion only when the user enabled streamed suggestions.
-            // Even when partial painting is off, keep the streaming transport so
-            // the HTTP client can stop at the same decode boundary as Cotabby.
-            let streamPartials = settings.cotypingStreamSuggestionsWhileGenerating
-            let result = try await engine.generateStreaming(request) { [weak self] partial in
-                guard streamPartials else { return }
-                Task { @MainActor in self?.queueStreamPartial(partial, work: work, field: field) }
-            }
+            // The whole suggestion appears at once, as in Cotypist.
+            let result = try await engine.generate(request)
             await completeGeneration(
                 result,
                 targetField: field,
@@ -241,7 +245,8 @@ extension CotypingCoordinator {
         for field: CotypingField,
         settings: AppSettings,
         generation: UInt64,
-        memoryContext: String? = nil
+        memoryContext: String? = nil,
+        allowsBlankPrefix: Bool = false
     ) -> CotypingRequest? {
         var cfg = config
         cfg.maxResponseTokens = settings.cotypingMaxResponseTokens
@@ -250,9 +255,13 @@ extension CotypingCoordinator {
             for: field,
             config: cfg,
             enabled: settings.cotypingUseClipboard)
+        // Ranked on finished words only: a half-typed word reordering the
+        // examples would change the prompt, and the model would read it again.
+        var rankingField = field
+        rankingField.precedingText = CotypingMemoryLookup.finishedWords(of: field.precedingText)
         let learnedExamples = settings.cotypingUseLocalLearning
             ? learningStore.examples(
-                for: field,
+                for: rankingField,
                 limit: settings.cotypingLearningExamplesInPrompt)
             : []
         return CotypingRequestBuilder.build(
@@ -262,7 +271,8 @@ extension CotypingCoordinator {
             memoryContext: memoryContext,
             visibleContext: field.visibleContext?.text,
             learnedExamples: learnedExamples,
-            wordPrefixIsValidWord: wordPrefixIsValidWord(for: field.precedingText))
+            wordPrefixIsValidWord: wordPrefixIsValidWord(for: field.precedingText),
+            allowsBlankPrefix: allowsBlankPrefix)
     }
 
     private func pinnedClipboardContext(
@@ -291,7 +301,7 @@ extension CotypingCoordinator {
         return resolution.value
     }
 
-    private func refreshFocusForPrediction(settings: AppSettings) async -> CotypingFocus {
+    func refreshFocusForPrediction(settings: AppSettings) async -> CotypingFocus {
         let includeVisibleContext = settings.cotypingUseVisibleContext
         let includeSurface = settings.cotypingUseAppContext
         let includeURL = !settings.cotypingExcludedDomainList.isEmpty
@@ -309,23 +319,18 @@ extension CotypingCoordinator {
             maxAgeMilliseconds: Self.freshSnapshotReuseWindowMilliseconds)
     }
 
+    /// One quick read of the field before painting: the suggestion is shown
+    /// only if the text it continues is still exactly what is there. The
+    /// field's font and the text above it come from the request's own read.
     private func validatedLiveFieldForGeneratedResult(
         originalField: CotypingField,
         settings: AppSettings,
         work: UInt64
     ) async -> CotypingField? {
         guard work == generation, isRunning, !discardRevokedMemoryContext() else { return nil }
-        let includeVisibleContext = settings.cotypingUseVisibleContext
-        let includeSurface = settings.cotypingUseAppContext
-        let includeURL = !settings.cotypingExcludedDomainList.isEmpty
-        let includeStyle = settings.cotypingMatchHostStyle
-        let includeLearningScope = settings.cotypingUseLocalLearning
-        guard let focus = await focusTracker.refreshForValidation(
-            includeSurface: includeSurface,
-            includeURL: includeURL,
-            includeStyle: includeStyle,
-            includeLearningScope: includeLearningScope,
-            includeVisibleContext: includeVisibleContext) else {
+        guard var focus = await focusTracker.refreshForValidation(
+            includeSurface: settings.cotypingUseAppContext,
+            includeURL: !settings.cotypingExcludedDomainList.isEmpty) else {
             return nil
         }
         guard work == generation, isRunning, !discardRevokedMemoryContext() else { return nil }
@@ -339,11 +344,12 @@ extension CotypingCoordinator {
             state = .disabled(reason)
             return nil
         }
-        guard activeVisibleContext == nil || activeVisibleContext == focus.field?.visibleContext,
-              originalField.learningScopeKey == focus.field?.learningScopeKey,
-              CotypingSessionReconciler.isCurrentGenerationTarget(originalField, liveField: focus.field) else {
+        guard CotypingSessionReconciler.isCurrentGenerationTarget(originalField, liveField: focus.field) else {
             return nil
         }
+        focus.field?.fieldStyle = originalField.fieldStyle
+        focus.field?.learningScopeKey = originalField.learningScopeKey
+        focus.field?.visibleContext = originalField.visibleContext
         return focus.field
     }
 
@@ -435,68 +441,6 @@ extension CotypingCoordinator {
         return true
     }
 
-    /// Coalesces streamed partials to one main-queue render pass. Tokens can
-    /// arrive faster than AppKit can relayout the overlay; latest-wins keeps the
-    /// visible ghost fresh without stacking window updates on the main actor.
-    private func queueStreamPartial(_ result: CotypingNormalizationResult, work: UInt64, field: CotypingField) {
-        guard work == generation, isRunning else { return }
-        pendingStreamPartial = PendingStreamPartial(result: result, work: work, field: field)
-        guard streamValidationTask == nil else { return }
-        streamValidationGeneration &+= 1
-        let validationGeneration = streamValidationGeneration
-        streamValidationTask = Task { [weak self] in
-            guard let self else { return }
-            while !Task.isCancelled,
-                  self.streamValidationGeneration == validationGeneration,
-                  let pending = self.pendingStreamPartial {
-                self.pendingStreamPartial = nil
-                await self.renderStreamPartial(
-                    pending.result,
-                    work: pending.work,
-                    field: pending.field)
-            }
-            if self.streamValidationGeneration == validationGeneration {
-                self.streamValidationTask = nil
-            }
-        }
-    }
-
-    /// Renders a streamed partial. Monotonic: ignores reordered/shorter partials
-    /// so the ghost only grows.
-    private func renderStreamPartial(
-        _ result: CotypingNormalizationResult,
-        work: UInt64,
-        field: CotypingField
-    ) async {
-        guard work == generation, isRunning, !result.text.isEmpty else { return }
-        let settings = settingsProvider()
-        let liveField = await validatedLiveFieldForGeneratedResult(
-            originalField: field,
-            settings: settings,
-            work: work)
-        guard work == generation, isRunning, !Task.isCancelled else { return }
-        guard let liveField else {
-            clearStaleGeneratedResult()
-            return
-        }
-        guard CotypingSeamGuard.allowsStreamedPartial(
-            precedingText: liveField.precedingText,
-            completion: result.text
-        ) else { return }
-        let currentlyRendered = session?.field.contentSignature == liveField.contentSignature
-            ? session?.fullText
-            : nil
-        guard CotypingStreamedGhostTextPolicy.isRenderableExtension(
-            candidate: result.text,
-            currentlyRendered: currentlyRendered) else {
-            return
-        }
-        present(
-            CotypingSession(field: liveField, fullText: result.text, kind: .continuation),
-            overlayText: result.text,
-            streamedWork: work)
-    }
-
     func seamVerdict(precedingText: String, completion: String) -> CotypingSeamGuard.Verdict {
         let verdictsApply = spellChecker.verdictsApply(context: precedingText)
         return CotypingSeamGuard.verdict(
@@ -544,11 +488,62 @@ extension CotypingCoordinator {
             text: text,
             caretRect: field.caretRect,
             inputFrameRect: field.inputFrameRect,
-            focusIdentityKey: field.focusIdentityKey,
-            style: field.fieldStyle,
+            style: field.fieldStyle ?? sessionStyle(for: field),
             placement: placement ?? self.placement(for: field),
             acceptanceText: acceptanceText,
-            isRightToLeft: CotypingTextDirectionDetector.isRightToLeft(field.precedingText))
+            isRightToLeft: CotypingTextDirectionDetector.isRightToLeft(field.precedingText),
+            precedingText: field.precedingText,
+            emphasisLength: acceptEmphasisLength(for: text))
+    }
+
+    /// A quick re-read of the field leaves out its font. The suggestion keeps
+    /// the font it was first drawn in, so it does not change size mid-line.
+    private func sessionStyle(for field: CotypingField) -> CotypingFieldStyle? {
+        guard let session,
+              CotypingFieldIdentity.suggestionAnchor(for: session.field)
+                == CotypingFieldIdentity.suggestionAnchor(for: field) else { return nil }
+        return session.field.fieldStyle
+    }
+
+    /// Characters of `text` the next accept keypress takes, which the ghost
+    /// draws a little stronger. Nil when one accept takes the whole suggestion.
+    func acceptEmphasisLength(for text: String) -> Int? {
+        guard let session, case .continuation = session.kind else { return nil }
+        let settings = settingsProvider()
+        let chunk = CotypingGhostHighlight.acceptancePrefix(
+            in: text,
+            granularity: settings.cotypingAcceptGranularity,
+            autoAcceptTrailingPunctuation: settings.cotypingAutoAcceptTrailingPunctuation)
+        return chunk.isEmpty ? nil : chunk.count
+    }
+
+    // MARK: - Saved memory
+
+    /// Saved facts for a live keystroke. Looking them up reads the library,
+    /// which takes tens of milliseconds, so the suggestion uses the newest
+    /// lookup that has finished for this field. Another starts in the
+    /// background when the finished words before the caret could name
+    /// something new, and the following keystroke picks it up.
+    private func latestSavedContext(for field: CotypingField, settings: AppSettings)
+        -> CotypingMemoryContextProvider.Snapshot {
+        guard CotypingMemoryContext.Policy(settings: settings).enabled else {
+            memoryLookup.reset()
+            return .empty
+        }
+        var lookupField = field
+        lookupField.precedingText = CotypingMemoryLookup.finishedWords(of: field.precedingText)
+        let anchor = CotypingFieldIdentity.suggestionAnchor(for: field)
+        let query = CotypingMemoryContext.query(for: lookupField, includeTitle: settings.cotypingUseAppContext)
+        if memoryLookup.needsLookup(anchor: anchor, query: query) {
+            let lookup = memoryLookup.begin(anchor: anchor, query: query)
+            memoryLookup.task = Task { [weak self] in
+                guard let self else { return }
+                let snapshot = await self.memoryContextProvider(lookupField, settings)
+                guard !Task.isCancelled else { return }
+                self.memoryLookup.finish(lookup, with: snapshot)
+            }
+        }
+        return memoryLookup.snapshot
     }
 
     // MARK: - In-app preview
@@ -634,7 +629,6 @@ extension CotypingCoordinator {
             engine: engine,
             config: cfg,
             personalization: settings.cotypingPersonalization,
-            streamPartials: settings.cotypingStreamSuggestionsWhileGenerating,
             learnedExamples: { [weak self] field in
                 guard let self, settings.cotypingUseLocalLearning else { return [] }
                 return self.learningStore.examples(
