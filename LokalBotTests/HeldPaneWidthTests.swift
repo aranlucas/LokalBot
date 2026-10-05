@@ -40,3 +40,37 @@ final class HeldPaneWidthTests: XCTestCase {
         XCTAssertNil(held.resized(to: 360.5, byUser: false))
     }
 }
+
+final class SplitPaneRefreshTests: XCTestCase {
+    func testRepeatedRenderingDoesNotRepeatAccessibilityWork() {
+        var state = SplitPaneRefreshState()
+        let configuration = SplitPaneRefreshState.Configuration(
+            label: "Settings navigation", autosaveName: "settings", initialWidth: 220)
+        XCTAssertTrue(state.update(configuration))
+        for _ in 0..<100 { XCTAssertFalse(state.update(configuration)) }
+        var changed = configuration
+        changed.label = "General"
+        XCTAssertTrue(state.update(changed))
+        changed.autosaveName = "other"
+        XCTAssertTrue(state.update(changed))
+        changed.initialWidth = 240
+        XCTAssertTrue(state.update(changed))
+    }
+}
+
+final class SplitPaneGeometryRefreshTests: XCTestCase {
+    func testAccessibilityLabelsDoNotBelongToGeometryConfiguration() {
+        var state = SplitPaneGeometryRefreshState()
+        let configuration = SplitPaneGeometryRefreshState.Configuration(
+            autosaveName: "settings", initialWidth: 220)
+
+        XCTAssertTrue(state.update(configuration))
+        for _ in 0..<100 {
+            XCTAssertFalse(state.update(configuration))
+        }
+
+        var changed = configuration
+        changed.initialWidth = 240
+        XCTAssertTrue(state.update(changed))
+    }
+}

@@ -274,31 +274,48 @@ final class AppState: ObservableObject {
             || old.approvedRemoteInferenceOrigins != new.approvedRemoteInferenceOrigins
     }
 
-    // Navigation (main window): sidebar section and selected meeting.
-    @Published var navSection: NavSection = .today
-    @Published var showingActions = false
+    // Navigation (main window). `router` owns page selection and intent; these
+    // forwarding accessors keep existing call sites and bindings working while
+    // SwiftUI observes the router's properties instead of all of AppState.
+    let router: AppRouter
+    var navSection: NavSection {
+        get { router.section }
+        set { router.show(newValue) }
+    }
+    var showingActions: Bool {
+        get { router.showingActions }
+        set { router.setShowingActions(newValue) }
+    }
     @Published var meetingNoteDrafts: [UUID: String] = [:]
     @Published var actionSelection: Set<String> = []
     @Published var recallQuery = ""
     @Published var recallState = RecallWorkspaceState()
-    @Published var evidenceMeetingID: UUID?
-    @Published var evidenceReturnSection: NavSection?
-    private var evidenceReturnMeetingIDs: Set<Meeting.ID>?
+    var evidenceMeetingID: UUID? {
+        get { router.evidenceMeetingID }
+        set { router.setEvidenceMeeting(newValue) }
+    }
+    var evidenceReturnSection: NavSection? {
+        get { router.evidenceReturnSection }
+        set { router.setEvidenceReturnSection(newValue) }
+    }
     func returnFromEvidence() {
-        guard let section = evidenceReturnSection else { return }
-        if let evidenceReturnMeetingIDs { selectedMeetingIDs = evidenceReturnMeetingIDs }
-        navSection = section
-        evidenceReturnSection = nil
-        evidenceReturnMeetingIDs = nil
+        guard let destination = router.returnFromEvidence() else { return }
+        if let meetingIDs = destination.meetingIDs { selectedMeetingIDs = meetingIDs }
     }
     @Published var meetingWorkspaceTabs: [UUID: MeetingWorkspaceTab] = [:]
     var meetingPlaybackPositions: [UUID: TimeInterval] = [:]
     var meetingPlaybackSpeeds: [UUID: Float] = [:]
-    func openActions() { showingActions = true; navSection = .today }
+    func openActions() { router.openActions() }
 
     /// People and Projects share one derived read model.
-    @Published var selectedPersonID: String?
-    @Published var selectedProjectID: String?
+    var selectedPersonID: String? {
+        get { router.selectedPersonID }
+        set { router.selectPerson(newValue) }
+    }
+    var selectedProjectID: String? {
+        get { router.selectedProjectID }
+        set { router.selectProject(newValue) }
+    }
     private(set) lazy var connections = WorkMemoryConnections()
 
     /// The meeting whose follow-up draft sheet is open, from any entry point.
@@ -313,15 +330,9 @@ final class AppState: ObservableObject {
         outcomeIndex.all.first { !$0.isArchived && $0.meeting.endedAt != nil }?.meeting
     }
 
-    func openPerson(_ id: String) {
-        selectedPersonID = id
-        navSection = .people
-    }
+    func openPerson(_ id: String) { router.openPerson(id) }
 
-    func openProject(_ id: String) {
-        selectedProjectID = id
-        navSection = .projects
-    }
+    func openProject(_ id: String) { router.openProject(id) }
 
     @Published private(set) var actionCompletionHints: [String: ActionCompletionHint] = [:]
     private var completionHintTask: Task<Void, Never>?
@@ -370,7 +381,6 @@ final class AppState: ObservableObject {
             root: storage.rootURL,
             activityDatabaseURL: activityStore.databaseURL))
     }
-    private static let typeTabDefaultsKey = "lokalbotv3.type.selectedTab"
     private static var navigationDefaults: UserDefaults {
         if let suite = UITestRuntime.defaultsSuiteName,
            let defaults = UserDefaults(suiteName: suite) {
@@ -378,14 +388,18 @@ final class AppState: ObservableObject {
         }
         return .standard
     }
-    @Published var typeTab: TypeTab = .dictation {
-        didSet { Self.navigationDefaults.set(typeTab.rawValue, forKey: Self.typeTabDefaultsKey) }
+    var typeTab: TypeTab {
+        get { router.typeTab }
+        set { router.selectTypeTab(newValue) }
     }
-    private static let settingsTabDefaultsKey = "lokalbotv3.settings.selectedTab"
-    @Published var settingsTab: SettingsTab = .general {
-        didSet { Self.navigationDefaults.set(settingsTab.rawValue, forKey: Self.settingsTabDefaultsKey) }
+    var settingsTab: SettingsTab {
+        get { router.settingsTab }
+        set { router.selectSettingsTab(newValue) }
     }
-    @Published var focusedSettingID: String?
+    var focusedSettingID: String? {
+        get { router.focusedSettingID }
+        set { router.focusSetting(newValue) }
+    }
     /// Ask's retrieval choice survives NavigationSplitView remounts while the
     /// app is running. Explicit handoffs and conversation selections still
     /// switch back to Ask before presenting their content.
@@ -412,17 +426,13 @@ final class AppState: ObservableObject {
 
     /// Keep legacy writing commands routed to the corresponding Settings section.
     func openType(_ tab: TypeTab) {
-        typeTab = tab
-        openSettings(tab: tab == .cotyping ? .writing : .dictation)
-        focusedSettingID = tab == .cotyping ? "settings.autocompletePreview" : "settings.dictationPreview"
+        router.openType(tab)
+        WindowAccess.shared.open("main")
     }
 
     /// Open Settings as a destination inside the existing main window.
     func openSettings(tab: SettingsTab? = nil) {
-        if let tab { settingsTab = tab }
-        focusedSettingID = nil
-        evidenceReturnSection = nil
-        navSection = .settings
+        router.openSettings(tab: tab)
         WindowAccess.shared.open("main")
     }
 
@@ -450,14 +460,11 @@ final class AppState: ObservableObject {
     /// Open one meeting in the Meetings section — the deep-link target
     /// for search hits, menu-bar recents, and palette recents.
     func openMeeting(_ id: Meeting.ID, seek: TimeInterval? = nil, intent: EvidenceIntent = .reveal) {
-        evidenceMeetingID = id
-        if navSection != .meetings {
-            evidenceReturnSection = navSection
-            evidenceReturnMeetingIDs = selectedMeetingIDs
-        }
+        router.setEvidenceMeeting(id)
         navigationHandoff.stageMeeting(id, seek: seek, intent: intent)
+        let origin = selectedMeetingIDs
         selectedMeetingIDs = [id]
-        navSection = .meetings
+        router.beginEvidence(at: .meetings, preservingMeetingIDs: origin)
     }
 
     var canSearchSelectedMeeting: Bool {
@@ -551,6 +558,7 @@ final class AppState: ObservableObject {
     /// Settings' user-managed pin controls. The store remains the source of
     /// truth; mutations reload it before saving to avoid stale-view writes.
     @Published private(set) var dreamMemory: DreamMemory?
+    private var dreamRefreshRevision: UInt64 = 0
     private var dreamObserver: AnyCancellable?
     private(set) lazy var dreamStore = DreamStore(root: storage.rootURL)
     private(set) lazy var dreaming: DreamScheduler = {
@@ -836,7 +844,6 @@ final class AppState: ObservableObject {
     private var audioMonitorObserver: AnyCancellable?
     private var audioMonitorChangeForwarder: AnyCancellable?
     private var calendarObserver: AnyCancellable?
-    private var modelRolesObserver: AnyCancellable?
     private var navigationHandoffObserver: AnyCancellable?
     /// True only on the real interactive launch path (not headless / UI test) —
     /// gates recording notifications and first-run onboarding.
@@ -928,23 +935,13 @@ final class AppState: ObservableObject {
     }
 
     init() {
+        router = AppRouter(
+            defaults: Self.navigationDefaults,
+            isExistingInstall: Self.navigationDefaults.bool(forKey: Self.onboardingShownKey))
         AppLog.bootstrap()
         settings = settingsStore.current
         // AppKit-drawn text reads this before any window exists.
         AppAppearance.apply(textSize: settings.textSize)
-        if let raw = Self.navigationDefaults.string(forKey: Self.settingsTabDefaultsKey),
-           let stored = SettingsTab(rawValue: raw) {
-            settingsTab = stored
-        }
-        if let raw = Self.navigationDefaults.string(forKey: Self.typeTabDefaultsKey),
-           let stored = TypeTab(rawValue: raw) {
-            typeTab = stored
-        } else {
-            // Existing installs retain Dictation; genuinely new installs lead
-            // with the approved Autocomplete experience.
-            typeTab = Self.navigationDefaults.bool(forKey: Self.onboardingShownKey)
-                ? .dictation : .cotyping
-        }
         if Self.isUnitTesting { return }
         // Settings corruption is a privacy event, not a cosmetic one: a field
         // like screenshot capture silently resetting to its default changes
@@ -965,8 +962,8 @@ final class AppState: ObservableObject {
         }
         LiveMeetingTranscriber.sweepOrphanedSnapshots(storageRoot: storage.rootURL)
         // Views observe AppState only; forward pipeline / recording /
-        // audio-monitor / calendar change notifications so MainWindowView
-        // refreshes when those sub-ObservableObjects publish.
+        // audio-monitor / calendar change notifications so AppState readers
+        // refresh when those sub-ObservableObjects publish.
         pipelineObserver = pipeline.objectWillChange.sink { [weak self] in
             self?.objectWillChange.send()
         }
@@ -1012,9 +1009,7 @@ final class AppState: ObservableObject {
         calendarObserver = calendar.objectWillChange.sink { [weak self] in
             self?.objectWillChange.send()
         }
-        modelRolesObserver = modelRoles.objectWillChange.sink { [weak self] in
-            self?.objectWillChange.send()
-        }
+        prepareModelRoles()
         navigationHandoffObserver = navigationHandoff.objectWillChange.sink { [weak self] in
             self?.objectWillChange.send()
         }
@@ -1154,6 +1149,12 @@ final class AppState: ObservableObject {
         cotyping.applySettings()
         if settings.cotypingEnabled { scheduleCotypingPrewarm() }
         loadLibraryInBackground()
+    }
+
+    /// Keep download-completion lifecycle subscriptions alive from startup.
+    /// Only role-specific views observe visual progress updates.
+    func prepareModelRoles() {
+        _ = modelRoles
     }
 
     /// Large meeting libraries can take seconds to enumerate, repair, duration-
@@ -2297,13 +2298,46 @@ final class AppState: ObservableObject {
         dreaming.dreamNow()
     }
 
+    /// Mutation paths keep their synchronous refresh so revoked evidence is
+    /// removed immediately. View entry points use the background variant.
     func refreshDreamMemory() {
+        dreamRefreshRevision &+= 1
         if settings.cotypingUseMeetingMemory || settings.cotypingUseScreenMemory { cotyping.invalidateMemoryContext() }
         do {
-            dreamMemory = try dreamStore.loadMemory()
+            let memory = try dreamStore.loadMemory()
+            if dreamMemory != memory { dreamMemory = memory }
         } catch {
-            dreamMemory = nil
-            lastError = "Could not load dream memory: \(error.localizedDescription)"
+            if dreamMemory != nil { dreamMemory = nil }
+            let message = "Could not load dream memory: \(error.localizedDescription)"
+            if lastError != message { lastError = message }
+        }
+    }
+
+    /// A slow disk or DreamStore lock must not block navigation. Newer refreshes,
+    /// pin edits and evidence revocations invalidate any older in-flight read.
+    func refreshDreamMemoryInBackground(
+        load: (@Sendable () throws -> DreamMemory?)? = nil
+    ) async {
+        dreamRefreshRevision &+= 1
+        let revision = dreamRefreshRevision
+        let store = dreamStore
+        let worker = Task.detached(priority: .utility) {
+            if let load { return try load() }
+            return try store.loadMemory()
+        }
+        do {
+            let memory = try await worker.value
+            guard !Task.isCancelled, revision == dreamRefreshRevision else { return }
+            guard memory != dreamMemory else { return }
+            if settings.cotypingUseMeetingMemory || settings.cotypingUseScreenMemory {
+                cotyping.invalidateMemoryContext()
+            }
+            dreamMemory = memory
+        } catch {
+            guard !Task.isCancelled, revision == dreamRefreshRevision else { return }
+            if dreamMemory != nil { dreamMemory = nil }
+            let message = "Could not load dream memory: \(error.localizedDescription)"
+            if lastError != message { lastError = message }
         }
     }
 
@@ -2340,7 +2374,8 @@ final class AppState: ObservableObject {
                 lastError = "That dream memory item is no longer available."
                 return
             }
-            dreamMemory = updated
+            dreamRefreshRevision &+= 1
+            if dreamMemory != updated { dreamMemory = updated }
         } catch {
             lastError = "Could not update dream memory: \(error.localizedDescription)"
         }
@@ -2362,13 +2397,10 @@ final class AppState: ObservableObject {
 
     /// Screen search/citation hit → open Timeline at the exact captured frame.
     func openScreenSnapshot(_ snapshotID: Int64) {
-        if navSection != .timeline {
-            evidenceReturnSection = navSection
-            evidenceReturnMeetingIDs = selectedMeetingIDs
-        }
         navigationHandoff.stageScreenSnapshot(snapshotID)
+        let origin = selectedMeetingIDs
         selectedMeetingIDs = []
-        navSection = .timeline
+        router.beginEvidence(at: .timeline, preservingMeetingIDs: origin)
     }
 
     /// Chat citation marker → open the cited meeting; timed markers seek the player.

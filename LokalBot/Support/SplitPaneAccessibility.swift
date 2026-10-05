@@ -34,32 +34,63 @@ struct HeldPaneWidth {
     }
 }
 
-/// SwiftUI labels a column's content, but macOS also exposes the native split
-/// item's hosting view as a separate group. Name that boundary without
-/// replacing the native split view, its children, or its keyboard behavior.
-private struct SplitPaneAccessibility: NSViewRepresentable {
-    let label: String
+/// Suppresses repeated configuration work while preserving attachment/layout retries.
+struct SplitPaneRefreshState {
+    struct Configuration: Equatable {
+        var label: String
+        var autosaveName: String?
+        var initialWidth: CGFloat?
+    }
+    private var configuration: Configuration?
+
+    mutating func update(_ next: Configuration) -> Bool {
+        guard configuration != next else { return false }
+        configuration = next
+        return true
+    }
+}
+
+/// Geometry has its own cache so accessibility label updates can never mark a
+/// divider configuration dirty.
+struct SplitPaneGeometryRefreshState {
+    struct Configuration: Equatable {
+        var autosaveName: String?
+        var initialWidth: CGFloat?
+    }
+
+    private var configuration: Configuration?
+
+    mutating func update(_ next: Configuration) -> Bool {
+        guard configuration != next else { return false }
+        configuration = next
+        return true
+    }
+}
+
+/// Owns divider geometry and autosave restoration for a native split pane.
+/// Accessibility is deliberately handled by a separate representable below;
+/// changing a label must never cause geometry work or a divider correction.
+private struct SplitPaneGeometry: NSViewRepresentable {
     var autosaveName: String?
     var initialWidth: CGFloat?
 
     func makeNSView(context: Context) -> PaneAnchor {
         let anchor = PaneAnchor()
         anchor.setAccessibilityElement(false)
-        anchor.label = label
         anchor.autosaveName = autosaveName
         anchor.initialWidth = initialWidth
         return anchor
     }
 
     func updateNSView(_ anchor: PaneAnchor, context: Context) {
-        anchor.label = label
+        guard anchor.refreshState.update(.init(autosaveName: autosaveName,
+                                               initialWidth: initialWidth)) else { return }
         anchor.autosaveName = autosaveName
         anchor.initialWidth = initialWidth
-        anchor.updatePaneLabel()
     }
 
     final class PaneAnchor: NSView {
-        var label = ""
+        var refreshState = SplitPaneGeometryRefreshState()
         var autosaveName: String?
         var initialWidth: CGFloat?
         /// Cleared once the pane has its opening width, or once a divider
@@ -75,6 +106,7 @@ private struct SplitPaneAccessibility: NSViewRepresentable {
         private weak var observedSplit: NSSplitView?
         private var resizeObserver: NSObjectProtocol?
         private var restoringHeldWidth = false
+        private var configuringGeometry = false
 
         deinit {
             if let resizeObserver { NotificationCenter.default.removeObserver(resizeObserver) }
@@ -84,12 +116,12 @@ private struct SplitPaneAccessibility: NSViewRepresentable {
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
-            updatePaneLabel()
+            configurePaneGeometry()
         }
 
         override func viewDidMoveToSuperview() {
             super.viewDidMoveToSuperview()
-            updatePaneLabel()
+            configurePaneGeometry()
         }
 
         /// The split can attach before it has its final width. Keep retrying
@@ -97,44 +129,33 @@ private struct SplitPaneAccessibility: NSViewRepresentable {
         /// leaving (and saving) HSplitView's even split.
         override func setFrameSize(_ newSize: NSSize) {
             super.setFrameSize(newSize)
-            if initialWidth != nil, initialWidthPending { updatePaneLabel() }
+            if initialWidth != nil, initialWidthPending { configurePaneGeometry() }
         }
 
-        func updatePaneLabel() {
-            // Defer until SwiftUI has attached the hosting view to its split
-            // item. Only this anchor's nearest pane is ever modified.
-            DispatchQueue.main.async { [weak self] in
-                guard let self, self.window != nil else { return }
-                var child: NSView = self
-                while let parent = child.superview {
-                    if let split = parent as? NSSplitView {
-                        // HSplitView's idealWidth is only a layout proposal.
-                        // Give each workspace its own native divider storage;
-                        // never borrow a sibling workspace's split position.
-                        if let name = self.autosaveName,
-                           split.autosaveName != name {
-                            // Check before naming: assigning the name restores
-                            // a saved position, which must win over the default.
-                            if Self.hasSavedFrames(name) { self.initialWidthPending = false }
-                            split.autosaveName = name
-                        }
-                        self.applyInitialWidth(of: child, in: split)
-                        child.setAccessibilityLabel(self.label)
-                        // NSSplitView exposes pane proxies separately from
-                        // its arranged NSViews. The proxy, rather than the
-                        // child hosting view, is the group VoiceOver enters.
-                        let panes: [any NSAccessibilityProtocol] = (split.accessibilityChildren() ?? [])
-                            .compactMap { $0 as? any NSAccessibilityProtocol }
-                            .filter { $0.accessibilityRole() == .group }
-                        if panes.count == split.arrangedSubviews.count,
-                           let index = split.arrangedSubviews.firstIndex(where: { $0 === child }) {
-                            panes[index].setAccessibilityLabel(self.label)
-                            panes[index].setAccessibilityTitle(self.label)
-                        }
-                        return
+        override func layout() {
+            super.layout()
+            configurePaneGeometry()
+        }
+
+        /// Restore sizing during native layout, before the window draws. Doing
+        /// this only in the queued accessibility callback shows the even split
+        /// for a frame and then visibly moves the divider and wraps the content.
+        private func configurePaneGeometry() {
+            guard !configuringGeometry, window != nil else { return }
+            configuringGeometry = true
+            defer { configuringGeometry = false }
+            var child: NSView = self
+            while let parent = child.superview {
+                if let split = parent as? NSSplitView {
+                    guard child.frame.width > 0, split.bounds.width > 0 else { return }
+                    if let name = autosaveName, split.autosaveName != name {
+                        if Self.hasSavedFrames(name) { initialWidthPending = false }
+                        split.autosaveName = name
                     }
-                    child = parent
+                    applyInitialWidth(of: child, in: split)
+                    return
                 }
+                child = parent
             }
         }
 
@@ -203,6 +224,70 @@ private struct SplitPaneAccessibility: NSViewRepresentable {
     }
 }
 
+/// Labels the native split item's accessibility group without touching its
+/// frame, autosave state, or holding priorities.
+private struct SplitPaneAccessibility: NSViewRepresentable {
+    let label: String
+
+    func makeNSView(context: Context) -> AccessibilityAnchor {
+        let anchor = AccessibilityAnchor()
+        anchor.setAccessibilityElement(false)
+        anchor.label = label
+        return anchor
+    }
+
+    func updateNSView(_ anchor: AccessibilityAnchor, context: Context) {
+        guard anchor.label != label else { return }
+        anchor.label = label
+        anchor.updateLabel()
+    }
+
+    final class AccessibilityAnchor: NSView {
+        var label = ""
+        private var updatePending = false
+
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            updateLabel()
+        }
+
+        override func viewDidMoveToSuperview() {
+            super.viewDidMoveToSuperview()
+            updateLabel()
+        }
+
+        func updateLabel() {
+            guard !updatePending else { return }
+            updatePending = true
+            // SwiftUI can attach the background before the native split item
+            // exists. Retry after attachment, without scheduling layout work.
+            DispatchQueue.main.async { [weak self] in
+                guard let self else { return }
+                self.updatePending = false
+                guard self.window != nil else { return }
+                var child: NSView = self
+                while let parent = child.superview {
+                    if let split = parent as? NSSplitView {
+                        child.setAccessibilityLabel(self.label)
+                        let panes: [any NSAccessibilityProtocol] = (split.accessibilityChildren() ?? [])
+                            .compactMap { $0 as? any NSAccessibilityProtocol }
+                            .filter { $0.accessibilityRole() == .group }
+                        if panes.count == split.arrangedSubviews.count,
+                           let index = split.arrangedSubviews.firstIndex(where: { $0 === child }) {
+                            panes[index].setAccessibilityLabel(self.label)
+                            panes[index].setAccessibilityTitle(self.label)
+                        }
+                        return
+                    }
+                    child = parent
+                }
+            }
+        }
+    }
+}
+
 extension View {
     /// Names a split pane for VoiceOver. `autosaveName` gives the split its own
     /// saved divider position; `initialWidth` sets this pane's width the first
@@ -213,7 +298,10 @@ extension View {
         initialWidth: CGFloat? = nil
     ) -> some View {
         background {
-            SplitPaneAccessibility(label: label, autosaveName: autosaveName, initialWidth: initialWidth)
+            SplitPaneGeometry(autosaveName: autosaveName, initialWidth: initialWidth)
+        }
+        .background {
+            SplitPaneAccessibility(label: label)
         }
     }
 

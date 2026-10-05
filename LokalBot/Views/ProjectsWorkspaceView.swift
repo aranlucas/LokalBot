@@ -21,7 +21,7 @@ struct ProjectsWorkspaceView: View {
         .detailSplitMinimumWidth([LBTokens.Metric.contentColumnMinWidth, LBTokens.Metric.contentDetailMinWidth])
         .task {
             // Projects come from Dream memory, which other sections load lazily.
-            app.refreshDreamMemory()
+            await app.refreshDreamMemoryInBackground()
             app.refreshConnections()
         }
         .onReceive(app.outcomeIndex.$projections.dropFirst()) { _ in app.refreshConnections() }
@@ -106,6 +106,9 @@ private struct ProjectRow: View {
                     .font(.scaled(.callout)).foregroundStyle(.secondary).lineLimit(1)
             }
         }
+        // Native List sizing must keep both text lines and the monogram;
+        // accepting a compressed row proposal clips the lower half of each row.
+        .fixedSize(horizontal: false, vertical: true)
         .padding(.vertical, 3)
         .accessibilityElement(children: .combine)
     }

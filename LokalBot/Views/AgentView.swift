@@ -5,7 +5,6 @@ struct AgentView: View {
     @Environment(\.colorScheme) private var colorScheme
     @ObservedObject var sessions: AgentSessionTabs
     @ObservedObject var installer: AgentRuntimeInstaller
-    @SceneStorage("agent.tasks.width") private var taskColumnWidth = 272.0
     private static let taskColumnMinWidth: CGFloat = 200
     private static let conversationMinWidth: CGFloat = 350
 
@@ -17,8 +16,10 @@ struct AgentView: View {
                 // with the transcript and can prevent the window shrinking.
                 HSplitView {
                     AgentTaskSidebar(sessions: sessions, verifyRuntime: verifyRuntime)
-                        .frame(minWidth: Self.taskColumnMinWidth, idealWidth: taskColumnWidth, maxWidth: 340)
-                        .onGeometryChange(for: Double.self) { Double($0.size.width) } action: { taskColumnWidth = $0 }
+                        // The native split owns divider restoration. Keeping a
+                        // second SceneStorage width and feeding it from a
+                        // geometry callback caused a late competing resize.
+                        .frame(minWidth: Self.taskColumnMinWidth, idealWidth: LBTokens.Metric.contentColumnWidth, maxWidth: 340)
                         .splitPaneAccessibilityLabel("Agent tasks", autosaveName: "LokalBot.agent", initialWidth: LBTokens.Metric.contentColumnWidth)
                     if let tab = sessions.selectedTab {
                         AgentSessionView(controller: tab.controller, sessions: sessions, taskID: tab.id)
@@ -32,6 +33,7 @@ struct AgentView: View {
                 .task { await sessions.refreshHistory() }
             } else { installCard }
         }
+        .task { NavigationTiming.mounted("agent") }
         .navigationTitle("Agent")
         .tint(Brand.teal)
         .alert("Agent tasks", isPresented: Binding(get: { sessions.error != nil }, set: { if !$0 { sessions.error = nil } })) {

@@ -166,8 +166,10 @@ final class AgentSessionTabs: ObservableObject {
                 if let index = tabs.firstIndex(where: {
                     $0.controller.activeSessionFile == session.fileURL || $0.record.sessionFile == session.fileURL
                 }) {
-                    tabs[index].saved = session
-                    tabs[index].record.sessionFile = session.fileURL
+                    if tabs[index].saved != session { tabs[index].saved = session }
+                    if tabs[index].record.sessionFile != session.fileURL {
+                        tabs[index].record.sessionFile = session.fileURL
+                    }
                 } else {
                     let controller = makeController()
                     controller.workspace = session.workspace
@@ -318,7 +320,13 @@ final class AgentSessionTabs: ObservableObject {
     private func observe(_ tab: Tab) {
         var set = Set<AnyCancellable>()
         let controller = tab.controller
-        controller.objectWillChange.sink { [weak self] in self?.objectWillChange.send() }.store(in: &set)
+        // Transcript tokens, draft edits, and approval details belong to the
+        // controller's views. Only catalog-visible changes invalidate the task
+        // collection (search/title and runtime-dependent menu availability).
+        Publishers.Merge3(controller.$state.removeDuplicates().map { _ in () },
+                          controller.$sessionTitle.removeDuplicates().map { _ in () },
+                          controller.$workspace.removeDuplicates().map { _ in () })
+            .dropFirst(3).sink { [weak self] in self?.objectWillChange.send() }.store(in: &set)
         Publishers.Merge4(controller.$draft.map { _ in () }, controller.$attachments.map { _ in () },
                           controller.$activeSessionFile.map { _ in () }, controller.$sessionTitle.map { _ in () })
             .dropFirst(4).sink { [weak self] in self?.persistSoon() }.store(in: &set)
@@ -345,12 +353,14 @@ final class AgentSessionTabs: ObservableObject {
         guard canPersist else { return }
         for index in tabs.indices {
             let controller = tabs[index].controller
-            tabs[index].record.workspace = controller.workspace
-            tabs[index].record.draft = controller.draft
-            tabs[index].record.attachments = controller.attachments
-            tabs[index].record.queuedPrompts = controller.queuedPrompts
-            tabs[index].record.sources = controller.sourceAttachments
-            if let file = controller.activeSessionFile { tabs[index].record.sessionFile = file }
+            var record = tabs[index].record
+            record.workspace = controller.workspace
+            record.draft = controller.draft
+            record.attachments = controller.attachments
+            record.queuedPrompts = controller.queuedPrompts
+            record.sources = controller.sourceAttachments
+            if let file = controller.activeSessionFile { record.sessionFile = file }
+            if tabs[index].record != record { tabs[index].record = record }
         }
         do { try store.save(tabs.map(\.record)) } catch { self.error = "Couldn’t save task metadata: \(error.localizedDescription)" }
     }

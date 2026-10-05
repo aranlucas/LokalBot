@@ -497,6 +497,25 @@ final class RedesignUITests: XCTestCase {
         snapshot("settings-wrapping-resources")
     }
 
+    func testSettingsSearchScrollsToTargetAfterCategoryChange() throws {
+        try launch(["LOKALBOT_INITIAL_SECTION": "settings", "LOKALBOT_INITIAL_SETTINGS_CATEGORY": "advanced"])
+        let form = app.scrollViews["settings.form"]
+        UITestHarness.scrollTo(UITestHarness.staticText(containing: "Agent CLI", in: app),
+                               in: app, within: form, attempts: 16)
+        let search = app.textFields["settings.search"]
+        search.click()
+        search.typeText("Screen context retention")
+        let result = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "Screen context retention")).firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 5))
+        result.click()
+        XCTAssertTrue(UITestHarness.waitUntil { self.element("settings.retention").isHittable },
+                      "Search focus must win over the new category's top-scroll request")
+        UITestHarness.selectSettingsCategory("General", in: app)
+        XCTAssertTrue(UITestHarness.waitUntil {
+            UITestHarness.toggle("Launch LokalBot at login", in: self.app).isHittable
+        })
+    }
+
     func testMeetingMenusHaveAccessibleActionsAndOpen() throws {
         try launch(["LOKALBOT_INITIAL_SECTION": "meetings", "LOKALBOT_SELECT_INDEX": "0",
                     "LOKALBOT_DETAIL_TAB": "review"])

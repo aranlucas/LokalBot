@@ -220,7 +220,9 @@ struct OnboardingView: View {
                 Text(model).font(AppFont.scaled(.callout)).foregroundStyle(.secondary)
             }
             Spacer()
-            Text(app.modelRoles.snapshot[role].label).font(.scaled(.callout).weight(.semibold))
+            ObservingModelRoles(roles: app.modelRoles) { roles in
+                Text(roles.snapshot[role].label).font(.scaled(.callout).weight(.semibold))
+            }
         }.workspacePanel()
     }
 
@@ -229,7 +231,9 @@ struct OnboardingView: View {
             LabeledContent("Meeting recording", value: draft.meetingMode.rawValue)
             LabeledContent("Day memory", value: draft.dayMemory ? draft.contextMode.rawValue : "Off")
             LabeledContent("Think model", value: InferencePresentation(settings: app.settings).label)
-            LabeledContent("Meeting models", value: app.modelRoles.snapshot.meetingReady ? "Ready to use · not a test result" : "Preparation can continue later")
+            ObservingModelRoles(roles: app.modelRoles) { roles in
+                LabeledContent("Meeting models", value: roles.snapshot.meetingReady ? "Ready to use · not a test result" : "Preparation can continue later")
+            }
             let missing = relevantPermissions.filter { permissions.granted[$0] != true }
             if !missing.isEmpty {
                 Text("Still unavailable: " + missing.map(\.title).joined(separator: ", ") + ". Features needing this access stay unavailable until you grant it.")
@@ -239,4 +243,13 @@ struct OnboardingView: View {
                 .workspaceTextRole(.trust)
         }
     }
+}
+
+/// `AppState` does not forward `ModelRoles` changes, so views reading role
+/// status through `app` observe the roles object directly.
+private struct ObservingModelRoles<Content: View>: View {
+    @ObservedObject var roles: ModelRoles
+    @ViewBuilder let content: (ModelRoles) -> Content
+
+    var body: some View { content(roles) }
 }

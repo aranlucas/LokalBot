@@ -14,6 +14,8 @@ struct MeetingListView: View {
     @State private var mergeDraft: MeetingMergeDraft?
 
     var body: some View {
+        let groupedMeetings = groupedMeetings
+        let failedMeetings = failedMeetings
         VStack(spacing: 0) {
             VStack(spacing: 10) {
                 HStack(spacing: 8) {
@@ -67,7 +69,10 @@ struct MeetingListView: View {
                             .selectionDisabled(true)
                         ForEach(group.items) { meeting in
                             MeetingRowView(meeting: meeting,
-                                           isSelected: app.selectedMeetingIDs.contains(meeting.id))
+                                           stage: app.pipeline.stages[meeting.id],
+                                           isSelected: app.selectedMeetingIDs.contains(meeting.id)) {
+                                app.retryProcessing(meeting)
+                            }
                                 .tag(meeting.id)
                         }
                     }
@@ -241,12 +246,13 @@ struct MeetingListView: View {
 /// processing/failed pipeline state. Shared by the Meetings list and the
 /// Today home so the two surfaces can never drift.
 struct MeetingRowView: View {
-    @EnvironmentObject var app: AppState
     let meeting: Meeting
+    let stage: ProcessingPipeline.Stage?
     /// Comes from the list's selection, not `backgroundProminence`: the row
     /// never saw `.increased` on the teal highlight, which left the
     /// light-mode supporting grey on teal.
     var isSelected = false
+    let retry: () -> Void
 
     var body: some View {
         if meeting.endedAt == nil {
@@ -290,7 +296,7 @@ struct MeetingRowView: View {
             .accessibilityLabel(meeting.displayTitle)
             .accessibilityIdentifier("meeting.row.\(meeting.id.uuidString)")
 
-            if !live, let stage = app.pipeline.stages[meeting.id] {
+            if !live, let stage {
                 status(stage)
             }
         }
@@ -305,7 +311,7 @@ struct MeetingRowView: View {
                     .font(AppFont.scaled(.callout))
                     .foregroundStyle(Brand.error)
                 Button("Retry") {
-                    app.retryProcessing(meeting)
+                    retry()
                 }
                 .buttonStyle(.borderless)
                 .font(AppFont.scaled(.callout))
@@ -320,7 +326,7 @@ struct MeetingRowView: View {
                     .font(AppFont.scaled(.callout))
                     .foregroundStyle(.secondary)
                 Button("Download & process") {
-                    app.retryProcessing(meeting)
+                    retry()
                 }
                 .buttonStyle(.borderless)
                 .font(AppFont.scaled(.callout))

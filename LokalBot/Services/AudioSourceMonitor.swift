@@ -20,7 +20,7 @@ final class AudioSourceMonitor: ObservableObject {
     var isRecordingActive = false {
         didSet {
             if isRecordingActive {
-                detectedProcess = nil
+                clearCandidate()
                 candidateExpiryTask?.cancel()
                 candidateExpiryTask = nil
             }
@@ -123,7 +123,7 @@ final class AudioSourceMonitor: ObservableObject {
         candidateExpiryTask?.cancel()
         candidateExpiryTask = nil
         let process = detectedProcess
-        detectedProcess = nil
+        clearCandidate()
         return process
     }
 
@@ -192,7 +192,15 @@ final class AudioSourceMonitor: ObservableObject {
         candidateExpiryTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(Self.candidateTimeout))
             guard !Task.isCancelled else { return }
-            detectedProcess = nil
+            clearCandidate()
         }
+    }
+
+    /// `@Published` announces every assignment, even nil → nil, and `AppState`
+    /// forwards each announcement to every view observing it. Clear only
+    /// when a candidate exists.
+    private func clearCandidate() {
+        guard detectedProcess != nil else { return }
+        detectedProcess = nil
     }
 }

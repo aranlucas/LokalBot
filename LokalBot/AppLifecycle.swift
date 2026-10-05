@@ -728,3 +728,36 @@ final class WindowAccess {
         }
     }
 }
+
+/// Temporary local navigation diagnostics. Only event age and app page names
+/// are recorded: no keys, coordinates, task titles, prompts or library content.
+@MainActor
+enum NavigationTiming {
+    private static let enabled = ProcessInfo.processInfo.environment["LOKALBOT_NAVIGATION_TIMING"] == "1"
+    private static var monitor: Any?
+    private static var lastSelection: (name: String, time: TimeInterval)?
+
+    static func start() {
+        guard enabled, monitor == nil else { return }
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .leftMouseUp]) { event in
+            let age = max(0, ProcessInfo.processInfo.systemUptime - event.timestamp) * 1_000
+            lokalbotLog(String(format: "navigation-timing event=%@ age_ms=%.1f",
+                              event.type == .leftMouseDown ? "down" : "up", age))
+            return event
+        }
+        lokalbotLog("navigation-timing enabled")
+    }
+
+    static func selected(_ name: String) {
+        guard enabled else { return }
+        lastSelection = (name, ProcessInfo.processInfo.systemUptime)
+        lokalbotLog("navigation-timing selected=\(name)")
+    }
+
+    static func mounted(_ name: String) {
+        guard enabled else { return }
+        let elapsed = lastSelection.map { (ProcessInfo.processInfo.systemUptime - $0.time) * 1_000 } ?? 0
+        lokalbotLog(String(format: "navigation-timing mounted=%@ selected=%@ elapsed_ms=%.1f",
+                          name, lastSelection?.name ?? "initial", elapsed))
+    }
+}

@@ -1,3 +1,4 @@
+import Combine
 import CoreAudio
 import XCTest
 @testable import LokalBot
@@ -513,4 +514,26 @@ final class AudioSourceMonitorTests: XCTestCase {
             in: [current, sibling],
             excluding: [current.id])?.id, sibling.id)
     }
+}
+
+/// `AppState` forwards every `AudioSourceMonitor` announcement to all of its
+/// consumers, so clearing an already-empty candidate must stay silent.
+@MainActor
+final class AudioSourceMonitorObservationTests: XCTestCase {
+    func testClearingWithoutCandidateDoesNotPublish() {
+        let monitor = AudioSourceMonitor()
+        var changes = 0
+        let subscription = monitor.objectWillChange.sink { changes += 1 }
+
+        for _ in 0..<3 {
+            monitor.isRecordingActive = true
+            monitor.isRecordingActive = false
+            XCTAssertNil(monitor.accept())
+        }
+
+        XCTAssertEqual(changes, 0)
+        withExtendedLifetime(subscription) {}
+    }
+
+
 }

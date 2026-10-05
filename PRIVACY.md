@@ -71,6 +71,12 @@ you share it.
 Development and UI-test builds use separate default libraries and Keychain
 namespaces from the release app. Their retention settings do not apply to the
 release library. An explicit storage-root override still selects that folder.
+For local development, explicitly launching Dev with
+`LOKALBOT_USE_RELEASE_LIBRARY=1` instead shares the release library, models,
+settings, and encryption keys. Both apps then edit the same data and use the
+same retention settings; only one can use that library at a time. Dev keeps
+its separate macOS permissions. This option is off by default and the UI-test
+host ignores it.
 
 Dream reports and durable work memory record their source dependencies.
 Deleting or correcting those sources retracts dependent facts, including pinned

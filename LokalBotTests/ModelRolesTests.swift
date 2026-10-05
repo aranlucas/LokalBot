@@ -1,3 +1,4 @@
+import Combine
 import XCTest
 @testable import LokalBot
 
@@ -332,5 +333,26 @@ final class ModelRolesTests: XCTestCase {
             try? await Task.sleep(for: .milliseconds(5))
         }
         XCTAssertTrue(condition(), "Timed out waiting for ModelRoles state")
+    }
+}
+
+/// Model download progress publishes many times per second. Those updates must
+/// reach only views observing `ModelRoles`, not every `AppState` consumer.
+@MainActor
+final class ModelRolesObservationTests: XCTestCase {
+    func testRoleUpdatesDoNotInvalidateAppStateConsumers() {
+        let app = AppState()
+        app.prepareModelRoles()
+        let roles = app.modelRoles
+        var appInvalidations = 0
+        var roleInvalidations = 0
+        let appSubscription = app.objectWillChange.sink { appInvalidations += 1 }
+        let roleSubscription = roles.objectWillChange.sink { roleInvalidations += 1 }
+
+        for _ in 0..<20 { roles.objectWillChange.send() }
+
+        XCTAssertEqual(roleInvalidations, 20, "ModelRoles readers must still observe role updates")
+        XCTAssertEqual(appInvalidations, 0, "Role updates must not rebuild every AppState consumer")
+        withExtendedLifetime((appSubscription, roleSubscription)) {}
     }
 }

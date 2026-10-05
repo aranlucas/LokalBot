@@ -24,6 +24,8 @@ The prod and Dev targets share sources, but have separate bundle identities (`me
 
 Dev and UI Test Host also have separate Application Support roots and Keychain namespaces. Dev starts with its own library and downloaded models; it never imports the release library automatically. An embedded CLI resolves the enclosing app identity, including when invoked through a symlink. `LOKALBOT_STORAGE_ROOT` remains an explicit fixture/storage override.
 
+For an explicitly requested local comparison against the installed library, launch **Dev only** with `LOKALBOT_USE_RELEASE_LIBRARY=1`. This selects the release Application Support root (including models), settings suite, and Keychain namespace together, while retaining Dev's bundle identity and macOS permissions. Changes affect the real library and settings. Quit the release app first; the library's existing instance lock prevents simultaneous GUI use. Without this flag Dev remains isolated; the UI Test Host ignores it. Keychain access still requires macOS authorization for the new executable. The flag can be placed in the locally installed Dev bundle's `LSEnvironment` dictionary and the bundle re-signed for persistent Finder launches; do not add it to `project.yml` or shipped artifacts.
+
 A release-identity build run from Xcode build products (any path under `DerivedData/` or `Build/Products/`) uses `~/Library/Application Support/me.dotenv.LokalBot.local-build` and its own settings suite, and never runs the library migration, so it cannot write the installed app's library. Set `LOKALBOT_STORAGE_ROOT` to point it at another library deliberately. Only one GUI process may use a library at a time: it holds `.instance.lock` in the library root, and a second copy waits up to 10 seconds for a quitting holder, then activates the running copy and exits. Headless flags, unit tests, and UI tests do not take the lock.
 
 App Sandbox is intentionally disabled because Core Audio process taps do not work in the sandbox. Distribution uses Developer ID signing and notarization. When the user requests reinstallation of the installed app, use `Scripts/reinstall-preserve-permissions.sh` to validate signing identity and update it in place.
@@ -33,6 +35,34 @@ The first build uses `Scripts/fetch-llama.sh` and `Scripts/fetch-sherpa.sh` to v
 The `lokalbot-cli` target shares `LokalBot/CLISupport/` and selected model files by direct source inclusion. It is built before the app and embedded in `Contents/Helpers/`; it is not a shared framework. `project.yml` separately copies `.agents/skills/lokalbot-cli/SKILL.md` into `Contents/Resources/lokalbot-cli/`. Keep that skill self-contained unless its packaging is also updated. `Scripts/build-mcpb.sh` packages the helper for GUI MCP clients.
 
 Unit tests are hosted inside the prod app binary and link `libllama` directly; `-bundle_loader` resolves host-defined symbols only. Generated `default.profraw` coverage files are gitignored and should not be committed. Signing keys and populated environment files must remain outside version control.
+
+## Navigation and UI responsiveness
+
+`AppRouter` owns main-window destinations, sticky Settings/writing selections,
+and evidence-return navigation. Views may observe its individual properties;
+compatibility accessors on `AppState` forward to the same router. Route changes
+must not load library files, query system services, or start model runtimes.
+The main-window shell takes stable references; app-wide feedback is observed
+inside its own child views.
+
+Feature readouts own their observations: General's login-item control reads the
+cached `LoginItemState`, and Advanced's system readout owns power and generation
+metrics. Blocking system status reads and writes run away from the main actor.
+Agent task catalog notifications cover catalog-visible changes; transcript and
+draft updates belong to controller views. Preserve equality checks when saving
+or refreshing task records.
+
+Native split geometry and accessibility labeling have separate owners in
+`SplitPaneAccessibility.swift`. Do not add a second width feedback loop to a
+pane already using native divider autosave. Keep layout state separate from
+routing state.
+
+For an explicitly enabled local comparison, `LOKALBOT_NAVIGATION_TIMING=1`
+records navigation selection and mount markers in `debug.log`. Compare the same
+page transitions and window conditions before and after a change. These markers
+measure mounting, not final presentation or visual stability; divider movement,
+row clipping, and first-frame correctness still require visual verification.
+Automated UI verification must use the remote runner described under Testing.
 
 ## Recording & meeting detection
 

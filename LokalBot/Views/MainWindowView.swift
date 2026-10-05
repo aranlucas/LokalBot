@@ -3,11 +3,23 @@ import AppKit
 import AVFoundation
 import UniformTypeIdentifiers
 
+/// Entry point. Only this thin wrapper subscribes to every AppState change;
+/// it hands the same references to the shell, whose body therefore re-runs
+/// only for router reads and its own state. Feedback that does depend on
+/// broad AppState lives in small child views below.
 struct MainWindowView: View {
-    @EnvironmentObject var app: AppState
+    @EnvironmentObject private var app: AppState
+
+    var body: some View {
+        MainWindowShell(app: app, router: app.router)
+    }
+}
+
+private struct MainWindowShell: View {
+    let app: AppState
+    let router: AppRouter
     @Environment(\.openWindow) private var openWindow
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Native sidebar toggle and restored visibility share the same binding.
     @SceneStorage("workspace.sidebar.visible") private var sidebarVisible = true
     @State private var pendingDelete: Set<Meeting.ID>?
@@ -28,7 +40,7 @@ struct MainWindowView: View {
             Text("This permanently deletes the audio, transcript and summary files.")
         }
         .toolbar {
-            if app.navSection == .timeline, app.evidenceReturnSection != nil {
+            if router.section == .timeline, router.evidenceReturnSection != nil {
                 ToolbarItem(placement: .navigation) {
                     Button(action: app.returnFromEvidence) {
                         Label("Back", systemImage: "chevron.left")
@@ -36,11 +48,9 @@ struct MainWindowView: View {
                 }
             }
         }
-        .sheet(item: $app.followUpDraftMeeting) { meeting in
-            FollowUpDraftSheet(meeting: meeting)
-                .environmentObject(app)
-        }
+        .background { FollowUpDraftSheetHost() }
         .task {
+            NavigationTiming.start()
             // Let non-View code (menu bar, AppDelegate reopen) open windows.
             // First-run permission onboarding is now triggered from AppState.
             WindowAccess.shared.register { openWindow(id: $0) }
@@ -61,65 +71,17 @@ struct MainWindowView: View {
                 .accessibilityLabel("Workspace navigation")
                 .splitPaneAccessibilityLabel("Workspace navigation")
         } detail: {
-            workspace
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    VStack(spacing: 0) {
-                        errorFeedback
-                        if !app.outcomeIndex.statusUndo.isEmpty {
-                            HStack {
-                                Text("Updated \(app.outcomeIndex.statusUndo.count) action(s)")
-                                Button("Undo") {
-                                    app.outcomeIndex.undoStatusChange()
-                                    app.lastError = app.outcomeIndex.lastError
-                                }
-                                    .accessibilityIdentifier("outcomes.undo")
-                                Spacer()
-                                Button("Dismiss") { app.outcomeIndex.dismissUndo() }
-                            }
-                            .font(AppFont.scaled(.body))
-                            .padding(12).background(.bar)
-                            .transition(WorkspaceMotion.bottomEdgeTransition(reduceMotion: reduceMotion))
-                        }
-                    }
-                }
-                // Model code sets this feedback, so animate on its values: the
-                // bar enters from the bottom edge while the workspace above
-                // yields its space in the same motion.
-                .animation(bottomFeedbackAnimation, value: app.lastError)
-                .animation(bottomFeedbackAnimation, value: app.micRecoveryNeeded)
-                .animation(bottomFeedbackAnimation, value: app.outcomeIndex.statusUndo.isEmpty)
+            WorkspaceBottomFeedback(content: workspace)
                 .accessibilityElement(children: .contain)
                 .accessibilityLabel("Workspace content")
                 .splitPaneAccessibilityLabel("Workspace content")
         }
     }
 
-    /// Reserve space for recovery feedback so it cannot cover Undo or a
-    /// workspace's composer, transport, or other bottom controls.
-    @ViewBuilder private var errorFeedback: some View {
-        if app.micRecoveryNeeded {
-            ErrorToast(
-                message: "Microphone access is off for LokalBot. Turn it on in System Settings to record.",
-                actionTitle: "Open System Settings",
-                action: {
-                    PermissionManager.shared.openSettings(for: .microphone)
-                    app.micRecoveryNeeded = false
-                }) { app.micRecoveryNeeded = false }
-                .transition(WorkspaceMotion.bottomEdgeTransition(reduceMotion: reduceMotion))
-        } else if let error = app.lastError {
-            ErrorToast(message: error) { app.lastError = nil }
-                .transition(WorkspaceMotion.bottomEdgeTransition(reduceMotion: reduceMotion))
-        }
-    }
-
-    private var bottomFeedbackAnimation: Animation? {
-        WorkspaceMotion.animation(.drawer, reduceMotion: reduceMotion)
-    }
-
     @ViewBuilder private var workspace: some View {
-        switch app.navSection {
+        switch router.section {
         case .today:
-            if app.showingActions { ActionsWorkspaceView() } else { TodayView() }
+            if router.showingActions { ActionsWorkspaceView() } else { TodayView() }
         case .timeline:
             TimelineContentView(model: capture)
         case .meetings:
@@ -206,13 +168,9 @@ struct MainWindowView: View {
     /// Scripted exports leave it empty; `sidebarRowBackground` marks the row.
     private var sidebarSelection: Binding<AppState.NavSection?> {
         Binding(
-            get: { isScriptedCapture ? nil : app.navSection },
+            get: { isScriptedCapture ? nil : router.section },
             set: { selection in
-                if let selection {
-                    if selection == .today { app.showingActions = false }
-                    app.evidenceReturnSection = nil
-                    app.navSection = selection
-                }
+                if let selection { router.selectFromSidebar(selection) }
             })
     }
 
@@ -236,14 +194,14 @@ struct MainWindowView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Text(LocalizedStringKey(title)))
         .accessibilityIdentifier(identifier)
-        .accessibilityAddTraits(app.navSection == section ? .isSelected : [])
+        .accessibilityAddTraits(router.section == section ? .isSelected : [])
     }
 
     /// Scripted exports draw AppKit's unemphasized selection color in place of
     /// the masked native highlight.
     @ViewBuilder
     private func sidebarRowBackground(_ section: AppState.NavSection) -> some View {
-        if isScriptedCapture && app.navSection == section {
+        if isScriptedCapture && router.section == section {
             RoundedRectangle(cornerRadius: 5, style: .continuous)
                 .fill(Color(nsColor: .unemphasizedSelectedContentBackgroundColor))
                 .padding(.horizontal, 10)
@@ -283,6 +241,82 @@ struct MainWindowView: View {
 #endif
     }
 
+}
+
+/// Bottom feedback depends on broad AppState (errors, microphone recovery,
+/// action undo), so it subscribes here rather than in the shell. `content` is
+/// built by the shell and is not re-evaluated when only feedback changes.
+private struct WorkspaceBottomFeedback<Content: View>: View {
+    @EnvironmentObject private var app: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let content: Content
+
+    var body: some View {
+        content
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 0) {
+                    errorFeedback
+                    if !app.outcomeIndex.statusUndo.isEmpty {
+                        HStack {
+                            Text("Updated \(app.outcomeIndex.statusUndo.count) action(s)")
+                            Button("Undo") {
+                                app.outcomeIndex.undoStatusChange()
+                                app.lastError = app.outcomeIndex.lastError
+                            }
+                                .accessibilityIdentifier("outcomes.undo")
+                            Spacer()
+                            Button("Dismiss") { app.outcomeIndex.dismissUndo() }
+                        }
+                        .font(AppFont.scaled(.body))
+                        .padding(12).background(.bar)
+                        .transition(WorkspaceMotion.bottomEdgeTransition(reduceMotion: reduceMotion))
+                    }
+                }
+            }
+            // Model code sets this feedback, so animate on its values: the
+            // bar enters from the bottom edge while the workspace above
+            // yields its space in the same motion.
+            .animation(bottomFeedbackAnimation, value: app.lastError)
+            .animation(bottomFeedbackAnimation, value: app.micRecoveryNeeded)
+            .animation(bottomFeedbackAnimation, value: app.outcomeIndex.statusUndo.isEmpty)
+    }
+
+    /// Reserve space for recovery feedback so it cannot cover Undo or a
+    /// workspace's composer, transport, or other bottom controls.
+    @ViewBuilder private var errorFeedback: some View {
+        if app.micRecoveryNeeded {
+            ErrorToast(
+                message: "Microphone access is off for LokalBot. Turn it on in System Settings to record.",
+                actionTitle: "Open System Settings",
+                action: {
+                    PermissionManager.shared.openSettings(for: .microphone)
+                    app.micRecoveryNeeded = false
+                }) { app.micRecoveryNeeded = false }
+                .transition(WorkspaceMotion.bottomEdgeTransition(reduceMotion: reduceMotion))
+        } else if let error = app.lastError {
+            ErrorToast(message: error) { app.lastError = nil }
+                .transition(WorkspaceMotion.bottomEdgeTransition(reduceMotion: reduceMotion))
+        }
+    }
+
+    private var bottomFeedbackAnimation: Animation? {
+        WorkspaceMotion.animation(.drawer, reduceMotion: reduceMotion)
+    }
+}
+
+/// The follow-up draft sheet can open from any entry point; only this host
+/// observes the AppState that presents it.
+private struct FollowUpDraftSheetHost: View {
+    @EnvironmentObject private var app: AppState
+
+    var body: some View {
+        Color.clear
+            .accessibilityHidden(true)
+            .sheet(item: $app.followUpDraftMeeting) { meeting in
+                FollowUpDraftSheet(meeting: meeting)
+                    .environmentObject(app)
+            }
+    }
 }
 
 /// Read prominence inside the row so native selection supplies its foreground.

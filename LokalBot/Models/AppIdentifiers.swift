@@ -29,6 +29,19 @@ enum AppIdentifiers {
 
     static var bundleID: String { identity.bundleID }
 
+    /// An explicit local Dev launch may share the release library. Select its
+    /// settings, model/runtime folders and encryption keys together; changing
+    /// only the database path could apply different retention rules or encrypt
+    /// new records with a key the release app cannot read.
+    static var dataIdentity: Identity {
+        dataIdentity(for: identity, sharingReleaseLibrary:
+            ProcessInfo.processInfo.environment["LOKALBOT_USE_RELEASE_LIBRARY"] == "1")
+    }
+
+    static func dataIdentity(for identity: Identity, sharingReleaseLibrary: Bool) -> Identity {
+        identity == .development && sharingReleaseLibrary ? .release : identity
+    }
+
     static func identity(forExecutable executable: URL?, bundleIdentifier: String?) -> Identity {
         if let bundleIdentifier, let identity = Identity(rawValue: bundleIdentifier) {
             return identity
@@ -85,7 +98,12 @@ enum UITestRuntime {
             ?? argumentValue(after: defaultsSuiteArgument)
             ?? nonEmpty(UserDefaults.standard.string(forKey: defaultsSuiteKey))
             ?? unitTestDefaultsSuite
+            ?? sharedLibraryDefaultsSuite
             ?? localBuildDefaultsSuite
+    }
+
+    private static var sharedLibraryDefaultsSuite: String? {
+        AppIdentifiers.dataIdentity != AppIdentifiers.identity ? AppIdentifiers.dataIdentity.bundleID : nil
     }
 
     /// The folder and settings suite of a release-identity copy run from
@@ -189,7 +207,7 @@ enum KeychainSecrets {
     }
 
     static func data(account: String) -> Data? {
-        data(service: AppIdentifiers.bundleID, account: account)
+        data(service: AppIdentifiers.dataIdentity.bundleID, account: account)
     }
 
     static func setString(_ value: String, account: String) {
@@ -202,7 +220,7 @@ enum KeychainSecrets {
     }
 
     static func set(_ data: Data, account: String) {
-        let query = baseQuery(service: AppIdentifiers.bundleID, account: account)
+        let query = baseQuery(service: AppIdentifiers.dataIdentity.bundleID, account: account)
         let update = [kSecValueData as String: data]
         let status = SecItemUpdate(query as CFDictionary, update as CFDictionary)
         if status == errSecItemNotFound {
@@ -213,7 +231,7 @@ enum KeychainSecrets {
     }
 
     static func delete(account: String) {
-        SecItemDelete(baseQuery(service: AppIdentifiers.bundleID, account: account) as CFDictionary)
+        SecItemDelete(baseQuery(service: AppIdentifiers.dataIdentity.bundleID, account: account) as CFDictionary)
     }
 
     private static func data(service: String, account: String) -> Data? {
@@ -271,7 +289,7 @@ enum KeychainSecrets {
 
         let proposedKey = SymmetricKey(size: .bits256)
         let proposedData = proposedKey.withUnsafeBytes { Data($0) }
-        let addStatus = operations.add(AppIdentifiers.bundleID, account, proposedData)
+        let addStatus = operations.add(AppIdentifiers.dataIdentity.bundleID, account, proposedData)
         if addStatus == errSecDuplicateItem {
             guard let existing = try encryptionKeyData(
                 account: account,
@@ -294,7 +312,7 @@ enum KeychainSecrets {
         account: String,
         operations: EncryptionKeyOperations
     ) throws -> Data? {
-        let result = operations.read(AppIdentifiers.bundleID, account)
+        let result = operations.read(AppIdentifiers.dataIdentity.bundleID, account)
         if result.status == errSecItemNotFound { return nil }
         guard result.status == errSecSuccess else {
             throw EncryptionKeyFailure.operation(
