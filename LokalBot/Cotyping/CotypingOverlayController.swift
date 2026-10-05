@@ -81,7 +81,8 @@ final class CotypingOverlayController {
         case .mirror:
             inline = nil
             guard presentMirror(
-                text: text, font: font, caretRect: caretRect, visible: visible,
+                text: text, font: font, caretRect: caretRect, caretIsExact: placement.caretIsExact,
+                inputFrameRect: inputFrameRect, visible: visible,
                 emphasisLength: emphasis, isRightToLeft: isRightToLeft) else {
                 hide()
                 return
@@ -215,10 +216,10 @@ final class CotypingOverlayController {
     }
 
     /// A popup one line below the caret, for carets with text after them on
-    /// the line or without exact geometry.
+    /// the line, or outside the field for carets without exact geometry.
     private func presentMirror(
-        text: String, font fieldFont: NSFont, caretRect: CGRect, visible: CGRect?,
-        emphasisLength: Int, isRightToLeft: Bool
+        text: String, font fieldFont: NSFont, caretRect: CGRect, caretIsExact: Bool,
+        inputFrameRect: CGRect?, visible: CGRect?, emphasisLength: Int, isRightToLeft: Bool
     ) -> Bool {
         let size = min(Self.mirrorPointSizes.upperBound, max(Self.mirrorPointSizes.lowerBound, fieldFont.pointSize))
         let font = NSFont(descriptor: fieldFont.fontDescriptor, size: size) ?? .systemFont(ofSize: size)
@@ -230,7 +231,9 @@ final class CotypingOverlayController {
         let content = CGSize(
             width: ceil(widest) + Self.chromePadding.width * 2,
             height: ceil(lineHeight * CGFloat(lines.count)) + Self.chromePadding.height * 2)
-        let frame = CotypingOverlayGeometry.mirrorFrame(caret: caretRect, content: content, visible: visible).integral
+        guard let frame = CotypingOverlayGeometry.popupFrame(
+            caret: caretRect, caretIsExact: caretIsExact, field: inputFrameRect,
+            content: content, visible: visible)?.integral else { return false }
         // Center each glyph box in its line, top line first.
         let glyphBox = font.ascender - font.descender
         var offset = 0

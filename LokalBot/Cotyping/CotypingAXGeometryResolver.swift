@@ -29,16 +29,14 @@ enum CotypingAXGeometryResolver {
         isRightToLeft: Bool,
         allowBoundsForRange: Bool = true
     ) -> (rect: CGRect, exact: Bool) {
-        if allowBoundsForRange,
-           let rect = boundsForRange(element, location: caretLocation, length: 0),
-           rect.width.isFinite, rect.height.isFinite, rect.height > 0 {
+        if allowBoundsForRange {
             if let caret = CotypingCaretGeometry.caret(
-                emptyRangeRect: rect,
+                emptyRangeRect: boundsForRange(element, location: caretLocation, length: 0),
                 previousCharacterRect: previousCharacterRect(element, caretLocation: caretLocation, fieldText: fieldText),
+                elementFrame: elementFrame(element),
                 isRightToLeft: isRightToLeft) {
                 return (cocoaRect(fromAX: caret), true)
             }
-            return (cocoaRect(fromAX: rect), true)
         }
         // Web engines (Chromium / WebKit / Electron) ignore NSRange-based
         // BoundsForRange and expose caret geometry only via opaque AX text
@@ -199,22 +197,45 @@ enum CotypingAXGeometryResolver {
     }
 }
 
-/// Picks the caret from what an AppKit text view reports. TextEdit and
-/// Telegram on macOS 26 report the empty range at the caret one line above
-/// where it is drawn (measured 2026-10-04: TextEdit at y 190 for a line at
-/// y 204, above the field's own top edge), with the right x. The character
-/// before the caret is reported where it is drawn, and its trailing edge is
-/// the caret, so the ghost sits on the line being typed.
+/// Picks the caret from what a text field reports for the empty range at the
+/// caret and for the character before it. TextEdit and Telegram on macOS 26
+/// report the empty range one line above where it is drawn (measured
+/// 2026-10-04: TextEdit at y 190 for a line at y 204, above the field's own
+/// top edge), with the right x. Chrome reports it with no size at all, so a
+/// GitHub review box fell back to a guess at the field's top-left corner
+/// (2026-10-05). In all three the character before the caret is reported
+/// where it is drawn, and its trailing edge is the caret, so the ghost sits on
+/// the line being typed.
 nonisolated enum CotypingCaretGeometry {
-    /// Both rects in AX coordinates (top-left origin). Nil keeps the empty
-    /// range's rect.
-    static func caret(emptyRangeRect: CGRect, previousCharacterRect: CGRect?, isRightToLeft: Bool) -> CGRect? {
-        guard let character = previousCharacterRect,
-              character.width.isFinite, character.height.isFinite,
-              character.width > 0, character.height > 0,
-              // One glyph, not a whole line or a stale frame.
-              character.width <= character.height * 3 else { return nil }
-        let x = isRightToLeft ? character.minX : character.maxX
-        return CGRect(x: x, y: character.minY, width: 0, height: character.height)
+    /// Slack for a character inside its field (borders, subpixel rounding).
+    private static let containmentTolerance: CGFloat = 4
+
+    /// All rects in AX coordinates (top-left origin). Nil when neither range
+    /// gives a usable caret.
+    ///
+    /// - Parameter elementFrame: the field's frame, read only when there is
+    ///   no usable empty range. The character is then trusted only when it
+    ///   lies inside the field.
+    static func caret(
+        emptyRangeRect: CGRect?,
+        previousCharacterRect: CGRect?,
+        elementFrame: @autoclosure () -> CGRect? = nil,
+        isRightToLeft: Bool
+    ) -> CGRect? {
+        let emptyRange = emptyRangeRect.flatMap { rect in
+            rect.width.isFinite && rect.height.isFinite && rect.height > 0 ? rect : nil
+        }
+        if let character = previousCharacterRect,
+           character.width.isFinite, character.height.isFinite,
+           character.width > 0, character.height > 0,
+           // One glyph, not a whole line or a stale frame.
+           character.width <= character.height * 3,
+           emptyRange != nil || elementFrame().map({
+               $0.insetBy(dx: -containmentTolerance, dy: -containmentTolerance).contains(character)
+           }) == true {
+            let x = isRightToLeft ? character.minX : character.maxX
+            return CGRect(x: x, y: character.minY, width: 0, height: character.height)
+        }
+        return emptyRange
     }
 }
