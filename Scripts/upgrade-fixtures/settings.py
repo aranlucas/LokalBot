@@ -6,7 +6,7 @@ import hashlib
 import json
 import sys
 
-VERSIONS = ["0.6.2", "0.7.2", "0.8.5", "0.9.0", "0.9.1", "0.9.2", "0.9.3"]
+VERSIONS = ["0.6.2", "0.7.2", "0.8.5", "0.9.0", "0.9.1", "0.9.2", "0.9.3", "0.9.4"]
 
 
 def _tuple(version):
