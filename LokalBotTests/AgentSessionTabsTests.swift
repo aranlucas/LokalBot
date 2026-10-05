@@ -6,6 +6,47 @@ final class AgentSessionTabsTests: XCTestCase {
 
     private var root: URL!
 
+    func testDraftEditsOnlyNotifyTheOwningController() async {
+        let factory = Factory(root: root)
+        let sessions = AgentSessionTabs { factory.makeController() }
+        let controller = sessions.tabs[0].controller
+        var catalogUpdates = 0
+        var controllerUpdates = 0
+        let catalogObservation = sessions.objectWillChange.sink { catalogUpdates += 1 }
+        let controllerObservation = controller.objectWillChange.sink { controllerUpdates += 1 }
+        for index in 0..<20 { controller.draft = "Draft \(index)" }
+        XCTAssertEqual(controllerUpdates, 20)
+        XCTAssertEqual(catalogUpdates, 0, "Typing must not invalidate every task and the workspace shell")
+        withExtendedLifetime((catalogObservation, controllerObservation)) {}
+        await sessions.shutdownAll()
+    }
+
+    func testWorkspaceChangesStillUpdateTaskSearchWithoutDuplicateNotifications() async {
+        let factory = Factory(root: root)
+        let sessions = AgentSessionTabs { factory.makeController() }
+        var updates = 0
+        let observation = sessions.objectWillChange.sink { updates += 1 }
+        let workspace = root.appendingPathComponent("other")
+        sessions.tabs[0].controller.workspace = workspace
+        sessions.tabs[0].controller.workspace = workspace
+        XCTAssertEqual(updates, 1)
+        withExtendedLifetime(observation) {}
+        await sessions.shutdownAll()
+    }
+
+    func testUnchangedPersistenceDoesNotRedrawTaskViews() async {
+        let factory = Factory(root: root)
+        let sessions = AgentSessionTabs { factory.makeController() }
+        _ = sessions.addSession()
+        sessions.persist()
+        var updates = 0
+        let observation = sessions.objectWillChange.sink { updates += 1 }
+        sessions.persist()
+        XCTAssertEqual(updates, 0, "Saving unchanged metadata must not redraw the Agent workspace")
+        withExtendedLifetime(observation) {}
+        await sessions.shutdownAll()
+    }
+
     func testMetadataOverflowPreservesReadableHistoryAndAllowsRetry() throws {
         let store = AgentTaskStore(directory: root, maximumBytes: 2_048)
         var record = AgentTaskRecord(id: UUID(), title: "Saved task", workspace: root)

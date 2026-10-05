@@ -52,7 +52,7 @@ struct TodayView: View {
         .task(id: app.navSection) {
             guard app.navSection == .today else { return }
             reloadCurrentDay(at: Date())
-            app.refreshDreamMemory()
+            await app.refreshDreamMemoryInBackground()
             while !Task.isCancelled {
                 await upcomingMeeting.refresh(app: app)
                 do {

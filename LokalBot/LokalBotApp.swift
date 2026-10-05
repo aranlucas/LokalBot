@@ -277,11 +277,11 @@ struct LokalBotApp: App {
                 }
             }
             CommandGroup(before: .textEditing) {
-                Button(app.navSection == .agent ? "Find in Task…" : "Find in Meeting…") {
-                    if app.navSection == .agent { app.agentSessions.findRequest += 1 } else { app.requestSelectedMeetingSearch() }
+                Button(app.router.section == .agent ? "Find in Task…" : "Find in Meeting…") {
+                    if app.router.section == .agent { app.agentSessions.findRequest += 1 } else { app.requestSelectedMeetingSearch() }
                 }
                 .keyboardShortcut("f", modifiers: .command)
-                .disabled(app.navSection != .agent && !app.canSearchSelectedMeeting)
+                .disabled(app.router.section != .agent && !app.canSearchSelectedMeeting)
             }
             // Keep the standard Settings shortcut inside the main workspace.
             CommandGroup(replacing: .appSettings) {

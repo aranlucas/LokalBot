@@ -1,7 +1,16 @@
 import SwiftUI
-import LaunchAtLogin
 import AppKit
 import UniformTypeIdentifiers
+
+/// One scroll request per navigation change; a search target takes precedence
+/// over the ordinary category/tool reset.
+struct SettingsScrollRequest: Equatable {
+    static let topID = "settings.form.top"
+    let category: AppState.SettingsTab
+    let writingTool: String
+    let focusedSettingID: String?
+    var targetID: String { focusedSettingID ?? Self.topID }
+}
 
 struct SettingsView: View {
     @EnvironmentObject var app: AppState
@@ -23,11 +32,12 @@ struct SettingsView: View {
 
     // Settings search + live system readouts.
     @State private var settingsQuery = ""
-    @StateObject private var power = PowerSourceMonitor()
     @StateObject private var permissions = PermissionManager.shared
-    @ObservedObject private var metrics = GenerationMetricsStore.shared
 
     var body: some View {
+        let scrollRequest = SettingsScrollRequest(category: app.settingsTab,
+                                                  writingTool: writingSection.rawValue,
+                                                  focusedSettingID: app.focusedSettingID)
         HSplitView {
             VStack(alignment: .leading, spacing: 12) {
                 Text("Settings")
@@ -78,12 +88,16 @@ struct SettingsView: View {
                             .frame(maxWidth: .infinity)
                             .scrollContentBackground(.hidden)
                             .accessibilityIdentifier("settings.form")
-                            .onChange(of: app.focusedSettingID, initial: true) {
-                                guard let id = app.focusedSettingID else { return }
-                                DispatchQueue.main.async { proxy.scrollTo(id, anchor: .center) }
+                            .task(id: scrollRequest) {
+                                // Let the new sections mount before resolving the anchor.
+                                // A newer request cancels this one, including search jumps.
+                                await Task.yield()
+                                guard !Task.isCancelled else { return }
+                                NavigationTiming.mounted("settings.\(app.settingsTab.rawValue)")
+                                proxy.scrollTo(scrollRequest.targetID,
+                                               anchor: scrollRequest.focusedSettingID == nil ? .top : .center)
                             }
                     }
-                    .id("\(app.settingsTab)-\(writingSection.rawValue)")
                 }
             }.frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity)
                 .accessibilityElement(children: .contain)
@@ -99,13 +113,14 @@ struct SettingsView: View {
             }
         }
         .onAppear {
-            power.start()
             permissions.startPolling()
             app.calendar.refreshAuthorizationStatus()
-            app.refreshDreamMemory()
+        }
+        .task {
+            NavigationTiming.mounted("settings")
+            await app.refreshDreamMemoryInBackground()
         }
         .onDisappear {
-            power.stop()
             permissions.stopPolling()
             PermissionGuidanceController.shared.dismiss()
         }
@@ -177,11 +192,11 @@ struct SettingsView: View {
     @ViewBuilder private func sections(for tab: AppState.SettingsTab) -> some View {
         switch tab {
         case .general:
-            generalSection; updatesSection
+            generalSection.id(SettingsScrollRequest.topID); updatesSection
         case .recording:
-            meetingsSection; processingSection; summarizationSection
+            meetingsSection.id(SettingsScrollRequest.topID); processingSection; summarizationSection
         case .dayMemory:
-            dayTrackingSection; routinesSection; dreamingSection
+            dayTrackingSection.id(SettingsScrollRequest.topID); routinesSection; dreamingSection
         case .writing:
             Section {
                 Picker("Writing tool", selection: $writingSection) {
@@ -190,6 +205,7 @@ struct SettingsView: View {
                 .pickerStyle(.segmented).tint(Brand.tealFill)
                 .accessibilityIdentifier("settings.writing.sections")
             }
+            .id(SettingsScrollRequest.topID)
             if writingSection == .autocomplete {
                 AutocompleteExperienceView()
                 cotypingSection
@@ -200,9 +216,9 @@ struct SettingsView: View {
         case .models:
             EmptyView() // handled by the ModelsView branch in body
         case .privacy:
-            privacySection; exclusionsSection; permissionsSection; privacyLinksSection
+            privacySection.id(SettingsScrollRequest.topID); exclusionsSection; permissionsSection; privacyLinksSection
         case .advanced:
-            memoryHealthSection; resourceMonitorSection; systemSection; agentCLISection
+            memoryHealthSection.id(SettingsScrollRequest.topID); resourceMonitorSection; systemSection; agentCLISection
         }
     }
 
@@ -273,12 +289,7 @@ struct SettingsView: View {
                                  "window", "background", "tray", "quick recall", "shortcut",
                                  "hotkey", "global search"]) {
                 Section("General") {
-                    LaunchAtLogin.Toggle {
-                        SettingsLabel("Launch LokalBot at login",
-                                      help: "Start automatically so it's ready to catch meetings.")
-                    }
-                    .accessibilityLabel("Launch LokalBot at login")
-                    .accessibilityHint("Start automatically so it's ready to catch meetings.")
+                    LaunchAtLoginSetting()
 
                     Toggle(isOn: $app.settings.menuBarOnly) {
                         SettingsLabel("Menu bar only (hide Dock icon)",
@@ -319,6 +330,35 @@ struct SettingsView: View {
                 }
             }
 
+    }
+
+    /// Owns the login-item observation only while the General section is
+    /// mounted. Settings navigation no longer observes this service globally.
+    private struct LaunchAtLoginSetting: View {
+        @Environment(\.scenePhase) private var scenePhase
+        @StateObject private var loginItem = LoginItemState.shared
+
+        var body: some View {
+            Group {
+                Toggle(isOn: Binding(get: { loginItem.isEnabled }, set: { enabled in
+                    Task { await loginItem.setEnabled(enabled) }
+                })) {
+                    SettingsLabel("Launch LokalBot at login",
+                                  help: "Start automatically so it's ready to catch meetings.")
+                }
+                .disabled(!loginItem.isLoaded || loginItem.isBusy)
+                .accessibilityLabel("Launch LokalBot at login")
+                .accessibilityHint("Start automatically so it's ready to catch meetings.")
+
+                if let error = loginItem.error {
+                    Text(error).foregroundStyle(.red)
+                }
+            }
+            .task { await loginItem.refresh() }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { Task { await loginItem.refresh() } }
+            }
+        }
     }
 
     @ViewBuilder private var cotypingSection: some View {
@@ -1102,26 +1142,7 @@ struct SettingsView: View {
                             .settingsSecondary()
                             .multilineTextAlignment(.trailing)
                     }
-                    if power.isLowPower {
-                        Label("Low Power Mode is on — summaries may run slower.", systemImage: "bolt.slash")
-                            .font(.scaled(.callout)).settingsSecondary()
-                    } else if power.isOnBattery {
-                        Label("Running on battery.", systemImage: "battery.75")
-                            .font(.scaled(.callout)).settingsSecondary()
-                    }
-                    if metrics.recent.isEmpty {
-                        LabeledContent("Recent generations") {
-                            Text("None yet").settingsSecondary()
-                        }
-                    } else {
-                        ForEach(Array(metrics.recent.reversed().prefix(5))) { metric in
-                            LabeledContent(metric.label) {
-                                Text(String(format: "%.1fs · ~%d tok · %.0f tok/s",
-                                            metric.durationSec, metric.approxTokens, metric.tokensPerSec))
-                                    .font(AppFont.scaled(.callout)).settingsSecondary()
-                            }
-                        }
-                    }
+                    SystemStatusReadout()
                     Button("Export Diagnostics…") { exportDiagnostics() }
                         .accessibilityIdentifier("settings.exportDiagnostics")
                     SettingsHelp("Logs, health reports, settings without secrets, and library counts. Never meeting audio, transcripts, notes, or screenshots.")
@@ -1132,6 +1153,41 @@ struct SettingsView: View {
                 }
             }
 
+    }
+
+    /// Keeps power notifications and live generation metrics local to the
+    /// advanced System section. Settings navigation does not observe either
+    /// service while another category is visible.
+    private struct SystemStatusReadout: View {
+        @StateObject private var power = PowerSourceMonitor()
+        @ObservedObject private var metrics = GenerationMetricsStore.shared
+
+        var body: some View {
+            Group {
+                if power.isLowPower {
+                    Label("Low Power Mode is on — summaries may run slower.", systemImage: "bolt.slash")
+                        .font(.scaled(.callout)).settingsSecondary()
+                } else if power.isOnBattery {
+                    Label("Running on battery.", systemImage: "battery.75")
+                        .font(.scaled(.callout)).settingsSecondary()
+                }
+                if metrics.recent.isEmpty {
+                    LabeledContent("Recent generations") {
+                        Text("None yet").settingsSecondary()
+                    }
+                } else {
+                    ForEach(Array(metrics.recent.reversed().prefix(5))) { metric in
+                        LabeledContent(metric.label) {
+                            Text(String(format: "%.1fs · ~%d tok · %.0f tok/s",
+                                        metric.durationSec, metric.approxTokens, metric.tokensPerSec))
+                                .font(AppFont.scaled(.callout)).settingsSecondary()
+                        }
+                    }
+                }
+            }
+            .task { power.start() }
+            .onDisappear { power.stop() }
+        }
     }
 
     private func exportDiagnostics() {

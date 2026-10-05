@@ -1,4 +1,6 @@
 import XCTest
+import Combine
+import Observation
 @testable import LokalBot
 
 /// The NavSection migration mapping (spec §2.1): capture names from the
@@ -83,5 +85,200 @@ final class NavSectionAgentTests: XCTestCase {
 final class TodayLandingTests: XCTestCase {
     func testFreshAppStateLandsOnToday() {
         XCTAssertEqual(AppState().navSection, .today)
+    }
+}
+
+@MainActor
+final class SettingsNavigationPerformanceTests: XCTestCase {
+    func testPageSwitchOnlyNotifiesNavigationReaders() {
+        let app = AppState()
+        var invalidations = 0
+        let subscription = app.objectWillChange.sink { invalidations += 1 }
+        let navigationChanged = expectation(description: "Navigation reader updates")
+        withObservationTracking {
+            _ = app.navSection
+        } onChange: {
+            navigationChanged.fulfill()
+        }
+
+        let pages: [AppState.NavSection] = [
+            .settings, .timeline, .meetings, .people, .projects, .ask, .agent, .today
+        ]
+        for page in pages { app.navSection = page }
+
+        XCTAssertEqual(invalidations, 0, "Page selection must not invalidate every AppState consumer")
+        wait(for: [navigationChanged], timeout: 1)
+        XCTAssertEqual(app.navSection, .today)
+        withExtendedLifetime(subscription) {}
+    }
+
+    func testSettingsReadersStillObserveCategoryAndSearchFocus() {
+        let app = AppState()
+        let originalTab = app.settingsTab
+        defer { app.settingsTab = originalTab }
+        app.settingsTab = .general
+        let categoryChanged = expectation(description: "Category reader updates")
+        let focusChanged = expectation(description: "Search focus reader updates")
+        withObservationTracking {
+            _ = app.settingsTab
+        } onChange: {
+            categoryChanged.fulfill()
+        }
+        withObservationTracking {
+            _ = app.focusedSettingID
+        } onChange: {
+            focusChanged.fulfill()
+        }
+
+        app.settingsTab = .writing
+        app.focusedSettingID = "settings.dictationPreview"
+
+        wait(for: [categoryChanged, focusChanged], timeout: 1)
+        XCTAssertEqual(AppState().settingsTab, .writing, "The selected category must survive relaunch")
+    }
+
+    func testCategorySwitchDoesNotInvalidateTheWholeApp() {
+        let app = AppState()
+        let originalTab = app.settingsTab
+        defer { app.settingsTab = originalTab }
+        var invalidations = 0
+        let subscription = app.objectWillChange.sink { invalidations += 1 }
+
+        // The same mutations made by the Settings category picker, including
+        // clearing a prior search highlight on each selection.
+        for category in AppState.SettingsTab.allCases {
+            app.settingsTab = category
+            app.focusedSettingID = nil
+        }
+
+        XCTAssertEqual(invalidations, 0,
+                       "Settings navigation must not rebuild unrelated AppState consumers")
+        withExtendedLifetime(subscription) {}
+    }
+}
+
+@MainActor
+final class NavigationWorkTests: XCTestCase {
+    func testUnchangedDreamMemoryDoesNotPublish() {
+        let app = AppState()
+        let originalSettings = app.settings
+        defer { app.settings = originalSettings }
+        app.settings.cotypingUseMeetingMemory = false
+        app.settings.cotypingUseScreenMemory = false
+        app.refreshDreamMemory()
+        var updates = 0
+        let observer = app.objectWillChange.sink { updates += 1 }
+        app.refreshDreamMemory()
+        app.refreshDreamMemory()
+        XCTAssertEqual(updates, 0)
+        withExtendedLifetime(observer) {}
+    }
+
+    func testBackgroundDreamReadRunsOffMainAndPublishesOnlyChanges() async {
+        let app = AppState()
+        let originalSettings = app.settings
+        defer { app.settings = originalSettings }
+        app.settings.cotypingUseMeetingMemory = false
+        app.settings.cotypingUseScreenMemory = false
+        let memory = DreamMemory(updatedAt: .distantPast)
+        var updates = 0
+        let observer = app.objectWillChange.sink { updates += 1 }
+        for _ in 0..<2 {
+            await app.refreshDreamMemoryInBackground {
+                XCTAssertFalse(Thread.isMainThread, "File reads must not block navigation")
+                return memory
+            }
+        }
+        XCTAssertEqual(app.dreamMemory, memory)
+        XCTAssertEqual(updates, 1)
+        withExtendedLifetime(observer) {}
+    }
+
+    func testOlderDreamReadCannotOverwriteANewerRefresh() async {
+        let app = AppState()
+        let originalSettings = app.settings
+        defer { app.settings = originalSettings }
+        app.settings.cotypingUseMeetingMemory = false
+        app.settings.cotypingUseScreenMemory = false
+        let started = expectation(description: "Old read started")
+        let release = DispatchSemaphore(value: 0)
+        let oldRead = Task {
+            await app.refreshDreamMemoryInBackground {
+                started.fulfill()
+                _ = release.wait(timeout: .now() + 5)
+                return DreamMemory(updatedAt: .distantPast)
+            }
+        }
+        await fulfillment(of: [started], timeout: 2)
+        let latest = DreamMemory(updatedAt: Date(timeIntervalSince1970: 1234))
+        await app.refreshDreamMemoryInBackground { latest }
+        release.signal()
+        await oldRead.value
+        XCTAssertEqual(app.dreamMemory, latest)
+    }
+
+    func testSynchronousRevocationRefreshSupersedesBackgroundRead() async {
+        let app = AppState()
+        let originalSettings = app.settings
+        defer { app.settings = originalSettings }
+        app.settings.cotypingUseMeetingMemory = false
+        app.settings.cotypingUseScreenMemory = false
+        let started = expectation(description: "Read started before revocation")
+        let release = DispatchSemaphore(value: 0)
+        let oldRead = Task {
+            await app.refreshDreamMemoryInBackground {
+                started.fulfill()
+                _ = release.wait(timeout: .now() + 5)
+                return DreamMemory(updatedAt: .distantPast)
+            }
+        }
+        await fulfillment(of: [started], timeout: 2)
+        app.refreshDreamMemory()
+        let current = app.dreamMemory
+        release.signal()
+        await oldRead.value
+        XCTAssertEqual(app.dreamMemory, current, "An old display read must not restore revoked memory")
+    }
+
+    func testSearchTargetWinsOverCategoryScrollReset() {
+        let reset = SettingsScrollRequest(category: .writing, writingTool: "Dictation", focusedSettingID: nil)
+        let search = SettingsScrollRequest(category: .writing, writingTool: "Dictation",
+                                           focusedSettingID: "settings.dictationPreview")
+        XCTAssertEqual(reset.targetID, SettingsScrollRequest.topID)
+        XCTAssertEqual(search.targetID, "settings.dictationPreview")
+        XCTAssertNotEqual(reset, search)
+        XCTAssertNotEqual(reset, SettingsScrollRequest(category: .general, writingTool: "Dictation", focusedSettingID: nil))
+    }
+}
+
+
+@MainActor
+final class LoginItemPerformanceTests: XCTestCase {
+    func testStatusReadNeverRunsOnMainThreadOrDuringRendering() async {
+        let read = expectation(description: "One background status read")
+        read.assertForOverFulfill = true
+        let state = LoginItemState(read: {
+            XCTAssertFalse(Thread.isMainThread, "ServiceManagement IPC must not block navigation")
+            read.fulfill()
+            return true
+        }, write: { _ in XCTFail("Opening Settings must not change login registration") })
+        XCTAssertFalse(state.isLoaded)
+        await state.refresh()
+        for _ in 0..<100 { XCTAssertTrue(state.isEnabled) }
+        XCTAssertTrue(state.isLoaded)
+        XCTAssertFalse(state.isBusy)
+        await fulfillment(of: [read], timeout: 1)
+    }
+
+    func testFailedWriteRestoresActualStatusAndReportsError() async {
+        let state = LoginItemState(read: { false }, write: { _ in
+            XCTAssertFalse(Thread.isMainThread)
+            throw NSError(domain: "LoginItemTest", code: 1)
+        })
+        await state.refresh()
+        await state.setEnabled(true)
+        XCTAssertFalse(state.isEnabled)
+        XCTAssertNotNil(state.error)
+        XCTAssertFalse(state.isBusy)
     }
 }

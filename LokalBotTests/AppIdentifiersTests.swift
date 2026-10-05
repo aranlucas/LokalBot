@@ -4,6 +4,20 @@ import XCTest
 @testable import LokalBot
 
 final class AppIdentifiersTests: XCTestCase {
+    func testOnlyExplicitDevelopmentLaunchSharesReleaseDataIdentity() {
+        let parent = URL(fileURLWithPath: "/synthetic/Application Support", isDirectory: true)
+        for identity in [AppIdentifiers.Identity.release, .development, .uiTestHost] {
+            XCTAssertEqual(AppIdentifiers.dataIdentity(for: identity, sharingReleaseLibrary: false), identity)
+        }
+        let shared = AppIdentifiers.dataIdentity(for: .development, sharingReleaseLibrary: true)
+        XCTAssertEqual(shared.bundleID, "me.dotenv.LokalBot", "Shared data must use the release Keychain namespace")
+        XCTAssertEqual(AppDirectories.applicationSupport(for: shared, under: parent),
+                       AppDirectories.applicationSupport(for: .release, under: parent))
+        XCTAssertEqual(AppIdentifiers.dataIdentity(for: .uiTestHost, sharingReleaseLibrary: true), .uiTestHost,
+                       "A developer launch override must never redirect UI-test data")
+        XCTAssertEqual(AppIdentifiers.dataIdentity(for: .release, sharingReleaseLibrary: true), .release)
+    }
+
     func testDevelopmentAndUITestHostsHaveSeparateLibraryAndSecretIdentities() {
         let parent = URL(fileURLWithPath: "/synthetic/Application Support", isDirectory: true)
         let release = AppDirectories.applicationSupport(for: .release, under: parent)

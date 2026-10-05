@@ -13,9 +13,9 @@ enum AppDirectories {
             ?? FileManager.default.temporaryDirectory
     }
 
-    /// The app identity's Application Support home. Development builds use
-    /// `me.dotenv.LokalBot.dev`; their retention settings cannot affect release
-    /// data. Identity-scoped runtimes and mutable process markers are separate too.
+    /// The data identity's Application Support home. Development builds default
+    /// to `me.dotenv.LokalBot.dev`; only the explicit shared-library launch
+    /// selects release data and settings. Runtimes follow the same choice.
     ///
     /// Deliberately NOT redirected by the storage-root override: the installed
     /// llama-server binary, its PID markers, transcription model stores, and
@@ -25,7 +25,7 @@ enum AppDirectories {
     /// library root (`ModelCatalog.localURL`); `Scripts/e2e.sh` symlinks the
     /// real models/ into its temp root to keep those shared too.
     static var applicationSupport: URL {
-        applicationSupport(for: AppIdentifiers.identity, under: userApplicationSupport)
+        applicationSupport(for: AppIdentifiers.dataIdentity, under: userApplicationSupport)
     }
 
     static func applicationSupport(for identity: AppIdentifiers.Identity, under parent: URL) -> URL {

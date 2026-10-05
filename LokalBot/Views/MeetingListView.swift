@@ -14,6 +14,8 @@ struct MeetingListView: View {
     @State private var mergeDraft: MeetingMergeDraft?
 
     var body: some View {
+        let groupedMeetings = groupedMeetings
+        let failedMeetings = failedMeetings
         VStack(spacing: 0) {
             VStack(spacing: 10) {
                 HStack(spacing: 8) {
@@ -66,7 +68,9 @@ struct MeetingListView: View {
                         SectionHeader(text: group.label)
                             .selectionDisabled(true)
                         ForEach(group.items) { meeting in
-                            MeetingRowView(meeting: meeting)
+                            MeetingRowView(meeting: meeting, stage: app.pipeline.stages[meeting.id]) {
+                                app.retryProcessing(meeting)
+                            }
                                 .tag(meeting.id)
                         }
                     }
@@ -240,8 +244,9 @@ struct MeetingListView: View {
 /// processing/failed pipeline state. Shared by the Meetings list and the
 /// Today home so the two surfaces can never drift.
 struct MeetingRowView: View {
-    @EnvironmentObject var app: AppState
     let meeting: Meeting
+    let stage: ProcessingPipeline.Stage?
+    let retry: () -> Void
     @Environment(\.backgroundProminence) private var prominence
 
     var body: some View {
@@ -283,7 +288,7 @@ struct MeetingRowView: View {
             .accessibilityLabel(meeting.displayTitle)
             .accessibilityIdentifier("meeting.row.\(meeting.id.uuidString)")
 
-            if !live, let stage = app.pipeline.stages[meeting.id] {
+            if !live, let stage {
                 status(stage)
             }
         }
@@ -298,7 +303,7 @@ struct MeetingRowView: View {
                     .font(AppFont.scaled(.callout))
                     .foregroundStyle(Brand.error)
                 Button("Retry") {
-                    app.retryProcessing(meeting)
+                    retry()
                 }
                 .buttonStyle(.borderless)
                 .font(AppFont.scaled(.callout))
@@ -313,7 +318,7 @@ struct MeetingRowView: View {
                     .font(AppFont.scaled(.callout))
                     .foregroundStyle(.secondary)
                 Button("Download & process") {
-                    app.retryProcessing(meeting)
+                    retry()
                 }
                 .buttonStyle(.borderless)
                 .font(AppFont.scaled(.callout))
