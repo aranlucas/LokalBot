@@ -33,6 +33,8 @@ final class CotypingCoordinator: ObservableObject {
     let inputMonitor: CotypingInputMonitor
     let inputSourceMonitor: CotypingKeyboardInputSourceMonitor
     let overlay: CotypingOverlayController
+    /// The caret found on screen for fields whose app reports none.
+    let visualCaret = CotypingVisualCaret()
     let inserter: CotypingInserter
     let engine: CotypingCompleting
     let learningStore: CotypingLearningStore
@@ -99,6 +101,9 @@ final class CotypingCoordinator: ObservableObject {
     nonisolated static let hostPublishFirstPollIntervalMs = 10
     nonisolated static let hostPublishPollIntervalMs = 15
     nonisolated static let freshSnapshotReuseWindowMilliseconds = 30
+    /// How long a finished suggestion waits for its caret to be found on
+    /// screen before it is shown beside the field instead.
+    nonisolated static let visualCaretWaitMilliseconds = 150
 
     init(
         engine: CotypingCompleting,
