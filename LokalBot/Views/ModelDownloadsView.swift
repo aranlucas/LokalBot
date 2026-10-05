@@ -164,7 +164,7 @@ struct ModelDownloadsView: View {
                 Button("Remove…") { removal = .text(entry) }
                     .disabled(setup.pending != nil)
                     .accessibilityIdentifier("models.downloads.remove.\(entry.id)")
-            } else {
+            } else if ModelDownloadManager.sourceRefusal(for: entry) == nil {
                 Button("Retry") { downloads.download(entry, storage: app.storage) }
             }
         }

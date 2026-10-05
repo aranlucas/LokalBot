@@ -68,7 +68,10 @@ final class ModelSetupController: ObservableObject {
             } catch {
                 guard generation == token, !Task.isCancelled else { return }
                 failure = error.localizedDescription
-                failedChange = change
+                // Without a failed change there is nothing to retry, so the
+                // banner offers only Dismiss for a source that always fails.
+                let retryable = (error as? ModelDownloadManager.PreparationError)?.isRetryable ?? true
+                failedChange = retryable ? change : nil
             }
             guard generation == token else { return }
             pending = nil

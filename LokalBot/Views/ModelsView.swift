@@ -132,7 +132,9 @@ struct ModelSetupFeedback: View {
                 Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
                 Text(failure).font(.scaled(.body)).textSelection(.enabled)
                 Spacer()
-                Button("Retry") { controller.retry() }
+                if controller.failedChange != nil {
+                    Button("Retry") { controller.retry() }
+                }
                 Button("Dismiss") { controller.dismissFeedback() }
             }
             .padding(.vertical, 14)
