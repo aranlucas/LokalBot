@@ -88,11 +88,14 @@ final class NemotronDiarizationTests: XCTestCase {
     func testModelDownloadsArePinnedAndComplete() {
         let artifacts = NemotronDiarizationModels.artifacts
         XCTAssertEqual(Set(artifacts.map(\.path)).count, artifacts.count)
-        XCTAssertEqual(artifacts.reduce(0) { $0 + $1.bytes }, 199_164_847)
+        XCTAssertEqual(artifacts.reduce(0) { $0 + $1.bytes }, 199_162_403)
         for artifact in artifacts {
             XCTAssertTrue(artifact.remoteURL.path.contains("/resolve/\(NemotronDiarizationModels.revision)/"))
             XCTAssertFalse(artifact.remoteURL.path.contains("/main/"))
             XCTAssertEqual(artifact.sha256.count, 64)
+            if artifact.path.hasPrefix("Nemotron3Diarizer_") {
+                XCTAssertTrue(artifact.remoteURL.path.contains("/monolithic/v2/"))
+            }
         }
     }
 }

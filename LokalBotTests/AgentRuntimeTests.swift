@@ -17,7 +17,7 @@ final class AgentRuntimeTests: XCTestCase {
         let root = URL(fileURLWithPath: "/tmp/agent-runtime")
         XCTAssertEqual(AgentRuntimeLayout.bunBinary(under: root).path, "/tmp/agent-runtime/bun/bun")
         XCTAssertEqual(AgentRuntimeLayout.piCLI(under: root).path,
-                       "/tmp/agent-runtime/pi/node_modules/@earendil-works/pi-coding-agent/dist/cli.js")
+                       "/tmp/agent-runtime/pi/node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js")
     }
 
     func testDefaultRootLivesInApplicationSupport() {
@@ -136,7 +136,7 @@ final class AgentRuntimeTests: XCTestCase {
     func testManifestPinsExpectedVersions() {
         let manifest = AgentRuntimeManifest.current
         XCTAssertEqual(AgentRuntimeManifest.bunVersion, "1.4.2")
-        XCTAssertEqual(AgentRuntimeManifest.piVersion, "0.86.1")
+        XCTAssertEqual(AgentRuntimeManifest.piVersion, "1.0.3")
         XCTAssertTrue(manifest.bun.url.absoluteString.contains("bun-v1.4.2/bun-darwin-aarch64.zip"))
         XCTAssertEqual(manifest.bun.sha256.count, 64)
         XCTAssertEqual(manifest.bun.archiveKind, .zip)

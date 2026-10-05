@@ -126,7 +126,7 @@ final class AgentRuntimeInstaller: ObservableObject {
             let piStage = staging.appendingPathComponent("pi-install", isDirectory: true)
             try await packageInstaller(bunBinary, runtimeTemplate, piStage)
             let stagedCLI = piStage.appendingPathComponent(
-                "node_modules/@earendil-works/pi-coding-agent/dist/cli.js")
+                "node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js")
             guard FileManager.default.fileExists(atPath: stagedCLI.path) else {
                 throw InstallError.layout("pi cli.js missing from bundle")
             }

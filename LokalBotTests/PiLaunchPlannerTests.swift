@@ -20,7 +20,7 @@ final class PiLaunchPlannerTests: XCTestCase {
         environment["LOKALBOT_LLM_API_KEY"] = inheritedAPIKey
         return PiLaunchPlanner.plan(
             bun: URL(fileURLWithPath: "/rt/bun/bun"),
-            piCLI: URL(fileURLWithPath: "/rt/pi/node_modules/@earendil-works/pi-coding-agent/dist/cli.js"),
+            piCLI: URL(fileURLWithPath: "/rt/pi/node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js"),
             extensionDirectory: URL(fileURLWithPath: "/app/Resources/pi/lokalbot-extension"),
             skillDirectory: skill,
             sessionDirectory: URL(fileURLWithPath: "/store/agent/sessions"),
@@ -37,7 +37,7 @@ final class PiLaunchPlannerTests: XCTestCase {
 
     func testArgumentsMatchTheSpecContract() {
         XCTAssertEqual(makePlan().arguments, [
-            "/rt/pi/node_modules/@earendil-works/pi-coding-agent/dist/cli.js",
+            "/rt/pi/node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js",
             "--mode", "rpc",
             "--provider", "lokalbot",
             "--model", "qwen2.5-7b-instruct",

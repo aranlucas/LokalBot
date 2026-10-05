@@ -145,21 +145,9 @@ actor QwenASREngine: TranscriptionEngine {
         let unblocked = windows?.disablesRepetitionBlocking == true
         func decode(language qwenLanguage: String?) async throws -> [Transcript.Segment] {
             try await SpanTranscription.segments(in: url, spans: spans) { samples, _ in
-                if unblocked {
-                    // speech-swift turns on no-repeat-3-gram blocking above 15 s,
-                    // which forces substitutions in ordinary repeated phrases.
-                    return model.transcribe(
-                        audio: Self.samplesForInference(samples), sampleRate: Self.sampleRate,
-                        options: Qwen3DecodingOptions(
-                            maxTokens: Self.maxTokens(for: samples.count), language: qwenLanguage,
-                            context: TranscriptionPrompt.normalized(prompt), longInputThresholdSeconds: .infinity))
-                }
-                return model.transcribe(
-                    audio: Self.samplesForInference(samples),
-                    sampleRate: Self.sampleRate,
-                    language: qwenLanguage,
-                    maxTokens: Self.maxTokens(for: samples.count),
-                    context: TranscriptionPrompt.normalized(prompt))
+                try Self.transcribeWindow(
+                    samples: samples, language: qwenLanguage, prompt: prompt,
+                    disablesRepetitionBlocking: unblocked, model: model)
             }
         }
         var segments = try await decode(language: Self.qwenLanguage(language))
@@ -175,6 +163,32 @@ actor QwenASREngine: TranscriptionEngine {
         lokalbotLog(
             "qwen-asr profile model=\(variant.modelID) spans=\(spans.count) merged=\(windows != nil) language=\(Self.qwenLanguage(language) ?? pinned.map { "auto→\($0)" } ?? "auto") elapsed=\(String(format: "%.2fs", elapsed)) rtfx=\(String(format: "%.1fx", elapsed > 0 ? duration / elapsed : 0))")
         return Transcript(segments: segments, engine: "\(variant.modelID) (Qwen3ASR MLX)")
+    }
+
+    /// Use the throwing API for every window so an abandoned transcription
+    /// stops at the next encoder/prefill/token checkpoint without saving a tail.
+    nonisolated static func transcribeWindow(
+        samples: [Float], language: String?, prompt: String?,
+        disablesRepetitionBlocking: Bool, model: Qwen3ASRModel
+    ) throws -> String {
+        try model.transcribeCheckingCancellation(
+            audio: samplesForInference(samples), sampleRate: sampleRate,
+            options: decodingOptions(sampleCount: samples.count, language: language,
+                                     prompt: prompt, disablesRepetitionBlocking: disablesRepetitionBlocking))
+    }
+
+    nonisolated static func decodingOptions(
+        sampleCount: Int, language: String?, prompt: String?, disablesRepetitionBlocking: Bool
+    ) -> Qwen3DecodingOptions {
+        var options = Qwen3DecodingOptions(
+            maxTokens: maxTokens(for: sampleCount), language: language,
+            context: TranscriptionPrompt.normalized(prompt))
+        if disablesRepetitionBlocking {
+            // Blocking repeated 3-grams substitutes legitimate repeated phrases
+            // in the accuracy model's merged word-attribution windows.
+            options.longInputThresholdSeconds = .infinity
+        }
+        return options
     }
 
     private func unload() async {

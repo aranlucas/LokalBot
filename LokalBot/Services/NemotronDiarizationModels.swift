@@ -1,11 +1,11 @@
 import Foundation
 
-/// The exact GA CoreML files used in the AMI evaluation. FluidAudio 0.17.1's
-/// default Nemotron downloader follows `main`, so use the app's integrity gate
-/// and an immutable, separate cache rather than trusting its version marker.
+/// The v2 CoreML export fixes ANE compilation on M3 while retaining the GA
+/// checkpoint weights. Keep an immutable, integrity-checked cache rather than
+/// following the upstream downloader's mutable `main` revision.
 enum NemotronDiarizationModels {
     static let repository = "FluidInference/nemotron-3-diarization-coreml"
-    static let revision = "53445f72d5735e33406ccce7b92116bce7ab1ab7"
+    static let revision = "25a90f97f254428d4b30374b76af9c74fdee8327"
 
     struct Artifact: Sendable {
         let path: String
@@ -13,7 +13,7 @@ enum NemotronDiarizationModels {
         let sha256: String
 
         var remoteURL: URL {
-            let remotePath = path.hasPrefix("Nemotron3Diarizer_") ? "monolithic/\(path)" : path
+            let remotePath = path.hasPrefix("Nemotron3Diarizer_") ? "monolithic/v2/\(path)" : path
             return URL(string: "https://huggingface.co/\(repository)/resolve/\(revision)/\(remotePath)")!
         }
     }
@@ -22,11 +22,11 @@ enum NemotronDiarizationModels {
         .init(path: "learnable_sil_emb.bin", bytes: 2048,
               sha256: "d4417b3c0eabdf7c47032fac2b5b5a7ee83d819a6ddda8fd8eaf74e2b5cc4ac7"),
         .init(path: "Nemotron3Diarizer_offline.mlmodelc/analytics/coremldata.bin", bytes: 243,
-              sha256: "013d4b137d9b21ca20d0877dc9c848de12ff2cb98957471d9adcd7e90677cf7d"),
+              sha256: "491594df92282a4f2cef65e96d236e210a5c4627063e37e822ec858aaaad416d"),
         .init(path: "Nemotron3Diarizer_offline.mlmodelc/coremldata.bin", bytes: 758,
-              sha256: "c20dbb6f4b3ca4aca043b8d04c73a3bc8c112f001c5318ce9c2de1e7dafc3fa7"),
-        .init(path: "Nemotron3Diarizer_offline.mlmodelc/model.mil", bytes: 507718,
-              sha256: "a29018338c9d07a886e37549b0171cb9379dee21be5934a48c23317582eded88"),
+              sha256: "8b790c919c65744648c17290a26d3371e0e55db655310e7f8445080757b0bf08"),
+        .init(path: "Nemotron3Diarizer_offline.mlmodelc/model.mil", bytes: 505274,
+              sha256: "ea5673d9e9ec785e7c8fb628acd82f9f86214c46b6584eaacdb6faddcb3f0277"),
         .init(path: "Nemotron3Diarizer_offline.mlmodelc/weights/weight.bin", bytes: 198654080,
               sha256: "bab76e5f190d0e4a4e174e7fcb1e9beea58c6b2be56e665e2cac8fba6d10f7f1"),
     ]
