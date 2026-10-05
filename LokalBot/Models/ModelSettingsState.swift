@@ -203,6 +203,41 @@ enum ModelSettingsPresentation {
         return uses
     }
 
+    /// Why a model can't be switched to: it is missing and its saved source is
+    /// one the downloader refuses, so preparation could only fail.
+    static func downloadBlocker(for entry: ModelCatalog.Entry, downloaded: Bool) -> String? {
+        downloaded ? nil : ModelDownloadManager.sourceRefusal(for: entry)
+    }
+
+    enum CustomModelRemoval: Equatable {
+        case allowed
+        case assigned([String])
+        case downloaded
+
+        var reason: String? {
+            switch self {
+            case .allowed: nil
+            case .assigned(let roles): "Assigned to \(roles.joined(separator: ", ")). Choose another model there first."
+            case .downloaded: "Remove its download in Downloaded first."
+            }
+        }
+    }
+
+    /// Nil for catalog models. Removing a custom model only edits the list,
+    /// so it must never orphan a downloaded file or leave a saved role
+    /// choice (even an inactive on-device Think choice) pointing at nothing.
+    static func customModelRemoval(_ entry: ModelCatalog.Entry, in settings: AppSettings,
+                                   downloaded: Bool) -> CustomModelRemoval? {
+        guard ModelCatalog.entry(id: entry.id) == nil,
+              settings.customBuiltInModels.contains(where: { $0.id == entry.id }) else { return nil }
+        var roles: [String] = []
+        if settings.builtInModelID == entry.id { roles.append("Think") }
+        if settings.cotypingBuiltInModelID == entry.id { roles.append("Autocomplete") }
+        if settings.dictationCompositionBuiltInModelID == entry.id { roles.append("Dictation composition") }
+        if !roles.isEmpty { return .assigned(roles) }
+        return downloaded ? .downloaded : .allowed
+    }
+
     static func estimatedTranscriptionBytes(
         _ choice: TranscriptionModelChoice,
         granite: GraniteSpeechModelConfiguration

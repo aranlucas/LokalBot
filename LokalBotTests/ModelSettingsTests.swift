@@ -181,6 +181,61 @@ final class ModelSettingsTests: XCTestCase {
         XCTAssertTrue(didPrepare)
     }
 
+    func testUnusableSourceFailureOffersNoRetry() async {
+        var settings = AppSettings()
+        let original = settings
+        var preparations = 0
+        let controller = ModelSetupController(settings: { settings }, update: { settings = $0 }) { _, _ in
+            preparations += 1
+            throw ModelDownloadManager.PreparationError.unusableSource("Source refused")
+        }
+        controller.apply(.init(autocompleteModelID: "unpinned"), title: "Unpinned")
+        await waitUntil { controller.pending == nil }
+
+        XCTAssertEqual(controller.failure, "Source refused")
+        XCTAssertNil(controller.failedChange)
+        controller.retry()
+        XCTAssertNil(controller.pending)
+        XCTAssertEqual(preparations, 1)
+        XCTAssertEqual(settings, original)
+    }
+
+    func testOnlyMissingModelsWithRefusedSourcesAreBlocked() {
+        let unpinned = ModelCatalog.Entry(
+            id: "unpinned", displayName: "Unpinned", fileName: "unpinned.gguf",
+            url: "https://huggingface.co/org/repo/resolve/main/unpinned.gguf",
+            sizeGB: 1, blurb: "", disablesThinking: false)
+        let recommended = ModelCatalog.entry(id: ModelCatalog.recommendedCotypingID)!
+
+        XCTAssertEqual(ModelSettingsPresentation.downloadBlocker(for: unpinned, downloaded: false),
+                       ModelDownloadManager.unpinnedHuggingFaceMessage)
+        // A file already on disk needs no download, so its source is moot.
+        XCTAssertNil(ModelSettingsPresentation.downloadBlocker(for: unpinned, downloaded: true))
+        XCTAssertNil(ModelSettingsPresentation.downloadBlocker(for: recommended, downloaded: false))
+    }
+
+    func testCustomModelRemovalNeverOrphansAssignmentsOrFiles() {
+        let custom = ModelCatalog.Entry(
+            id: "hf:org/repo/model.gguf", displayName: "Custom", fileName: "hf-model.gguf",
+            url: "https://huggingface.co/org/repo/resolve/main/model.gguf",
+            sizeGB: 1, blurb: "", disablesThinking: false)
+        var settings = AppSettings()
+        settings.customBuiltInModels = [custom]
+
+        XCTAssertEqual(ModelSettingsPresentation.customModelRemoval(custom, in: settings, downloaded: false),
+                       .allowed)
+        XCTAssertEqual(ModelSettingsPresentation.customModelRemoval(custom, in: settings, downloaded: true),
+                       .downloaded)
+        // A saved on-device Think choice counts even while Think runs remotely.
+        settings.summarizerBackend = .openAICompatible
+        settings.builtInModelID = custom.id
+        settings.dictationCompositionBuiltInModelID = custom.id
+        XCTAssertEqual(ModelSettingsPresentation.customModelRemoval(custom, in: settings, downloaded: false),
+                       .assigned(["Think", "Dictation composition"]))
+        let catalogEntry = ModelCatalog.entry(id: ModelCatalog.recommendedCotypingID)!
+        XCTAssertNil(ModelSettingsPresentation.customModelRemoval(catalogEntry, in: settings, downloaded: false))
+    }
+
     func testPresetMatchingDoesNotDescribeACustomRemoteSetupAsLocal() {
         var settings = ModelStackPreset.recommended.patch.applying(to: AppSettings())
         XCTAssertEqual(ModelStackPreset.matching(settings), .recommended)

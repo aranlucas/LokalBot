@@ -29,18 +29,20 @@ struct ModelPickerSheet: View {
         roles = app.modelRoles
         setup = app.modelSetup
         let settings = app.settings
-        let id: String
-        switch role {
-        case .transcription: id = settings.transcriptionModel.id
-        case .assistant: id = settings.builtInModelID
-        case .autocomplete: id = settings.cotypingBuiltInModelID
-        case .dictation: id = settings.dictationCompositionBuiltInModelID
-        }
-        _selectedID = State(initialValue: id)
+        _selectedID = State(initialValue: Self.assignedID(for: role, in: settings))
         _backend = State(initialValue: settings.summarizerBackend)
         _remoteModel = State(initialValue: settings.openAIModel)
         _ollamaModel = State(initialValue: settings.ollamaModel)
         _granite = State(initialValue: settings.graniteSpeechModel)
+    }
+
+    private static func assignedID(for role: ModelPickerRole, in settings: AppSettings) -> String {
+        switch role {
+        case .transcription: settings.transcriptionModel.id
+        case .assistant: settings.builtInModelID
+        case .autocomplete: settings.cotypingBuiltInModelID
+        case .dictation: settings.dictationCompositionBuiltInModelID
+        }
     }
 
     private var selection: Binding<String?> {
@@ -83,8 +85,21 @@ struct ModelPickerSheet: View {
         }
     }
 
+    private func isDownloaded(_ entry: ModelCatalog.Entry) -> Bool {
+        ModelCatalog.localURL(for: entry, storage: app.storage) != nil
+    }
+
+    private func downloadBlocker(_ entry: ModelCatalog.Entry) -> String? {
+        ModelSettingsPresentation.downloadBlocker(for: entry, downloaded: isDownloaded(entry))
+    }
+
+    private var selectedBlocker: String? {
+        guard role != .transcription, let selectedEntry else { return nil }
+        return downloadBlocker(selectedEntry)
+    }
+
     private var canApply: Bool {
-        guard setup.pending == nil else { return false }
+        guard setup.pending == nil, selectedBlocker == nil else { return false }
         if role == .assistant, backend != .builtIn {
             let target = patch.applying(to: app.settings)
             if InferencePresentation(settings: target).isBlocked { return false }
@@ -212,8 +227,9 @@ struct ModelPickerSheet: View {
                             title: entry.displayName,
                             detail: ModelSettingsPresentation.sizeLabel(entry) + " on disk",
                             inUse: ModelSettingsPresentation.uses(of: entry.id, in: app.settings).contains(role.title),
-                            available: ModelCatalog.localURL(for: entry, storage: app.storage) != nil,
-                            progress: downloads.progress[entry.id])
+                            available: isDownloaded(entry),
+                            progress: downloads.progress[entry.id],
+                            blocked: downloadBlocker(entry) != nil)
                         .tag(entry.id)
                     }
                 }
@@ -271,6 +287,27 @@ struct ModelPickerSheet: View {
                 if let advisory = fit.advisory {
                     Label(advisory, systemImage: "memorychip").font(.scaled(.callout)).foregroundStyle(.orange)
                 }
+                if let blocker = selectedBlocker {
+                    // Autocomplete's picker has no Browse button; say where it is.
+                    Label(role == .autocomplete
+                          ? blocker + " Browse Hugging Face is under Advanced in the Think model picker."
+                          : blocker,
+                          systemImage: "exclamationmark.triangle")
+                        .font(.scaled(.callout)).foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                if let removal = ModelSettingsPresentation.customModelRemoval(
+                    entry, in: app.settings, downloaded: isDownloaded(entry)) {
+                    HStack(spacing: 10) {
+                        Button("Remove from List") { removeCustomModel(entry) }
+                            .disabled(removal != .allowed || setup.pending != nil
+                                      || downloads.progress[entry.id] != nil)
+                            .accessibilityIdentifier("models.picker.removeCustom")
+                        if let reason = removal.reason {
+                            Text(reason).font(.scaled(.callout)).foregroundStyle(.secondary)
+                        }
+                    }
+                }
             }
             Button { showingAdvanced.toggle() } label: {
                 HStack(spacing: 5) {
@@ -290,6 +327,13 @@ struct ModelPickerSheet: View {
         }
         .padding(.horizontal, 24).padding(.vertical, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Only the list entry goes: the role assignments and downloaded file
+    /// checks in `customModelRemoval` keep this from orphaning anything.
+    private func removeCustomModel(_ entry: ModelCatalog.Entry) {
+        app.settings.customBuiltInModels.removeAll { $0.id == entry.id }
+        selectedID = Self.assignedID(for: role, in: app.settings)
     }
 
     private var advancedOptions: some View {
@@ -362,6 +406,13 @@ private struct ModelChoiceRow: View {
     let inUse: Bool
     let available: Bool
     let progress: Double?
+    var blocked = false
+
+    private var status: String {
+        if inUse { return "In use" }
+        if available { return "Downloaded" }
+        return blocked ? "Needs re-adding" : "Available"
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -371,8 +422,9 @@ private struct ModelChoiceRow: View {
             }
             Spacer()
             if let progress { ProgressView(value: progress).frame(width: 70) }
-            Text(inUse ? "In use" : available ? "Downloaded" : "Available")
-                .font(.scaled(.callout)).foregroundStyle(.secondary)
+            Text(status)
+                .font(.scaled(.callout))
+                .foregroundStyle(blocked && !inUse ? AnyShapeStyle(.orange) : AnyShapeStyle(.secondary))
         }
         .padding(.vertical, 6)
         .accessibilityElement(children: .combine)

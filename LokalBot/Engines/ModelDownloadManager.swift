@@ -19,13 +19,23 @@ final class ModelDownloadManager: ObservableObject {
 
     enum PreparationError: LocalizedError {
         case failed(String)
+        /// The saved download source breaks the download policy, so every
+        /// retry of the same source fails the same way.
+        case unusableSource(String)
 
         var errorDescription: String? {
             switch self {
-            case .failed(let message): message
+            case .failed(let message), .unusableSource(let message): message
             }
         }
+
+        var isRetryable: Bool {
+            if case .unusableSource = self { return false }
+            return true
+        }
     }
+
+    nonisolated static let unpinnedHuggingFaceMessage = "For safety, Hugging Face models must use an immutable revision and an advertised SHA-256 digest. Remove this model, then add it again from Browse Hugging Face."
 
     static let shared = ModelDownloadManager()
 
@@ -146,6 +156,10 @@ final class ModelDownloadManager: ObservableObject {
             return existing
         }
         try Task.checkCancellation()
+        if let refusal = Self.sourceRefusal(for: entry) {
+            errors[entry.id] = refusal
+            throw PreparationError.unusableSource(refusal)
+        }
 
         download(entry, storage: storage)
         while tasks[entry.id] != nil {
@@ -173,25 +187,12 @@ final class ModelDownloadManager: ObservableObject {
             errors[id] = "The model filename is unsafe. Choose the file again."
             return
         }
-        let embeddedSHA256 = Self.embeddedSHA256(in: rawURL)
-        let requiredSHA256 = expectedSHA256 ?? embeddedSHA256
-        guard let url = Self.networkURL(from: rawURL) else {
-            errors[id] = "The model download URL is invalid."
+        let requiredSHA256 = expectedSHA256 ?? Self.embeddedSHA256(in: rawURL)
+        if let refusal = Self.sourceRefusal(for: rawURL, requiredSHA256: requiredSHA256) {
+            errors[id] = refusal
             return
         }
-        // Every model source today (catalog, HF Browse) is HTTPS; refusing
-        // plaintext keeps a tampered download from ever reaching the digest
-        // check, and keeps non-HF custom URLs on the same encrypted footing.
-        guard url.scheme?.lowercased() == "https" else {
-            errors[id] = "Model downloads must use an https:// URL."
-            return
-        }
-        if Self.isHuggingFaceURL(url) {
-            guard Self.isPinnedHuggingFaceURL(url), requiredSHA256 != nil else {
-                errors[id] = "For safety, Hugging Face models must use an immutable revision and an advertised SHA-256 digest. Choose the model again from Browse Hugging Face."
-                return
-            }
-        }
+        guard let url = Self.networkURL(from: rawURL) else { return }
         let folder = storage.rootURL.appendingPathComponent("models", isDirectory: true)
         try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let destination = folder.appendingPathComponent(fileName)
@@ -342,7 +343,29 @@ final class ModelDownloadManager: ObservableObject {
         lastProgressPublish[id] = (clamped, now)
     }
 
-    private static func embeddedSHA256(in url: URL) -> String? {
+    /// Why `download` refuses a saved source before any bytes move, or nil.
+    /// The pickers share this so a custom model that can never download (a
+    /// Hugging Face link saved before pinning) is flagged, not offered.
+    nonisolated static func sourceRefusal(for entry: ModelCatalog.Entry) -> String? {
+        guard let url = URL(string: entry.url) else { return "The model download URL is invalid." }
+        return sourceRefusal(for: url, requiredSHA256: entry.expectedSHA256)
+    }
+
+    private nonisolated static func sourceRefusal(for rawURL: URL, requiredSHA256: String?) -> String? {
+        guard let url = networkURL(from: rawURL) else { return "The model download URL is invalid." }
+        // Every model source today (catalog, HF Browse) is HTTPS; refusing
+        // plaintext keeps a tampered download from ever reaching the digest
+        // check, and keeps non-HF custom URLs on the same encrypted footing.
+        guard url.scheme?.lowercased() == "https" else {
+            return "Model downloads must use an https:// URL."
+        }
+        if isHuggingFaceURL(url), !isPinnedHuggingFaceURL(url) || requiredSHA256 == nil {
+            return unpinnedHuggingFaceMessage
+        }
+        return nil
+    }
+
+    private nonisolated static func embeddedSHA256(in url: URL) -> String? {
         guard let fragment = URLComponents(url: url, resolvingAgainstBaseURL: false)?.fragment,
               fragment.hasPrefix("sha256=") else { return nil }
         let digest = String(fragment.dropFirst("sha256=".count)).lowercased()
@@ -350,7 +373,7 @@ final class ModelDownloadManager: ObservableObject {
         return digest
     }
 
-    private static func networkURL(from url: URL) -> URL? {
+    private nonisolated static func networkURL(from url: URL) -> URL? {
         guard var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             return nil
         }
@@ -358,11 +381,11 @@ final class ModelDownloadManager: ObservableObject {
         return components.url
     }
 
-    private static func isHuggingFaceURL(_ url: URL) -> Bool {
+    private nonisolated static func isHuggingFaceURL(_ url: URL) -> Bool {
         url.scheme?.lowercased() == "https" && url.host?.lowercased() == "huggingface.co"
     }
 
-    private static func isPinnedHuggingFaceURL(_ url: URL) -> Bool {
+    private nonisolated static func isPinnedHuggingFaceURL(_ url: URL) -> Bool {
         let components = url.pathComponents
         guard let resolveIndex = components.firstIndex(of: "resolve"),
               components.indices.contains(resolveIndex + 1) else { return false }

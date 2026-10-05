@@ -64,6 +64,62 @@ final class ModelDownloadManagerCancellationTests: XCTestCase {
         XCTAssertNil(manager.progress["plaintext"])
     }
 
+    func testSourceRefusalRequiresPinnedHuggingFaceRevisionAndDigest() {
+        let digest = String(repeating: "a", count: 64)
+        let revision = String(repeating: "b", count: 40)
+        func entry(_ url: String, sha256: String? = nil) -> ModelCatalog.Entry {
+            ModelCatalog.Entry(id: "custom", displayName: "Custom", fileName: "model.gguf",
+                               url: url, sha256: sha256, sizeGB: 1, blurb: "", disablesThinking: false)
+        }
+        let branch = "https://huggingface.co/org/repo/resolve/main/model.gguf"
+        let pinned = "https://huggingface.co/org/repo/resolve/\(revision)/model.gguf"
+
+        XCTAssertEqual(ModelDownloadManager.sourceRefusal(for: entry(branch, sha256: digest)),
+                       ModelDownloadManager.unpinnedHuggingFaceMessage)
+        XCTAssertEqual(ModelDownloadManager.sourceRefusal(for: entry(pinned)),
+                       ModelDownloadManager.unpinnedHuggingFaceMessage)
+        XCTAssertNil(ModelDownloadManager.sourceRefusal(for: entry(pinned, sha256: digest)))
+        XCTAssertNil(ModelDownloadManager.sourceRefusal(for: entry(pinned + "#sha256=\(digest)")))
+        XCTAssertNil(ModelDownloadManager.sourceRefusal(for: entry("https://mirror.example.com/model.gguf")))
+        XCTAssertEqual(ModelDownloadManager.sourceRefusal(for: entry("http://mirror.example.com/model.gguf")),
+                       "Model downloads must use an https:// URL.")
+        for catalogEntry in ModelCatalog.entries {
+            XCTAssertNil(ModelDownloadManager.sourceRefusal(for: catalogEntry), catalogEntry.id)
+        }
+    }
+
+    /// A custom model saved before Hugging Face pinning can never download, so
+    /// preparation must fail as not retryable instead of offering a Retry
+    /// that repeats the same refusal.
+    func testEnsureAvailableReportsUnpinnedSourceAsNotRetryable() async {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("unpinned-source-\(UUID().uuidString)", isDirectory: true)
+        let storage = StorageManager(rootURL: root)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let manager = ModelDownloadManager(
+            stagedDownloader: { _, _, _, _ in
+                XCTFail("an unpinned Hugging Face download must never start")
+                throw URLError(.badURL)
+            },
+            sha256Digest: { _ in "" })
+        let entry = ModelCatalog.Entry(
+            id: "unpinned", displayName: "Unpinned", fileName: "unpinned.gguf",
+            url: "https://huggingface.co/org/repo/resolve/main/unpinned.gguf",
+            sizeGB: 1, blurb: "", disablesThinking: false)
+
+        do {
+            _ = try await manager.ensureAvailable(entry, storage: storage)
+            XCTFail("an unpinned source must not prepare")
+        } catch let error as ModelDownloadManager.PreparationError {
+            XCTAssertFalse(error.isRetryable)
+            XCTAssertEqual(error.errorDescription, ModelDownloadManager.unpinnedHuggingFaceMessage)
+        } catch {
+            XCTFail("unexpected error: \(error)")
+        }
+        XCTAssertEqual(manager.errors["unpinned"], ModelDownloadManager.unpinnedHuggingFaceMessage)
+        XCTAssertNil(manager.progress["unpinned"])
+    }
+
     func testLegacyCatalogModelIsHashedAndMarkedBeforeReuse() async throws {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("legacy-model-\(UUID().uuidString)", isDirectory: true)
