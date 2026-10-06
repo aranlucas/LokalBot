@@ -110,7 +110,7 @@ final class PersonalActionItemsTests: XCTestCase {
         }
     }
 
-    func testMixedRecapCannotOverrideAnIndependentlyQuotedUndertaking() throws {
+    func testAnotherSpeakersOwnUndertakingStandsBesideAMixedRecap() throws {
         let quote = "I will send the measurements."
         let transcript = Transcript(segments: [
             microphone(0, "I'll prepare the policy, and you will send the measurements."),
@@ -121,10 +121,25 @@ final class PersonalActionItemsTests: XCTestCase {
         let result = try validate(transcript, [raw])
         XCTAssertTrue(result.rejected.isEmpty)
         XCTAssertEqual(result.outcomes.actionItems.first?.attribution?.resolution, .other)
+        // The recap as source does not change who said they would do it.
         raw["source"] = "s1"
         raw["context"] = ["s2"]
-        let mixedPrimary = try validate(transcript, [raw])
-        XCTAssertEqual(mixedPrimary.outcomes.actionItems.first?.attribution?.rejectionReason, .ambiguousQuote)
+        let recapFirst = try validate(transcript, [raw])
+        XCTAssertEqual(recapFirst.outcomes.actionItems.first?.attribution?.resolution, .other)
+        XCTAssertEqual(recapFirst.outcomes.actionItems.first?.citations.first?.segmentID, transcript.segmentID(at: 1))
+    }
+
+    func testAMixedSourceCannotBorrowAPromiseAboutSomethingElse() throws {
+        let promise = "I will prepare the summary."
+        let transcript = Transcript(segments: [
+            microphone(0, "I'll prepare the policy, and you will send the measurements."),
+            remote(10, "them 1", promise),
+        ], engine: "fixture")
+        var raw = action("s1", text: "Send the measurements", owner: "unknown", context: ["s2"])
+        raw["quote"] = promise
+        let result = try validate(transcript, [raw])
+        XCTAssertEqual(result.outcomes.actionItems.first?.attribution?.rejectionReason, .ambiguousQuote)
+        XCTAssertTrue(result.outcomes.actionItems.first?.ownershipIsUnclear ?? false)
     }
 
     func testPurposeClauseDoesNotTurnTheSpeakersPromiseIntoMixedOwnership() throws {
@@ -137,21 +152,26 @@ final class PersonalActionItemsTests: XCTestCase {
         }
     }
 
-    func testOwnershipQuoteMustBeVisibleUniqueAndVerbatim() throws {
+    func testOwnershipIsReadFromTheCitedSpeechNotTheModelsQuote() throws {
         let quote = "I need to review the change."
         let transcript = Transcript(segments: [microphone(0, quote), remote(30, "them 1", quote)], engine: "fixture")
         var raw = action("s1", text: "Review the change", context: ["s2"])
         raw["quote"] = quote
         let duplicate = try validate(transcript, [raw])
-        XCTAssertEqual(duplicate.outcomes.actionItems.first?.attribution?.rejectionReason, .ambiguousQuote)
+        XCTAssertEqual(duplicate.outcomes.actionItems.first?.attribution?.rejectionReason, .ambiguousQuote,
+                       "Two people said it, so only a quote that picks one can")
         raw["context"] = [String]()
         raw["quote"] = "\"\(quote)\""
         let wrapped = try validate(transcript, [raw])
         XCTAssertTrue(try XCTUnwrap(wrapped.outcomes.actionItems.first).isForUser)
         XCTAssertEqual(wrapped.outcomes.actionItems.first?.attribution?.quote, quote)
+        // A quote the model got wrong does not unsay what the cited row says.
         raw["quote"] = "I need to review the document."
-        let fabricated = try validate(transcript, [raw])
-        XCTAssertEqual(fabricated.outcomes.actionItems.first?.attribution?.rejectionReason, .quoteNotFound)
+        let misquoted = try validate(transcript, [raw])
+        XCTAssertTrue(misquoted.rejected.isEmpty)
+        XCTAssertTrue(try XCTUnwrap(misquoted.outcomes.actionItems.first).isForUser)
+        XCTAssertEqual(misquoted.outcomes.actionItems.first?.attribution?.quote, quote, "The saved quote is what was said")
+        // Words the model was never shown prove nothing.
         let evidence = MeetingNotesEvidence(transcript: transcript)
         var clipped = evidence.units[0]
         clipped.text = "review the change."
@@ -174,19 +194,24 @@ final class PersonalActionItemsTests: XCTestCase {
         XCTAssertEqual(result.rejected.first?.sources, ["s9"])
     }
 
-    func testQuoteCannotClipAConditionOrAssignAMicrophoneRequestToMe() throws {
+    func testAConditionalCommitmentIsMineAndItsSavedQuoteKeepsTheCondition() throws {
         for text in ["If approved, I have to review the change.", "I need to review the change if approved."] {
             let transcript = Transcript(segments: [microphone(0, text)], engine: "fixture")
-            var raw = action("s1", text: "Review the change")
+            var raw = action("s1", text: "Review the change if approved")
             raw["quote"] = text.contains("have to") ? "I have to review the change" : "I need to review the change"
-            let result = try validate(transcript, [raw])
-            XCTAssertTrue(result.outcomes.userActionItems.isEmpty)
+            let item = try XCTUnwrap(try validate(transcript, [raw]).outcomes.userActionItems.first, text)
+            XCTAssertEqual(item.attribution?.quote, text, "A clipped quote cannot drop the condition from the record")
         }
+    }
+
+    func testARequestIMadeOnTheMicrophoneIsNotMine() throws {
         let text = "Could you check the question on Discord?"
-        var raw = action("s1", text: "Check the question on Discord", owner: "unknown", basis: "request")
-        raw["quote"] = text
-        let result = try validate(Transcript(segments: [microphone(0, text)], engine: "fixture"), [raw])
-        XCTAssertFalse(try XCTUnwrap(result.outcomes.actionItems.first).isForUser)
+        for basis in ["request", "commitment", "unclear"] {
+            var raw = action("s1", text: "Check the question on Discord", owner: "unknown", basis: basis)
+            raw["quote"] = text
+            let result = try validate(Transcript(segments: [microphone(0, text)], engine: "fixture"), [raw])
+            XCTAssertTrue(result.outcomes.userActionItems.isEmpty, basis)
+        }
     }
 
     func testRemoteRequestAnsweredByTheUserBelongsToTheUser() throws {
@@ -352,23 +377,25 @@ final class PersonalActionItemsTests: XCTestCase {
         XCTAssertEqual(result.rejected.map(\.reason), ["unsupported_commitment"], "Negated undertakings stay rejected")
     }
 
-    func testOffersAndNonEnglishCommitmentsKeepTheirTasksWithUnclearOwner() throws {
+    func testOffersAreTheSpeakersOwnAndAStatusReportIsStillNotATask() throws {
         let english = Transcript(segments: [
             microphone(0, "I can send you the numbers tomorrow morning."),
             microphone(5, "Leave it with me, the contract review is mine."),
             microphone(10, "The deck is already in the shared drive."),
         ], engine: "fixture")
-        let englishResult = try validate(english, [
+        let result = try validate(english, [
             action("s1", text: "Send the numbers tomorrow morning"),
             action("s2", text: "Review the contract"),
             action("s3", text: "Share the deck"),
         ])
-        XCTAssertEqual(englishResult.outcomes.actionItems.map(\.text),
-                       ["Send the numbers tomorrow morning", "Review the contract"])
-        XCTAssertTrue(englishResult.outcomes.actionItems.allSatisfy(\.ownershipIsUnclear))
-        XCTAssertEqual(englishResult.rejected.map(\.reason), ["unsupported_commitment"],
+        XCTAssertEqual(result.outcomes.userActionItems.map(\.text), ["Send the numbers tomorrow morning", "Review the contract"])
+        XCTAssertEqual(result.rejected.map(\.reason), ["unsupported_commitment"],
                        "An English statement with no undertaking is still not a task")
+    }
 
+    /// Wording checks read English. In any other language the cited voice
+    /// and the model's claim decide, or the user would never own a task.
+    func testNonEnglishCommitmentsFollowTheCitedVoiceAndTheModelsClaim() throws {
         let meetings: [(String, String, String)] = [
             ("Te mando el informe del presupuesto mañana por la mañana.",
              "Revisamos los números con todo el equipo durante la reunión de ayer.",
@@ -381,12 +408,29 @@ final class PersonalActionItemsTests: XCTestCase {
              "Poslati izveštaj"),
         ]
         for (promise, context, task) in meetings {
-            let transcript = Transcript(segments: [microphone(0, promise), microphone(5, context)], engine: "fixture")
-            let result = try validate(transcript, [action("s1", text: task)])
-            XCTAssertEqual(result.outcomes.actionItems.map(\.text), [task], promise)
-            XCTAssertEqual(result.outcomes.actionItems.first?.ownershipIsUnclear, true, promise)
+            let transcript = Transcript(segments: [microphone(0, promise), microphone(5, context),
+                                                   remote(10, "them 1", promise)], engine: "fixture")
+            XCTAssertFalse(MeetingNotesEvidence(transcript: transcript).isEnglishMeeting, promise)
+            let result = try validate(transcript, [
+                action("s1", text: task), action("s3", text: task),
+                action("s1", text: task + " 2", owner: "unknown", basis: "unclear"),
+            ])
             XCTAssertTrue(result.rejected.isEmpty, promise)
+            XCTAssertEqual(result.outcomes.actionItems.map { $0.attribution?.resolution }, [.user, .other, .unresolved], promise)
+            let question = Transcript(segments: [microphone(0, promise.dropLast() + "?"), microphone(5, context)], engine: "fixture")
+            XCTAssertTrue(try validate(question, [action("s1", text: task)]).outcomes.actionItems.isEmpty, promise)
         }
+    }
+
+    /// Transcripts often open with noise heard as another language. That
+    /// opening used to switch the English checks off for the whole meeting.
+    func testAForeignSoundingOpeningDoesNotMakeAnEnglishMeetingForeign() {
+        var segments = [remote(0, "them 1", "Est-ce que le courrier est arrivé? demanda-t-il. Merkle ist eine Mutter. È d'ordine, e d'oro.")]
+        for index in 1...40 {
+            segments.append(remote(Double(index * 5), "them 1",
+                                   "Then we walked through the release checklist and agreed on the order of the remaining work for the week."))
+        }
+        XCTAssertTrue(MeetingNotesEvidence(transcript: Transcript(segments: segments, engine: "fixture")).isEnglishMeeting)
     }
 
     // MARK: - Ranking

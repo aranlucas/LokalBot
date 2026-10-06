@@ -41,4 +41,33 @@ enum SyntheticModelPrompts {
             Transcript.Segment(start: $0.0, end: $0.1, speaker: $0.2, text: $0.3)
         }, engine: "synthetic")
     }
+
+    /// A standup the way it is actually transcribed: little punctuation,
+    /// stumbled words, and one speaker's sentence cut across rows. The user
+    /// commits to two things mid-sentence; neither starts with "I'll".
+    static func runOnStandupTranscript() -> Transcript {
+        let lines: [(TimeInterval, TimeInterval, String, String)] = [
+            (0, 6, "them", "okay who wants to go next"),
+            (7, 12, "me", "On my side I've been drafting that small export proof of concept and also had a few "
+                + "comments to respond to on the the billing change"),
+            (12.2, 13, "me", "one"),
+            (13.4, 19, "me", "so it just video is not working for me right now anyway so these"),
+            (19.2, 19.3, "me", "The"),
+            (19.4, 24, "me", "export change is something I I have to update"),
+            (24.1, 28, "me", "and confirm the the plan is still"),
+            (28.2, 31, "me", "true because it was initially written"),
+            (31.1, 35, "me", "before the last merges so"),
+            (35.2, 42, "me", "I would say it needs a bit of a revisit right now the nightly export is a separate queue"),
+            (42.2, 46, "me", "from the the main queue so I think"),
+            (46.3, 58, "me", "those can be a bit more simplified if we update the plan but I'll ping you Mira and Jonas "
+                + "to to get that resolved in chat"),
+            (59, 66, "them", "sounds good and from the reporting side Nico reviewed the two open changes I had so "
+                + "I'm going to merge them"),
+            (66.5, 74, "them", "one more thing we need to do is once the pricing work is merged speak with Mira and "
+                + "figure out which alerts we still need"),
+        ]
+        return Transcript(segments: lines.map {
+            Transcript.Segment(start: $0.0, end: $0.1, speaker: $0.2, text: $0.3)
+        }, engine: "synthetic")
+    }
 }

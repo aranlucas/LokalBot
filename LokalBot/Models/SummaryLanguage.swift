@@ -116,6 +116,27 @@ enum SummaryLanguage: Equatable, Hashable, Sendable {
         }.first?.key ?? .en
     }
 
+    /// Whether most of a transcript is English, sampled across the meeting
+    /// for the same reason as above. Languages outside the summary presets
+    /// count as themselves here instead of falling back to English.
+    static func isMostlyEnglish(_ transcript: Transcript) -> Bool {
+        let samples = distributedSamples(detectionWindows(in: transcript.languageDetectionText), limit: maximumDetectionSamples)
+        var english = 0.0
+        var total = 0.0
+        for sample in samples {
+            let recognizer = NLLanguageRecognizer()
+            recognizer.processString(sample)
+            guard let language = recognizer.dominantLanguage else { continue }
+            let letters = sample.unicodeScalars.reduce(into: 0) { count, scalar in
+                if CharacterSet.letters.contains(scalar) { count += 1 }
+            }
+            let material = min(1, Double(letters) / minimumFullVoteLetters)
+            total += material
+            if language == .english { english += material }
+        }
+        return total == 0 || english * 2 >= total
+    }
+
     private static func recognizedLanguage(in sample: String) -> (SummaryLanguage, Double)? {
         if let chinese = chineseScriptLanguage(in: sample) {
             return (chinese, 1)

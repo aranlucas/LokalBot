@@ -185,6 +185,7 @@ extension CotypingCoordinator {
 
         pendingInsertionConsumedCount = nil
         let remainingText = advanced.remainingText
+        let liveField = displayField(liveField)
         let placement = self.placement(for: liveField)
         if !overlay.shouldHoldInlineReanchor(
             text: remainingText,

@@ -1,0 +1,383 @@
+import AppKit
+import ScreenCaptureKit
+import Vision
+
+/// Finds the caret from the field's own text as it appears on screen, for
+/// fields whose app reports no caret position through Accessibility.
+///
+/// Chrome's text areas are the case that needs it. In a GitHub comment box
+/// every range and text-marker query answered an empty box at the page's
+/// corner, with Chrome's text metrics and screen-reader mode on or off
+/// (measured 2026-10-05), so a suggestion could only be shown beside the
+/// field. Recognizing the line that ends at the caret puts it back on the
+/// line being typed. Pure geometry over plain values, so it is unit-testable
+/// without the screen.
+nonisolated enum CotypingVisualCaretLocator {
+    /// One line of text recognized on screen. Global Cocoa coordinates.
+    struct RecognizedLine: Equatable {
+        var text: String
+        /// Leading edge of its first character and trailing edge of its last.
+        var minX: CGFloat
+        var maxX: CGFloat
+        /// Bottom of its letters that sit on the baseline, or nil when it has none.
+        var baseline: CGFloat?
+        var box: CGRect
+    }
+
+    /// Where the caret was found for one field, and what moving along its
+    /// line needs.
+    struct Calibration: Equatable {
+        /// The text before the caret when it was found there.
+        var precedingText: String
+        var caretX: CGFloat
+        var baseline: CGFloat
+        /// Size of the system font whose width matches the recognized line.
+        var pointSize: CGFloat
+        /// Where the caret's line starts, and where text on it wraps.
+        var lineMinX: CGFloat
+        var lineMaxX: CGFloat
+    }
+
+    /// Recognized text compared with the typed text, after normalizing both.
+    static let minimumSimilarity = 0.75
+    /// How much of the end of a line is compared.
+    static let comparedCharacters = 48
+    /// Typing this far from where the caret was found is measured again.
+    static let maximumDrift = 40
+    /// Recognition found no line shorter than this (one to three typed
+    /// characters were never found, measured 2026-10-05).
+    static let minimumLineCharacters = 3
+
+    /// Whether the caret's line has enough text to be found on screen.
+    static func hasEnoughText(_ precedingText: String) -> Bool {
+        caretLine(of: precedingText).typed.count >= minimumLineCharacters
+    }
+
+    /// The caret's paragraph up to the caret, normalized and without the
+    /// spaces typed at its end, and how many of those there are.
+    private static func caretLine(of precedingText: String) -> (typed: String, trailingSpaces: Int) {
+        let paragraph = precedingText.split(separator: "\n", omittingEmptySubsequences: false).last.map(String.init) ?? ""
+        let trailingSpaces = paragraph.reversed().prefix { $0 == " " || $0 == "\u{00A0}" }.count
+        return (normalized(String(paragraph.dropLast(trailingSpaces))), trailingSpaces)
+    }
+
+    /// Finds the line that ends at the caret: the end of the caret's
+    /// paragraph, as far as it is drawn on its last line.
+    static func locate(lines: [RecognizedLine], precedingText: String, fieldFrame: CGRect) -> Calibration? {
+        let (typed, trailingSpaces) = caretLine(of: precedingText)
+        guard typed.count >= minimumLineCharacters else { return nil }
+
+        var best: (line: RecognizedLine, score: Double)?
+        for line in lines {
+            let recognized = normalized(line.text)
+            // A line longer than the paragraph holds other text too.
+            guard recognized.count >= 2, recognized.count <= typed.count + 2 else { continue }
+            let length = min(recognized.count, typed.count, comparedCharacters)
+            let score = similarity(String(recognized.suffix(length)), String(typed.suffix(length)))
+            guard score >= minimumSimilarity else { continue }
+            // The best match wins; between equals, the lowest line, which is
+            // where a paragraph's last line is drawn.
+            if let current = best,
+               score < current.score || (score == current.score && line.box.minY >= current.line.box.minY) {
+                continue
+            }
+            best = (line, score)
+        }
+        guard let line = best?.line, line.maxX > line.minX,
+              let pointSize = fittedPointSize(of: line) else { return nil }
+        let font = NSFont.systemFont(ofSize: pointSize)
+        let inset = max(line.minX - fieldFrame.minX, 0)
+        return Calibration(
+            precedingText: precedingText,
+            caretX: line.maxX + CGFloat(trailingSpaces) * CotypingInlineGhostLayout.width(of: " ", font: font),
+            baseline: line.baseline ?? line.box.minY - font.descender,
+            pointSize: pointSize,
+            lineMinX: line.minX,
+            lineMaxX: fieldFrame.maxX - inset)
+    }
+
+    /// The caret's x for `precedingText`, moved along the line from where it
+    /// was found by the width of what was typed or deleted since. Nil when
+    /// that leaves the line, crosses a line break, or strays too far.
+    static func caretX(for calibration: Calibration, precedingText: String) -> CGFloat? {
+        guard let change = change(from: calibration.precedingText, to: precedingText) else { return nil }
+        guard change.text.count <= maximumDrift, !change.text.contains(where: \.isNewline) else { return nil }
+        let width = CotypingInlineGhostLayout.width(
+            of: change.text, font: .systemFont(ofSize: calibration.pointSize))
+        let x = calibration.caretX + (change.isAddition ? width : -width)
+        guard x <= calibration.lineMaxX, x >= calibration.lineMinX - 1 else { return nil }
+        return x
+    }
+
+    /// A caret rect the inline ghost places on the found baseline: one
+    /// default line of the system font at the fitted size, which the overlay
+    /// reads as AppKit text, baseline a fixed distance below the top.
+    static func caretRect(for calibration: Calibration, caretX: CGFloat) -> CGRect {
+        let font = NSFont.systemFont(ofSize: calibration.pointSize)
+        let layout = NSLayoutManager()
+        let height = layout.defaultLineHeight(for: font)
+        let top = calibration.baseline + layout.defaultBaselineOffset(for: font)
+        return CGRect(x: caretX, y: top - height, width: 0, height: height)
+    }
+
+    /// Whether the field may be captured: never a secure field, an app
+    /// excluded from screen capture or autocomplete, or, while any site is
+    /// excluded, a browser page whose address is unknown or excluded.
+    static func permitsCapture(
+        appName: String, bundleID: String?, host: String?, isSecure: Bool,
+        excludedApps: [String], excludedDomains: [String]
+    ) -> Bool {
+        guard !isSecure,
+              !ScreenContextPrivacy.isExcluded(appName: appName, bundleIdentifier: bundleID, rules: excludedApps)
+        else { return false }
+        guard excludedDomains.contains(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty }),
+              ScreenContextPrivacy.isBrowser(.init(appName: appName, bundleIdentifier: bundleID)) else { return true }
+        guard let host else { return false }
+        return !ScreenContextPrivacy.isExcluded(sourceURL: "https://\(host)/", rules: excludedDomains)
+    }
+
+    /// The system font size whose width matches the recognized line's. The
+    /// system font changes its spacing with size, so the width is compared
+    /// near the size found, starting from the line's height.
+    static func fittedPointSize(of line: RecognizedLine) -> CGFloat? {
+        let text = line.text.trimmingCharacters(in: .whitespaces)
+        let measured = line.maxX - line.minX
+        guard measured > 0, line.box.height > 0 else { return nil }
+        var size = line.box.height
+        for _ in 0..<3 {
+            let natural = CotypingInlineGhostLayout.width(of: text, font: .systemFont(ofSize: size))
+            guard natural > 0 else { return nil }
+            size *= measured / natural
+            guard (6...72).contains(size) else { return nil }
+        }
+        // Recognized lines are about as tall as the font's size.
+        guard (0.5...1.6).contains(line.box.height / size) else { return nil }
+        return size
+    }
+
+    /// What was typed after `old` to make `new`, or deleted from its end.
+    /// Both may be windows that keep only the newest text, so they are
+    /// aligned on the end of the shorter one when neither starts the other.
+    static func change(from old: String, to new: String) -> (text: String, isAddition: Bool)? {
+        if new.hasPrefix(old) { return (String(new.dropFirst(old.count)), true) }
+        if old.hasPrefix(new) { return (String(old.dropFirst(new.count)), false) }
+        let anchorLength = 32
+        if old.count >= anchorLength, let range = new.range(of: String(old.suffix(anchorLength)), options: .backwards) {
+            return (String(new[range.upperBound...]), true)
+        }
+        if new.count >= anchorLength, let range = old.range(of: String(new.suffix(anchorLength)), options: .backwards) {
+            return (String(old[range.upperBound...]), false)
+        }
+        return nil
+    }
+
+    /// Lowercased, with typographic quotes and dashes plain and whitespace
+    /// runs as one space, so recognition's small liberties do not count.
+    static func normalized(_ text: String) -> String {
+        let mapped = text.lowercased().map { character -> Character in
+            switch character {
+            case "\u{2018}", "\u{2019}", "`": "'"
+            case "\u{201C}", "\u{201D}": "\""
+            case "\u{2013}", "\u{2014}": "-"
+            case "\u{00A0}": " "
+            default: character
+            }
+        }
+        return String(mapped).split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    }
+
+    /// 1 minus the edit distance per character.
+    static func similarity(_ lhs: String, _ rhs: String) -> Double {
+        let a = Array(lhs), b = Array(rhs)
+        guard !a.isEmpty || !b.isEmpty else { return 1 }
+        var previous = Array(0...b.count)
+        for (i, x) in a.enumerated() {
+            var current = [i + 1] + Array(repeating: 0, count: b.count)
+            for (j, y) in b.enumerated() {
+                current[j + 1] = min(previous[j + 1] + 1, current[j] + 1, previous[j] + (x == y ? 0 : 1))
+            }
+            previous = current
+        }
+        return 1 - Double(previous[b.count]) / Double(max(a.count, b.count))
+    }
+}
+
+/// Keeps the caret found on screen for the focused field, and finds it again
+/// when typing leaves the line it was found on. The capture is the field's
+/// own frame, held in memory only while its text is recognized; nothing but
+/// the caret's position is kept.
+@MainActor
+final class CotypingVisualCaret {
+    private struct Entry {
+        let key: String
+        let frame: CGRect
+        let calibration: CotypingVisualCaretLocator.Calibration
+    }
+
+    private var entry: Entry?
+    private var pending: (key: String, precedingText: String, task: Task<Void, Never>)?
+
+    /// Larger fields are left alone: the caret could be anywhere in them.
+    private static let maximumFieldSize = CGSize(width: 2400, height: 900)
+
+    /// `field` with the caret found on screen, when its app reports none and
+    /// the caret is still on the line it was found on.
+    func resolve(_ field: CotypingField) -> CotypingField {
+        guard !field.caretIsExact,
+              let entry, entry.key == Self.key(for: field),
+              let frame = field.inputFrameRect, Self.isSameFrame(entry.frame, frame),
+              let x = CotypingVisualCaretLocator.caretX(for: entry.calibration, precedingText: field.precedingText)
+        else { return field }
+        var resolved = field
+        resolved.caretRect = CotypingVisualCaretLocator.caretRect(for: entry.calibration, caretX: x)
+        resolved.caretIsExact = true
+        return resolved
+    }
+
+    /// Starts finding the caret on screen when `field` reports none and no
+    /// earlier find still places it. The caller has checked the privacy rules.
+    func refreshIfNeeded(for field: CotypingField) {
+        guard !field.caretIsExact, !resolve(field).caretIsExact,
+              let frame = field.inputFrameRect,
+              frame.width >= 40, frame.height >= 12,
+              frame.width <= Self.maximumFieldSize.width, frame.height <= Self.maximumFieldSize.height,
+              CotypingRenderModePolicy.isCaretAtEndOfLine(trailingText: field.trailingText),
+              CotypingVisualCaretLocator.hasEnoughText(field.precedingText),
+              !CotypingTextDirectionDetector.isRightToLeft(field.precedingText),
+              CGPreflightScreenCaptureAccess() else { return }
+        let key = Self.key(for: field)
+        if let pending, pending.key == key, pending.precedingText == field.precedingText { return }
+        pending?.task.cancel()
+        let precedingText = field.precedingText
+        let task = Task { [weak self] in
+            let lines = await Self.recognizeLines(in: frame)
+            guard let self, !Task.isCancelled else { return }
+            if let lines, let calibration = CotypingVisualCaretLocator.locate(
+                lines: lines, precedingText: precedingText, fieldFrame: frame) {
+                self.remember(calibration, key: key, frame: frame)
+            }
+            if self.pending?.key == key, self.pending?.precedingText == precedingText { self.pending = nil }
+        }
+        pending = (key, precedingText, task)
+    }
+
+    /// Keeps where the caret was found for `field`.
+    func remember(_ calibration: CotypingVisualCaretLocator.Calibration, for field: CotypingField) {
+        guard let frame = field.inputFrameRect else { return }
+        remember(calibration, key: Self.key(for: field), frame: frame)
+    }
+
+    private func remember(_ calibration: CotypingVisualCaretLocator.Calibration, key: String, frame: CGRect) {
+        entry = Entry(key: key, frame: frame, calibration: calibration)
+    }
+
+    /// Waits for a find in progress, for at most `milliseconds`.
+    func waitForPending(milliseconds: Int) async {
+        guard let task = pending?.task else { return }
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await task.value }
+            group.addTask { try? await Task.sleep(for: .milliseconds(milliseconds)) }
+            await group.next()
+            group.cancelAll()
+        }
+    }
+
+    func reset() {
+        pending?.task.cancel()
+        pending = nil
+        entry = nil
+    }
+
+    /// The app and kind of field. Not the element's identity: Chrome hands
+    /// out a new element on every read, which would find the caret again
+    /// for every suggestion. The field's frame and its text pin it instead.
+    private static func key(for field: CotypingField) -> String {
+        "\(field.processID)|\(field.role)"
+    }
+
+    private static func isSameFrame(_ lhs: CGRect, _ rhs: CGRect) -> Bool {
+        abs(lhs.minX - rhs.minX) <= 0.5 && abs(lhs.minY - rhs.minY) <= 0.5
+            && abs(lhs.width - rhs.width) <= 0.5 && abs(lhs.height - rhs.height) <= 0.5
+    }
+
+    // MARK: - Capture and recognition
+
+    /// The field's frame captured at twice its point size, which keeps small
+    /// text legible on a non-Retina display, with its lines recognized.
+    private static func recognizeLines(in frame: CGRect) async -> [CotypingVisualCaretLocator.RecognizedLine]? {
+        guard let image = await capture(frame) else { return nil }
+        return await Task.detached(priority: .userInitiated) {
+            CotypingVisualCaret.recognize(image, frame: frame)
+        }.value
+    }
+
+    private static func capture(_ frame: CGRect) async -> CGImage? {
+        guard let content = try? await SCShareableContent.excludingDesktopWindows(
+            false, onScreenWindowsOnly: true) else { return nil }
+        let center = CGPoint(x: frame.midX, y: frame.midY)
+        guard let screen = NSScreen.screens.first(where: { $0.frame.contains(center) }),
+              let screenNumber = (screen.deviceDescription[
+                NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value,
+              let display = content.displays.first(where: { $0.displayID == screenNumber }) else { return nil }
+        let visible = frame.intersection(screen.frame)
+        guard visible == frame else { return nil }
+        let config = captureConfiguration(for: frame, screenFrame: screen.frame, backingScale: screen.backingScaleFactor)
+        // The ghost panel is never shared, so it is not in the capture.
+        let filter = SCContentFilter(display: display, excludingWindows: [])
+        return try? await SCScreenshotManager.captureImage(contentFilter: filter, configuration: config)
+    }
+
+    /// The field's frame at twice its point size. Without `scalesToFit` a
+    /// non-Retina display's pixels land unscaled in the image's top-left
+    /// quarter (measured 2026-10-05 on a 1x display), and every recognized
+    /// box comes out at half its size and place.
+    nonisolated static func captureConfiguration(
+        for frame: CGRect, screenFrame: CGRect, backingScale: CGFloat
+    ) -> SCStreamConfiguration {
+        let scale = max(2, backingScale)
+        let config = SCStreamConfiguration()
+        // The display's top-left point space.
+        config.sourceRect = CGRect(
+            x: frame.minX - screenFrame.minX, y: screenFrame.maxY - frame.maxY,
+            width: frame.width, height: frame.height)
+        config.width = Int((frame.width * scale).rounded())
+        config.height = Int((frame.height * scale).rounded())
+        config.scalesToFit = true
+        config.showsCursor = false
+        return config
+    }
+
+    /// Recognized lines with their first and last characters' edges and
+    /// baselines, mapped from the image onto `frame`.
+    nonisolated static func recognize(
+        _ image: CGImage, frame: CGRect
+    ) -> [CotypingVisualCaretLocator.RecognizedLine] {
+        let request = VNRecognizeTextRequest()
+        // Fast recognition gives character boxes within half a point; the
+        // accurate one gives only word boxes and takes far longer.
+        request.recognitionLevel = .fast
+        request.usesLanguageCorrection = false
+        guard (try? VNImageRequestHandler(cgImage: image).perform([request])) != nil else { return [] }
+        func point(_ box: CGRect) -> CGRect {
+            CGRect(x: frame.minX + box.minX * frame.width, y: frame.minY + box.minY * frame.height,
+                   width: box.width * frame.width, height: box.height * frame.height)
+        }
+        return (request.results ?? []).compactMap { observation in
+            guard let candidate = observation.topCandidates(1).first else { return nil }
+            let text = candidate.string
+            func box(_ index: String.Index) -> CGRect? {
+                (try? candidate.boundingBox(for: index..<text.index(after: index))).map { point($0.boundingBox) }
+            }
+            guard let first = text.firstIndex(where: { !$0.isWhitespace }),
+                  let last = text.lastIndex(where: { !$0.isWhitespace }),
+                  let firstBox = box(first), let lastBox = box(last) else { return nil }
+            // Letters without descenders sit on the baseline.
+            let onBaseline = text.indices.filter { "acemnorsuvwxzABCDEFHIKLMNORSTUVWXZ".contains(text[$0]) }
+            let bottoms = onBaseline.prefix(8).compactMap { box($0)?.minY }.sorted()
+            return CotypingVisualCaretLocator.RecognizedLine(
+                text: text, minX: firstBox.minX, maxX: lastBox.maxX,
+                baseline: bottoms.isEmpty ? nil : bottoms[bottoms.count / 2],
+                box: point(observation.boundingBox))
+        }
+    }
+}

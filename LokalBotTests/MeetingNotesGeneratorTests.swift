@@ -167,10 +167,10 @@ final class MeetingNotesGeneratorTests: XCTestCase {
             .init(start: 0, end: 5, speaker: "me", text: "I have been doing reviews."),
             .init(start: 5, end: 10, speaker: "me", text: obligation),
         ]
+        // The first answer cites only the status row, which proves nothing.
         var original = action(owner: "unknown")
         original["text"] = "Review the remaining change"
         original["basis"] = "unclear"
-        original["context"] = ["s2"]
         var repaired = original
         repaired["source"] = "s2"
         repaired["context"] = ["s1"]
@@ -214,24 +214,34 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         var repaired = original
         repaired["source"] = "s2"
         repaired["quote"] = transcript.segments[1].text
-        let script = Script([.text(try response(actions: [original])), .text(try response(actions: [repaired]))])
+        // The user's own half of that sentence is a commitment no task
+        // covers yet, so the model is asked for it once.
+        var mine = action(owner: "source")
+        mine["text"] = "Prepare the policy"
+        mine["quote"] = "I'll prepare the policy"
+        let script = Script([.text(try response(actions: [original])), .text(try response(actions: [repaired])),
+                             .text(try response(actions: [mine]))])
         let result = try await generate(script, transcript: transcript)
-        XCTAssertEqual(result.outcomes.actionItems.count, 1)
-        XCTAssertTrue(result.outcomes.userActionItems.isEmpty)
-        XCTAssertEqual(result.outcomes.actionItems[0].attribution?.resolution, .other)
-        XCTAssertEqual(result.outcomes.actionItems[0].citations.first?.segmentID, transcript.segmentID(at: 1))
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 3)
+        XCTAssertTrue(calls[2].prompt.contains(#""reason":"missing_user_commitment""#))
+        XCTAssertEqual(result.outcomes.userActionItems.map(\.text), ["Prepare the policy"])
+        let sent = try XCTUnwrap(result.outcomes.actionItems.first { $0.text == "Send the measurements" })
+        XCTAssertEqual(sent.attribution?.resolution, .other)
+        XCTAssertEqual(sent.citations.first?.segmentID, transcript.segmentID(at: 1))
     }
 
     func testOwnershipRepairKeepsItsReplacementIdentityAcrossRepeatedExtractionPages() async throws {
         var transcript = transcript
         transcript.segments[0].text = "I have been doing reviews."
         transcript.segments[1] = .init(start: 5, end: 10, speaker: "me", text: "I still have to review the change.")
+        // Cites the status row with words nobody said: unresolved until repaired.
         var original = action(owner: "unknown")
         original["text"] = "Review the change"
         original["basis"] = "unclear"
-        original["context"] = ["s2"]
+        original["quote"] = "I will look at it"
         var repeated = original
-        repeated["context"] = ["s2", "s3"]
+        repeated["context"] = ["s3"]
         var repaired = original
         repaired["source"] = "s2"
         repaired["context"] = ["s1"]
@@ -281,21 +291,25 @@ final class MeetingNotesGeneratorTests: XCTestCase {
 
     func testOwnershipRepairsBatchTasksButKeepEachOriginalNeighborhood() async throws {
         var transcript = longTranscript()
-        transcript.segments[0].text = "I need to review the draft."
-        transcript.segments[19].text = "I must send the measurements."
+        // Two sentences that each hand the task to someone else, each
+        // followed by the other speaker taking it on.
+        transcript.segments[0].text = "I'll check the logs, and you will review the draft."
+        transcript.segments[1] = .init(start: 5, end: 10, speaker: "them 2", text: "I need to review the draft.")
+        transcript.segments[19].text = "I'll check the build, and you will send the measurements."
+        transcript.segments[20] = .init(start: 100, end: 105, speaker: "them 2", text: "I must send the measurements.")
         var first = action("s1", owner: "source")
         first["text"] = "Review the draft"
-        first["quote"] = "Invented quote"
         var second = action("s20", owner: "source")
         second["text"] = "Send the measurements"
-        second["quote"] = "Invented quote"
         var fixedFirst = first
-        fixedFirst["quote"] = transcript.segments[0].text
+        fixedFirst["source"] = "s2"
+        fixedFirst["quote"] = transcript.segments[1].text
         var fixedSecond = second
-        fixedSecond["quote"] = transcript.segments[19].text
+        fixedSecond["source"] = "s21"
+        fixedSecond["quote"] = transcript.segments[20].text
         var outside = fixedFirst
-        outside["source"] = "s20"
-        outside["quote"] = transcript.segments[19].text
+        outside["source"] = "s21"
+        outside["quote"] = transcript.segments[20].text
         let script = Script([
             .text(try response(actions: [first, second])),
             .text(try response(actions: [outside, fixedSecond])),
@@ -304,7 +318,8 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         let result = try await generate(script, transcript: transcript)
         XCTAssertEqual(result.outcomes.actionItems.count, 2)
         let reviewed = try XCTUnwrap(result.outcomes.actionItems.first { $0.text == "Review the draft" })
-        XCTAssertEqual(reviewed.citations.first?.segmentID, transcript.segmentID(at: 0))
+        XCTAssertEqual(reviewed.citations.first?.segmentID, transcript.segmentID(at: 1))
+        XCTAssertEqual(reviewed.attribution?.speakerID, "them 2")
         let calls = await script.recorded()
         XCTAssertEqual(calls.count, 3)
         XCTAssertTrue(calls[1].prompt.contains("Review the draft"))
@@ -385,11 +400,29 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertTrue(result.outcomes.actionItems[0].ownershipIsUnclear)
     }
 
-    func testUsersUnquotableCommitmentStaysVisibleAsLikelyTheirsAndCompletes() async throws {
+    func testAMisquotedCommitmentIsStillTheUsersWithoutAnotherRequest() async throws {
         var transcript = transcript
         transcript.segments = [
             .init(start: 0, end: 5, speaker: "them", text: "Can someone look at the pull request?"),
             .init(start: 5, end: 10, speaker: "me", text: "I still have to review the change.",
+                  attribution: .init(source: .microphone, identity: .user, method: .confirmation)),
+        ]
+        var task = action("s2", owner: "source")
+        task["text"] = "Review the change"
+        task["quote"] = "I will review it"
+        let script = Script([.text(try response(actions: [task]))])
+        let result = try await generate(script, transcript: transcript)
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 1, "The cited row says it; the model's wording of it is not evidence")
+        let item = try XCTUnwrap(result.outcomes.userActionItems.first)
+        XCTAssertEqual(item.attribution?.quote, "I still have to review the change.")
+    }
+
+    func testUnprovableOwnershipStaysVisibleAsLikelyTheUsersAndCompletes() async throws {
+        var transcript = transcript
+        transcript.segments = [
+            .init(start: 0, end: 5, speaker: "them", text: "Can someone look at the pull request?"),
+            .init(start: 5, end: 10, speaker: "me", text: "We should review the change before Friday.",
                   attribution: .init(source: .microphone, identity: .user, method: .confirmation)),
         ]
         var task = action("s2", owner: "source")
@@ -418,7 +451,7 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         var original = action(owner: "unknown")
         original["text"] = "Review the remaining change"
         original["basis"] = "unclear"
-        original["context"] = ["s2"]
+        original["quote"] = "I will look at it"
         var repaired = original
         repaired["source"] = "s2"
         repaired["context"] = ["s1"]
@@ -573,7 +606,7 @@ final class MeetingNotesGeneratorTests: XCTestCase {
 
     func testFillerTheRepairFindsNoTaskInDoesNotLeaveNotesPartial() async throws {
         var transcript = longTranscript()
-        transcript.segments[20] = .init(start: 100, end: 105, speaker: "me", text: "I'll be honest, the dependency worries me.",
+        transcript.segments[20] = .init(start: 100, end: 105, speaker: "me", text: "I'll just flag that the dependency worries me.",
                                         attribution: .init(source: .microphone, identity: .user, method: .confirmation))
         XCTAssertEqual(MeetingNotesEvidence(transcript: transcript).units.filter(\.isUserCommitment).map(\.source), ["s21"])
         let script = Script([
@@ -826,19 +859,33 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertEqual(engine.minimumStructuredOutputTokens, 512)
     }
 
-    func testWrongOwnerAndNegatedCommitmentRemainUnassigned() throws {
+    func testTheCitedVoiceOutranksAWrongOwnerAndANegationIsNotATask() throws {
+        // The model named the other participant for words the user said.
         let evidence = MeetingNotesEvidence(transcript: transcript)
         let wrongOwner = evidence.validate(try response(actions: [action(owner: "p2")]),
             units: evidence.units, template: .meeting, meetingID: UUID(), maximumNotes: 12, maximumActions: 10)
-        XCTAssertFalse(wrongOwner.outcomes.actionItems[0].isForUser)
-        XCTAssertTrue(wrongOwner.outcomes.actionItems[0].ownershipIsUnclear)
+        XCTAssertTrue(wrongOwner.outcomes.actionItems[0].isForUser)
+        XCTAssertEqual(wrongOwner.outcomes.actionItems[0].attribution?.speakerID, "me")
+        var unrelated = action(owner: "p2")
+        unrelated["text"] = "Book the venue"
+        let conflict = evidence.validate(try response(actions: [unrelated]),
+            units: evidence.units, template: .meeting, meetingID: UUID(), maximumNotes: 12, maximumActions: 10)
+        XCTAssertTrue(conflict.outcomes.actionItems[0].ownershipIsUnclear, "A named owner stands unless the task is the speaker's own")
+
         var negatedTranscript = transcript
-        negatedTranscript.segments[0].text = "If approved, I will ship the update on Friday."
+        negatedTranscript.segments[0].text = "I will not ship the update on Friday."
         let negated = MeetingNotesEvidence(transcript: negatedTranscript)
         let result = negated.validate(try response(actions: [action()]), units: negated.units,
             template: .meeting, meetingID: UUID(), maximumNotes: 12, maximumActions: 10)
         XCTAssertTrue(result.outcomes.actionItems.isEmpty)
         XCTAssertEqual(result.rejected.first?.reason, "unsupported_commitment")
+
+        var conditionalTranscript = transcript
+        conditionalTranscript.segments[0].text = "If approved, I will ship the update on Friday."
+        let conditional = MeetingNotesEvidence(transcript: conditionalTranscript)
+        let kept = conditional.validate(try response(actions: [action()]), units: conditional.units,
+            template: .meeting, meetingID: UUID(), maximumNotes: 12, maximumActions: 10)
+        XCTAssertTrue(kept.outcomes.actionItems[0].isForUser, "A condition does not change whose task it is")
     }
 
     func testSpeakerCorrectionOverridesMicrophoneDefaultInUnifiedExtraction() throws {

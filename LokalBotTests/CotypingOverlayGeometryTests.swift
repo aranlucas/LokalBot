@@ -62,6 +62,45 @@ final class CotypingOverlayGeometryTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(nearBottom.minY, screen.minY)
     }
 
+    /// The 2026-10-05 report: a GitHub review box in Chrome gave no exact
+    /// caret, and the popup was drawn under a guess at the field's top-left
+    /// corner, across the first line of text. Cocoa coordinates; the guess is
+    /// the resolver's fallback, 4 pt in and 22 pt tall at the field's top.
+    func testAnEstimatedCaretsPopupNeverCoversTheField() throws {
+        let field = CGRect(x: 300, y: 400, width: 700, height: 130)
+        let estimate = CGRect(x: field.minX + 4, y: field.maxY - 22, width: 1, height: 22)
+        let content = CGSize(width: 180, height: 26)
+        let frame = try XCTUnwrap(CotypingOverlayGeometry.popupFrame(
+            caret: estimate, caretIsExact: false, field: field, content: content, visible: screen))
+        XCTAssertFalse(frame.intersects(field))
+        XCTAssertEqual(frame.maxY, field.minY - CotypingOverlayGeometry.gap, accuracy: 0.5)
+        XCTAssertEqual(frame.minX, field.minX)
+
+        // No room below: just above the field instead.
+        let low = CGRect(x: 300, y: 10, width: 700, height: 130)
+        let above = try XCTUnwrap(CotypingOverlayGeometry.popupFrame(
+            caret: estimate, caretIsExact: false, field: low, content: content, visible: screen))
+        XCTAssertFalse(above.intersects(low))
+        XCTAssertEqual(above.minY, low.maxY + CotypingOverlayGeometry.gap, accuracy: 0.5)
+
+        // A field that fills the screen has no outside: no popup at all.
+        XCTAssertNil(CotypingOverlayGeometry.popupFrame(
+            caret: estimate, caretIsExact: false, field: screen.insetBy(dx: 0, dy: 4), content: content,
+            visible: screen))
+        XCTAssertNil(CotypingOverlayGeometry.popupFrame(
+            caret: estimate, caretIsExact: false, field: nil, content: content, visible: screen))
+    }
+
+    func testAnExactCaretsPopupStillSitsUnderTheCaret() {
+        let caret = CGRect(x: 100, y: 500, width: 0, height: 16)
+        let content = CGSize(width: 120, height: 24)
+        XCTAssertEqual(
+            CotypingOverlayGeometry.popupFrame(
+                caret: caret, caretIsExact: true, field: CGRect(x: 40, y: 450, width: 600, height: 80),
+                content: content, visible: screen),
+            CotypingOverlayGeometry.mirrorFrame(caret: caret, content: content, visible: screen))
+    }
+
     func testMirrorLayoutWrapsLongSuggestionWithinBudget() {
         let font = NSFont.systemFont(ofSize: 13)
         let maxWidth: CGFloat = 140

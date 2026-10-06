@@ -1,9 +1,12 @@
 import Foundation
 
+/// Evidence rules shared by every path that assigns an action's owner.
+/// A speaker's own undertaking is recognized by `SpokenUndertaking`; this
+/// file keeps the rules for work handed to someone by name, or by a request
+/// the user answered.
 enum OutcomeEvidencePolicy {
-    /// Only speaker-local preambles may precede a commitment. Keep the clause
-    /// anchored so reported speech ("I said…") cannot become a new promise.
-    /// Acceptance and conversation-management checks share the same prefix.
+    /// Only speaker-local preambles may precede a bare acceptance or a remark
+    /// about the conversation itself.
     private static let commitmentPreamble =
         #"^(?:(?:yes|yeah|yep|okay|ok|sure|right|well|so|and|then|absolutely|after this|next|also|um|uh|"#
         + #"(?:on|from) my (?:side|end)|for my part|as for me)[,!.: ]+)*"#
@@ -12,74 +15,19 @@ enum OutcomeEvidencePolicy {
         + #"|i['’]m (?:going to|gonna|planning to|intending to)|i['’]ll|my next step is"#
         + #"|(?:i think )?i (?:still )?(?:have to|need to|must))"#
 
-    /// A missing quote is compatible only with one unambiguous undertaking.
-    /// Never choose the first promise from a passage containing other actors'
-    /// tasks: even a verbatim quote cannot establish which task was paraphrased.
-    static func resolveFromSource(
-        speakerID: String?, basis: String?, source: Transcript.Segment,
-        visibleText: String, roster: [String: Transcript.SpeakerDescriptor],
-        addressedToUser: Bool = false, quote: String? = nil
-    ) -> OutcomeAttribution {
-        func reject(_ reason: OutcomeAttribution.RejectionReason) -> OutcomeAttribution {
-            .init(resolution: .unresolved, speakerID: speakerID.flatMap { roster[$0] == nil ? nil : $0 },
-                  basis: .unclear, rejectionReason: reason)
-        }
-        guard !hasCompetingActors(in: source.displayText) else { return reject(.ambiguousQuote) }
-        let supplied = quote.flatMap { normalized($0).isEmpty ? nil : $0 }
-        let clauses = supplied.map { [$0] } ?? canonicalClauses(visibleText)
-        // With no selected quote, a second task-bearing clause makes inference
-        // ambiguous even when only one of its owners passes identity checks.
-        if supplied == nil, clauses.filter({ expressesUndertaking($0) || isSecondPersonRequest($0) }).count > 1 {
-            return reject(.missingQuote)
-        }
-        var failure = resolve(speakerID: speakerID, basis: basis, quote: nil, sources: [source], roster: roster)
-        var accepted: [OutcomeAttribution] = []
-        for quote in clauses {
-            let resolvedBasis = basis == "unclear" && isCommitment(quote) ? "commitment" : basis
-            let attribution = resolve(speakerID: speakerID, basis: resolvedBasis,
-                                      quote: quote, sources: [source], roster: roster,
-                                      addressedToUser: addressedToUser)
-            if attribution.resolution != .unresolved { accepted.append(attribution) }
-            failure = attribution
-        }
-        if accepted.count > 1 { return reject(.ambiguousQuote) }
-        return accepted.first ?? failure
-    }
-
-    static func hasCommitment(source: Transcript.Segment, visibleText: String) -> Bool {
-        !hasCompetingActors(in: source.displayText)
-            && canonicalClauses(visibleText).contains { isCommitment($0) && supportsCommitment($0, in: source.displayText) }
-    }
-
-    /// Independent actor clauses, including coordinated promises, are not a
-    /// single ownership anchor. Purpose clauses ("so you can introduce us")
-    /// are deliberately not treated as another assignment.
-    static func hasCompetingActors(in raw: String) -> Bool {
-        let text = normalized(raw)
-        let boundary = #"(?:^|[.!?;]\s*|,\s*(?!so\b)|\b(?:and|but|while)\s+)(?:(?:and|but|then|also|so|yeah|yes)\s*,?\s*)*"#
-        let actor = #"([\p{L}][\p{L}'’-]*(?:\s+[\p{L}][\p{L}'’-]*){0,2}?)"#
-        let undertaking = #"(?:\s+(?:will|shall|must|should|can|have to|has to|need to|needs to|am going to|is going to|are going to|plan to|plans to|is responsible for)|['’]ll)\s+"#
-        guard let regex = try? NSRegularExpression(pattern: boundary + actor + undertaking) else { return true }
-        let actors = regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).compactMap { match -> String? in
-            guard let range = Range(match.range(at: 1), in: text) else { return nil }
-            let value = String(text[range])
-            return value == "i" || value.hasPrefix("i ") || value.hasPrefix("i'm") || value.hasPrefix("i’m") ? "i" : value
-        }
-        let hasRequest = canonicalClauses(text).contains(where: isSecondPersonRequest)
-        let hasPersonalUndertaking = canonicalClauses(text).contains(where: isCommitment)
-        return Set(actors + (hasRequest ? ["you"] : []) + (hasPersonalUndertaking ? ["i"] : [])).count > 1
-    }
-
+    /// "I can do that" names no task of its own; it needs the request it answers.
     static func isBareAcceptance(_ raw: String) -> Bool {
         normalized(raw).range(of:
             commitmentPreamble + #"i can (?:do (?:that|it)|take (?:that|it)(?: on)?|handle (?:that|it))[.! ]*$"#,
             options: .regularExpression) != nil
     }
 
+    /// The whole row is a remark about the conversation: "I'll be brief",
+    /// "I'm going to be honest with you".
     static func isConversationManagement(_ raw: String) -> Bool {
         normalized(raw).range(of:
-            commitmentPreamble + firstPersonUndertaking
-                + #" be (?:a little (?:bit )?)?(?:more specific|more clear|clearer|brief)[.! ]*$"#,
+            commitmentPreamble + firstPersonUndertaking + " " + SpokenUndertaking.conversationRemark
+                + #"(?: with (?:you|everyone|you all|you guys))?[.! ]*$"#,
             options: .regularExpression) != nil
     }
 
@@ -90,6 +38,32 @@ enum OutcomeEvidencePolicy {
             let quote = String(text[range]).trimmingCharacters(in: .whitespacesAndNewlines)
             return quote.isEmpty || quote.count > 1_000 ? nil : quote
         } ?? []
+    }
+
+    /// A request or assignment read from its own source row. With no quote,
+    /// a row stating more than one task cannot say which one was meant.
+    static func resolveTarget(
+        speakerID: String?, basis: String?, source: Transcript.Segment, visibleText: String,
+        roster: [String: Transcript.SpeakerDescriptor], addressedToUser: Bool, quote: String?
+    ) -> OutcomeAttribution {
+        let supplied = quote.flatMap { normalized($0).isEmpty ? nil : $0 }
+        let clauses = supplied.map { [$0] } ?? canonicalClauses(visibleText)
+        if supplied == nil, clauses.filter({ expressesUndertaking($0) || isSecondPersonRequest($0) }).count > 1 {
+            return .init(resolution: .unresolved, speakerID: speakerID.flatMap { roster[$0] == nil ? nil : $0 },
+                         basis: .unclear, rejectionReason: .missingQuote)
+        }
+        var failure = resolve(speakerID: speakerID, basis: basis, quote: nil, sources: [source], roster: roster)
+        var accepted: [OutcomeAttribution] = []
+        for quote in clauses {
+            let attribution = resolve(speakerID: speakerID, basis: basis, quote: quote, sources: [source],
+                                      roster: roster, addressedToUser: addressedToUser)
+            if attribution.resolution != .unresolved { accepted.append(attribution) }
+            failure = attribution
+        }
+        if accepted.count > 1 {
+            return .init(resolution: .unresolved, speakerID: speakerID, basis: .unclear, rejectionReason: .ambiguousQuote)
+        }
+        return accepted.first ?? failure
     }
 
     /// `addressedToUser` is transcript evidence supplied by the caller: the
@@ -110,20 +84,20 @@ enum OutcomeEvidencePolicy {
         guard let basis = basis.flatMap(OutcomeAttribution.Basis.init(rawValue:)),
               [.commitment, .assignment, .request].contains(basis) else { return reject(.missingBasis) }
         guard let quote, !normalized(quote).isEmpty, quote.count <= 1_000 else { return reject(.missingQuote) }
-        let quoted = sources.filter { normalized($0.displayText).contains(normalized(quote)) }
-        guard !quoted.isEmpty else { return reject(.quoteNotFound) }
         if basis == .commitment {
-            // Identity comes from the cited voice. Conversational acceptance is
-            // evidence of a commitment, never evidence that the speaker is "Me".
-            guard isCommitment(quote), quoted.allSatisfy({ supportsCommitment(quote, in: $0.displayText) }) else {
-                return reject(.unsupportedCommitment)
-            }
+            // Identity comes from the cited voice. The words only have to
+            // show that voice undertaking something itself.
+            let quoted = sources.filter { !SpokenUndertaking.occurrences(of: quote, in: SpokenUndertaking.words([$0.displayText])).isEmpty }
+            guard !quoted.isEmpty else { return reject(.quoteNotFound) }
+            guard quoted.allSatisfy({ undertakes(quote, in: $0.displayText) }) else { return reject(.unsupportedCommitment) }
             guard quoted.allSatisfy({
                 Transcript.canonicalSpeakerKey($0.speaker) == speakerID
                     && $0.resolvedAttribution.identity == person.identity
                     && ![.overlappingSpeech, .suspectedEcho].contains($0.resolvedAttribution.method)
             }) else { return reject(.speakerMismatch) }
         } else {
+            let quoted = sources.filter { normalized($0.displayText).contains(normalized(quote)) }
+            guard !quoted.isEmpty else { return reject(.quoteNotFound) }
             let names = uniqueTargetNames(for: person, roster: roster)
             let named = names.contains(where: { name in
                 hasExplicitTarget(name, in: quote, basis: basis) && quoted.allSatisfy { source in
@@ -144,44 +118,44 @@ enum OutcomeEvidencePolicy {
             speakerID: speakerID, basis: basis, quote: quote)
     }
 
-    /// Accept explicit first-person plans as well as promises and acceptance,
-    /// but not questions, hypothetical promises, past reports, or collective "we".
+    /// A first-person undertaking anywhere in the text: a promise, a plan, an
+    /// obligation or an offer. Not a question, a negation, reported speech,
+    /// or a collective "we".
     static func isCommitment(_ raw: String) -> Bool {
-        let text = normalized(raw)
-        guard !isConversationManagement(text) else { return false }
-        let undertaking = firstPersonUndertaking + #"\s+(?!not\b|never\b|no longer\b)\S"#
-        let acceptance = #"i can (?:do (?:that|it)|take (?:that|it)(?: on)?|handle (?:that|it))\b"#
-        let translated = #"(?:ja ću |ja cu |je vais |ich werde |voy a |我会|我會)"#
-        guard text.range(of: commitmentPreamble + "(?:" + undertaking + "|" + acceptance + "|" + translated + ")",
-                         options: .regularExpression) != nil else { return false }
-        // Preserve surrounding uncertainty even when a short quote omits it.
-        return text.range(of: #"\?|\b(?:if|unless|might|maybe|perhaps|cannot|can't|can’t|won't|won’t)\b"#,
-                          options: .regularExpression) == nil
+        SpokenUndertaking.cues(in: SpokenUndertaking.words([raw])).contains(where: \.isAccepted)
     }
 
-    /// Questions, conditions, hedges, and negations. Such a statement cannot
-    /// become a task merely because its wording escaped the commitment check.
-    static func isQualified(_ raw: String) -> Bool {
+    /// The sentence the quote sits in carries the speaker's own undertaking.
+    private static func undertakes(_ quote: String, in source: String) -> Bool {
+        let words = SpokenUndertaking.words([source])
+        guard let hit = SpokenUndertaking.occurrences(of: quote, in: words).first else { return false }
+        let start = words[..<hit.lowerBound].lastIndex(where: \.endsSentence).map { $0 + 1 } ?? 0
+        let end = words[(hit.upperBound - 1)...].firstIndex(where: \.endsSentence).map { $0 + 1 } ?? words.count
+        return SpokenUndertaking.cues(in: words).contains { $0.isAccepted && (start..<end).contains($0.words.lowerBound) }
+    }
+
+    /// A question or a negation.
+    static func isNegatedOrQuestioned(_ raw: String) -> Bool {
         normalized(raw).range(of:
-            #"\?|\b(?:if|unless|might|maybe|perhaps|not|never|cannot|can't|can’t|won't|won’t|don't|don’t|shouldn't|shouldn’t)\b"#,
+            #"\?|\b(?:not|never|cannot|can't|can’t|won't|won’t|don't|don’t|shouldn't|shouldn’t)\b"#,
             options: .regularExpression) != nil
     }
 
-    /// Offers that commit without a modal verb ("I can send you the numbers
-    /// tomorrow", "Leave it with me"). Like `expressesUndertaking`, this only
-    /// keeps a quoted task whose stricter commitment check failed; it never
-    /// establishes ownership.
-    static func offersToTakeOn(_ raw: String) -> Bool {
-        normalized(raw).range(of: #"\bi can (?!not\b)\w|\bleave (?:it|that|this) (?:with|to) me\b"#,
-                              options: .regularExpression) != nil
+    /// Every sentence of the row that looks forward is a question or a
+    /// negation ("We should not deploy on Friday."). Such a row cannot become
+    /// a task merely because no undertaking was recognized in it. A stray
+    /// "not" or "?" elsewhere in the row decides nothing.
+    static func undertakingIsNegatedOrQuestioned(_ raw: String) -> Bool {
+        let sentences = canonicalClauses(raw).filter(expressesUndertaking)
+        return !sentences.isEmpty && sentences.allSatisfy(isNegatedOrQuestioned)
     }
 
-    /// Forward-looking wording ("we should", "I need to", "let me"). A task
-    /// whose commitment claim failed is kept only when its own source still
-    /// expresses an undertaking; a fragment cannot manufacture one.
+    /// Forward-looking wording ("we should", "I need to", "we can try to"). A
+    /// task with no recognized owner is kept only when the speech it cites
+    /// still looks forward; a status report cannot manufacture one.
     static func expressesUndertaking(_ raw: String) -> Bool {
         normalized(raw).range(of:
-            #"\b(?:will|shall|going to|gonna|need to|needs to|have to|has to|got to|should|must|let me|let['’]s|let us|plan to|want to)\b|['’]ll\b"#,
+            #"\b(?:will|shall|going to|gonna|need to|needs to|have to|has to|got to|should|must|can|could|let me|let['’]s|let us|plan to|want to)\b|['’]ll\b"#,
             options: .regularExpression) != nil
     }
 
@@ -202,10 +176,6 @@ enum OutcomeEvidencePolicy {
             #"(?:^|[.!?]\s*)please (?!note\b)\w"#,
         ]
         return patterns.contains { text.range(of: $0, options: .regularExpression) != nil }
-    }
-
-    private static func supportsCommitment(_ quote: String, in source: String) -> Bool {
-        evidenceClause(quote, in: source).map(isCommitment) == true
     }
 
     private static func evidenceClause(_ quote: String, in source: String) -> String? {
