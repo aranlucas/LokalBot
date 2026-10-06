@@ -229,6 +229,8 @@ grant optional permissions until you approve them:
   interaction.
 - Screen Recording when visual screen context is selected. Meeting-speaker
   observation uses Accessibility only and does not require Screen Recording.
+  When it is already granted, Autocomplete also uses it to place suggestions
+  in fields that report no caret position (see below); it never asks for it.
 
 On a fresh install, LokalBot asks through a notification before it records a
 detected meeting. You can switch to automatic recording or turn auto-record
@@ -337,6 +339,17 @@ the app or site forgets it at once and discards any suggestion that used it.
 Tab performs no screen traversal.
 Apps that do not expose visible static text through Accessibility get ordinary
 autocomplete without this additional context.
+
+Some fields, such as text areas in Chrome, do not report where the caret is.
+For those, when Screen Recording is already granted, Autocomplete captures the
+focused field's own frame, finds the line that ends at the caret with on-device
+text recognition, and keeps only the caret's position. The image and the
+recognized text are held in memory while this runs and then discarded; nothing
+is saved, sent, or added to screen memory. It never runs for secure fields,
+apps excluded from screen capture or autocomplete, or, while any site is
+excluded from screen capture, a browser page whose address is unknown or
+excluded. Without Screen Recording the suggestion is shown just outside the
+field instead.
 
 Autocomplete has separate, off-by-default **Use meeting and work memory** and
 **Use screen-derived work memory** settings. When enabled, it can include up to

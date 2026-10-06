@@ -11,7 +11,7 @@ nonisolated enum CotypingRenderMode: Equatable, Sendable {
 
     nonisolated enum MirrorReason: String, Equatable, Sendable {
         /// Caret rect was estimated from the field frame, so inline ghost text
-        /// would drift as the user types.
+        /// would drift as the user types. The popup goes outside the field.
         case caretGeometryEstimated
         /// Real characters follow the caret before the next line break; inline
         /// ghost text would draw on top of them.

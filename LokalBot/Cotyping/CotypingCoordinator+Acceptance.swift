@@ -132,7 +132,7 @@ extension CotypingCoordinator {
                       liveSession.remainingText == remainingText else { return }
                 guard !self.isAwaitingPostInsertionSync else { return }
                 let focus = await self.focusTracker.refreshNow()
-                if let field = focus.field {
+                if let field = focus.field.map(self.displayField) {
                     let placement = self.placement(for: field)
                     if self.overlay.shouldHoldInlineReanchor(
                         text: remainingText,

@@ -126,6 +126,7 @@ extension CotypingCoordinator {
         }
         guard let field = focus.field else { state = .idle; return }
         guard !isPausedByEscape(in: field) else { state = .idle; return }
+        prepareVisualCaret(for: field, host: focus.host, settings: settings)
 
         // Emoji: an explicit `:shortcode` intent wins over autocorrect and the LLM.
         if settings.cotypingEmoji, let emoji = CotypingEmoji.match(trailing: field.precedingText) {
@@ -222,6 +223,8 @@ extension CotypingCoordinator {
             clearStaleGeneratedResult()
             return
         }
+        await visualCaret.waitForPending(milliseconds: Self.visualCaretWaitMilliseconds)
+        guard work == generation, isRunning else { return }
         let pendingAcceptedTail = lastAcceptedTail
         lastAcceptedTail = nil
         _ = applyGenerationResult(
@@ -469,10 +472,27 @@ extension CotypingCoordinator {
         return !spellChecker.isTypo(partial)
     }
 
+    /// Starts finding the caret on screen for a field whose app reports
+    /// none, unless the field may not be captured.
+    func prepareVisualCaret(for field: CotypingField, host: String?, settings: AppSettings) {
+        guard !field.caretIsExact, CotypingVisualCaretLocator.permitsCapture(
+            appName: field.appName, bundleID: field.bundleID, host: host, isSecure: field.isSecure,
+            excludedApps: settings.excludedAppList + settings.cotypingExcludedAppList,
+            excludedDomains: settings.excludedScreenDomainList + settings.cotypingExcludedDomainList) else { return }
+        visualCaret.refreshIfNeeded(for: field)
+    }
+
+    /// `field` as the ghost is placed for it: with the caret found on screen
+    /// when its app reports none.
+    func displayField(_ field: CotypingField) -> CotypingField {
+        visualCaret.resolve(field)
+    }
+
     /// Bundles the caret-geometry + mid-line + preference signals the overlay
     /// needs to pick inline vs popup rendering, derived from a field snapshot.
     func placement(for field: CotypingField) -> CotypingOverlayPlacement {
-        CotypingOverlayPlacement(
+        let field = displayField(field)
+        return CotypingOverlayPlacement(
             caretIsExact: field.caretIsExact,
             isCaretAtEndOfLine: CotypingRenderModePolicy.isCaretAtEndOfLine(trailingText: field.trailingText),
             preference: settingsProvider().cotypingMirrorPreference)
@@ -484,6 +504,7 @@ extension CotypingCoordinator {
         placement: CotypingOverlayPlacement? = nil,
         acceptanceText: String? = nil
     ) {
+        let field = displayField(field)
         overlay.show(
             text: text,
             caretRect: field.caretRect,

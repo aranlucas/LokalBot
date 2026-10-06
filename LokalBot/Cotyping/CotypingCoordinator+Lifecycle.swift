@@ -122,6 +122,7 @@ extension CotypingCoordinator {
         focusRefreshTask?.cancel()
         focusRefreshTask = nil
         CotypingAXHelper.forgetVisibleContext()
+        visualCaret.reset()
         if let workspaceObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(workspaceObserver)
             self.workspaceObserver = nil
