@@ -6,6 +6,8 @@ Jump to [build workflows](#build-workflows), [capture and processing](#recording
 
 ## Build workflows
 
+Build with Xcode 26.4 or newer (Swift 6.3 and the Metal toolchain), as required by the pinned MLX package. The app deployment target remains macOS 15.
+
 The Xcode project is generated from `project.yml`. Regenerate it after editing project configuration or adding/removing source files:
 
 ```bash
@@ -253,6 +255,7 @@ Debug builds add test-only flags (`LOKALBOT_TEST_HOOKS`; Release never compiles 
   ```
   Pure-logic coverage — prompt sanitizers, search ranker, model fit, transcript merging, settings codecs, data migration, and the chat agent (tool-call parsing for JSON **and** native function-call forms, the ReAct loop, observation formatters).
   Select an affected class or method with `-only-testing:LokalBotTests/CotypingTests` (replace the class with the relevant test).
+- **Qwen upgrade parity:** `QwenASREngineTests/testCachedModelTranscriptionMatchesReferenceWhenProvided` uses cached weights from `LOKALBOT_QWEN_TEST_MODEL_DIR` and a `LOKALBOT_QWEN_TEST_REFERENCE` JSON array of `{id, audio, language, text}` records. Use public or synthetic audio, with `text` captured from the previous pinned runtime. It checks the production decode entry point with both repetition policies; `LOKALBOT_QWEN_TEST_REPORT` optionally writes the decoded outputs. Prefix these environment variables with `TEST_RUNNER_` when invoking `xcodebuild` so they reach the test host. Regular unit runs skip this hardware check without a fixture.
 - **Audio crash probe:** `bash Scripts/tests/audio-recovery-crash.sh` kills a synthetic writer with SIGKILL, removes its growing CAF, and verifies waveform/frame coverage from checkpoints without capture devices or a private library. The hosted unit job also runs it.
 - **Agent runtime:** `LOKALBOT_PINNED_RUNTIME_ROOT=/path/to/agent-runtime bash Scripts/tests/run-pi-runtime-tests.sh` runs the extension and adapter tests against the pinned runtime. It copies test sources to a temporary folder and uses synthetic loopback services without changing the installed runtime.
 - **UI** (`LokalBotUITests`, XCUITest): run the hosted **UI Tests** workflow or another remote Mac runner. `Scripts/ui-tests.sh --remote` dispatches the suite; append a test name to select one test. Never use `--foreground` or run UI tests locally on this MacBook. The script checks that the relevant changes are committed and pushed so the remote runner tests the intended revision. It drives a dedicated UI Test Host against a synthetic library under a temporary `LOKALBOT_STORAGE_ROOT`; `LOKALBOT_UI_TEST=1` skips side-effectful subsystems, so the suite never touches the installed production app.
