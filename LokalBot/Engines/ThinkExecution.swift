@@ -66,6 +66,7 @@ final class ThinkExecution {
                 chatDialect: .llamaServer,
                 defaultThinkingBudgetTokens:
                     MainLLMRuntimePolicy.highReasoningBudgetTokens,
+                reasoningLevel: settings.thinkReasoningLevel,
                 displayNameOverride: "Built-in — \(entry.displayName)")
             guard let role = InferenceRole(serverPort: server.port) else {
                 try await server.ensureRunning(modelAt: modelURL)
@@ -97,7 +98,8 @@ final class ThinkExecution {
                 model = await OllamaEngine.listModels(baseURL: url).first ?? ""
             }
             return GatedTextEngine(
-                base: OllamaEngine(baseURL: url, model: model),
+                base: OllamaEngine(baseURL: url, model: model,
+                                   reasoningLevel: settings.thinkReasoningLevel),
                 origin: RemoteInferenceGate.origin(for: url),
                 priority: priority,
                 purpose: purpose)
@@ -114,7 +116,8 @@ final class ThinkExecution {
                 model: settings.openAIModel,
                 apiKey: includingCredentials ? settings.openAIAPIKey : nil,
                 chatDialect: .inferred(from: url),
-                openRouterDataPolicy: settings.openRouterDataPolicy)
+                openRouterDataPolicy: settings.openRouterDataPolicy,
+                reasoningLevel: settings.thinkReasoningLevel)
             // External servers share one gate per origin so scheduled work
             // cannot crowd out meeting notes or chat, and a rate limit pauses
             // every caller instead of each replaying a second later.

@@ -170,6 +170,9 @@ struct ModelStackOverviewView: View {
             Text(model).font(.scaled(.body).weight(.semibold)).textSelection(.enabled)
             Label(locationLabel(role, status: status), systemImage: destination.icon)
                 .font(.scaled(.callout)).settingsModelLocation(destination)
+            if role == .think, app.settings.summarizerBackend != .appleIntelligence {
+                reasoningPicker.padding(.top, 2)
+            }
             if checks.testingRole == role {
                 Label("Checking…", systemImage: "ellipsis.circle")
                     .font(.scaled(.callout)).settingsSecondary()
@@ -192,6 +195,24 @@ struct ModelStackOverviewView: View {
                     .accessibilityIdentifier("models.stack.status.\(role.rawValue)")
             }
         }
+    }
+
+    /// Apple Intelligence exposes no reasoning control; every other Think
+    /// backend maps the level onto its own request field.
+    private var reasoningPicker: some View {
+        HStack(spacing: 6) {
+            Text("Reasoning").font(.scaled(.callout)).settingsSecondary()
+            Picker("Reasoning", selection: $app.settings.thinkReasoningLevel) {
+                ForEach(ThinkReasoningLevel.allCases) { Text($0.displayName).tag($0) }
+            }
+            .labelsHidden().pickerStyle(.menu).controlSize(.small).fixedSize()
+            .accessibilityLabel("Think reasoning level")
+            .accessibilityIdentifier("models.think.reasoning")
+        }
+        .help("How much the Think model reasons before it answers in summaries and Ask. Automatic "
+              + "keeps LokalBot's per-task amounts and the server's own default. A level sets the most "
+              + "any task uses. Agent Mode keeps the model's default.")
+        .settingTarget("settings.thinkReasoningLevel", selected: app.focusedSettingID)
     }
 
     private func locationLabel(_ role: ModelRole, status: ModelRoleStatus) -> String {

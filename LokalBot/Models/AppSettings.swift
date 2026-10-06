@@ -345,6 +345,9 @@ struct AppSettings: Codable, Equatable {
     /// Processing budget for meeting-notes generation. Applies to every Think
     /// backend, not only the connection it is edited alongside.
     var generationBudgetPreset: GenerationBudgetPreset = .standard
+    /// How much the Think model reasons. Automatic keeps per-task budgets and
+    /// each server's own default; a chosen level also caps those budgets.
+    var thinkReasoningLevel: ThinkReasoningLevel = .automatic
 
     /// True only when the selected Think backend may actually send meeting or
     /// workday text to an approved remote server. Configured-but-unapproved,
@@ -650,6 +653,8 @@ struct AppSettings: Codable, Equatable {
         var s = self
         s.summarizerBackend = .builtIn
         s.builtInModelID = dictationCompositionBuiltInModelID
+        // The Think reasoning level belongs to the Think model, not this one.
+        s.thinkReasoningLevel = .automatic
         return s
     }
 
@@ -766,6 +771,7 @@ struct AppSettings: Codable, Equatable {
         case openRouterDataPolicy
         case approvedRemoteInferenceOrigins
         case generationBudgetPreset
+        case thinkReasoningLevel
         case noteTemplate
         case summaryLanguage
         case rememberSpeakersOnMac
@@ -943,6 +949,7 @@ struct AppSettings: Codable, Equatable {
         try c.encode(openRouterDataPolicy, forKey: .openRouterDataPolicy)
         try c.encode(approvedRemoteInferenceOrigins, forKey: .approvedRemoteInferenceOrigins)
         try c.encode(generationBudgetPreset, forKey: .generationBudgetPreset)
+        try c.encode(thinkReasoningLevel, forKey: .thinkReasoningLevel)
         try c.encode(noteTemplate, forKey: .noteTemplate)
         try c.encode(summaryLanguage, forKey: .summaryLanguage)
         try c.encode(multiSpeakerDiarization, forKey: .multiSpeakerDiarization)
@@ -1106,6 +1113,7 @@ struct AppSettings: Codable, Equatable {
             .approvedRemoteInferenceOrigins, defaults.approvedRemoteInferenceOrigins)
         generationBudgetPreset = decode(
             .generationBudgetPreset, defaults.generationBudgetPreset)
+        thinkReasoningLevel = decode(.thinkReasoningLevel, defaults.thinkReasoningLevel)
         noteTemplate = decode(.noteTemplate, defaults.noteTemplate)
         summaryLanguage = decode(.summaryLanguage, defaults.summaryLanguage)
         multiSpeakerDiarization = decode(.multiSpeakerDiarization, defaults.multiSpeakerDiarization)

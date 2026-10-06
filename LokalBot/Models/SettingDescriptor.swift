@@ -10,6 +10,7 @@ struct SettingDescriptor: Identifiable {
         if id == "settings.models" { return InferencePresentation(settings: settings).label }
         if id == "settings.effectiveScreenContextCaptureMode" { return settings.effectiveScreenContextCaptureMode.rawValue }
         if id == "settings.generationBudgetPreset" { return settings.generationBudgetPreset.displayName }
+        if id == "settings.thinkReasoningLevel" { return settings.thinkReasoningLevel.displayName }
         if id == "settings.appTheme" { return settings.appTheme.displayName }
         if id == "settings.textSize" { return settings.textSize.displayName }
         guard let data = try? JSONEncoder().encode(settings),
@@ -69,6 +70,8 @@ struct SettingDescriptor: Identifiable {
         .init(id: "settings.ollamaBaseURL", title: "Ollama server URL", category: .models, aliases: "local remote endpoint host"),
         .init(id: "settings.generationBudgetPreset", title: "Think processing budget", category: .models,
               aliases: "generation budget limit tokens time requests unlimited conservative generous summary meeting notes"),
+        .init(id: "settings.thinkReasoningLevel", title: "Think reasoning level", category: .models,
+              aliases: "reasoning effort thinking budget think off low medium high"),
         .init(id: "settings.transcriptionModel", title: "Transcribe model", category: .models, aliases: "ASR speech whisper qwen"),
         .init(id: "settings.transcriptionLanguage", title: "Transcription language", category: .models, aliases: "ASR spoken language"),
         .init(id: "settings.transcriptionPrompt", title: "Transcription vocabulary", category: .models, aliases: "names acronyms spelling"),

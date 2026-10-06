@@ -412,6 +412,20 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(decoded.generationBudgetPreset, .generous)
     }
 
+    func testThinkReasoningLevelRoundTripsAndDefaultsToAutomatic() throws {
+        var settings = AppSettings()
+        settings.thinkReasoningLevel = .low
+
+        let decoded = try JSONDecoder().decode(
+            AppSettings.self, from: JSONEncoder().encode(settings))
+        let legacy = try JSONDecoder().decode(
+            AppSettings.self, from: Data(#"{"autoTranscribe":true}"#.utf8))
+
+        XCTAssertEqual(decoded.thinkReasoningLevel, .low)
+        XCTAssertEqual(legacy.thinkReasoningLevel, .automatic)
+        XCTAssertTrue(legacy.corruptedSettingsKeys.isEmpty)
+    }
+
     func testLegacySettingsDefaultToStandardGenerationBudget() throws {
         let settings = try JSONDecoder().decode(
             AppSettings.self, from: Data(#"{"autoTranscribe":true}"#.utf8))
@@ -637,12 +651,14 @@ final class AppSettingsTests: XCTestCase {
         var settings = AppSettings()
         settings.summarizerBackend = .ollama
         settings.ollamaModel = "large-main-model"
+        settings.thinkReasoningLevel = .high
         settings.dictationCompositionBuiltInModelID = "qwen3.5-2b"
 
         let resolved = settings.dictationCompositionTextEngineSettings
 
         XCTAssertEqual(resolved.summarizerBackend, .builtIn)
         XCTAssertEqual(resolved.builtInModelID, "qwen3.5-2b")
+        XCTAssertEqual(resolved.thinkReasoningLevel, .automatic)
         XCTAssertEqual(settings.summarizerBackend, .ollama)
         XCTAssertEqual(settings.ollamaModel, "large-main-model")
     }
