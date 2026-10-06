@@ -5,11 +5,47 @@ import Foundation
 /// backwards-compatible hierarchy for both old and newly generated digests.
 struct DayDigestPresentation: Equatable {
     struct FocusBlock: Equatable, Identifiable {
+        enum Status: Equatable {
+            case completed
+            case inProgress
+            case blocked
+        }
+
         let id: Int
         let timeRange: String?
         let title: String?
+        /// Parsed from the journal's "Completed." style lead, which the
+        /// summary no longer repeats.
+        let status: Status?
         let summaryMarkdown: String
         let sourceIDs: [Int64]
+        /// The journal's "Next — task: step" follow-up, shown with its task
+        /// instead of repeating the task title in a separate list.
+        var nextStep: String?
+    }
+
+    /// Tasks ordered for scanning: open work first, finished work last.
+    struct TaskGroup: Equatable, Identifiable {
+        enum Kind: CaseIterable {
+            case blocked
+            case inProgress
+            case other
+            case completed
+
+            var title: String {
+                switch self {
+                case .blocked: "Blocked"
+                case .inProgress: "In progress"
+                case .other: "Other work"
+                case .completed: "Done"
+                }
+            }
+        }
+
+        let kind: Kind
+        let blocks: [FocusBlock]
+
+        var id: Kind { kind }
     }
 
     struct ActivityEntry: Equatable, Identifiable {
@@ -39,11 +75,34 @@ struct DayDigestPresentation: Equatable {
     let atAGlanceMarkdown: String
     let focusBlocks: [FocusBlock]
     let otherActivityBlocks: [FocusBlock]
-    let decisionsMarkdown: String?
+    let decisions: [String]
+    let blockers: [String]
+    /// Follow-ups that are neither a decision, a blocker, nor the next step
+    /// of a listed task, such as older journals' free-form items. Shown as
+    /// rows like tasks; their ids continue after the tasks' ids.
+    let followUps: [FocusBlock]
     let meetingsMarkdown: String?
     let agentSessionsMarkdown: String?
     let timeAllocations: [TimeAllocation]
     let activityGroups: [ActivityHourGroup]
+
+    /// Whether a task row shows only its title and next step, with the
+    /// summary opening on demand. Task-first journals give tasks a status,
+    /// and there every titled task collapses, including the ones whose status
+    /// the generator left unknown. Older journals never carry a status; their
+    /// summary is the only description, so it stays visible.
+    func collapsesDetails(of block: FocusBlock) -> Bool {
+        block.title != nil
+            && (!block.summaryMarkdown.isEmpty || !block.sourceIDs.isEmpty)
+            && focusBlocks.contains { $0.status != nil }
+    }
+
+    var taskGroups: [TaskGroup] {
+        TaskGroup.Kind.allCases.compactMap { kind in
+            let blocks = focusBlocks.filter { Self.groupKind(of: $0) == kind }
+            return blocks.isEmpty ? nil : TaskGroup(kind: kind, blocks: blocks)
+        }
+    }
 
     var activityCount: Int {
         activityGroups.reduce(0) { $0 + $1.entries.count }
@@ -108,12 +167,17 @@ struct DayDigestPresentation: Equatable {
             excluding: taskComparisons) ?? ""
         let conciseOverviewMarkdown = Self.conciseOverview(uniqueOverview)
 
-        atAGlanceMarkdown = conciseOverviewMarkdown
-        focusBlocks = parsedFocusBlocks
-        otherActivityBlocks = parsedOtherActivityBlocks
-        decisionsMarkdown = Self.removingSimilarContent(
+        let followUps = Self.followUps(
             decisions,
+            tasks: parsedFocusBlocks,
             excluding: taskComparisons + [conciseOverviewMarkdown])
+
+        atAGlanceMarkdown = conciseOverviewMarkdown
+        focusBlocks = followUps.tasks
+        otherActivityBlocks = parsedOtherActivityBlocks
+        self.decisions = followUps.decisions
+        blockers = followUps.blockers
+        self.followUps = followUps.other
 
         let meetings = document.first(where: {
             Self.normalized($0.title) == "meetings"
@@ -250,6 +314,111 @@ struct DayDigestPresentation: Equatable {
             .joined(separator: " ")
     }
 
+    private static func groupKind(of block: FocusBlock) -> TaskGroup.Kind {
+        switch block.status {
+        case .blocked: .blocked
+        case .inProgress: .inProgress
+        case .completed: .completed
+        case nil: .other
+        }
+    }
+
+    /// Splits the journal's follow-up list into decisions, blockers, and the
+    /// rest, and moves each "Next — task: step" onto the task it names. Items
+    /// already said by a task, the overview, or an earlier item are dropped.
+    private static func followUps(
+        _ markdown: String?,
+        tasks: [FocusBlock],
+        excluding existing: [String]
+    ) -> (tasks: [FocusBlock], decisions: [String], blockers: [String], other: [FocusBlock]) {
+        var tasks = tasks
+        var decisions: [String] = []
+        var blockers: [String] = []
+        var other: [FocusBlock] = []
+        func appendOther(_ markdown: String, nextStep: String? = nil) {
+            var block = focusBlock(id: tasks.count + other.count, markdown: markdown)
+            block.nextStep = nextStep
+            other.append(block)
+        }
+        guard let clean = meaningful(markdown) else { return (tasks, [], [], []) }
+
+        var comparisons = existing.filter { !$0.isEmpty }
+        func isNew(_ text: String) -> Bool {
+            guard !comparisons.contains(where: {
+                DayDigestTextSimilarity.isSimilar(text, $0)
+            }) else { return false }
+            comparisons.append(text)
+            return true
+        }
+
+        let items = topLevelItems(in: clean)
+        for item in items.isEmpty ? [clean] : items {
+            let text = strippingListMarker(item)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if let decision = removingLabel(["Decision", "Decisions"], from: text) {
+                if isNew(decision) { decisions.append(directVoice(decision)) }
+            } else if let blocker = removingLabel(["Blocker", "Blockers"], from: text) {
+                if isNew(blocker) { blockers.append(directVoice(blocker)) }
+            } else if let next = nextStep(in: text, tasks: tasks) {
+                guard let index = next.taskIndex else {
+                    if isNew(next.step) {
+                        appendOther("**\(next.title)**", nextStep: directVoice(next.step))
+                    }
+                    continue
+                }
+                guard tasks[index].nextStep == nil,
+                      !DayDigestTextSimilarity.isSimilar(next.step, comparisonText(tasks[index]))
+                else { continue }
+                tasks[index].nextStep = directVoice(next.step)
+            } else if isNew(text) {
+                appendOther(text)
+            }
+        }
+        return (tasks, decisions, blockers, other)
+    }
+
+    /// `Decision: …` and `**Blocker:** …` leads, without the label.
+    private static func removingLabel(_ labels: [String], from text: String) -> String? {
+        let pattern = #"^\*{0,2}(?:"# + labels.joined(separator: "|") + #")\*{0,2}:\*{0,2}\s*"#
+        guard let match = text.range(
+            of: pattern, options: [.regularExpression, .caseInsensitive]) else { return nil }
+        let rest = String(text[match.upperBound...]).trimmingCharacters(in: .whitespaces)
+        return rest.isEmpty ? nil : rest
+    }
+
+    /// `Next — <task title>: <step>`. Task titles can contain colons, so the
+    /// longest shown title that prefixes the item wins; otherwise the first
+    /// colon separates an unknown title from its step.
+    private static func nextStep(
+        in text: String,
+        tasks: [FocusBlock]
+    ) -> (taskIndex: Int?, title: String, step: String)? {
+        guard let lead = text.range(
+            of: #"^Next\s+[—–-]\s+"#, options: .regularExpression) else { return nil }
+        let rest = String(text[lead.upperBound...])
+        let candidates = [rest, directVoice(rest)]
+        let match = tasks.indices
+            .compactMap { index -> (Int, String)? in
+                guard let title = tasks[index].title, !title.isEmpty else { return nil }
+                let prefix = title + ":"
+                guard let candidate = candidates.first(where: {
+                    $0.lowercased().hasPrefix(prefix.lowercased())
+                }) else { return nil }
+                let step = String(candidate.dropFirst(prefix.count))
+                    .trimmingCharacters(in: .whitespaces)
+                return step.isEmpty ? nil : (index, step)
+            }
+            .max { (tasks[$0.0].title?.count ?? 0) < (tasks[$1.0].title?.count ?? 0) }
+        if let match {
+            return (match.0, tasks[match.0].title ?? "", match.1)
+        }
+        guard let colon = rest.range(of: ": ") else { return nil }
+        let title = String(rest[..<colon.lowerBound]).trimmingCharacters(in: .whitespaces)
+        let step = String(rest[colon.upperBound...]).trimmingCharacters(in: .whitespaces)
+        guard !title.isEmpty, !step.isEmpty else { return nil }
+        return (nil, title, step)
+    }
+
     /// The journal can retain a longer overview for export, but the default UI
     /// should answer "what mattered?" in one glance. Paragraph-style legacy
     /// summaries are kept intact; generated bullet lists show at most three.
@@ -285,6 +454,7 @@ struct DayDigestPresentation: Equatable {
                 id: id,
                 timeRange: nil,
                 title: nil,
+                status: nil,
                 summaryMarkdown: directVoice(visible),
                 sourceIDs: sourceIDs)
         }
@@ -295,6 +465,7 @@ struct DayDigestPresentation: Equatable {
                 id: id,
                 timeRange: nil,
                 title: nil,
+                status: nil,
                 summaryMarkdown: directVoice(visible),
                 sourceIDs: sourceIDs)
         }
@@ -302,14 +473,15 @@ struct DayDigestPresentation: Equatable {
         let heading = String(visible[headingStart..<headingEnd.lowerBound])
         let remainder = String(visible[headingEnd.upperBound...])
             .trimmingCharacters(in: .whitespacesAndNewlines)
-        let summary = remainder.hasPrefix("—")
+        let (status, summary) = statusLead(in: remainder.hasPrefix("—")
             ? String(remainder.dropFirst()).trimmingCharacters(in: .whitespacesAndNewlines)
-            : remainder
+            : remainder)
         if let separator = heading.range(of: " · ") {
             return FocusBlock(
                 id: id,
                 timeRange: String(heading[..<separator.lowerBound]),
                 title: directVoice(String(heading[separator.upperBound...])),
+                status: status,
                 summaryMarkdown: directVoice(summary),
                 sourceIDs: sourceIDs)
         }
@@ -317,8 +489,23 @@ struct DayDigestPresentation: Equatable {
             id: id,
             timeRange: nil,
             title: directVoice(heading),
+            status: status,
             summaryMarkdown: directVoice(summary),
             sourceIDs: sourceIDs)
+    }
+
+    /// Task summaries open with the status the generator settled on.
+    private static func statusLead(in summary: String) -> (FocusBlock.Status?, String) {
+        let leads: [(String, FocusBlock.Status)] = [
+            ("Completed.", .completed),
+            ("In progress.", .inProgress),
+            ("Blocked.", .blocked),
+        ]
+        for (lead, status) in leads where summary.hasPrefix(lead) {
+            return (status, String(summary.dropFirst(lead.count))
+                .trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+        return (nil, summary)
     }
 
     private static func screenIDs(in value: String) -> [Int64] {

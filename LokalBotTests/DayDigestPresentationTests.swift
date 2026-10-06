@@ -56,7 +56,7 @@ final class DayDigestPresentationTests: XCTestCase {
         XCTAssertEqual(presentation.otherActivityBlocks.first?.timeRange, "16:00–16:05")
         XCTAssertEqual(presentation.otherActivityBlocks.first?.title, "Invoice payment")
         XCTAssertEqual(presentation.otherActivityBlocks.first?.sourceIDs, [24])
-        XCTAssertTrue(presentation.decisionsMarkdown?.contains("Reinstall") == true)
+        XCTAssertEqual(presentation.followUps.map(\.summaryMarkdown), ["Reinstall the signed app."])
         XCTAssertTrue(presentation.meetingsMarkdown?.contains("Product sync") == true)
         XCTAssertEqual(presentation.timeAllocations.map(\.app), ["Xcode", "Safari"])
         XCTAssertEqual(presentation.timeAllocations.map(\.seconds), [5_400, 1_500])
@@ -97,7 +97,7 @@ final class DayDigestPresentationTests: XCTestCase {
 
         XCTAssertEqual(presentation.atAGlanceMarkdown, "A concise legacy overview.")
         XCTAssertEqual(presentation.focusBlocks.count, 10)
-        XCTAssertNil(presentation.decisionsMarkdown)
+        assertNoFollowUps(presentation)
         XCTAssertNil(presentation.meetingsMarkdown)
         XCTAssertTrue(presentation.timeAllocations.isEmpty)
         XCTAssertEqual(presentation.activityGroups.first?.label, "17:00–17:59")
@@ -173,7 +173,86 @@ final class DayDigestPresentationTests: XCTestCase {
 
         XCTAssertTrue(presentation.atAGlanceMarkdown.isEmpty)
         XCTAssertEqual(presentation.focusBlocks.count, 1)
-        XCTAssertNil(presentation.decisionsMarkdown)
+        XCTAssertEqual(presentation.focusBlocks.first?.status, .completed)
+        XCTAssertNil(presentation.focusBlocks.first?.nextStep)
+        assertNoFollowUps(presentation)
+    }
+
+    func testTaskStatusAndNextStepsMoveOntoTheirTasks() {
+        let markdown = """
+            ## Day summary
+
+            ### Tasks
+            - **Publish LokalBot 0.9.5 release** — Completed. Prepared the release notes. Pull requests: stevyhacker/LokalBot#167
+            - **Fix overlay positioning: caret-aware placement (PR #169)** — In progress. Identified the root cause and pushed a fix.
+            - **Generate Matilda voiceover** — Blocked. Waiting for more audio credits.
+            - **Read the API reference** — Looked at the documentation.
+
+            ### Decisions and next steps
+            - Decision: Keep a single cloud environment until onboarding starts.
+            - **Blocker:** ElevenLabs API credit exhaustion stops the export.
+            - Next — Fix overlay positioning: caret-aware placement (PR #169): Enable accessibility text metrics in Chrome.
+            - Next — Generate Matilda voiceover: Purchase additional ElevenLabs credits.
+            - Next — Estimate the article budget: Run the prepared upgrade scripts.
+            """
+
+        let presentation = DayDigestPresentation(markdown: markdown)
+
+        XCTAssertEqual(presentation.focusBlocks.map(\.status),
+                       [.completed, .inProgress, .blocked, nil])
+        XCTAssertEqual(presentation.focusBlocks.first?.summaryMarkdown,
+                       "Prepared the release notes. Pull requests: stevyhacker/LokalBot#167")
+        XCTAssertEqual(presentation.focusBlocks.map(\.nextStep), [
+            nil,
+            "Enable accessibility text metrics in Chrome.",
+            "Purchase additional ElevenLabs credits.",
+            nil,
+        ])
+        XCTAssertEqual(presentation.decisions,
+                       ["Keep a single cloud environment until onboarding starts."])
+        XCTAssertEqual(presentation.blockers,
+                       ["ElevenLabs API credit exhaustion stops the export."])
+        XCTAssertEqual(presentation.followUps.map(\.title), ["Estimate the article budget"])
+        XCTAssertEqual(presentation.followUps.map(\.nextStep), ["Run the prepared upgrade scripts."])
+        XCTAssertEqual(presentation.followUps.map(\.id), [4])
+        XCTAssertEqual(presentation.taskGroups.map(\.kind),
+                       [.blocked, .inProgress, .other, .completed])
+        XCTAssertEqual(presentation.taskGroups.map { $0.blocks.map(\.id) },
+                       [[2], [1], [3], [0]])
+    }
+
+    func testTaskFirstDigestCollapsesEveryTitledTaskIncludingUnknownStatus() {
+        let taskFirst = DayDigestPresentation(markdown: """
+            ## Day summary
+
+            ### Tasks
+            - **Publish the release** — Completed. Pushed the release branch after signing passed.
+            - **Read the API reference** — Looked through the streaming section of the documentation.
+            - **Plan the week** — In progress.
+            """)
+        XCTAssertEqual(taskFirst.focusBlocks.map(\.status), [.completed, nil, .inProgress])
+        XCTAssertEqual(taskFirst.focusBlocks.map { taskFirst.collapsesDetails(of: $0) },
+                       [true, true, false])
+
+        let legacy = DayDigestPresentation(markdown: """
+            ## Day summary
+
+            ### Focus blocks
+            - **09:00–10:30 · Fixture implementation** — User updated the Timeline UI.
+            - Reviewed the release checklist.
+            """)
+        XCTAssertEqual(legacy.focusBlocks.map { legacy.collapsesDetails(of: $0) },
+                       [false, false])
+    }
+
+    private func assertNoFollowUps(
+        _ presentation: DayDigestPresentation,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        XCTAssertTrue(presentation.decisions.isEmpty, file: file, line: line)
+        XCTAssertTrue(presentation.blockers.isEmpty, file: file, line: line)
+        XCTAssertTrue(presentation.followUps.isEmpty, file: file, line: line)
     }
 
     func testSimilarityRejectsLightRephrasingWithoutHidingDistinctFacts() {
@@ -253,7 +332,7 @@ final class DayDigestPresentationTests: XCTestCase {
         XCTAssertEqual(
             presentation.atAGlanceMarkdown,
             "The day began with a substantive implementation session.")
-        XCTAssertNil(presentation.decisionsMarkdown)
+        assertNoFollowUps(presentation)
         XCTAssertEqual(presentation.focusBlocks.count, 1)
     }
 

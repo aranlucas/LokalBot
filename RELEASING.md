@@ -196,9 +196,11 @@ with `--candidate` or `--staged`; candidate preparation and stable publication
 still require the notes and changelog. Prerelease publication retains its
 tag-specific notes path and generated-notes fallback.
 
-Validation and release currently use Xcode **26.3** (0.8.0 used build **17C529**).
-Update the explicit version in Build (including its Tests job), UI Tests and Release together after
-hosted validation. The Build gate compiles the production app and its unit-test
+Validation and release currently use Xcode **26.4.1** (build **17E202**) on `macos-26`
+runners; MLX 0.32.3 and later need its Swift 6.3 toolchain, and the `macos-15` image has
+no Xcode newer than 26.3. 0.8.0 used Xcode 26.3 build **17C529**. Update the explicit
+version and runner in Build (including its Tests job), UI Tests, Nightly and Release
+together after hosted validation. The Build gate compiles the production app and its unit-test
 target. The UI workflow builds its separate host once, runs the critical group,
 then Reduce Motion, then independent functional and visual shards covering all
 72 captures. A shared inventory and aggregate result verification prevent missing
