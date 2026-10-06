@@ -56,6 +56,8 @@ enum WorkspaceMetric {
     static let timelineRailMaxWidth: CGFloat = 640
     static let timelineDrawerBreakpoint: CGFloat = 820
     static let timelineDrawerMaxWidth: CGFloat = 520
+    /// The main window's titlebar and unified toolbar.
+    static let toolbarHeight: CGFloat = 52
 
     /// The rail may widen until the day column reaches its readable minimum.
     static func timelineRailMaxWidth(in paneWidth: CGFloat) -> CGFloat {
@@ -231,6 +233,17 @@ private struct ComposerChromeModifier: ViewModifier {
                         .accessibilityHidden(true)
                 }
             }
+    }
+}
+
+extension View {
+    /// A main-window workspace's minimum height. NavigationSplitView counts the
+    /// 52 pt titlebar and toolbar in its own minimum, and the full-size-content
+    /// window's root hosting view adds it again, so a 600 pt minimum kept the
+    /// window at least 704 pt tall. Subtracting the second count makes the
+    /// window's minimum the workspace plus one toolbar.
+    func workspaceMinimumHeight(_ height: CGFloat) -> some View {
+        frame(minHeight: max(height - WorkspaceMetric.toolbarHeight, 0))
     }
 }
 
