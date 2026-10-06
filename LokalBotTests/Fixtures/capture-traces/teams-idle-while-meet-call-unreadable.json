@@ -1,0 +1,11 @@
+{
+  "header": {"schemaVersion": 1, "macOSVersion": "27.0", "origin": "reconstructed",
+             "scenario": "teams-idle-while-meet-call-unreadable", "scrubberVersion": 1, "recordedAt": "2026-10-06T00:00:00Z"},
+  "events": [
+    {"t": 0, "query": "runningApps", "apps": [{"processIdentifier": 700, "bundleIdentifier": "com.microsoft.teams2", "localizedName": "Microsoft Teams"}, {"processIdentifier": 800, "bundleIdentifier": "com.google.Chrome", "localizedName": "Google Chrome"}]},
+    {"t": 0, "query": "frontmost", "app": {"processIdentifier": 800, "bundleIdentifier": "com.google.Chrome", "localizedName": "Google Chrome"}},
+    {"t": 0, "query": "audioProcesses", "processes": [{"id": 720, "name": "Microsoft Teams MdlHst", "bundleID": "com.microsoft.teams2.modulehost", "objectID": 72, "isRunningOutput": true}, {"id": 711, "name": "Microsoft Teams Hlpr", "bundleID": "com.microsoft.teams2.helper", "objectID": 71, "isRunningOutput": false}, {"id": 801, "name": "Google Chrome Helper", "bundleID": "com.google.Chrome.helper", "objectID": 81, "isRunningOutput": true}]},
+    {"t": 0, "query": "inputRunning", "processID": 700, "flag": false},
+    {"t": 40, "query": "browserSnapshot", "processID": 800, "browser": {"url": "https://meet.google.com/bcd-fghj-klm", "state": "inCall"}}
+  ]
+}

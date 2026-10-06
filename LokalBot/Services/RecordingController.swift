@@ -43,6 +43,33 @@ enum RecordingSystemAudioPolicy: Equatable {
     }
 }
 
+/// Where system audio comes from when no detected app started the recording.
+/// Static, so a replayed capture environment can check the choice without an
+/// audio device.
+enum RecordingSystemAudioSource: Equatable {
+    /// Evidence of the call: an emitting meeting app, a verified browser call,
+    /// or the idle app the recording is already bound to. Attaching binds.
+    case verified(MeetingDetector.DetectedApp)
+    /// An always-open stream, which an idle app holds too. Tapped without
+    /// binding the recording; see `MeetingDetector.alwaysOpenCaptureCandidate`.
+    case held(MeetingDetector.DetectedApp)
+
+    /// Audible audio a held tap must carry before the recording binds to its
+    /// app. The detector sets the same bar before a communication app's sound
+    /// counts as a call rather than a notification or a launch blip.
+    static let bindingAudibleDuration = MeetingDetector.nativeAudioMinimumConfirmationDuration
+
+    static func find(for intent: Meeting.CaptureIntent) -> Self? {
+        if let app = MeetingDetector.captureCandidateApp(
+            expectedMeetingURL: intent.meetingURL, expectedBundleID: intent.appBundleID) {
+            return .verified(app)
+        }
+        guard intent.appBundleID == nil, intent.meetingURL == nil,
+              let app = MeetingDetector.alwaysOpenCaptureCandidate() else { return nil }
+        return .held(app)
+    }
+}
+
 enum SystemAudioRecoveryCandidatePolicy {
     static func shouldRetrySamePID(
         framesSinceAttach: Int64,
@@ -269,8 +296,13 @@ final class RecordingController: ObservableObject {
         var bundleID: String
         var pid: pid_t
         var hostPID: pid_t?
+        /// Held without binding the recording; any verified source may still
+        /// replace it. See `RecordingSystemAudioSource.held`.
+        var isHeld = false
     }
     private var systemAudioTarget: SystemAudioTarget?
+    /// No tap yet, or only a held one: a verified source should still attach.
+    private var awaitsVerifiedSystemAudio: Bool { systemAudioTarget?.isHeld ?? true }
     private var recordingHealthWatchdog: AnyCancellable?
     private let healthSampler = RecordingHealthSampler()
     private var lastWatchdogCheckAt: Date?
@@ -575,15 +607,22 @@ final class RecordingController: ObservableObject {
                 // The fallback verifies a browser's in-call document first, so
                 // manual recovery can capture Chrome without widening scope to
                 // an arbitrary browser tab. Mic-only callers never evaluate it.
+                // With nothing verified, an unbound recording holds an
+                // always-open stream such as Teams' modulehost (#179).
+                var heldApp: MeetingDetector.DetectedApp?
                 let captureApp = systemAudioPolicy.captureApp(
                     detectedApp: detectedApp,
                     fallback: {
-                        MeetingDetector.captureCandidateApp(
-                            expectedMeetingURL: meeting.captureIntent?.meetingURL,
-                            expectedBundleID: meeting.captureIntent?.appBundleID)
+                        switch meeting.captureIntent.flatMap(RecordingSystemAudioSource.find(for:)) {
+                        case .verified(let app): return app
+                        case .held(let app): heldApp = app; return nil
+                        case nil: return nil
+                        }
                     })
                 if let captureApp {
                     _ = startSystemAudioCapture(captureApp, meeting: &meeting, detectedApp: detectedApp)
+                } else if let heldApp {
+                    _ = startSystemAudioCapture(heldApp, meeting: &meeting, detectedApp: nil, held: true)
                 } else {
                     lokalbotLog(
                         "system audio capture pending detected=\(detectedApp != nil) "
@@ -594,7 +633,7 @@ final class RecordingController: ObservableObject {
                 status = .recording(meetingID: meeting.id)
                 updateCaptureWarnings()
                 startRecordingHealthWatchdog()
-                if systemAudioPolicy == .meetingAppWhenAvailable, systemAudioTarget == nil {
+                if systemAudioPolicy == .meetingAppWhenAvailable, awaitsVerifiedSystemAudio {
                     scheduleLateSystemAudioCapture(expectedMeetingURL: meeting.meetingURL)
                 }
                 startRecordingTick()
@@ -713,7 +752,7 @@ final class RecordingController: ObservableObject {
     func considerDetectedSource(_ context: MeetingDetectionContext) {
         guard isRecording, let meeting = currentMeeting, let app = context.detectedApp else { return }
         guard meeting.captureIntent?.accepts(appBundleID: app.bundleID, meetingURL: app.meetingURL) == true else { return }
-        if systemAudioTarget == nil {
+        if awaitsVerifiedSystemAudio {
             systemAudioRecovery.offer(app, recordingID: meeting.id)
         } else if let target = systemAudioTarget, target.hostPID != Self.hostPID(for: app.bundleID) {
             // The detector has just verified the same call in a replacement host.
@@ -868,29 +907,42 @@ final class RecordingController: ObservableObject {
     /// the normal start path and a late manual attachment. Keeping this update
     /// atomic prevents metadata from claiming a system track when Core Audio
     /// never accepted the tap.
+    ///
+    /// A `held` tap leaves the recording unbound. A verified source replaces a
+    /// held tap on the same writer, so what the held tap wrote stays in place.
     @discardableResult
     private func startSystemAudioCapture(
         _ captureApp: MeetingDetector.DetectedApp,
         meeting: inout Meeting,
-        detectedApp: MeetingDetector.DetectedApp?
+        detectedApp: MeetingDetector.DetectedApp?,
+        held: Bool = false
     ) -> Bool {
         if let intent = meeting.captureIntent,
            !intent.accepts(appBundleID: captureApp.bundleID, meetingURL: captureApp.meetingURL) { return false }
         let captureProcess = MeetingDetector.currentCaptureTargetProcess(for: captureApp)
         let pid = captureProcess?.id ?? captureApp.pid
+        let heldPID = systemAudioTarget?.isHeld == true ? systemAudioTarget?.pid : nil
         do {
-            try systemRecorder.start(
-                capturingPID: pid,
-                writingTo: meeting.folderURL(in: storage).appendingPathComponent("system.m4a"),
-                previewTee: meeting.folderURL(in: storage)
-                    .appendingPathComponent(AudioPreviewTee.systemFileName),
-                timeline: audioTimeline)
+            if let heldPID {
+                if heldPID != pid { try systemRecorder.reattach(capturingPID: pid) }
+            } else {
+                try systemRecorder.start(
+                    capturingPID: pid,
+                    writingTo: meeting.folderURL(in: storage).appendingPathComponent("system.m4a"),
+                    previewTee: meeting.folderURL(in: storage)
+                        .appendingPathComponent(AudioPreviewTee.systemFileName),
+                    timeline: audioTimeline)
+            }
             meeting.hasSystemTrack = true
-            meeting.captureIntent?.appBundleID = captureApp.bundleID
-            meeting.captureIntent?.meetingURL = captureApp.meetingURL
+            if !held {
+                meeting.captureIntent?.appBundleID = captureApp.bundleID
+                meeting.captureIntent?.meetingURL = captureApp.meetingURL
+            }
             systemAudioTarget = SystemAudioTarget(bundleID: captureApp.bundleID, pid: pid,
-                hostPID: Self.hostPID(for: captureApp.bundleID))
-            systemAudioTapLedger.attached(to: pid, audibleDuration: 0)
+                hostPID: Self.hostPID(for: captureApp.bundleID), isHeld: held)
+            systemAudioTapLedger.attached(
+                to: pid,
+                audibleDuration: heldPID == nil ? 0 : systemRecorder.captureHealth().audibleDuration)
             if pid != captureApp.pid || captureProcess?.bundleID != captureApp.bundleID {
                 lokalbotLog(
                     "system audio capture resolved detectedPID=\(captureApp.pid) capturePID=\(pid) "
@@ -899,7 +951,8 @@ final class RecordingController: ObservableObject {
             }
             lokalbotLog(
                 "system audio tap started pid=\(pid) bundle=\(captureApp.bundleID) "
-                    + "detected=\(detectedApp != nil) fallback=\(detectedApp == nil)")
+                    + "detected=\(detectedApp != nil) fallback=\(detectedApp == nil) held=\(held) "
+                    + "replacedHeldPID=\(heldPID.map(String.init) ?? "none")")
             if let url = captureApp.meetingURL { meeting.meetingURL = url }
             do { try storage.saveMeta(meeting) } catch {
                 onError("Audio capture started, but its source metadata could not be saved: \(error.localizedDescription)")
@@ -922,15 +975,26 @@ final class RecordingController: ObservableObject {
     /// user presses Record. Do not freeze that first miss into a mic-only
     /// meeting: look again for a verified browser call while the recording is
     /// already active, with bounded backoff and no broader browser tabs.
+    /// Meanwhile an unbound recording holds an always-open stream when one
+    /// appears, and keeps looking until the held tap binds.
     private func scheduleLateSystemAudioCapture(expectedMeetingURL: URL?) {
         guard activeSystemAudioPolicy == .meetingAppWhenAvailable,
-              isRecording, let meeting = currentMeeting, systemAudioTarget == nil else { return }
+              isRecording, let meeting = currentMeeting, awaitsVerifiedSystemAudio else { return }
         let intent = meeting.captureIntent ?? .init(
             systemAudioRequested: true, meetingURL: expectedMeetingURL)
-        systemAudioRecovery.start(recordingID: meeting.id, intent: intent, find: { intent in
+        systemAudioRecovery.start(recordingID: meeting.id, intent: intent, find: { [weak self] intent in
             MeetingDetector.invalidateAudioProcessSnapshot()
-            return MeetingDetector.captureCandidateApp(
-                expectedMeetingURL: intent.meetingURL, expectedBundleID: intent.appBundleID)
+            switch RecordingSystemAudioSource.find(for: intent) {
+            case .verified(let app):
+                return app
+            case .held(let app):
+                guard let self, self.currentMeeting?.id == meeting.id,
+                      self.attachLateSystemAudio(app, held: true) else { return nil }
+                self.updateCaptureWarnings()
+                return nil
+            case nil:
+                return nil
+            }
         }, attach: { [weak self] app in
             guard let self, self.currentMeeting?.id == meeting.id else { return false }
             let attached = self.attachLateSystemAudio(app)
@@ -939,12 +1003,32 @@ final class RecordingController: ObservableObject {
         })
     }
 
+    /// Attaches a verified source in place of no tap or a held one. A held
+    /// source attaches only when there is no tap at all.
     @discardableResult
-    private func attachLateSystemAudio(_ captureApp: MeetingDetector.DetectedApp) -> Bool {
-        guard isRecording, systemAudioTarget == nil, var meeting = currentMeeting else { return false }
-        guard startSystemAudioCapture(captureApp, meeting: &meeting, detectedApp: nil) else { return false }
+    private func attachLateSystemAudio(_ captureApp: MeetingDetector.DetectedApp, held: Bool = false) -> Bool {
+        guard isRecording, held ? systemAudioTarget == nil : awaitsVerifiedSystemAudio,
+              var meeting = currentMeeting else { return false }
+        guard startSystemAudioCapture(captureApp, meeting: &meeting, detectedApp: nil, held: held) else { return false }
         currentMeeting = meeting
         return true
+    }
+
+    /// A held tap that has carried the call binds the recording to its app,
+    /// so later sounds from other apps can no longer claim it.
+    private func bindHeldSystemAudio(_ target: inout SystemAudioTarget, audible: TimeInterval) {
+        guard target.isHeld, var meeting = currentMeeting else { return }
+        target.isHeld = false
+        systemAudioTarget = target
+        systemAudioRecovery.cancel()
+        meeting.captureIntent?.appBundleID = target.bundleID
+        currentMeeting = meeting
+        do { try storage.saveMeta(meeting) } catch {
+            lokalbotLog("system audio binding could not be saved: \(error.localizedDescription)")
+        }
+        lokalbotLog(
+            "system audio held tap bound pid=\(target.pid) bundle=\(target.bundleID) "
+                + "audible=\(String(format: "%.2fs", audible))")
     }
 
     private func resetAudioClocks() {
@@ -1199,6 +1283,11 @@ final class RecordingController: ObservableObject {
         systemAudioTapLedger.observe(pid: target.pid,
                                      audibleDuration: health.audibleDuration,
                                      minimum: AudioFileInspector.minimumTranscribableDuration)
+        if target.isHeld, systemAudioTapLedger.hasProvedItself(
+            audibleDuration: health.audibleDuration,
+            minimum: RecordingSystemAudioSource.bindingAudibleDuration) {
+            bindHeldSystemAudio(&target, audible: health.audibleDuration)
+        }
         let noBuffers = health.lastAudioWriteAt.map { now.timeIntervalSince($0) >= 5 } ?? true
         let silentFor = noBuffers
             ? now.timeIntervalSince(health.lastAudioWriteAt ?? meeting.startedAt)
