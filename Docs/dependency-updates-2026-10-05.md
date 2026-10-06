@@ -31,8 +31,8 @@ bypassing package-plugin validation. Its logger fix also avoids the startup cras
 introduced by 0.32.2 on OS versions older than 26.4. Its manifest declares Swift
 tools 6.3, so contributors and hosted builds need Xcode 26.4 or newer; Xcode 26.3
 ships Swift 6.2.4 and fails package resolution. The `macos-15` runner image has no
-Xcode newer than 26.3, so the hosted workflows must move to `macos-26` before this
-merges. The app's macOS 15 deployment floor is unchanged.
+Xcode newer than 26.3, so hosted workflows build on `macos-26` with Xcode 26.4.1.
+The app's macOS 15 deployment floor is unchanged.
 
 ## Upgrade behavior
 
