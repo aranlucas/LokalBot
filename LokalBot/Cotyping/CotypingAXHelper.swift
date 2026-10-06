@@ -66,6 +66,7 @@ enum CotypingAXHelper {
         let lock = NSLock()
         let fieldStyles = CotypingFieldContextCache<CotypingFieldStyle>(label: "field-style", maxAge: 5)
         let learningScopes = CotypingFieldContextCache<String?>(label: "learning-scope", maxAge: 30)
+        let fileDialogs = CotypingFieldContextCache<Bool>(label: "file-dialog", maxAge: 30)
         /// Nearby text is held for the focused field only.
         let visibleContexts = CotypingFieldContextCache<CotypingVisibleContext.Snapshot?>(
             label: "visible-context", maxAge: 3, maxEntries: 1)
@@ -304,6 +305,12 @@ enum CotypingAXHelper {
         guard !CotypingSearchFieldDetector.isSearchField(role: role, subrole: subrole) else {
             return CotypingFocus(appName: appName, bundleID: bundleID,
                                  capability: .unsupported("Search field."), field: nil)
+        }
+        guard !cacheState.fileDialogs.value(forKey: focusIdentityKey, read: {
+            isInFileDialog(element)
+        }) else {
+            return CotypingFocus(appName: appName, bundleID: bundleID,
+                                 capability: .unsupported("Open or save dialog."), field: nil)
         }
 
         let content = appReadPolicy.readIfAllowed(appName: appName, bundleID: bundleID) {
@@ -652,6 +659,21 @@ enum CotypingAXHelper {
         guard let raw = copyAttribute(element, kAXWindowAttribute as String),
               CFGetTypeID(raw) == AXUIElementGetTypeID() else { return nil }
         return stringAttribute(raw as! AXUIElement, kAXTitleAttribute as String)
+    }
+
+    /// Whether `element` is in an app's own open or save panel: its window, or
+    /// the window a sheet such as Go to Folder hangs from. Cached per field.
+    private static func isInFileDialog(_ element: AXUIElement) -> Bool {
+        guard let raw = copyAttribute(element, kAXWindowAttribute as String),
+              CFGetTypeID(raw) == AXUIElementGetTypeID() else { return false }
+        let window = raw as! AXUIElement
+        var identifiers = [stringAttribute(window, kAXIdentifierAttribute as String)]
+        if !CotypingFileDialogDetector.isFileDialog(windowIdentifiers: identifiers),
+           stringAttribute(window, kAXRoleAttribute as String) == kAXSheetRole as String,
+           let parent = parentElement(of: window) {
+            identifiers.append(stringAttribute(parent, kAXIdentifierAttribute as String))
+        }
+        return CotypingFileDialogDetector.isFileDialog(windowIdentifiers: identifiers)
     }
 
     private static func learningScopeKey(near element: AXUIElement, bundleID: String?) -> String? {

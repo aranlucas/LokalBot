@@ -541,6 +541,38 @@ final class CotypingCoordinatorTests: XCTestCase {
         XCTAssertNil(coordinator.extensionTask)
     }
 
+    // MARK: - A suggestion left alone
+
+    /// Cotypist 2026.5 fixed a suggestion staying up after a minute without
+    /// typing and taking the Tab meant for the app.
+    func testASuggestionLeftAloneIsTakenDownSoTabReachesTheApp() async throws {
+        let coordinator = makeCoordinator()
+        coordinator.isRunning = true
+        coordinator.idleSuggestionLifetimeMilliseconds = 400
+        coordinator.session = shownSession(" up on the timeline", after: "I wanted to follow")
+        coordinator.markReady(" up on the timeline")
+        try await Task.sleep(for: .milliseconds(200))
+        // Typing through the suggestion is activity, so the clock starts again.
+        coordinator.markReady(" on the timeline")
+        try await Task.sleep(for: .milliseconds(250))
+        XCTAssertNotNil(coordinator.session, "typed through 250 ms ago, inside the lifetime")
+        try await Task.sleep(for: .milliseconds(600))
+        XCTAssertNil(coordinator.session)
+        XCTAssertEqual(coordinator.state, .idle)
+        XCTAssertNil(coordinator.suggestionExpiryTask)
+        XCTAssertFalse(coordinator.inputMonitor.isAcceptActive)
+    }
+
+    func testClearingASuggestionStopsItsIdleClock() {
+        let coordinator = makeCoordinator()
+        coordinator.session = shownSession(" up", after: "I wanted to follow")
+        coordinator.markReady(" up")
+        XCTAssertNotNil(coordinator.suggestionExpiryTask)
+        coordinator.clearSuggestion()
+        XCTAssertNil(coordinator.suggestionExpiryTask)
+        XCTAssertNil(coordinator.lastSuggestionActivity)
+    }
+
     // MARK: - Escape
 
     func testEscapeHoldsOnlyTheFieldItWasPressedInAndOnlyBriefly() {

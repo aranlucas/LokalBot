@@ -18,6 +18,8 @@ struct AutocompleteExperienceView: View {
     @State private var task: Task<Void, Never>?
     @State private var topUpTask: Task<Void, Never>?
     @State private var focusRevision = 0
+    /// macOS's own inline predictions, read again each time LokalBot comes forward.
+    @State private var systemPredictionsOn = AutocompleteExperienceView.readSystemPredictions()
 
     private static var openingRehearsal: CotypingRehearsal {
         var rehearsal = CotypingRehearsal()
@@ -70,6 +72,9 @@ struct AutocompleteExperienceView: View {
         Group {
             Section {
                 summary
+                if app.settings.cotypingEnabled && systemPredictionsOn {
+                    systemPredictionsNotice
+                }
                 if !modelReady {
                     CotypingModelPreparationView(compact: true)
                 }
@@ -81,6 +86,35 @@ struct AutocompleteExperienceView: View {
             }
         }
         .onDisappear { task?.cancel() }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            systemPredictionsOn = Self.readSystemPredictions()
+        }
+    }
+
+    private static func readSystemPredictions() -> Bool {
+#if LOKALBOT_UI_TEST_HOST
+        // The test runner's own keyboard settings must not change the layout under test.
+        return ProcessInfo.processInfo.environment["LOKALBOT_SYSTEM_PREDICTIONS_ON"] == "1"
+#else
+        return CotypingSystemInlinePredictions.isOn()
+#endif
+    }
+
+    /// Two grey suggestions at the same caret look broken, so ask for the
+    /// macOS one to be turned off, as Cotypist does.
+    private var systemPredictionsNotice: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label("macOS can show its own inline predictions where you type, so two suggestions may appear at once. Turn off “Show inline predictive text” in Keyboard → Text Input → Edit….",
+                  systemImage: "exclamationmark.triangle")
+                .workspaceTextRole(.warning)
+                .fixedSize(horizontal: false, vertical: true)
+            Button("Open Keyboard Settings") {
+                NSWorkspace.shared.open(CotypingSystemInlinePredictions.keyboardSettingsURL)
+            }
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("autocomplete.systemPredictions")
     }
 
     /// Counters and timings from typing in other apps. They answer what a

@@ -34,6 +34,22 @@ enum CotypingSearchFieldDetector {
     }
 }
 
+/// Open and save dialogs stay quiet, as they do in Cotypist 2026.5: a file
+/// name is not prose to continue. AppKit names the panel's window
+/// `save-panel` or `open-panel` in every language. A sheet on the panel, such
+/// as Go to Folder, is checked through the window it hangs from. Sandboxed
+/// apps show these panels from another process, whose fields
+/// `CotypingAXHelper.resolveFocus` never reads.
+enum CotypingFileDialogDetector {
+    static let panelWindowIdentifiers: Set<String> = ["save-panel", "open-panel"]
+
+    static func isFileDialog(windowIdentifiers: [String?]) -> Bool {
+        windowIdentifiers.contains { identifier in
+            identifier.map(panelWindowIdentifiers.contains) ?? false
+        }
+    }
+}
+
 struct CotypingAcceptanceContentRanges: Equatable, Sendable {
     let preceding: NSRange
     let trailing: NSRange
