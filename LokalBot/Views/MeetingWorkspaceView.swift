@@ -407,9 +407,7 @@ private struct MeetingWorkspaceDetail: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 contentTabPicker
-                    .pickerStyle(.segmented).tint(Brand.tealFill)
                     .controlSize(compactToolbar ? .small : .regular)
-                    .frame(width: compactToolbar ? 250 : 320)
             }
             ToolbarItem(placement: .navigation) {
                 if let section = app.evidenceReturnSection {
@@ -473,11 +471,9 @@ private struct MeetingWorkspaceDetail: View {
     }
 
     private var contentTabPicker: some View {
-        Picker("Meeting content", selection: Binding(get: { tab }, set: { tab = $0 })) {
-            ForEach(MeetingWorkspaceTab.allCases) { Text($0.rawValue).tag($0) }
-        }
-        .labelsHidden()
-        .accessibilityIdentifier("meeting.contentTabs")
+        ToolbarTabs(label: "Meeting content", tabs: MeetingWorkspaceTab.allCases,
+                    selection: Binding(get: { tab }, set: { tab = $0 }), title: \.rawValue)
+            .accessibilityIdentifier("meeting.contentTabs")
     }
 
     private var meetingActionMenuItems: [WorkspaceMenu.Item] {
