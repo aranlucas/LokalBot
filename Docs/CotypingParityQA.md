@@ -22,6 +22,17 @@ LokalBot defaults:
   "Escape on a suggestion" can send the key through instead. A composing input
   method always receives its own Escape.
 - Search fields (`AXSearchField`) stay quiet, as in Cotypist.
+- Autocomplete stays quiet when the model is unsure, as Cotypist does
+  (`CotypingFirstWordConfidence`). A suggestion at the start of a word is
+  dropped when the model's own probability of its first word (the product of
+  its tokens' probabilities, up to the token that ends the word) is below 0.1,
+  and generation stops there. Suggestions inside a word are not gated: their
+  first token is forced to re-type the fragment. Measured on 2026-10-06 (E2B,
+  GitHub issue replies, Serbian tweets, the user's own agent prompts and
+  messages): wrong suggestions shown halve (100–122 → 48–58 per 100 words) for
+  1.4–2.0 points of keystrokes saved, the share of shown suggestions that are
+  right goes from 15–27% to 24–43%, and the median request takes half as long
+  because unsure ones stop after a token or two.
 - The initial/server pause defaults to 160 ms. It controls the first local
   request and the model-server floor; after the first latency sample, the
   in-process route uses 20/25/55 ms adaptive tiers. The settings label states

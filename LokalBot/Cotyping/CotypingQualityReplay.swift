@@ -22,6 +22,8 @@ enum CotypingQualityReplay {
         var useScreenMemory: Bool?
         var memoryNow: Date?
         var useVisibleContext: Bool?
+        /// False turns the confidence gate off, to compare against it.
+        var confidenceGate: Bool?
     }
 
     struct Case: Decodable {
@@ -63,6 +65,7 @@ enum CotypingQualityReplay {
                 throw ReplayError.invalidCases
             }
             let config = try configuration(for: fixture)
+            if fixture.confidenceGate == false { engine.minimumFirstWordProbability = 0 }
             let personalization = CotypingPersonalization(
                 userName: fixture.userName, styleNote: fixture.styleNote,
                 languageHint: fixture.languageHint, isMultiLine: false,

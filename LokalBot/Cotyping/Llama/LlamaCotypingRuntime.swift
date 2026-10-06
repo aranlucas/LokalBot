@@ -91,6 +91,8 @@ actor LlamaCotypingRuntime {
     private var cachedTokens: [Int32] = []
     private var tokenPrefixIndex: CotypingTokenPrefixIndex?
     private(set) var lastPrefillTokenCount: Int = 0
+    /// Reused for the confidence gate's softmax, one float per vocabulary entry.
+    private var probabilityScratch: [Float] = []
     /// When a suggestion was last generated, for the memory-pressure policy.
     private var lastUsedUptime: TimeInterval?
     /// True only for pure-attention models, whose per-position KV cells can be
@@ -471,6 +473,10 @@ actor LlamaCotypingRuntime {
     ///     avoid (free decode after "…tomorro" can emit "ow."). Prefer a
     ///     boundary-crossing candidate that keeps spelling the word — Cotypist's
     ///     transition-expansion behavior.
+    ///   - minimumFirstWordProbability: the confidence gate
+    ///     (`CotypingFirstWordConfidence`); 0 turns it off. When the first
+    ///     word falls below it, generation stops, `onLowConfidence` is called
+    ///     and nothing is returned.
     func generate(
         promptTokens: [Int32],
         maxTokens: Int,
@@ -478,6 +484,8 @@ actor LlamaCotypingRuntime {
         stopAtArgmaxEOG: Bool = true,
         requiredPrefixUTF8: [UInt8] = [],
         preferWordExtendingOvershoot: Bool = false,
+        minimumFirstWordProbability: Float = 0,
+        onLowConfidence: @Sendable () -> Void = {},
         onToken: @Sendable (String) -> Bool
     ) throws -> String {
         guard let ctx, let vocab, !promptTokens.isEmpty else { return "" }
@@ -540,6 +548,12 @@ actor LlamaCotypingRuntime {
         var output = ""
         var textDecoder = CotypingUTF8TokenDecoder()
         var pos = Int32(promptTokens.count)
+        var confidence = CotypingFirstWordConfidence(minimum: minimumFirstWordProbability)
+        func confident(_ token: Int32, _ piece: String) -> Bool {
+            guard !confidence.isSettled else { return true }
+            let probability = tokenProbability(token, ctx: ctx, vocab: vocab)
+            return confidence.accept(piece: piece, probability: probability)
+        }
 
         // Constrained phase: force-decode the healed word fragment. Each step
         // consumes >=1 byte, so the loop terminates in <=count steps.
@@ -563,6 +577,7 @@ actor LlamaCotypingRuntime {
             case .overshoots(let extraBytes):
                 remaining = remaining.dropFirst(remaining.count)
                 guard let text = textDecoder.append(extraBytes) else { return "" }
+                guard confident(tok, text) else { onLowConfidence(); return "" }
                 output += text
                 if !text.isEmpty, !onToken(text) { constraintStopped = true }
             case .mismatch:
@@ -582,6 +597,7 @@ actor LlamaCotypingRuntime {
             if llama_vocab_is_eog(vocab, tok) { break }
             llama_sampler_accept(sampler, tok)
             guard let text = textDecoder.append(pieceBytes(for: tok)) else { return "" }
+            guard confident(tok, text) else { onLowConfidence(); return "" }
             output += text
             if !text.isEmpty, !onToken(text) { break }
             // A mid-generation decode failure discards the partial output and
@@ -591,6 +607,40 @@ actor LlamaCotypingRuntime {
             pos += 1
         }
         return output
+    }
+
+    /// The model's probability of `token` given the current logits (softmax at
+    /// temperature 1, whatever the sampler's settings). Unknown is 0, which
+    /// keeps the gate closed rather than showing an unweighed suggestion.
+    private func tokenProbability(_ token: Int32, ctx: OpaquePointer, vocab: OpaquePointer) -> Float {
+        let vocabularySize = Int(llama_vocab_n_tokens(vocab))
+        if probabilityScratch.count != vocabularySize {
+            probabilityScratch = [Float](repeating: 0, count: vocabularySize)
+        }
+        return probabilityScratch.withUnsafeMutableBufferPointer { scratch in
+            Self.probability(of: token, in: llama_get_logits_ith(ctx, -1), scratch: scratch)
+        } ?? 0
+    }
+
+    /// Softmax probability of `token`, vectorized over the whole vocabulary.
+    /// `scratch` holds one float per vocabulary entry and is overwritten.
+    nonisolated static func probability(
+        of token: Int32, in logits: UnsafePointer<Float>?, scratch: UnsafeMutableBufferPointer<Float>
+    ) -> Float? {
+        guard let logits, let buffer = scratch.baseAddress, !scratch.isEmpty,
+              token >= 0, Int(token) < scratch.count else { return nil }
+        let count = vDSP_Length(scratch.count)
+        var maximum: Float = 0
+        vDSP_maxv(logits, 1, &maximum, count)
+        guard maximum.isFinite else { return nil }
+        var negativeMaximum = -maximum
+        vDSP_vsadd(logits, 1, &negativeMaximum, buffer, 1, count)
+        var length = Int32(scratch.count)
+        vvexpf(buffer, buffer, &length)
+        var sum: Float = 0
+        vDSP_sve(buffer, 1, &sum, count)
+        guard sum > 0, sum.isFinite else { return nil }
+        return buffer[Int(token)] / sum
     }
 
     private func argmaxTokenIsEOG(ctx: OpaquePointer, vocab: OpaquePointer) -> Bool {
