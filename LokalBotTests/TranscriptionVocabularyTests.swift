@@ -115,4 +115,30 @@ final class TranscriptionVocabularyTests: XCTestCase {
         let sources = TranscriptionVocabulary.recentSources(library: meetings, memory: nil, now: now)
         XCTAssertEqual(sources.attendeeNames, ["Frequent Person", "Rare Person"])
     }
+
+    /// A merged meeting's applied names carry "· source N", and labels such as
+    /// "Them 6" name nobody; fed to the recognizer they came back as rows.
+    func testTermsDropMergedAndPlaceholderSpeakerLabelsAndDepartmentTitleWords() throws {
+        let merged = try meeting("Product standup", day: -1, attendees: [],
+                                 aliases: ["them": "Them 6 · source 2", "local 2": "Mila Novak · source 1",
+                                           "them 3": "Speaker unclear", "local": "Local speaker"])
+        let current = try meeting("Product standup", day: 0, attendees: [("Ana Horvat", nil)])
+
+        let terms = TranscriptionVocabulary.terms(TranscriptionVocabulary.sources(
+            for: current, library: [merged, current], root: root, memory: nil))
+
+        XCTAssertEqual(terms, ["Ana Horvat", "Mila Novak"],
+                       "the series still relates the meetings; the suffix is stripped, labels and 'Product' are out")
+    }
+
+    func testSavedPromptReusesTheMeetingsOwnTerms() throws {
+        let folder = root.appendingPathComponent("saved", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        XCTAssertEqual(TranscriptionVocabulary.savedPrompt(manual: "LokalBot", in: folder), "LokalBot")
+
+        try TranscriptionVocabulary.save(.init(terms: ["Mila Novak", "Acme"], createdAt: Date()), to: folder)
+
+        XCTAssertEqual(TranscriptionVocabulary.savedPrompt(manual: "LokalBot", in: folder),
+                       "LokalBot\nMila Novak, Acme.")
+    }
 }

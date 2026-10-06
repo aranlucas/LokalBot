@@ -103,6 +103,79 @@ final class TranscriptSanitizerTests: XCTestCase {
         XCTAssertEqual(result.removedWords, 133)
     }
 
+    func testDropsRowsThatOnlyRepeatTheVocabularyPrompt() {
+        let prompt = "LokalBot\nThem 6 · source 2, Mila Novak, Orion Launch, Acme."
+        let transcript = makeTranscript(rows: [
+            ("We ship the Orion Launch next week.", 3),
+            ("Them 6 · source 2, Mila Novak, Orion Launch, Acme.", 3),
+            ("Orion Launch, Acme.", 2),
+            ("Acme, Mila Novak.", 2),
+            ("LokalBot LokalBot.", 1),
+            ("Mila Novak.", 1),
+            ("Acme", 1),
+        ])
+
+        let result = TranscriptSanitizer.sanitize(transcript, prompt: prompt)
+
+        XCTAssertEqual(result.transcript.segments.map(\.text),
+                       ["We ship the Orion Launch next week.", "Mila Novak.", "Acme"],
+                       "a row of listed terms is the hint; one term or one word may be speech")
+        XCTAssertEqual(result.transcript.segments.map(\.start), [10, 60, 70])
+        XCTAssertEqual(result.removedSegments, 4)
+        XCTAssertEqual(result.changedSegments, 0)
+        XCTAssertTrue(result.changed)
+        XCTAssertFalse(TranscriptSanitizer.sanitize(transcript).changed, "without the prompt no row is an echo")
+        XCTAssertFalse(TranscriptSanitizer.sanitize(result.transcript, prompt: prompt).changed)
+    }
+
+    func testDropsPreciselyTimedRowsTooFastForSpeech() {
+        let eightWords = "alpha beta gamma delta epsilon zeta eta theta."
+        let cases: [(precision: Transcript.Segment.TimingPrecision?, text: String, duration: TimeInterval, dropped: Bool)] = [
+            (.token, eightWords, 0.6, true),
+            (.span, eightWords, 0.6, true),
+            (.coarse, eightWords, 0.6, false),
+            (nil, eightWords, 0.6, false),
+            (.token, eightWords, 2, false),
+            (.token, "alpha beta gamma delta epsilon zeta eta.", 0.5, false),
+        ]
+        for item in cases {
+            var transcript = makeTranscript(text: item.text, duration: item.duration)
+            transcript.segments[0].timingPrecision = item.precision
+            let result = TranscriptSanitizer.sanitize(transcript)
+            let label = "\(String(describing: item.precision)) \(item.text) \(item.duration)s"
+            XCTAssertEqual(result.transcript.segments.isEmpty, item.dropped, label)
+            XCTAssertEqual(result.removedSegments, item.dropped ? 1 : 0, label)
+            XCTAssertEqual(result.changed, item.dropped, label)
+        }
+    }
+
+    func testPreciselyTimedFillerLoopCollapsesInsteadOfDisappearing() {
+        let loop = Array(repeating: "oh", count: 64).joined(separator: " ")
+        var transcript = makeTranscript(text: "\(loop).", duration: 1.3)
+        transcript.segments[0].timingPrecision = .span
+
+        let result = TranscriptSanitizer.sanitize(transcript)
+
+        XCTAssertEqual(result.transcript.segments.map(\.text), ["oh oh."])
+        XCTAssertEqual(result.removedSegments, 0)
+        XCTAssertEqual(result.removedWords, 62)
+    }
+
+    /// Microphone rows like the ones a prompt echo produced: speaker "local",
+    /// identity user, one row every ten seconds.
+    private func makeTranscript(rows: [(text: String, duration: TimeInterval)]) -> Transcript {
+        let segments = rows.enumerated().map { index, row in
+            Transcript.Segment(
+                start: 10 + Double(index) * 10,
+                end: 10 + Double(index) * 10 + row.duration,
+                speaker: "local",
+                text: row.text,
+                confidence: 0.7,
+                attribution: .init(source: .microphone, identity: .user, method: .track))
+        }
+        return Transcript(segments: segments, engine: "test")
+    }
+
     private func makeTranscript(text: String, duration: TimeInterval) -> Transcript {
         Transcript(
             segments: [.init(
