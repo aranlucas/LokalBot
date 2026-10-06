@@ -475,7 +475,8 @@ struct AppSettings: Codable, Equatable {
     /// Separately opt in to relevant meeting notes/outcomes and attributed work
     /// memory. Screen-derived facts require their independent permission too.
     /// Transient Accessibility text above the focused field. Separate from saved screen memory.
-    var cotypingUseVisibleContext: Bool = false
+    /// On for new installs; settings saved before this default keep theirs (see the decoder).
+    var cotypingUseVisibleContext: Bool = true
     var cotypingUseMeetingMemory: Bool = false
     var cotypingUseScreenMemory: Bool = false
     /// Match the host field's font and text color so ghost text reads as a
@@ -1143,7 +1144,9 @@ struct AppSettings: Codable, Equatable {
             defaults.cotypingSuggestInIntegratedTerminals)
         cotypingUseAppContext = decode(.cotypingUseAppContext, defaults.cotypingUseAppContext)
         cotypingUseClipboard = decode(.cotypingUseClipboard, defaults.cotypingUseClipboard)
-        cotypingUseVisibleContext = decode(.cotypingUseVisibleContext, defaults.cotypingUseVisibleContext)
+        // Saved settings without the key predate it and keep it off: the
+        // on-by-default applies to new installs only.
+        cotypingUseVisibleContext = decode(.cotypingUseVisibleContext, false)
         cotypingUseMeetingMemory = decode(.cotypingUseMeetingMemory, defaults.cotypingUseMeetingMemory)
         cotypingUseScreenMemory = decode(.cotypingUseScreenMemory, defaults.cotypingUseScreenMemory)
         cotypingMatchHostStyle = decode(.cotypingMatchHostStyle, defaults.cotypingMatchHostStyle)

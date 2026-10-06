@@ -79,12 +79,17 @@ final class AutocompleteRehearsalUITests: XCTestCase {
         _ = try openRehearsal()
         let conversation = app.descendants(matching: .any)["autocomplete.rehearsal.conversation"]
         XCTAssertTrue(conversation.waitForExistence(timeout: 5))
-        // Every optional source is off by default, and the rehearsal says so.
+        // Visible text is on for new installs; the memory sources are off,
+        // and the rehearsal says so.
         for source in ["visible", "meetings", "screen"] {
             let row = app.descendants(matching: .any)["autocomplete.rehearsal.context.\(source)"]
             XCTAssertTrue(row.exists, "missing context row: \(source)")
             let text = row.label.isEmpty ? (row.value as? String ?? "") : row.label
-            XCTAssertTrue(text.hasSuffix(": Off"), "\(source) should read as off, not '\(text)'")
+            if source == "visible" {
+                XCTAssertFalse(text.hasSuffix(": Off"), "visible text should read as on, not '\(text)'")
+            } else {
+                XCTAssertTrue(text.hasSuffix(": Off"), "\(source) should read as off, not '\(text)'")
+            }
         }
     }
 
