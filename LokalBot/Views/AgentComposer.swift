@@ -15,6 +15,7 @@ struct AgentComposer: View {
     @State private var pendingMode: AgentApprovalMode?
     @State private var submitting = false
     @State private var queueExpanded = true
+    @State private var resolvedReasoning: ResolvedReasoningSupport?
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -134,7 +135,56 @@ struct AgentComposer: View {
                 .menuStyle(.borderlessButton).fixedSize()
                 .help(controller.approvalMode.detail).accessibilityLabel("Agent approval mode")
                 .accessibilityValue(controller.approvalMode.title).accessibilityIdentifier("agent.approvalMode")
+            if reasoningSupport.isAdjustable { reasoningMenu }
         }.font(AppFont.scaled(.callout).weight(.semibold)).foregroundStyle(.primary)
+    }
+
+    /// The launched model's levels, or the selected model's before launch.
+    private var reasoningSupport: ReasoningSupport {
+        controller.reasoningSupport ?? resolvedReasoning?.support(for: app.settings) ?? .known(for: app.settings)
+    }
+
+    /// Agent Mode's own level, or the Think level from Settings → Models,
+    /// offering only the levels the model accepts.
+    private var reasoningMenu: some View {
+        let support = reasoningSupport
+        let chosen = app.settings.agentReasoningLevel
+        let shown = support.displayed(app.settings.effectiveAgentReasoningLevel)
+        let checked = chosen.map(support.displayed)
+        let sameAsThink = "Same as Think (\(support.displayed(app.settings.thinkReasoningLevel).displayName))"
+        func choose(_ level: ThinkReasoningLevel?) {
+            app.settings.agentReasoningLevel = level
+            controller.reasoningLevelDidChange()
+        }
+        return Menu {
+            Button {
+                choose(nil)
+            } label: {
+                if chosen == nil { Label(sameAsThink, systemImage: "checkmark") } else { Text(sameAsThink) }
+            }
+            Divider()
+            ForEach([ThinkReasoningLevel.automatic] + support.levels) { level in
+                Button {
+                    choose(level)
+                } label: {
+                    let title = level == .automatic ? support.automaticTitle : level.displayName
+                    if checked == level {
+                        Label(title, systemImage: "checkmark")
+                    } else {
+                        Text(title)
+                    }
+                }
+            }
+        } label: { Label("Reasoning: \(shown.displayName)", systemImage: "brain").lineLimit(1) }
+            .menuStyle(.borderlessButton).fixedSize()
+            .help("How much the agent reasons before each step, from the levels this model accepts. "
+                  + "Same as Think follows Settings → Models. A change applies from the agent's next step.")
+            .accessibilityLabel("Agent reasoning level")
+            .accessibilityValue(chosen == nil ? "Same as Think, \(shown.displayName)" : shown.displayName)
+            .accessibilityIdentifier("agent.reasoning")
+            .task(id: ReasoningSupport.lookupKey(for: app.settings)) {
+                resolvedReasoning = await .resolve(for: app.settings)
+            }
     }
 
     @ViewBuilder private var sendControls: some View {

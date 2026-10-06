@@ -139,28 +139,66 @@ final class TextEngineTests: XCTestCase {
         XCTAssertEqual(body["temperature"] as? Double, 0.2)
     }
 
-    func testReasoningLevelIsTheDefaultBudgetAndACeilingForTaskBudgets() {
-        XCTAssertNil(ThinkReasoningLevel.automatic.applied(to: nil))
-        XCTAssertEqual(ThinkReasoningLevel.automatic.applied(to: .init(reasoningBudgetTokens: 1_024)),
-                       .init(reasoningBudgetTokens: 1_024))
-        XCTAssertEqual(ThinkReasoningLevel.medium.applied(to: nil)?.reasoningBudgetTokens, 4_096)
-        XCTAssertEqual(ThinkReasoningLevel.low.applied(
-            to: .init(maxTokens: 900, reasoningBudgetTokens: 1_024, temperature: 0.3)),
-            .init(maxTokens: 900, reasoningBudgetTokens: 512, temperature: 0.3))
-        XCTAssertEqual(ThinkReasoningLevel.high.applied(to: .init(reasoningBudgetTokens: 0))?
-            .reasoningBudgetTokens, 0)
-        XCTAssertEqual(ThinkReasoningLevel.off.applied(to: .init(reasoningBudgetTokens: 256))?
-            .reasoningBudgetTokens, 0)
-        XCTAssertEqual(ThinkReasoningLevel.allCases.compactMap(\.budgetTokens)
-            .map(ThinkReasoningLevel.effort(forBudget:)), ["none", "low", "medium", "high"])
+    func testRequestLevelIsTheChosenLevelCappedByTheTaskAndClampedToTheModel() {
+        let common = ReasoningSupport.common
+        XCTAssertNil(common.requestLevel(.automatic, taskBudget: nil))
+        XCTAssertEqual(common.requestLevel(.medium, taskBudget: nil), .medium)
+        XCTAssertEqual(common.requestLevel(.high, taskBudget: 256), .low)
+        XCTAssertEqual(common.requestLevel(.high, taskBudget: 1_024), .medium)
+        XCTAssertEqual(common.requestLevel(.high, taskBudget: 0), .off)
+        XCTAssertEqual(common.requestLevel(.low, taskBudget: 8_192), .low)
+
+        // GLM 5.3 on OpenRouter: low/high/max and no way to switch it off.
+        let glm = ReasoningSupport(levels: [.max, .low, .high])
+        XCTAssertEqual(glm.levels, [.low, .high, .max])
+        XCTAssertEqual(glm.clamp(.medium), .low)
+        XCTAssertEqual(glm.clamp(.off), .low)
+        XCTAssertEqual(glm.clamp(.xhigh), .high)
+        XCTAssertEqual(glm.displayed(.medium), .low)
+        XCTAssertEqual(glm.displayed(.automatic), .automatic)
+
+        XCTAssertNil(ReasoningSupport.unavailable.requestLevel(.high, taskBudget: nil))
+        XCTAssertEqual(ReasoningSupport.unavailable.displayed(.high), .automatic)
+        XCTAssertEqual(ThinkReasoningLevel(effort: "none"), .off)
+        XCTAssertEqual(ThinkReasoningLevel(effort: "xhigh"), .xhigh)
+        XCTAssertNil(ThinkReasoningLevel(effort: "automatic"))
     }
 
-    func testGenericServerReceivesTheChosenReasoningEffort() throws {
+    func testKnownReasoningLevelsFollowProviderAndModel() {
+        func levels(_ provider: ReasoningSupport.Provider, _ model: String) -> [ThinkReasoningLevel] {
+            ReasoningSupport.known(provider: provider, model: model).levels
+        }
+        // Cerebras's documented values.
+        XCTAssertEqual(levels(.cerebras, "qwen-3.8-27b"), [.off, .low, .medium, .high])
+        XCTAssertEqual(ReasoningSupport.known(provider: .cerebras, model: "qwen-3.8-27b").defaultLevel, .high)
+        XCTAssertEqual(levels(.cerebras, "gpt-oss-120b"), [.low, .medium, .high])
+        XCTAssertEqual(levels(.cerebras, "gemma-4-31b"), [.off, .low, .medium, .high])
+        XCTAssertEqual(levels(.cerebras, "kimi-k2.7-code"), [])
+        // OpenAI generations.
+        XCTAssertEqual(levels(.openAI, "o3-mini"), [.low, .medium, .high])
+        XCTAssertEqual(levels(.openAI, "gpt-5-mini"), [.minimal, .low, .medium, .high])
+        XCTAssertEqual(levels(.openAI, "gpt-5.1"), [.off, .low, .medium, .high])
+        XCTAssertEqual(levels(.openAI, "gpt-5.4-mini"), [.off, .low, .medium, .high, .xhigh])
+        XCTAssertEqual(levels(.openAI, "gpt-4.1-mini"), [])
+        // Built-in models.
+        XCTAssertEqual(levels(.builtIn, "qwen3.5-4b"), [.off, .low, .medium, .high])
+        XCTAssertEqual(levels(.builtIn, "lfm2.5-2.6b"), [.low, .medium, .high])
+        XCTAssertEqual(levels(.builtIn, "ministral-3-3b-instruct-2512"), [])
+        // Unlisted servers and models.
+        XCTAssertEqual(levels(.openRouter, "openai/gpt-5.4-mini"), [.off, .low, .medium, .high, .xhigh])
+        XCTAssertEqual(levels(.generic, "gpt-oss-20b"), [.low, .medium, .high])
+        XCTAssertEqual(levels(.generic, "some-model"), [.off, .low, .medium, .high])
+        XCTAssertEqual(levels(.ollama, "qwen3:8b"), [.off])
+        XCTAssertEqual(ReasoningSupport.Provider(dialect: .generic, baseURL: URL(string: "https://api.cerebras.ai/v1")!),
+                       .cerebras)
+    }
+
+    func testCerebrasRequestCarriesTheChosenEffortCappedByTheTask() throws {
         let engine = OpenAICompatibleEngine(
             baseURL: URL(string: "https://api.cerebras.ai/v1")!,
             model: "qwen-3.8-27b",
             apiKey: "test-token",
-            reasoningLevel: .low)
+            reasoningLevel: .medium)
 
         func body(_ options: TextGenerationOptions?, fallback: Bool = false) throws -> [String: Any] {
             let request = try engine.makeChatRequest(system: "system", prompt: "prompt", context: [],
@@ -170,7 +208,8 @@ final class TextEngineTests: XCTestCase {
                 with: XCTUnwrap(request.httpBody)) as? [String: Any])
         }
 
-        XCTAssertEqual(try body(nil)["reasoning_effort"] as? String, "low")
+        XCTAssertEqual(try body(nil)["reasoning_effort"] as? String, "medium")
+        XCTAssertEqual(try body(.init(reasoningBudgetTokens: 256))["reasoning_effort"] as? String, "low")
         XCTAssertEqual(try body(.init(reasoningBudgetTokens: 0))["reasoning_effort"] as? String, "none")
         XCTAssertEqual(try body(.init(reasoningBudgetTokens: 0), fallback: true)["reasoning_effort"] as? String,
                        "low")
@@ -178,97 +217,106 @@ final class TextEngineTests: XCTestCase {
         XCTAssertNil(try body(nil)["thinking_budget_tokens"])
     }
 
-    func testBuiltInReasoningLevelSetsTheThinkingBudget() {
-        var off: [String: Any] = [:]
-        OpenAICompatibleEngine.applyGenerationOptions(
-            to: &off,
-            options: ThinkReasoningLevel.off.applied(to: nil),
-            defaultThinkingBudgetTokens: MainLLMRuntimePolicy.highReasoningBudgetTokens,
-            dialect: .llamaServer,
-            model: "local",
-            reasoningLevel: .off)
-        XCTAssertEqual(off["thinking_budget_tokens"] as? Int, 0)
-        XCTAssertEqual((off["chat_template_kwargs"] as? [String: Any])?["enable_thinking"] as? Bool, false)
+    func testRequestLevelIsClampedToWhatTheModelAccepts() throws {
+        let gptOss = OpenAICompatibleEngine(
+            baseURL: URL(string: "https://api.cerebras.ai/v1")!, model: "gpt-oss-120b", reasoningLevel: .off)
+        let kimi = OpenAICompatibleEngine(
+            baseURL: URL(string: "https://api.cerebras.ai/v1")!, model: "kimi-k2.7-code", reasoningLevel: .high)
+        let glm = OpenAICompatibleEngine(
+            baseURL: URL(string: "https://openrouter.ai/api/v1")!, model: "z-ai/glm-5.3-flash",
+            chatDialect: .openRouter, reasoningLevel: .medium,
+            reasoningSupport: ReasoningSupport(levels: [.low, .high, .max]))
 
-        var medium: [String: Any] = [:]
-        OpenAICompatibleEngine.applyGenerationOptions(
-            to: &medium,
-            options: ThinkReasoningLevel.medium.applied(to: nil),
-            defaultThinkingBudgetTokens: MainLLMRuntimePolicy.highReasoningBudgetTokens,
-            dialect: .llamaServer,
-            model: "local",
-            reasoningLevel: .medium)
-        XCTAssertEqual(medium["thinking_budget_tokens"] as? Int, 4_096)
-        XCTAssertNil(medium["reasoning_effort"])
+        XCTAssertEqual(gptOss.requestLevel(for: nil), .low, "gpt-oss cannot switch reasoning off")
+        XCTAssertNil(kimi.requestLevel(for: nil), "a model without a control gets no field")
+        let request = try glm.makeChatRequest(system: "s", prompt: "p", context: [], schema: nil,
+                                              options: .init(temperature: 0.2))
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: Any])
+        let reasoning = try XCTUnwrap(body["reasoning"] as? [String: Any])
+        XCTAssertEqual(reasoning["effort"] as? String, "low")
+        XCTAssertEqual(reasoning["exclude"] as? Bool, true)
+        XCTAssertNil(body["temperature"])
+        XCTAssertEqual((body["provider"] as? [String: Any])?["require_parameters"] as? Bool, true)
     }
 
-    func testOpenAIReasoningLevelOffSendsNoneAndRetriesAtLow() {
-        func body(level: ThinkReasoningLevel, fallback: Bool) -> [String: Any] {
+    func testBuiltInReasoningLevelSetsTheThinkingBudget() {
+        func body(_ level: ThinkReasoningLevel, options: TextGenerationOptions? = nil) -> [String: Any] {
             var body: [String: Any] = [:]
             OpenAICompatibleEngine.applyGenerationOptions(
                 to: &body,
-                options: level.applied(to: .init(reasoningBudgetTokens: 0)),
+                options: options,
+                defaultThinkingBudgetTokens: MainLLMRuntimePolicy.highReasoningBudgetTokens,
+                dialect: .llamaServer,
+                model: "local",
+                requestLevel: level)
+            return body
+        }
+
+        let off = body(.off)
+        XCTAssertEqual(off["thinking_budget_tokens"] as? Int, 0)
+        XCTAssertEqual((off["chat_template_kwargs"] as? [String: Any])?["enable_thinking"] as? Bool, false)
+        XCTAssertEqual(body(.medium)["thinking_budget_tokens"] as? Int, 4_096)
+        XCTAssertEqual(body(.high, options: .init(maxTokens: 2_000))["thinking_budget_tokens"] as? Int, 1_000)
+        XCTAssertNil(body(.medium)["reasoning_effort"])
+    }
+
+    func testOpenAIReasoningLevelOffSendsNoneAndRetriesAtLow() {
+        func body(_ level: ThinkReasoningLevel?, fallback: Bool) -> [String: Any] {
+            var body: [String: Any] = [:]
+            OpenAICompatibleEngine.applyGenerationOptions(
+                to: &body,
+                options: .init(reasoningBudgetTokens: 0),
                 defaultThinkingBudgetTokens: nil,
                 dialect: .openAI,
                 model: "gpt-5.4-mini",
-                reasoningLevel: level,
+                requestLevel: level,
                 reasoningFallback: fallback)
             return body
         }
 
-        XCTAssertEqual(body(level: .off, fallback: false)["reasoning_effort"] as? String, "none")
-        XCTAssertEqual(body(level: .off, fallback: true)["reasoning_effort"] as? String, "low")
-        XCTAssertNil(body(level: .automatic, fallback: false)["reasoning_effort"])
+        XCTAssertEqual(body(.off, fallback: false)["reasoning_effort"] as? String, "none")
+        XCTAssertEqual(body(.off, fallback: true)["reasoning_effort"] as? String, "low")
+        XCTAssertEqual(body(.xhigh, fallback: false)["reasoning_effort"] as? String, "xhigh")
+        XCTAssertNil(body(nil, fallback: false)["reasoning_effort"])
     }
 
     func testRejectedReasoningLevelRetriesOnceWhenTheServerNamesReasoning() {
         let rejected = TextEngineError.httpStatus(
             code: 400, detail: "Unsupported value for reasoning_effort: 'none'", retryAfter: nil)
+        func retries(_ dialect: ChatCompletionDialect, _ level: ThinkReasoningLevel?,
+                     _ error: Error = rejected, usedFallback: Bool = false) -> Bool {
+            OpenAICompatibleEngine.shouldRetryRejectedReasoningLevel(
+                dialect: dialect, requestLevel: level, error: error, usedFallback: usedFallback)
+        }
 
-        XCTAssertTrue(OpenAICompatibleEngine.shouldRetryRejectedReasoningLevel(
-            dialect: .generic, level: .off, error: rejected, usedFallback: false,
-            requestedReasoningBudget: 0))
-        XCTAssertTrue(OpenAICompatibleEngine.shouldRetryRejectedReasoningLevel(
-            dialect: .generic, level: .high, error: TextEngineError.httpStatus(
-                code: 422, detail: "unknown field reasoning_effort", retryAfter: nil),
-            usedFallback: false, requestedReasoningBudget: 8_192))
-        XCTAssertTrue(OpenAICompatibleEngine.shouldRetryRejectedReasoningLevel(
-            dialect: .openAI, level: .off, error: rejected, usedFallback: false,
-            requestedReasoningBudget: 0))
-        XCTAssertFalse(OpenAICompatibleEngine.shouldRetryRejectedReasoningLevel(
-            dialect: .openAI, level: .low, error: rejected, usedFallback: false,
-            requestedReasoningBudget: 512))
-        XCTAssertFalse(OpenAICompatibleEngine.shouldRetryRejectedReasoningLevel(
-            dialect: .generic, level: .off, error: rejected, usedFallback: true,
-            requestedReasoningBudget: 0))
-        XCTAssertFalse(OpenAICompatibleEngine.shouldRetryRejectedReasoningLevel(
-            dialect: .generic, level: .automatic, error: rejected, usedFallback: false,
-            requestedReasoningBudget: 0))
-        XCTAssertFalse(OpenAICompatibleEngine.shouldRetryRejectedReasoningLevel(
-            dialect: .llamaServer, level: .off, error: rejected, usedFallback: false,
-            requestedReasoningBudget: 0))
-        XCTAssertFalse(OpenAICompatibleEngine.shouldRetryRejectedReasoningLevel(
-            dialect: .generic, level: .off, error: TextEngineError.httpStatus(
-                code: 400, detail: "context length exceeded", retryAfter: nil),
-            usedFallback: false, requestedReasoningBudget: 0))
-        XCTAssertFalse(OpenAICompatibleEngine.shouldRetryRejectedReasoningLevel(
-            dialect: .generic, level: .off, error: TextEngineError.httpStatus(
-                code: 500, detail: "reasoning backend failed", retryAfter: nil),
-            usedFallback: false, requestedReasoningBudget: 0))
+        XCTAssertTrue(retries(.generic, .off))
+        XCTAssertTrue(retries(.generic, .high, TextEngineError.httpStatus(
+            code: 422, detail: "unknown field reasoning_effort", retryAfter: nil)))
+        XCTAssertTrue(retries(.openAI, .off))
+        XCTAssertFalse(retries(.openAI, .low))
+        XCTAssertFalse(retries(.generic, .off, usedFallback: true))
+        XCTAssertFalse(retries(.generic, nil))
+        XCTAssertFalse(retries(.llamaServer, .off))
+        XCTAssertFalse(retries(.generic, .off, TextEngineError.httpStatus(
+            code: 400, detail: "context length exceeded", retryAfter: nil)))
+        XCTAssertFalse(retries(.generic, .off, TextEngineError.httpStatus(
+            code: 500, detail: "reasoning backend failed", retryAfter: nil)))
     }
 
     func testOllamaReasoningLevelTurnsThinkingOffOrGradesGptOss() {
         let off = OllamaEngine.chatBody(model: "qwen3:8b", system: "s", user: "u", schema: nil,
-                                        options: nil, reasoningLevel: .off)
+                                        options: nil, requestLevel: .off)
         XCTAssertEqual(off["think"] as? Bool, false)
 
         let gptOss = OllamaEngine.chatBody(model: "gpt-oss:20b", system: "s", user: "u", schema: nil,
-                                           options: nil, reasoningLevel: .high)
+                                           options: nil, requestLevel: .high)
         XCTAssertEqual(gptOss["think"] as? String, "high")
 
-        let qwen = OllamaEngine.chatBody(model: "qwen3:8b", system: "s", user: "u", schema: nil,
-                                         options: nil, reasoningLevel: .high)
-        XCTAssertNil(qwen["think"])
+        XCTAssertEqual(OllamaEngine.reasoningSupport(model: "qwen3:8b", capabilities: ["completion", "thinking"]).levels,
+                       [.off])
+        XCTAssertEqual(OllamaEngine.reasoningSupport(model: "gpt-oss:20b", capabilities: ["thinking"]).levels,
+                       [.low, .medium, .high])
+        XCTAssertEqual(OllamaEngine.reasoningSupport(model: "llama3.3", capabilities: ["completion"]), .unavailable)
     }
 
     func testOfficialOpenAIUsesModernReasoningFieldsWithoutSamplingExtension() throws {

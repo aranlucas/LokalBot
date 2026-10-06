@@ -67,6 +67,7 @@ final class ThinkExecution {
                 defaultThinkingBudgetTokens:
                     MainLLMRuntimePolicy.highReasoningBudgetTokens,
                 reasoningLevel: settings.thinkReasoningLevel,
+                reasoningSupport: .known(provider: .builtIn, model: entry.id),
                 displayNameOverride: "Built-in — \(entry.displayName)")
             guard let role = InferenceRole(serverPort: server.port) else {
                 try await server.ensureRunning(modelAt: modelURL)
@@ -97,9 +98,13 @@ final class ThinkExecution {
             if model.isEmpty {
                 model = await OllamaEngine.listModels(baseURL: url).first ?? ""
             }
+            // Only a chosen level needs to know what the model accepts.
+            let support = settings.thinkReasoningLevel == .automatic || model.isEmpty ? nil
+                : await OllamaEngine.reasoningSupport(baseURL: url, model: model)
             return GatedTextEngine(
                 base: OllamaEngine(baseURL: url, model: model,
-                                   reasoningLevel: settings.thinkReasoningLevel),
+                                   reasoningLevel: settings.thinkReasoningLevel,
+                                   reasoningSupport: support),
                 origin: RemoteInferenceGate.origin(for: url),
                 priority: priority,
                 purpose: purpose)
@@ -117,7 +122,9 @@ final class ThinkExecution {
                 apiKey: includingCredentials ? settings.openAIAPIKey : nil,
                 chatDialect: .inferred(from: url),
                 openRouterDataPolicy: settings.openRouterDataPolicy,
-                reasoningLevel: settings.thinkReasoningLevel)
+                reasoningLevel: settings.thinkReasoningLevel,
+                reasoningSupport: settings.thinkReasoningLevel == .automatic
+                    ? nil : await ReasoningSupport.resolve(for: settings))
             // External servers share one gate per origin so scheduled work
             // cannot crowd out meeting notes or chat, and a rate limit pauses
             // every caller instead of each replaying a second later.
@@ -189,7 +196,8 @@ final class ThinkExecution {
                 baseURL: server.baseURL,
                 model: entry.id,
                 contextTokens: AgentLLMEndpoint.defaultContextTokens,
-                apiKey: authenticationToken)
+                apiKey: authenticationToken,
+                reasoningDialect: .llamaServer)
             return AgentLLMConnection(endpoint: endpoint, lease: lease)
 
         case .unsupported(let reason):
@@ -241,7 +249,8 @@ final class ThinkExecution {
                 baseURL: base.appendingPathComponent("v1"),
                 model: settings.ollamaModel,
                 contextTokens: AgentLLMEndpoint.defaultContextTokens,
-                apiKey: nil))
+                apiKey: nil,
+                reasoningDialect: .ollama))
 
         case .openAICompatible:
             guard let base = URL(string: settings.openAIBaseURL) else {
@@ -270,7 +279,8 @@ final class ThinkExecution {
                 baseURL: base,
                 model: settings.openAIModel,
                 contextTokens: AgentLLMEndpoint.defaultContextTokens,
-                apiKey: key.isEmpty ? nil : key))
+                apiKey: key.isEmpty ? nil : key,
+                reasoningDialect: AgentReasoningDialect(.inferred(from: base))))
         }
     }
 

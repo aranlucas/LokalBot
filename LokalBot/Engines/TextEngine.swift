@@ -64,57 +64,6 @@ struct TextGenerationOptions: Equatable, Sendable {
     }
 }
 
-/// The user's reasoning preference for the Think role. Automatic keeps each
-/// task's own budget and leaves an external server at its default. A chosen
-/// level is the budget for tasks that set none and a ceiling for tasks that
-/// do, so a task tuned for no reasoning never starts reasoning.
-enum ThinkReasoningLevel: String, Codable, CaseIterable, Identifiable, Sendable {
-    case automatic
-    case off
-    case low
-    case medium
-    case high
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .automatic: "Automatic"
-        case .off: "Off"
-        case .low: "Low"
-        case .medium: "Medium"
-        case .high: "High"
-        }
-    }
-
-    /// Budgets chosen to map back onto the same named effort for servers
-    /// that take an effort instead of a token count.
-    var budgetTokens: Int? {
-        switch self {
-        case .automatic: nil
-        case .off: 0
-        case .low: 512
-        case .medium: 4_096
-        case .high: MainLLMRuntimePolicy.highReasoningBudgetTokens
-        }
-    }
-
-    func applied(to options: TextGenerationOptions?) -> TextGenerationOptions? {
-        guard let ceiling = budgetTokens else { return options }
-        var applied = options ?? TextGenerationOptions()
-        applied.reasoningBudgetTokens = min(applied.reasoningBudgetTokens ?? ceiling, ceiling)
-        return applied
-    }
-
-    /// The `reasoning_effort` value for a token budget.
-    static func effort(forBudget tokens: Int) -> String {
-        if tokens <= 0 { return "none" }
-        if tokens <= 512 { return "low" }
-        if tokens <= 4_096 { return "medium" }
-        return "high"
-    }
-}
-
 /// Request fields differ between bundled llama-server, generic compatible
 /// servers, OpenAI, and OpenRouter. Keep the dialect explicit so one
 /// provider's extensions can never leak into another provider's request.
@@ -447,6 +396,8 @@ struct OllamaEngine: TextEngine {
     var baseURL: URL
     var model: String
     var reasoningLevel: ThinkReasoningLevel = .automatic
+    /// What the model accepts; nil uses what LokalBot knows without asking.
+    var reasoningSupport: ReasoningSupport?
 
     var displayName: String { "Ollama — \(model)" }
     var checkpointIdentity: String { "\(displayName)|\(baseURL.scheme ?? "")|\(baseURL.host ?? "")|\(baseURL.port ?? 0)|\(baseURL.path)" }
@@ -484,8 +435,10 @@ struct OllamaEngine: TextEngine {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         let user = (context + [prompt]).joined(separator: "\n\n")
-        let body = Self.chatBody(model: model, system: system, user: user, schema: schema,
-                                 options: options, reasoningLevel: reasoningLevel)
+        let support = reasoningSupport ?? .known(provider: .ollama, model: model)
+        let body = Self.chatBody(model: model, system: system, user: user, schema: schema, options: options,
+                                 requestLevel: support.requestLevel(
+                                    reasoningLevel, taskBudget: options?.reasoningBudgetTokens))
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, response) = try await send(request, base: baseURL)
@@ -506,8 +459,7 @@ struct OllamaEngine: TextEngine {
 
     static func chatBody(model: String, system: String, user: String,
                          schema: [String: Any]?, options: TextGenerationOptions?,
-                         reasoningLevel: ThinkReasoningLevel = .automatic) -> [String: Any] {
-        let options = reasoningLevel.applied(to: options)
+                         requestLevel: ThinkReasoningLevel? = nil) -> [String: Any] {
         var body: [String: Any] = [
             "model": model,
             "stream": false,
@@ -519,13 +471,12 @@ struct OllamaEngine: TextEngine {
         if let schema { body["format"] = schema }
         // Ollama's thinking models think by default, and those tokens count
         // against `num_predict`. A zero budget turns the thinking turn off.
-        if options?.reasoningBudgetTokens == 0 {
+        // Of the chosen levels, only gpt-oss takes a graded one (see
+        // `ReasoningSupport`); `think: true` fails on models that can't think.
+        if let requestLevel, requestLevel != .off {
+            body["think"] = requestLevel.effortValue
+        } else if requestLevel == .off || options?.reasoningBudgetTokens == 0 {
             body["think"] = false
-        } else if reasoningLevel != .automatic, let budget = options?.reasoningBudgetTokens,
-                  model.lowercased().contains("gpt-oss") {
-            // Only gpt-oss takes a graded level. Other thinking models already
-            // think by default, and `think: true` fails on models that can't.
-            body["think"] = ThinkReasoningLevel.effort(forBudget: budget)
         }
         // Notes and digests are planned for this window. Without `num_ctx`,
         // Ollama uses its own default (4K on most Macs) and silently drops the
@@ -552,6 +503,26 @@ struct OllamaEngine: TextEngine {
               let models = json["models"] as? [[String: Any]] else { return [] }
         return models.compactMap { $0["name"] as? String }.sorted()
     }
+
+    /// The model's levels from `POST /api/show` capabilities; nil if the
+    /// server does not answer. The request carries only the model name.
+    static func reasoningSupport(baseURL: URL, model: String) async -> ReasoningSupport? {
+        var request = URLRequest(url: baseURL.appendingPathComponent("api/show"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 3
+        request.httpBody = try? JSONSerialization.data(withJSONObject: ["model": model])
+        guard let (data, response) = try? await llmSession.data(for: request),
+              (response as? HTTPURLResponse)?.statusCode == 200,
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let capabilities = json["capabilities"] as? [String] else { return nil }
+        return reasoningSupport(model: model, capabilities: capabilities)
+    }
+
+    static func reasoningSupport(model: String, capabilities: [String]) -> ReasoningSupport {
+        guard capabilities.contains("thinking") else { return .unavailable }
+        return .known(provider: .ollama, model: model)
+    }
 }
 
 // MARK: - OpenAI-compatible localhost (LM Studio, vllm-mlx, …)
@@ -568,6 +539,8 @@ struct OpenAICompatibleEngine: TextEngine {
     /// external endpoints that may not understand this extension.
     var defaultThinkingBudgetTokens: Int?
     var reasoningLevel: ThinkReasoningLevel = .automatic
+    /// What the model accepts; nil uses what LokalBot knows without asking.
+    var reasoningSupport: ReasoningSupport?
     var displayNameOverride: String?
 
     var displayName: String { displayNameOverride ?? "OpenAI-compatible — \(model)" }
@@ -622,11 +595,18 @@ struct OpenAICompatibleEngine: TextEngine {
     private func chat(system: String, prompt: String, context: [String],
                       schema: [String: Any]?,
                       options: TextGenerationOptions?) async throws -> String {
-        let options = reasoningLevel.applied(to: options)
-        return try await chat(
+        try await chat(
             system: system, prompt: prompt, context: context,
             schema: schema, options: options, openRouterReasoning: reasoningCompatibility(options: options),
             reasoningFallback: false)
+    }
+
+    /// The chosen level for one request (see `ReasoningSupport.requestLevel`),
+    /// or nil to leave reasoning to the task budget and the server's default.
+    func requestLevel(for options: TextGenerationOptions?) -> ThinkReasoningLevel? {
+        let support = reasoningSupport
+            ?? .known(provider: .init(dialect: chatDialect, baseURL: baseURL), model: model)
+        return support.requestLevel(reasoningLevel, taskBudget: options?.reasoningBudgetTokens)
     }
 
     private func reasoningCompatibility(options: TextGenerationOptions?) -> OpenRouterReasoningCompatibility {
@@ -651,7 +631,8 @@ struct OpenAICompatibleEngine: TextEngine {
         do {
             return try await completeChat(request, options: options)
         } catch {
-            if Self.shouldFallbackToReasoningEffort(
+            let level = requestLevel(for: options)
+            if level == nil, Self.shouldFallbackToReasoningEffort(
                 dialect: chatDialect,
                 error: error,
                 usedFallback: openRouterReasoning == .effort,
@@ -664,11 +645,10 @@ struct OpenAICompatibleEngine: TextEngine {
             }
             if Self.shouldRetryRejectedReasoningLevel(
                 dialect: chatDialect,
-                level: reasoningLevel,
+                requestLevel: level,
                 error: error,
-                usedFallback: reasoningFallback,
-                requestedReasoningBudget: options?.reasoningBudgetTokens) {
-                lokalbotLog("reasoning level fallback dialect=\(chatDialect) level=\(reasoningLevel.rawValue) model=\(model)")
+                usedFallback: reasoningFallback) {
+                lokalbotLog("reasoning level fallback dialect=\(chatDialect) level=\(level?.rawValue ?? "") model=\(model)")
                 return try await chat(
                     system: system, prompt: prompt, context: context,
                     schema: schema, options: options, openRouterReasoning: openRouterReasoning,
@@ -758,9 +738,8 @@ struct OpenAICompatibleEngine: TextEngine {
                 let error = TextEngineError.fromHTTPResponse(httpResponse, data: data)
                 if Self.shouldFallbackToReasoningEffort(dialect: chatDialect, error: error,
                     usedFallback: false, requestedReasoningBudget: options?.reasoningBudgetTokens)
-                    || Self.shouldRetryRejectedReasoningLevel(dialect: chatDialect, level: reasoningLevel,
-                        error: error, usedFallback: false,
-                        requestedReasoningBudget: options?.reasoningBudgetTokens) {
+                    || Self.shouldRetryRejectedReasoningLevel(dialect: chatDialect,
+                        requestLevel: requestLevel(for: options), error: error, usedFallback: false) {
                     // A routing/parameter rejection did not start generation.
                     // Refund that output reservation, but still count the
                     // physical request. Unknown transport usage stays reserved.
@@ -801,7 +780,7 @@ struct OpenAICompatibleEngine: TextEngine {
                          options: TextGenerationOptions?,
                          openRouterReasoning: OpenRouterReasoningCompatibility? = nil,
                          reasoningFallback: Bool = false) throws -> URLRequest {
-        let options = reasoningLevel.applied(to: options)
+        let level = requestLevel(for: options)
         let openRouterReasoning = openRouterReasoning ?? reasoningCompatibility(options: options)
         if chatDialect == .openAI || chatDialect == .openRouter,
            let schema,
@@ -836,13 +815,13 @@ struct OpenAICompatibleEngine: TextEngine {
             dialect: chatDialect,
             model: model,
             openRouterReasoning: openRouterReasoning,
-            reasoningLevel: reasoningLevel,
+            requestLevel: level,
             reasoningFallback: reasoningFallback)
         if chatDialect == .openRouter {
             var provider: [String: Any] = [
                 "data_collection": openRouterDataPolicy.providerDataCollectionValue,
             ]
-            if schema != nil || options?.reasoningBudgetTokens != nil {
+            if schema != nil || options?.reasoningBudgetTokens != nil || level != nil {
                 provider["require_parameters"] = true
             }
             body["provider"] = provider
@@ -910,8 +889,9 @@ struct OpenAICompatibleEngine: TextEngine {
     /// completion limit. OpenAI exposes a qualitative reasoning effort;
     /// OpenRouter normalizes a provider-independent reasoning object. Generic
     /// compatible servers receive only common request fields, plus
-    /// `reasoning_effort` once the user chooses a reasoning level.
-    /// `reasoningFallback` is the retry after a server rejected that level.
+    /// `reasoning_effort` once the user chooses a reasoning level. A
+    /// `requestLevel` (already clamped to the model) replaces the task budget;
+    /// `reasoningFallback` is the retry after a server rejected it.
     nonisolated static func applyGenerationOptions(
         to body: inout [String: Any],
         options: TextGenerationOptions?,
@@ -919,7 +899,7 @@ struct OpenAICompatibleEngine: TextEngine {
         dialect: ChatCompletionDialect,
         model: String,
         openRouterReasoning: OpenRouterReasoningCompatibility = .native,
-        reasoningLevel: ThinkReasoningLevel = .automatic,
+        requestLevel: ThinkReasoningLevel? = nil,
         reasoningFallback: Bool = false
     ) {
         let maxTokens = options?.maxTokens.map { max(1, $0) }
@@ -931,7 +911,7 @@ struct OpenAICompatibleEngine: TextEngine {
             if let temperature = options?.temperature {
                 body["temperature"] = max(0, temperature)
             }
-            guard let requested = options?.reasoningBudgetTokens
+            guard let requested = requestLevel?.budgetTokens ?? options?.reasoningBudgetTokens
                     ?? defaultThinkingBudgetTokens else { return }
             let nonnegative = max(0, requested)
             let effective = maxTokens.map { min(nonnegative, $0 / 2) } ?? nonnegative
@@ -954,17 +934,25 @@ struct OpenAICompatibleEngine: TextEngine {
             // the user chose sends it. A rejected `none` retries at `low` for
             // models that always reason; any other rejected level retries at
             // the server's default.
-            if reasoningLevel != .automatic, let budget = options?.reasoningBudgetTokens {
-                let effort = ThinkReasoningLevel.effort(forBudget: budget)
+            if let requestLevel {
                 if !reasoningFallback {
-                    body["reasoning_effort"] = effort
-                } else if effort == "none" {
+                    body["reasoning_effort"] = requestLevel.effortValue
+                } else if requestLevel == .off {
                     body["reasoning_effort"] = "low"
                 }
             }
 
         case .openRouter:
             if let maxTokens { body["max_tokens"] = maxTokens }
+            if let requestLevel {
+                // OpenRouter publishes each model's efforts; the level is one.
+                body["reasoning"] = requestLevel == .off
+                    ? ["effort": "none"] : ["effort": requestLevel.effortValue, "exclude": true]
+                if requestLevel == .off, let temperature = options?.temperature {
+                    body["temperature"] = max(0, temperature)
+                }
+                return
+            }
             if openRouterReasoning == .effort {
                 body["reasoning"] = ["effort": (options?.reasoningBudgetTokens ?? 0) <= 512 ? "low" : "high",
                                      "exclude": true]
@@ -998,13 +986,12 @@ struct OpenAICompatibleEngine: TextEngine {
             if !isReasoningModel, let temperature = options?.temperature {
                 body["temperature"] = max(0, temperature)
             }
-            if isReasoningModel, let budget = options?.reasoningBudgetTokens {
-                if budget > 0 {
-                    body["reasoning_effort"] = ThinkReasoningLevel.effort(forBudget: budget)
-                } else if reasoningLevel != .automatic {
-                    // Older reasoning models have no `none`; retry at `low`.
-                    body["reasoning_effort"] = reasoningFallback ? "low" : "none"
-                }
+            if let requestLevel {
+                // A rejected `none` retries at `low`.
+                body["reasoning_effort"] = reasoningFallback && requestLevel == .off
+                    ? "low" : requestLevel.effortValue
+            } else if isReasoningModel, let budget = options?.reasoningBudgetTokens, budget > 0 {
+                body["reasoning_effort"] = ThinkReasoningLevel.ceiling(forTaskBudget: budget).effortValue
             }
         }
     }
@@ -1045,21 +1032,19 @@ struct OpenAICompatibleEngine: TextEngine {
     /// names reasoning in a 400/422; that rejection did not start generation.
     nonisolated static func shouldRetryRejectedReasoningLevel(
         dialect: ChatCompletionDialect,
-        level: ThinkReasoningLevel,
+        requestLevel: ThinkReasoningLevel?,
         error: Error,
-        usedFallback: Bool,
-        requestedReasoningBudget: Int?
+        usedFallback: Bool
     ) -> Bool {
-        guard level != .automatic,
+        guard let requestLevel,
               !usedFallback,
-              let budget = requestedReasoningBudget,
               case .httpStatus(let code, let detail, _) = error as? TextEngineError,
               code == 400 || code == 422,
               detail.localizedCaseInsensitiveContains("reasoning")
         else { return false }
         switch dialect {
         case .generic: return true
-        case .openAI: return budget == 0
+        case .openAI: return requestLevel == .off
         case .llamaServer, .openRouter: return false
         }
     }

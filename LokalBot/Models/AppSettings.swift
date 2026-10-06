@@ -348,6 +348,13 @@ struct AppSettings: Codable, Equatable {
     /// How much the Think model reasons. Automatic keeps per-task budgets and
     /// each server's own default; a chosen level also caps those budgets.
     var thinkReasoningLevel: ThinkReasoningLevel = .automatic
+    /// Agent Mode's own reasoning level, chosen in the Agent composer. Nil
+    /// follows `thinkReasoningLevel`.
+    var agentReasoningLevel: ThinkReasoningLevel?
+
+    var effectiveAgentReasoningLevel: ThinkReasoningLevel {
+        agentReasoningLevel ?? thinkReasoningLevel
+    }
 
     /// True only when the selected Think backend may actually send meeting or
     /// workday text to an approved remote server. Configured-but-unapproved,
@@ -772,6 +779,7 @@ struct AppSettings: Codable, Equatable {
         case approvedRemoteInferenceOrigins
         case generationBudgetPreset
         case thinkReasoningLevel
+        case agentReasoningLevel
         case noteTemplate
         case summaryLanguage
         case rememberSpeakersOnMac
@@ -950,6 +958,7 @@ struct AppSettings: Codable, Equatable {
         try c.encode(approvedRemoteInferenceOrigins, forKey: .approvedRemoteInferenceOrigins)
         try c.encode(generationBudgetPreset, forKey: .generationBudgetPreset)
         try c.encode(thinkReasoningLevel, forKey: .thinkReasoningLevel)
+        try c.encodeIfPresent(agentReasoningLevel, forKey: .agentReasoningLevel)
         try c.encode(noteTemplate, forKey: .noteTemplate)
         try c.encode(summaryLanguage, forKey: .summaryLanguage)
         try c.encode(multiSpeakerDiarization, forKey: .multiSpeakerDiarization)
@@ -1114,6 +1123,7 @@ struct AppSettings: Codable, Equatable {
         generationBudgetPreset = decode(
             .generationBudgetPreset, defaults.generationBudgetPreset)
         thinkReasoningLevel = decode(.thinkReasoningLevel, defaults.thinkReasoningLevel)
+        agentReasoningLevel = decode(.agentReasoningLevel, defaults.agentReasoningLevel)
         noteTemplate = decode(.noteTemplate, defaults.noteTemplate)
         summaryLanguage = decode(.summaryLanguage, defaults.summaryLanguage)
         multiSpeakerDiarization = decode(.multiSpeakerDiarization, defaults.multiSpeakerDiarization)

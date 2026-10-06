@@ -415,14 +415,23 @@ final class AppSettingsTests: XCTestCase {
     func testThinkReasoningLevelRoundTripsAndDefaultsToAutomatic() throws {
         var settings = AppSettings()
         settings.thinkReasoningLevel = .low
+        settings.agentReasoningLevel = .xhigh
 
         let decoded = try JSONDecoder().decode(
             AppSettings.self, from: JSONEncoder().encode(settings))
         let legacy = try JSONDecoder().decode(
             AppSettings.self, from: Data(#"{"autoTranscribe":true}"#.utf8))
+        settings.agentReasoningLevel = nil
+        let following = try JSONDecoder().decode(
+            AppSettings.self, from: JSONEncoder().encode(settings))
 
         XCTAssertEqual(decoded.thinkReasoningLevel, .low)
+        XCTAssertEqual(decoded.agentReasoningLevel, .xhigh)
+        XCTAssertEqual(decoded.effectiveAgentReasoningLevel, .xhigh)
         XCTAssertEqual(legacy.thinkReasoningLevel, .automatic)
+        XCTAssertNil(legacy.agentReasoningLevel)
+        XCTAssertNil(following.agentReasoningLevel)
+        XCTAssertEqual(following.effectiveAgentReasoningLevel, .low, "Agent follows Think by default")
         XCTAssertTrue(legacy.corruptedSettingsKeys.isEmpty)
     }
 
