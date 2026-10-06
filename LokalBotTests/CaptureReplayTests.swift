@@ -24,6 +24,10 @@ final class CaptureReplayTests: XCTestCase {
         let replay = ReplayCaptureEnvironment(trace: try CaptureTrace.load(from: url),
                                               start: Date(timeIntervalSince1970: 1_790_000_000))
         CaptureEnvironment.install(replay.environment)
+        // Both outlive a test: the process list is cached by (virtual) time,
+        // and capture remembers which sibling last emitted per bundle.
+        MeetingDetector.invalidateAudioProcessSnapshot()
+        MeetingDetector.resetCaptureTargetMemory()
         return replay
     }
 
@@ -240,6 +244,35 @@ final class CaptureReplayTests: XCTestCase {
         XCTAssertEqual(started.count, 1)
         XCTAssertGreaterThanOrEqual(started.first ?? 0,
                                     60 + MeetingDetector.nativeAudioMinimumConfirmationDuration - 2)
+    }
+
+    private let teams = MeetingDetector.DetectedApp(name: "Teams", bundleID: "com.microsoft.teams2", pid: 700)
+
+    /// #179: new Teams plays a scheduled meeting only through modulehost, whose
+    /// stream is open even while Teams is idle, so nothing counted as a source
+    /// and a manual recording stayed microphone-only. It must hold modulehost.
+    func testManualRecordingHoldsTheTeamsCallOnModuleHost() throws {
+        _ = try replay("teams-call-only-on-modulehost")
+        XCTAssertNil(MeetingDetector.captureCandidateApp(), "modulehost is not evidence of a call")
+        let unbound = Meeting.CaptureIntent(systemAudioRequested: true)
+        XCTAssertEqual(RecordingSystemAudioSource.find(for: unbound), .held(teams))
+        XCTAssertEqual(MeetingDetector.currentCaptureTargetProcess(for: teams)?.id, 720, "the tap goes on modulehost")
+    }
+
+    /// The case 2fde15d guards: Teams sits idle while the Meet call being
+    /// recorded cannot be read yet. Teams is only held, the call replaces it
+    /// once readable, and a recording bound to the call never holds Teams.
+    func testAHeldTeamsStreamGivesWayToTheMeetCall() async throws {
+        let replay = try replay("teams-idle-while-meet-call-unreadable")
+        let room = try XCTUnwrap(URL(string: "https://meet.google.com/bcd-fghj-klm"))
+        let unbound = Meeting.CaptureIntent(systemAudioRequested: true)
+        XCTAssertEqual(RecordingSystemAudioSource.find(for: unbound), .held(teams))
+        XCTAssertNil(RecordingSystemAudioSource.find(for: .init(systemAudioRequested: true, meetingURL: room)))
+
+        await replay.clock.advance(to: 40)
+        let call = MeetingDetector.DetectedApp(name: "Google Chrome", bundleID: "com.google.Chrome",
+                                               pid: 801, meetingURL: room)
+        XCTAssertEqual(RecordingSystemAudioSource.find(for: unbound), .verified(call))
     }
 
     /// Every scripted browser trace must replay to at least one text capture.
