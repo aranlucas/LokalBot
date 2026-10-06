@@ -909,7 +909,8 @@ final class RecordingController: ObservableObject {
     /// never accepted the tap.
     ///
     /// A `held` tap leaves the recording unbound. A verified source replaces a
-    /// held tap on the same writer, so what the held tap wrote stays in place.
+    /// held tap on the same writer, so what the held tap wrote stays in place;
+    /// one from the held tap's own app binds it where it is.
     @discardableResult
     private func startSystemAudioCapture(
         _ captureApp: MeetingDetector.DetectedApp,
@@ -919,12 +920,25 @@ final class RecordingController: ObservableObject {
     ) -> Bool {
         if let intent = meeting.captureIntent,
            !intent.accepts(appBundleID: captureApp.bundleID, meetingURL: captureApp.meetingURL) { return false }
-        let captureProcess = MeetingDetector.currentCaptureTargetProcess(for: captureApp)
-        let pid = captureProcess?.id ?? captureApp.pid
-        let heldPID = systemAudioTarget?.isHeld == true ? systemAudioTarget?.pid : nil
+        let heldTarget = systemAudioTarget.flatMap { $0.isHeld ? $0 : nil }
+        let captureProcess: AudioProcess?
+        let pid: pid_t
+        if let heldTarget, heldTarget.bundleID == captureApp.bundleID {
+            // The held tap's own app was verified: bind without moving the
+            // tap. Teams helpers emit short bursts during a call, which count
+            // as verification, while the call itself comes out of the held
+            // modulehost (#179). If the held process stays silent while a
+            // sibling emits, the watchdog still moves the tap.
+            captureProcess = nil
+            pid = heldTarget.pid
+        } else {
+            captureProcess = MeetingDetector.currentCaptureTargetProcess(for: captureApp)
+            pid = captureProcess?.id ?? captureApp.pid
+        }
+        let keepsTap = heldTarget?.pid == pid
         do {
-            if let heldPID {
-                if heldPID != pid { try systemRecorder.reattach(capturingPID: pid) }
+            if let heldTarget {
+                if !keepsTap { try systemRecorder.reattach(capturingPID: pid) }
             } else {
                 try systemRecorder.start(
                     capturingPID: pid,
@@ -940,19 +954,21 @@ final class RecordingController: ObservableObject {
             }
             systemAudioTarget = SystemAudioTarget(bundleID: captureApp.bundleID, pid: pid,
                 hostPID: Self.hostPID(for: captureApp.bundleID), isHeld: held)
-            systemAudioTapLedger.attached(
-                to: pid,
-                audibleDuration: heldPID == nil ? 0 : systemRecorder.captureHealth().audibleDuration)
-            if pid != captureApp.pid || captureProcess?.bundleID != captureApp.bundleID {
+            if !keepsTap {
+                systemAudioTapLedger.attached(
+                    to: pid,
+                    audibleDuration: heldTarget == nil ? 0 : systemRecorder.captureHealth().audibleDuration)
+            }
+            if !keepsTap, pid != captureApp.pid || captureProcess?.bundleID != captureApp.bundleID {
                 lokalbotLog(
                     "system audio capture resolved detectedPID=\(captureApp.pid) capturePID=\(pid) "
                         + "captureBundle=\(captureProcess?.bundleID ?? "unknown") "
                         + "hostBundle=\(captureApp.bundleID)")
             }
             lokalbotLog(
-                "system audio tap started pid=\(pid) bundle=\(captureApp.bundleID) "
+                "system audio tap \(keepsTap ? "kept" : "started") pid=\(pid) bundle=\(captureApp.bundleID) "
                     + "detected=\(detectedApp != nil) fallback=\(detectedApp == nil) held=\(held) "
-                    + "replacedHeldPID=\(heldPID.map(String.init) ?? "none")")
+                    + "replacedHeldPID=\(heldTarget.map { String($0.pid) } ?? "none")")
             if let url = captureApp.meetingURL { meeting.meetingURL = url }
             do { try storage.saveMeta(meeting) } catch {
                 onError("Audio capture started, but its source metadata could not be saved: \(error.localizedDescription)")
