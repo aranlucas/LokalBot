@@ -2,34 +2,26 @@
 
 The high and medium items that resolve safely are updated together. Existing
 transcription models, local processing defaults and consent boundaries remain
-the same. MLX is unblocked by a tested, immutable speech-swift fork revision
-while the same pin update is reviewed upstream.
+the same. MLX has a verified upstream dependency conflict and stays pinned.
 
 | Priority | Component | Update | User impact |
 | --- | --- | --- | --- |
 | High | [FluidAudio](https://github.com/FluidInference/FluidAudio/releases/tag/v0.17.5) | 0.17.1 → 0.17.5 | Fixes Nemotron output-backing failures. The pinned v2 export enables the upstream M3 ANE compilation fix. ASR debug/notice text is filtered from dependency logging. |
-| High | [speech-swift](https://github.com/soniqo/speech-swift/releases/tag/v0.0.28) | 0.0.26 → 0.0.28 + pin patch | Qwen transcription observes cancellation at encoder/prefill/token checkpoints and throws instead of returning a cancelled partial transcript. Existing language, prompt, token and repetition policies are retained. |
-| Medium | [MLX Swift](https://github.com/ml-explore/mlx-swift/releases/tag/0.32.3) | 0.31.4 → 0.32.3 | Updates Qwen ASR, forced alignment and Granite tensor inference. The CUDA build plugin is excluded on macOS; the release includes the startup logger fix for older OS versions. Model weights and decode policies are unchanged. |
+| High | [speech-swift](https://github.com/soniqo/speech-swift/releases/tag/v0.0.28) | 0.0.26 → 0.0.28 | Qwen transcription observes cancellation at encoder/prefill/token checkpoints and throws instead of returning a cancelled partial transcript. Existing language, prompt, token and repetition policies are retained. |
 | Medium | [Pi](https://github.com/earendil-works/pi/releases/tag/v1.0.3) | 0.86.1 → 1.0.3 | Updates Agent Mode's runtime and session handling. Installer/launcher use the new bundled CLI; approvals, private-library access and approved-origin restrictions remain enforced. |
 | Medium | [llama.cpp](https://github.com/ggml-org/llama.cpp/releases/tag/v0.6.0) | 0.5.0 → 0.6.0 | Updates local chat, structured output, tool calls, embeddings and autocomplete. Built from checksum-pinned source for macOS 15, with generic arm64 CPU code and bundle-relative libraries. |
 
-## MLX compatibility
+## MLX compatibility hold
 
-Upstream [speech-swift 0.0.28](https://github.com/soniqo/speech-swift/blob/v0.0.28/Package.swift)
-requires MLX-LM 3.31.4, which constrains MLX to `0.31.4..<0.32.0`. The app now
-uses [fork revision `33f42bc`](https://github.com/stevyhacker/speech-swift/commit/33f42bc0d48efa5baf39f2531f52c333d92e519a),
-based on that release, with only the exact MLX-LM pin and matching comments
-changed to 3.32.3. It resolves with MLX `0.32.3..<0.33.0`; the app pins 0.32.3.
-The ASR implementation remains the released 0.0.28 code.
-
-[Upstream PR #501](https://github.com/soniqo/speech-swift/pull/501) submits the same
-manifest change against upstream main. Replace the fork with an upstream release
-when that change ships; keep the immutable fork revision until then.
-
-MLX 0.32.3 makes its CUDA plugin Linux-only, so normal macOS builds work without
-bypassing package-plugin validation. Its logger fix also avoids the startup crash
-introduced by 0.32.2 on OS versions older than 26.4. Contributors need Swift 6.3
-(Xcode 26.3 or newer); the app's macOS 15 deployment floor is unchanged.
+[speech-swift 0.0.28](https://github.com/soniqo/speech-swift/blob/v0.0.28/Package.swift)
+requires MLX-LM 3.31.4, whose
+[manifest](https://github.com/ml-explore/mlx-swift-lm/blob/3.31.4/Package.swift)
+requires MLX `0.31.4..<0.32.0`. An isolated Xcode resolution attempt with speech-swift
+0.0.28 and MLX 0.32.3 fails with that exact conflict. The compatible
+[0.31.6 manifest](https://github.com/ml-explore/mlx-swift/blob/0.31.6/Package.swift)
+still attaches the CUDA build plugin unconditionally, retaining the repository's
+headless Xcode validation blocker. Keep 0.31.4 until the speech package adopts
+compatible MLX-LM/MLX versions; this PR adds no fork or plugin-validation bypass.
 
 ## Upgrade behavior
 
@@ -52,12 +44,6 @@ introduced by 0.32.2 on OS versions older than 26.4. Contributors need Swift 6.3
   pinned Nemotron v2 inference/reset on CPU/Neural Engine, native model generation,
   streaming, cancellation, prefix reuse, runtime receipts and synthetic Pi RPC.
   Cancellation and log-privacy regressions fail when their fixes are undone.
-- The published fork and MLX update passed 27 focused app tests with no failures
-  or skips, including cached Qwen cancellation/sub-frame inference, real forced
-  alignment, Granite inference/preparation, attribution and logging. Six Qwen outputs (three public
-  English/French clips, both repetition policies) and two Granite outputs match
-  the MLX 0.31.4 baseline exactly. This checks upgrade parity, not improved WER.
-  Qwen3ASR and VoiceChat also compile from the patched upstream main manifest.
 - 20 Pi runtime checks passed against a fresh production frozen install, including
   denied/approved writes, context-edit session resume, private-library and symlink
   gating, redirect rejection, full-command approval and API-key isolation. Two

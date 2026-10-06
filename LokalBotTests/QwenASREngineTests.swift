@@ -69,45 +69,6 @@ final class QwenASREngineTests: XCTestCase {
         }
     }
 
-    /// Compare real speech with a pinned reference across MLX upgrades. The
-    /// manifest must name public or synthetic audio and already cached weights.
-    func testCachedModelTranscriptionMatchesReferenceWhenProvided() async throws {
-        let environment = ProcessInfo.processInfo.environment
-        guard let path = environment["LOKALBOT_QWEN_TEST_REFERENCE"],
-              let modelPath = environment["LOKALBOT_QWEN_TEST_MODEL_DIR"] else {
-            throw XCTSkip("Set cached Qwen weights and a public-audio reference manifest for upgrade parity")
-        }
-        struct Clip: Decodable {
-            let id: String
-            let audio: String
-            let language: String?
-            let text: String
-        }
-        let clips = try JSONDecoder().decode([Clip].self, from: Data(contentsOf: URL(fileURLWithPath: path)))
-        XCTAssertFalse(clips.isEmpty)
-        let directory = URL(fileURLWithPath: modelPath, isDirectory: true)
-        let model = try await Qwen3ASRModel.fromPretrained(
-            modelId: "aufklarer/\(directory.lastPathComponent)", cacheDir: directory, offlineMode: true)
-        defer { model.unload() }
-        var results: [[String: Any]] = []
-        for clip in clips {
-            let reader = try SpanAudioReader(url: URL(fileURLWithPath: clip.audio))
-            let samples = try reader.samples(from: 0, to: reader.duration)
-            XCTAssertFalse(samples.isEmpty, clip.id)
-            for unblocked in [false, true] {
-                let text = try QwenASREngine.transcribeWindow(
-                    samples: samples, language: clip.language, prompt: nil,
-                    disablesRepetitionBlocking: unblocked, model: model)
-                XCTAssertEqual(text, clip.text, "\(clip.id), repetition blocking disabled: \(unblocked)")
-                results.append(["id": clip.id, "text": text, "unblocked": unblocked])
-            }
-        }
-        if let output = environment["LOKALBOT_QWEN_TEST_REPORT"] {
-            try JSONSerialization.data(withJSONObject: results, options: [.prettyPrinted, .sortedKeys])
-                .write(to: URL(fileURLWithPath: output))
-        }
-    }
-
     func testCancellationAwareOptionsKeepExistingDecodingPolicy() {
         let ordinary = QwenASREngine.decodingOptions(
             sampleCount: 320_000, language: "Serbian", prompt: "  LokalBot  ", disablesRepetitionBlocking: false)
