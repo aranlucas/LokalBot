@@ -50,8 +50,10 @@ final class MainWindowMinimumSizeTests: XCTestCase {
         }, to: NSSize(width: 700, height: 600))
         defer { window.close() }
 
+        // macOS 26.6 settles about 8 pt wider than macOS 27 (885 vs 877);
+        // counting the sidebar twice added its whole 216 pt width.
         let panesAndDivider = panes.reduce(0, +) + 1
-        XCTAssertLessThanOrEqual(window.frame.width, LBTokens.Metric.sidebarWidth + panesAndDivider + 1,
+        XCTAssertLessThanOrEqual(window.frame.width, LBTokens.Metric.sidebarWidth + panesAndDivider + 16,
                                  "The window must shrink to the sidebar plus the split's panes")
         func splits(in view: NSView) -> [NSSplitView] {
             ((view as? NSSplitView).map { [$0] } ?? []) + view.subviews.flatMap { splits(in: $0) }
