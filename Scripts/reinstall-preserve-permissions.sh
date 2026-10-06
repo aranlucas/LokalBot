@@ -4,6 +4,11 @@
 # place instead of deleting it first, so macOS TCC grants keep pointing at the
 # same signed app identity.
 #
+# Xcode's Developer ID export writes its own form of the designated
+# requirement. When that text differs from the installed app's but the build
+# still satisfies the installed requirement, the outer bundle is re-signed with
+# the installed requirement so the identity TCC checks stays the same.
+#
 # Usage:
 #   Scripts/reinstall-preserve-permissions.sh
 #   Scripts/reinstall-preserve-permissions.sh --no-relaunch
@@ -140,6 +145,34 @@ verify_app_identity() {
   printf '%s\n' "$requirement"
 }
 
+satisfies_requirement() {
+  /usr/bin/codesign --verify --test-requirement="=$2" "$1" >/dev/null 2>&1
+}
+
+# Re-signs only the outer bundle; nested code keeps the export's signatures.
+resign_with_requirement() {
+  local app_path="$1"
+  local requirement="$2"
+  local timestamp="--timestamp=none"
+
+  [ -n "$(codesign_field "$app_path" Timestamp)" ] && timestamp="--timestamp"
+  /usr/bin/codesign --force \
+    --preserve-metadata=identifier,entitlements,flags,runtime \
+    --requirements="=designated => $requirement" \
+    "$timestamp" \
+    --sign "$SIGNING_IDENTITY" \
+    "$app_path"
+}
+
+# Only the installed copy: Release replays and benchmarks run other copies
+# under the same process name and must keep running.
+installed_app_pids() {
+  /bin/ps -axo pid=,command= | /usr/bin/awk -v exe="$INSTALLED_EXECUTABLE" '
+    { pid = $1; sub(/^ *[0-9]+ +/, "") }
+    $0 == exe || index($0, exe " ") == 1 { print pid }
+  '
+}
+
 cleanup_old_temp_dirs() {
   local removed=0
   local path
@@ -181,6 +214,7 @@ SIGNING_IDENTITY="${SIGNING_IDENTITY:-$(codesign_authority "$INSTALLED_APP")}"
 [ -n "$EXPECTED_BUNDLE_ID" ] || fail "could not derive the installed bundle id"
 [ -n "$EXPECTED_TEAM_ID" ] || fail "could not derive the installed TeamIdentifier"
 [ -n "$SIGNING_IDENTITY" ] || fail "could not derive the installed signing authority"
+INSTALLED_EXECUTABLE="$INSTALLED_APP/Contents/MacOS/$(plist_raw "$INSTALLED_APP/Contents/Info.plist" CFBundleExecutable)"
 installed_requirement="$(verify_app_identity "$INSTALLED_APP" installed)"
 installed_signed_time="$(codesign_field "$INSTALLED_APP" Timestamp)"
 note "bundle id: $EXPECTED_BUNDLE_ID"
@@ -257,13 +291,34 @@ built_signed_time="$(codesign_field "$BUILT_APP" Timestamp)"
 note "built signed time: ${built_signed_time:-unknown}"
 
 if [ "$built_requirement" != "$installed_requirement" ]; then
-  fail "built app signing requirement differs from installed app; refusing to replace because TCC permissions may not survive"
+  note "installed requirement: $installed_requirement"
+  note "built requirement:     $built_requirement"
+  satisfies_requirement "$BUILT_APP" "$installed_requirement" \
+    || fail "built app does not satisfy the installed app's signing requirement; refusing to replace because TCC permissions would not survive"
+
+  log "Re-signing built app with the installed signing requirement"
+  resign_with_requirement "$BUILT_APP" "$installed_requirement" >>"$BUILD_LOG" 2>&1 \
+    || fail "re-signing failed; full log: $BUILD_LOG"
+  built_requirement="$(verify_app_identity "$BUILT_APP" built)"
+  [ "$built_requirement" = "$installed_requirement" ] \
+    || fail "re-signed app signing requirement still differs from installed app"
+  note "re-signed time: $(codesign_field "$BUILT_APP" Timestamp)"
 fi
 
 log "Stopping running app"
-/usr/bin/pkill -x "$APP_NAME" 2>/dev/null || true
+running_pids="$(installed_app_pids)"
+if [ -n "$running_pids" ]; then
+  note "stopping pid(s): $(printf '%s ' $running_pids)"
+  kill $running_pids 2>/dev/null || true
+  for _ in $(seq 1 20); do
+    [ -z "$(installed_app_pids)" ] && break
+    /bin/sleep 0.5
+  done
+  [ -z "$(installed_app_pids)" ] || fail "$APP_NAME is still running from $INSTALLED_APP; quit it and rerun"
+else
+  note "not running"
+fi
 /usr/bin/pkill -x "LokalBotV3" 2>/dev/null || true
-/bin/sleep 1
 
 log "Syncing app bundle in place"
 note "source: $BUILT_APP/"
@@ -281,7 +336,7 @@ if [ "$RELAUNCH" -eq 1 ]; then
 
   app_pid=""
   for _ in $(seq 1 20); do
-    app_pid="$(/usr/bin/pgrep -x "$APP_NAME" | /usr/bin/head -1 || true)"
+    app_pid="$(installed_app_pids | /usr/bin/head -1)"
     [ -n "$app_pid" ] && break
     /bin/sleep 0.5
   done
