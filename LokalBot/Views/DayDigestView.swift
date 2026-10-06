@@ -10,7 +10,6 @@ private enum DayDigestTaskType {
 /// focus stay visible; the forensic activity/evidence trail is available on
 /// demand without making every captured moment compete for attention.
 struct DayDigestView: View {
-    @EnvironmentObject private var app: AppState
     enum Mode: Equatable {
         case standalone
         case timeline
@@ -44,16 +43,20 @@ struct DayDigestView: View {
 
     private var fullContent: some View {
         VStack(alignment: .leading, spacing: 20) {
-            if let decisions = presentation.decisionsMarkdown {
-                digestSection("Decisions and Next Steps", icon: "checklist") {
-                    SelectableDigestText(decisions)
-                        .frame(maxWidth: proseMaxWidth, alignment: .leading)
-                }
+            if !presentation.blockers.isEmpty {
+                blockersCallout
             }
 
             if !presentation.atAGlanceMarkdown.isEmpty {
                 digestSection("Highlights", icon: "sparkles") {
                     SelectableDigestText(presentation.atAGlanceMarkdown)
+                        .frame(maxWidth: proseMaxWidth, alignment: .leading)
+                }
+            }
+
+            if !presentation.decisions.isEmpty {
+                digestSection("Decisions", icon: "checkmark.seal") {
+                    SelectableDigestText(Self.bulletList(presentation.decisions))
                         .frame(maxWidth: proseMaxWidth, alignment: .leading)
                 }
             }
@@ -68,15 +71,21 @@ struct DayDigestView: View {
                             .accessibilityIdentifier("dayDigest.tasks")
                     }
                     .foregroundStyle(.primary)
-                    // Every session stays visible; the work summary is the
-                    // point of the digest, so none hide behind a disclosure.
+                    // Every task stays visible as one scannable line; only
+                    // the description of what was done opens on demand.
                     if mode.arrangesSessionsInGrid {
                         sessionGrid
                     } else {
-                        sessionList(presentation.focusBlocks, prominent: true)
+                        taskList
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            if !presentation.followUps.isEmpty {
+                digestSection("Follow-ups", icon: "arrow.turn.down.right") {
+                    taskRows(presentation.followUps)
+                }
             }
 
             if mode.showsOtherActivity, !presentation.otherActivityBlocks.isEmpty {
@@ -150,10 +159,65 @@ struct DayDigestView: View {
         }
     }
 
-    /// Each session becomes its own card, filling the page width instead of
+    /// Blockers lead the digest: they are what stops the day's open work.
+    private var blockersCallout: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(presentation.blockers.count == 1 ? "Blocker" : "Blockers",
+                  systemImage: "exclamationmark.triangle.fill")
+                .font(.scaled(.subheadline).weight(.semibold))
+                .foregroundStyle(LBTokens.Palette.attentionText)
+            SelectableDigestText(presentation.blockers.count == 1
+                ? presentation.blockers[0]
+                : Self.bulletList(presentation.blockers))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .lbStatusSurface(LBTokens.Palette.attention)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("dayDigest.blockers")
+    }
+
+    /// Open work first, then finished work, each task on its own line.
+    private var taskList: some View {
+        let groups = presentation.taskGroups
+        return VStack(alignment: .leading, spacing: 14) {
+            ForEach(groups) { group in
+                VStack(alignment: .leading, spacing: 2) {
+                    if groups.count > 1 {
+                        Text("\(group.kind.title) · \(group.blocks.count)")
+                            .font(.scaled(.subheadline).weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .accessibilityAddTraits(.isHeader)
+                            .padding(.bottom, 2)
+                    }
+                    taskRows(group.blocks)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func taskRows(_ blocks: [DayDigestPresentation.FocusBlock]) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(blocks) { block in
+                DayDigestTaskRow(block: block)
+                    .padding(.vertical, 7)
+                if block.id != blocks.last?.id {
+                    Divider().padding(.leading, DayDigestTaskRow.textInset)
+                }
+            }
+        }
+    }
+
+    private static func bulletList(_ items: [String]) -> String {
+        items.map { "- " + $0 }.joined(separator: "\n")
+    }
+
+    /// Each task becomes its own card, filling the page width instead of
     /// nesting a boxed list inside the digest.
     private var sessionGrid: some View {
-        let blocks = presentation.focusBlocks
+        let blocks = presentation.taskGroups.flatMap(\.blocks)
         let columns = sessionColumnCount
         let rows = stride(from: 0, to: blocks.count, by: columns).map {
             Array(blocks[$0..<min($0 + columns, blocks.count)])
@@ -162,7 +226,7 @@ struct DayDigestView: View {
             ForEach(rows.indices, id: \.self) { index in
                 GridRow {
                     ForEach(rows[index]) { block in
-                        focusBlock(block, prominent: true)
+                        DayDigestTaskRow(block: block)
                             .padding(WorkspaceMetric.cardPadding)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                             .background(.quaternary.opacity(0.24),
@@ -192,38 +256,25 @@ struct DayDigestView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func sessionList(
-        _ blocks: [DayDigestPresentation.FocusBlock],
-        prominent: Bool = false
-    ) -> some View {
+    private func sessionList(_ blocks: [DayDigestPresentation.FocusBlock]) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(blocks) { block in
-                focusBlock(block, prominent: prominent)
-                    .padding(.vertical, prominent ? 12 : 10)
+                focusBlock(block)
+                    .padding(.vertical, 10)
                 if block.id != blocks.last?.id {
                     Divider()
                 }
             }
         }
-        .padding(.horizontal, prominent ? 16 : 12)
+        .padding(.horizontal, 12)
         .background {
-            let radius = prominent ? Brand.Radius.panel : Brand.Radius.control
-            RoundedRectangle(cornerRadius: radius)
-                .fill(.quaternary.opacity(prominent ? 0.42 : 0.24))
-                .overlay {
-                    if prominent {
-                        RoundedRectangle(cornerRadius: radius)
-                            .strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
-                    }
-                }
+            RoundedRectangle(cornerRadius: Brand.Radius.control)
+                .fill(.quaternary.opacity(0.24))
         }
     }
 
-    private func focusBlock(
-        _ block: DayDigestPresentation.FocusBlock,
-        prominent: Bool = false
-    ) -> some View {
-        VStack(alignment: .leading, spacing: prominent ? 7 : 5) {
+    private func focusBlock(_ block: DayDigestPresentation.FocusBlock) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
             if block.timeRange != nil || block.title != nil {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     if let timeRange = block.timeRange {
@@ -233,36 +284,17 @@ struct DayDigestView: View {
                     }
                     if let title = block.title {
                         Text(title)
-                            .font(prominent
-                                  ? DayDigestTaskType.taskTitle
-                                  : .scaled(.body).weight(.semibold))
+                            .font(.scaled(.body).weight(.semibold))
                             .foregroundStyle(.primary)
                             .textSelection(.enabled)
                     }
                 }
             }
             if !block.summaryMarkdown.isEmpty {
-                if prominent {
-                    ExpandableDigestSummary(
-                        text: block.summaryMarkdown,
-                        accessibilityID: "dayDigest.taskShowMore.\(block.id)")
-                } else {
-                    SelectableDigestText(block.summaryMarkdown)
-                        .foregroundStyle(.secondary)
-                }
+                SelectableDigestText(block.summaryMarkdown)
+                    .foregroundStyle(.secondary)
             }
-            if !block.sourceIDs.isEmpty {
-                ForEach(block.sourceIDs, id: \.self) { id in
-                    if let shot = app.activityStore.screenshot(id: id) {
-                        Button { app.openScreenSnapshot(id) } label: {
-                            Label("\(shot.documentName.isEmpty ? shot.app : shot.documentName) · \(shot.ts.formatted(date: .omitted, time: .shortened))", systemImage: "doc.text.magnifyingglass")
-                                .font(AppFont.scaled(.callout))
-                        }.buttonStyle(.workspaceLink)
-                    } else {
-                        Text("Source moment unavailable").font(AppFont.scaled(.callout)).foregroundStyle(.secondary)
-                    }
-                }
-            }
+            DayDigestSourceLinks(ids: block.sourceIDs)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -308,6 +340,158 @@ struct DayDigestView: View {
         }
         .accessibilityIdentifier("dayDigest.timeAllocation")
         .accessibilityHint("Tracked app time shown as optional supporting detail")
+    }
+}
+
+/// One task at a glance: status, title, and its next step. What was done
+/// opens in place, so a day of tasks reads as a short list.
+private struct DayDigestTaskRow: View {
+    /// Status column width plus spacing; details and dividers align to it.
+    static let textInset: CGFloat = 26
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let block: DayDigestPresentation.FocusBlock
+    @State private var expanded = false
+
+    /// Older journals have no status; their summary is the only description,
+    /// so it stays visible as before.
+    private var collapsesDetails: Bool {
+        block.status != nil && block.title != nil
+            && (!block.summaryMarkdown.isEmpty || !block.sourceIDs.isEmpty)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if collapsesDetails {
+                Button {
+                    withAnimation(WorkspaceMotion.animation(.disclosure, reduceMotion: reduceMotion)) {
+                        expanded.toggle()
+                    }
+                } label: {
+                    header.contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityValue(expanded ? "Expanded" : "Collapsed")
+                .accessibilityHint(expanded ? "Hides what was done" : "Shows what was done")
+                .accessibilityIdentifier("dayDigest.task.\(block.id)")
+
+                if expanded {
+                    details
+                        .padding(.leading, Self.textInset)
+                        .transition(WorkspaceMotion.disclosureTransition(reduceMotion: reduceMotion))
+                }
+            } else {
+                header
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            statusMark
+                .frame(width: Self.textInset - 8)
+            VStack(alignment: .leading, spacing: 3) {
+                if block.timeRange != nil || block.title != nil {
+                    titleLine
+                }
+                if let nextStep = block.nextStep {
+                    HStack(alignment: .firstTextBaseline, spacing: 5) {
+                        Text("Next")
+                            .font(DayDigestTaskType.summary.weight(.semibold))
+                            .foregroundStyle(LBTokens.Palette.accentText)
+                        Text(nextStep)
+                            .font(DayDigestTaskType.summary)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                if !collapsesDetails {
+                    details
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if collapsesDetails {
+                Image(systemName: "chevron.right")
+                    .font(.scaled(.caption).weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .rotationEffect(.degrees(expanded ? 90 : 0))
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+
+    private var titleLine: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            if let timeRange = block.timeRange {
+                Text(timeRange)
+                    .font(.scaled(.caption).monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            if let title = block.title {
+                Text(title)
+                    .font(DayDigestTaskType.taskTitle)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    @ViewBuilder private var statusMark: some View {
+        switch block.status {
+        case .completed:
+            statusSymbol("checkmark.circle.fill", LBTokens.Palette.success, label: "Done")
+        case .inProgress:
+            statusSymbol("circle.lefthalf.filled", LBTokens.Palette.accentText, label: "In progress")
+        case .blocked:
+            statusSymbol("exclamationmark.circle.fill", LBTokens.Palette.attention, label: "Blocked")
+        case nil:
+            Text("•")
+                .font(DayDigestTaskType.taskTitle)
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private func statusSymbol(_ name: String, _ color: Color, label: String) -> some View {
+        Image(systemName: name)
+            .font(DayDigestTaskType.taskTitle)
+            .foregroundStyle(color)
+            .accessibilityLabel(label)
+    }
+
+    @ViewBuilder private var details: some View {
+        if !block.summaryMarkdown.isEmpty {
+            if collapsesDetails {
+                SelectableDigestText(block.summaryMarkdown, font: DayDigestTaskType.summary)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                ExpandableDigestSummary(
+                    text: block.summaryMarkdown,
+                    accessibilityID: "dayDigest.taskShowMore.\(block.id)")
+            }
+        }
+        DayDigestSourceLinks(ids: block.sourceIDs)
+    }
+}
+
+/// Screen moments a legacy journal cited for a task.
+private struct DayDigestSourceLinks: View {
+    @EnvironmentObject private var app: AppState
+    let ids: [Int64]
+
+    var body: some View {
+        ForEach(ids, id: \.self) { id in
+            if let shot = app.activityStore.screenshot(id: id) {
+                Button { app.openScreenSnapshot(id) } label: {
+                    Label("\(shot.documentName.isEmpty ? shot.app : shot.documentName) · \(shot.ts.formatted(date: .omitted, time: .shortened))", systemImage: "doc.text.magnifyingglass")
+                        .font(AppFont.scaled(.callout))
+                }.buttonStyle(.workspaceLink)
+            } else {
+                Text("Source moment unavailable").font(AppFont.scaled(.callout)).foregroundStyle(.secondary)
+            }
+        }
     }
 }
 

@@ -321,7 +321,7 @@ final class DayDigestEvidenceTests: XCTestCase {
         let invoice = overview.range(of: "Invoice reconciliation")!.lowerBound
         let project = overview.range(of: "Main project")!.lowerBound
         XCTAssertLessThan(invoice, project)
-        XCTAssertTrue(presentation.decisionsMarkdown?.contains("Continue implementation") == true)
+        XCTAssertEqual(presentation.focusBlocks[1].nextStep, "Continue implementation.")
         XCTAssertFalse(presentation.focusBlocks[1].summaryMarkdown.contains(
             "Continue implementation"))
         XCTAssertTrue(document.contains("Invoice payment"))
@@ -1120,7 +1120,7 @@ final class DayDigestEvidenceTests: XCTestCase {
         XCTAssertEqual(presentation.focusBlocks.first?.title, "Release pipeline")
         XCTAssertTrue(presentation.focusBlocks.first?.summaryMarkdown.contains(
             "signing configuration") == true)
-        XCTAssertTrue(presentation.decisionsMarkdown?.contains("Publish") == true)
+        XCTAssertEqual(presentation.decisions, ["Publish the verified build."])
         XCTAssertFalse(overview.contains("Xcode"))
         XCTAssertFalse(overview.contains("17:00"))
     }
@@ -1162,9 +1162,8 @@ final class DayDigestEvidenceTests: XCTestCase {
             markdown: evidence.renderDocument(summary: overview, calendar: calendar))
 
         XCTAssertEqual(presentation.focusBlocks.first?.title, title)
-        XCTAssertEqual(
-            presentation.focusBlocks.first?.summaryMarkdown,
-            "In progress. \(summary)")
+        XCTAssertEqual(presentation.focusBlocks.first?.status, .inProgress)
+        XCTAssertEqual(presentation.focusBlocks.first?.summaryMarkdown, summary)
         XCTAssertFalse(overview.contains("…"))
     }
 
