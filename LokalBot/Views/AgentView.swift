@@ -6,6 +6,8 @@ struct AgentView: View {
     @ObservedObject var sessions: AgentSessionTabs
     @ObservedObject var installer: AgentRuntimeInstaller
     @SceneStorage("agent.tasks.width") private var taskColumnWidth = 272.0
+    private static let taskColumnMinWidth: CGFloat = 200
+    private static let conversationMinWidth: CGFloat = 350
 
     var body: some View {
         Group {
@@ -15,16 +17,18 @@ struct AgentView: View {
                 // with the transcript and can prevent the window shrinking.
                 HSplitView {
                     AgentTaskSidebar(sessions: sessions, verifyRuntime: verifyRuntime)
-                        .frame(minWidth: 200, idealWidth: taskColumnWidth, maxWidth: 340)
+                        .frame(minWidth: Self.taskColumnMinWidth, idealWidth: taskColumnWidth, maxWidth: 340)
                         .onGeometryChange(for: Double.self) { Double($0.size.width) } action: { taskColumnWidth = $0 }
                         .splitPaneAccessibilityLabel("Agent tasks", autosaveName: "LokalBot.agent", initialWidth: LBTokens.Metric.contentColumnWidth)
                     if let tab = sessions.selectedTab {
                         AgentSessionView(controller: tab.controller, sessions: sessions, taskID: tab.id)
                             .id(tab.id)
-                            .frame(minWidth: 350, maxWidth: .infinity, maxHeight: .infinity)
+                            .frame(minWidth: Self.conversationMinWidth, maxWidth: .infinity, maxHeight: .infinity)
                             .splitPaneAccessibilityLabel("Agent conversation")
                     }
                 }
+                .detailSplitMinimumWidth(sessions.selectedTab == nil
+                    ? [Self.taskColumnMinWidth] : [Self.taskColumnMinWidth, Self.conversationMinWidth])
                 .task { await sessions.refreshHistory() }
             } else { installCard }
         }

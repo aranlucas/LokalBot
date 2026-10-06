@@ -10,13 +10,15 @@ struct ProjectsWorkspaceView: View {
     var body: some View {
         HSplitView {
             list
-                .frame(minWidth: 240, idealWidth: LBTokens.Metric.contentColumnWidth, maxWidth: 340)
+                .frame(minWidth: LBTokens.Metric.contentColumnMinWidth,
+                       idealWidth: LBTokens.Metric.contentColumnWidth, maxWidth: 340)
                 .splitPaneAccessibilityLabel("Projects", autosaveName: "LokalBot.projects",
                                              initialWidth: LBTokens.Metric.contentColumnWidth)
             detail
-                .frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
+                .frame(minWidth: LBTokens.Metric.contentDetailMinWidth, maxWidth: .infinity, maxHeight: .infinity)
                 .splitPaneAccessibilityLabel("Project details")
         }
+        .detailSplitMinimumWidth([LBTokens.Metric.contentColumnMinWidth, LBTokens.Metric.contentDetailMinWidth])
         .task {
             // Projects come from Dream memory, which other sections load lazily.
             app.refreshDreamMemory()

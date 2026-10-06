@@ -11,13 +11,15 @@ struct PeopleWorkspaceView: View {
     var body: some View {
         HSplitView {
             list
-                .frame(minWidth: 240, idealWidth: LBTokens.Metric.contentColumnWidth, maxWidth: 340)
+                .frame(minWidth: LBTokens.Metric.contentColumnMinWidth,
+                       idealWidth: LBTokens.Metric.contentColumnWidth, maxWidth: 340)
                 .splitPaneAccessibilityLabel("People", autosaveName: "LokalBot.people",
                                              initialWidth: LBTokens.Metric.contentColumnWidth)
             detail
-                .frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
+                .frame(minWidth: LBTokens.Metric.contentDetailMinWidth, maxWidth: .infinity, maxHeight: .infinity)
                 .splitPaneAccessibilityLabel("Person details")
         }
+        .detailSplitMinimumWidth([LBTokens.Metric.contentColumnMinWidth, LBTokens.Metric.contentDetailMinWidth])
         .task { app.refreshConnections() }
         .onReceive(app.outcomeIndex.$projections.dropFirst()) { _ in app.refreshConnections() }
         .onChange(of: app.meetings.count) { app.refreshConnections() }

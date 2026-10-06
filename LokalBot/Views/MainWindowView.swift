@@ -125,12 +125,14 @@ struct MainWindowView: View {
         case .meetings:
             HSplitView {
                 MeetingListView(pendingDelete: $pendingDelete)
-                    .frame(minWidth: 240, idealWidth: LBTokens.Metric.contentColumnWidth, maxWidth: 340)
+                    .frame(minWidth: LBTokens.Metric.contentColumnMinWidth,
+                           idealWidth: LBTokens.Metric.contentColumnWidth, maxWidth: 340)
                     .splitPaneAccessibilityLabel("Meeting library", autosaveName: "LokalBot.meetings", initialWidth: LBTokens.Metric.contentColumnWidth)
                 MeetingLibraryDetailView(pendingDelete: $pendingDelete)
-                    .frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(minWidth: LBTokens.Metric.contentDetailMinWidth, maxWidth: .infinity, maxHeight: .infinity)
                     .splitPaneAccessibilityLabel("Meeting details")
             }
+            .detailSplitMinimumWidth([LBTokens.Metric.contentColumnMinWidth, LBTokens.Metric.contentDetailMinWidth])
             .id("workspace.meetings")
         case .people:
             PeopleWorkspaceView(connections: app.connections)
@@ -141,11 +143,13 @@ struct MainWindowView: View {
         case .ask:
             HSplitView {
                 ChatConversationList()
-                        .frame(minWidth: 240, idealWidth: LBTokens.Metric.contentColumnWidth, maxWidth: 340)
+                        .frame(minWidth: LBTokens.Metric.contentColumnMinWidth,
+                               idealWidth: LBTokens.Metric.contentColumnWidth, maxWidth: 340)
                         .splitPaneAccessibilityLabel("Conversations", autosaveName: "LokalBot.recall", initialWidth: LBTokens.Metric.contentColumnWidth)
-                AskView().frame(minWidth: 420, maxWidth: .infinity, maxHeight: .infinity)
+                AskView().frame(minWidth: LBTokens.Metric.contentDetailMinWidth, maxWidth: .infinity, maxHeight: .infinity)
                     .splitPaneAccessibilityLabel("Search and conversation")
             }
+            .detailSplitMinimumWidth([LBTokens.Metric.contentColumnMinWidth, LBTokens.Metric.contentDetailMinWidth])
             .id("workspace.recall")
         case .agent:
             AgentView(sessions: app.agentSessions, installer: app.agentInstaller)
