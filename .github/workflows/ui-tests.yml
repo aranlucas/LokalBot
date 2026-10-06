@@ -79,7 +79,7 @@ jobs:
     if: needs.changes.outputs.relevant == 'true'
     # Move to a self-hosted Mac (runs-on: [self-hosted, macOS]) once one
     # exists — see the TCC note at the top of this file.
-    runs-on: macos-15
+    runs-on: macos-26
     # A cold checksum-pinned llama.cpp build currently takes close to an hour
     # on GitHub's hosted Macs. Match the unit-test budget so the UI suite still
     # gets time to execute before the Vendor cache has been populated.
@@ -105,7 +105,7 @@ jobs:
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: "26.3"
+          xcode-version: "26.4.1"
 
       - name: Install build tools
         run: |
@@ -141,7 +141,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: .build/SourcePackages
-          key: packages-${{ runner.os }}-${{ runner.arch }}-xcode26.3-${{ hashFiles('**/Package.resolved') }}
+          key: packages-${{ runner.os }}-${{ runner.arch }}-xcode26.4.1-${{ hashFiles('**/Package.resolved') }}
 
       # Only the content-addressed compiler store is restored. Build products,
       # build databases and provenance always belong to this workflow attempt.
@@ -220,14 +220,14 @@ jobs:
     # Preserve this check's name and build dependency for existing branch rules.
     name: UI build and critical tests
     needs: build
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90
         with:
-          xcode-version: "26.3"
+          xcode-version: "26.4.1"
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: ui-products
@@ -263,14 +263,14 @@ jobs:
     name: UI reduced-motion
     needs: build
     if: github.event_name != 'workflow_dispatch' || inputs.filter == ''
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90
         with:
-          xcode-version: "26.3"
+          xcode-version: "26.4.1"
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: ui-products
@@ -301,7 +301,7 @@ jobs:
     name: UI ${{ matrix.phase }}
     needs: build
     if: github.event_name != 'workflow_dispatch' || inputs.filter == ''
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 35
     strategy:
       fail-fast: false
@@ -312,7 +312,7 @@ jobs:
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90
         with:
-          xcode-version: "26.3"
+          xcode-version: "26.4.1"
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: ui-products
