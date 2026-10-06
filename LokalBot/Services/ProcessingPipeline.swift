@@ -696,12 +696,13 @@ final class ProcessingPipeline: ObservableObject {
                     from: previousTranscript,
                     in: folder,
                     regenerated: transcript)
-                let mergedSanitization = TranscriptSanitizer.sanitize(transcript)
+                let mergedSanitization = TranscriptSanitizer.sanitize(transcript, prompt: prompt)
                 transcript = mergedSanitization.transcript
                 if mergedSanitization.changed {
                     lokalbotLog(
                         "transcript cleanup after merge changedSegments="
-                            + "\(mergedSanitization.changedSegments) removedWords="
+                            + "\(mergedSanitization.changedSegments) removedSegments="
+                            + "\(mergedSanitization.removedSegments) removedWords="
                             + "\(mergedSanitization.removedWords) removedCharacters="
                             + "\(mergedSanitization.removedCharacters)")
                 }
@@ -783,14 +784,19 @@ final class ProcessingPipeline: ObservableObject {
                     for: meeting,
                     notified: &notifiedArtifactsWillChange)
                 try write(transcript, for: meeting)
-                let sanitization = TranscriptSanitizer.sanitize(transcript)
+                // The vocabulary this meeting was transcribed with, so rows
+                // that only repeat it never become notes evidence.
+                let sanitization = TranscriptSanitizer.sanitize(
+                    transcript,
+                    prompt: TranscriptionVocabulary.savedPrompt(manual: config.transcriptionPrompt, in: folder))
                 if sanitization.changed {
                     transcript = sanitization.transcript
                     try requireCommitPermission(for: meeting.id)
                     try write(transcript, for: meeting)
                     lokalbotLog(
                         "transcript cleanup before summary changedSegments="
-                            + "\(sanitization.changedSegments) removedWords="
+                            + "\(sanitization.changedSegments) removedSegments="
+                            + "\(sanitization.removedSegments) removedWords="
                             + "\(sanitization.removedWords) removedCharacters="
                             + "\(sanitization.removedCharacters)")
                 }
@@ -1110,12 +1116,13 @@ final class ProcessingPipeline: ObservableObject {
             "transcription track start track=\(name) engine=\(engine.displayName) duration=\(Self.formatSeconds(duration)) language=\(language ?? "auto")")
         var transcript = try await AttributedTrackTranscriber.transcribe(url: url, duration: duration,
             diarization: diarization, source: source, engine: engine, language: language, prompt: prompt, contentRange: contentRange)
-        let sanitization = TranscriptSanitizer.sanitize(transcript)
+        let sanitization = TranscriptSanitizer.sanitize(transcript, prompt: prompt)
         transcript = sanitization.transcript
         if sanitization.changed {
             lokalbotLog(
                 "transcript cleanup track=\(name) changedSegments="
-                    + "\(sanitization.changedSegments) removedWords="
+                    + "\(sanitization.changedSegments) removedSegments="
+                    + "\(sanitization.removedSegments) removedWords="
                     + "\(sanitization.removedWords) removedCharacters="
                     + "\(sanitization.removedCharacters)")
         }

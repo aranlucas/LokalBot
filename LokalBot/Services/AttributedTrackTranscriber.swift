@@ -55,6 +55,26 @@ enum AttributedTrackTranscriber {
     static func transcribe(url: URL, duration: Double, diarization: [DiarizedSegment],
                            source: SpeakerAttribution.Source, engine: TranscriptionEngine,
                            language: String?, prompt: String?, contentRange: Meeting.ContentRange? = nil) async throws -> Transcript {
+        var transcript = try await attributedTranscript(url: url, duration: duration, diarization: diarization,
+            source: source, engine: engine, language: language, prompt: prompt, contentRange: contentRange)
+        // A prompt-capable model answers a near-silent span with its
+        // vocabulary hint, and forced alignment then packs those words into a
+        // sub-second row of their own. Nothing downstream should see one.
+        if let echo = TranscriptionPromptEcho(prompt: prompt) {
+            let kept = echo.removing(from: transcript.segments)
+            if kept.count < transcript.segments.count {
+                lokalbotLog("speaker-asr: dropped \(transcript.segments.count - kept.count) row(s) echoing the vocabulary prompt")
+                transcript.segments = kept
+            }
+        }
+        return transcript
+    }
+
+    @MainActor
+    private static func attributedTranscript(url: URL, duration: Double, diarization: [DiarizedSegment],
+                                             source: SpeakerAttribution.Source, engine: TranscriptionEngine,
+                                             language: String?, prompt: String?,
+                                             contentRange: Meeting.ContentRange?) async throws -> Transcript {
         if engine.speakerAttribution == .alignedWords, !(diarization.isEmpty && contentRange == nil),
            let transcript = try await alignedWordTranscript(
                url: url, duration: duration, diarization: diarization, source: source, engine: engine,

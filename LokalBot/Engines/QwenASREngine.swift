@@ -163,12 +163,14 @@ actor QwenASREngine: TranscriptionEngine {
             }
         }
         var segments = try await decode(language: Self.qwenLanguage(language))
+        segments = Self.withoutPromptEchoes(segments, prompt: prompt)
         var pinned: String?
         if Self.qwenLanguage(language) == nil, let vote = Self.pinnedLanguage(for: segments.map(\.text)) {
             // Per-window auto-detection misfires on short or accented speech;
             // a track in one language decodes better pinned to it.
             pinned = vote
             segments = try await decode(language: vote)
+            segments = Self.withoutPromptEchoes(segments, prompt: prompt)
         }
         let elapsed = Date().timeIntervalSince(started)
         let duration = spans.last?.end ?? 0
@@ -277,6 +279,20 @@ actor QwenASREngine: TranscriptionEngine {
         guard let vote = TranscriptLanguageVote.dominant(in: texts), vote.share >= 0.8,
               supportedLanguages.contains(vote.code) else { return nil }
         return vote.code
+    }
+
+    /// A near-silent span decodes to the context itself ("Mila Novak, Orion
+    /// Launch, Acme."). Dropped here so dictation never types the list and
+    /// the language vote hears only speech; the track transcriber repeats
+    /// the check for engines that do not.
+    nonisolated static func withoutPromptEchoes(_ segments: [Transcript.Segment],
+                                                prompt: String?) -> [Transcript.Segment] {
+        guard let echo = TranscriptionPromptEcho(prompt: prompt) else { return segments }
+        let kept = echo.removing(from: segments)
+        if kept.count < segments.count {
+            lokalbotLog("qwen-asr dropped \(segments.count - kept.count) span(s) echoing the vocabulary prompt")
+        }
+        return kept
     }
 
     private static func qwenLanguage(_ language: String?) -> String? {

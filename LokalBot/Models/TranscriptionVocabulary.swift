@@ -33,6 +33,8 @@ enum TranscriptionVocabulary {
     /// Priority order: attendees, then names the user applied before, then
     /// projects, then title terms. Deduplicated case- and accent-insensitively
     /// and bounded so the prompt never crowds out the audio context.
+    /// Placeholder speaker labels and the suffix meeting merges add to names
+    /// never reach the recognizer.
     static func terms(_ sources: Sources) -> [String] {
         var seen = Set<String>()
         var result: [String] = []
@@ -40,8 +42,7 @@ enum TranscriptionVocabulary {
         let ordered = sources.attendeeNames + sources.appliedSpeakerNames
             + sources.projectNames + sources.titleTerms
         for raw in ordered {
-            let term = raw.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
-                .trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
+            let term = cleanedTerm(raw)
             guard (2...60).contains(term.count), !isPlaceholderName(term) else { continue }
             let key = term.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
             guard seen.insert(key).inserted else { continue }
@@ -132,6 +133,12 @@ enum TranscriptionVocabulary {
         return try? decoder.decode(Record.self, from: data)
     }
 
+    /// The prompt a finished meeting was transcribed with, for cleanup that
+    /// runs after transcription: the manual vocabulary plus the saved terms.
+    static func savedPrompt(manual: String, in folder: URL) -> String {
+        prompt(manual: manual, terms: load(from: folder)?.terms ?? [])
+    }
+
     static func save(_ record: Record, to folder: URL) throws {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -148,13 +155,33 @@ enum TranscriptionVocabulary {
         "to", "weekly", "with", "workshop", "interview", "onboarding", "update",
     ]
 
+    /// Department and format words name a series ("Product standup", so they
+    /// still relate its meetings) but are ordinary words a speech model spells
+    /// on its own; as vocabulary, "Product" came back in prompt-echo rows.
+    private static let commonTitleWords: Set<String> = [
+        "product", "design", "engineering", "eng", "dev", "tech", "marketing", "sales",
+        "research", "support", "operations", "ops", "finance", "legal", "hr", "people",
+        "leadership", "management", "growth", "data", "platform", "mobile", "web",
+        "backend", "frontend", "infra", "infrastructure", "security", "analytics",
+        "content", "community", "customer", "client", "partner", "vendor", "status",
+        "project", "sprint", "roadmap", "strategy", "discussion", "session",
+        "brainstorm", "brainstorming", "lunch", "coffee", "chat", "intro",
+        "introduction", "prep", "debrief", "backlog", "grooming", "refinement",
+        "triage", "handoff", "huddle", "offsite", "training", "feedback", "budget",
+        "hiring", "recruiting", "release", "launch", "general", "internal",
+        "external", "optional", "agenda", "notes", "followup", "follow", "biweekly",
+        "fortnightly", "morning", "afternoon", "evening", "today", "tomorrow",
+    ]
+
     /// Capitalized or mixed-case words and acronyms from a title ("Acme",
     /// "iOS", "SDK") are likely names worth spelling; generic words are not.
     static func titleTerms(_ title: String) -> [String] {
         title.split(whereSeparator: { !$0.isLetter && !$0.isNumber && $0 != "-" && $0 != "'" })
             .map(String.init)
             .filter { word in
-                guard word.count >= 2, !genericTitleWords.contains(word.lowercased()) else { return false }
+                let lowered = word.lowercased()
+                guard word.count >= 2, !genericTitleWords.contains(lowered),
+                      !commonTitleWords.contains(lowered) else { return false }
                 guard word.rangeOfCharacter(from: .letters) != nil else { return false }
                 let hasUpper = word.rangeOfCharacter(from: .uppercaseLetters) != nil
                 let isCapitalized = word.first?.isUppercase == true
@@ -167,11 +194,19 @@ enum TranscriptionVocabulary {
         normalizedTitle.split(separator: " ").allSatisfy { genericTitleWords.contains(String($0)) }
     }
 
-    /// Placeholder speaker labels carry no spelling value.
+    /// Placeholder speaker labels ("Them 6", "Speaker unclear", "Local
+    /// speaker") and collective words carry no spelling value; fed to a
+    /// recognizer, a label came back as transcript rows on silent spans.
     private static func isPlaceholderName(_ name: String) -> Bool {
-        let lowered = name.lowercased()
-        return ["me", "you", "them", "speaker", "other speaker", "unknown", "remote"].contains(lowered)
-            || lowered.range(of: #"^speaker \d+$"#, options: .regularExpression) != nil
+        Transcript.isPlaceholderSpeakerName(name) || PeopleDirectory.isPlaceholder(name)
+    }
+
+    /// Meeting merges suffix applied names with "· source 2", which names a
+    /// recording rather than a person; whitespace and edge punctuation go too.
+    private static func cleanedTerm(_ raw: String) -> String {
+        PeopleDirectory.cleanedName(raw)
+            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines.union(.punctuationCharacters))
     }
 
     private static func normalizedKey(_ value: String) -> String {

@@ -1,17 +1,28 @@
 import Foundation
 
-/// Removes only objectively pathological ASR repetition. Normal conversational
-/// emphasis is left intact: word/phrase collapse requires a long repeated
-/// cycle plus an impossible rate or a fast, overwhelmingly repetitive burst.
+/// Removes only objectively pathological ASR output: extreme repetition,
+/// rows that merely repeat the vocabulary prompt, and precisely timed rows
+/// too fast to be speech. Normal conversational emphasis is left intact:
+/// word/phrase collapse requires a long repeated cycle plus an impossible
+/// rate or a fast, overwhelmingly repetitive burst.
 enum TranscriptSanitizer {
     struct Result {
         var transcript: Transcript
         var changedSegments: Int
+        var removedSegments: Int = 0
         var removedWords: Int
         var removedCharacters: Int
 
-        var changed: Bool { changedSegments > 0 }
+        var changed: Bool { changedSegments > 0 || removedSegments > 0 }
     }
+
+    /// A precisely timed row with at least this many words at this rate is
+    /// not speech: the forced aligner packs words a model made up for a
+    /// near-silent gap into a fraction of a second (8–12 words in under one).
+    /// Coarse or unknown timing never authorizes removal, and a collapsed
+    /// filler loop is judged by the words it keeps.
+    static let implausibleRateMinimumWords = 8
+    static let implausibleWordsPerSecond: Double = 10
 
     private struct Word: Equatable {
         var normalized: String
@@ -25,19 +36,33 @@ enum TranscriptSanitizer {
         var span: Int { period * repetitions }
     }
 
-    static func sanitize(_ transcript: Transcript) -> Result {
-        var cleaned = transcript
+    /// `prompt` is the vocabulary prompt the transcript was made with, when
+    /// known. Rows that only repeat it are removed (`TranscriptionPromptEcho`).
+    static func sanitize(_ transcript: Transcript, prompt: String? = nil) -> Result {
+        let echo = TranscriptionPromptEcho(prompt: prompt)
+        var kept: [Transcript.Segment] = []
+        kept.reserveCapacity(transcript.segments.count)
         var changedSegments = 0
+        var removedSegments = 0
         var removedWords = 0
         var removedCharacters = 0
 
-        for index in cleaned.segments.indices {
-            let segment = cleaned.segments[index]
+        for segment in transcript.segments {
             let original = segment.displayText
-            guard !original.isEmpty else { continue }
+            guard !original.isEmpty else {
+                kept.append(segment)
+                continue
+            }
             let characterCleaned = collapseExtremeCharacterRuns(in: original)
             let originalWords = words(in: characterCleaned)
+            if echo?.matches(original) == true {
+                removedSegments += 1
+                removedWords += originalWords.count
+                removedCharacters += original.count
+                continue
+            }
             var finalText = characterCleaned
+            var remainingWords = originalWords.count
 
             let duration = max(0.25, segment.end - segment.start)
             let wordsPerSecond = Double(originalWords.count) / duration
@@ -51,19 +76,36 @@ enum TranscriptSanitizer {
                 if removed > 0, impossibleRate || dominatedByLoop {
                     finalText = collapsed.text
                     removedWords += removed
+                    remainingWords -= removed
                 }
+            }
+            if segment.timingPrecision?.isBleedFilterSafe == true,
+               remainingWords >= implausibleRateMinimumWords,
+               Double(remainingWords) / duration >= implausibleWordsPerSecond {
+                removedSegments += 1
+                removedWords += remainingWords
+                removedCharacters += original.count
+                continue
             }
 
             finalText = Transcript.normalizedText(finalText)
-            guard finalText != original else { continue }
+            guard finalText != original else {
+                kept.append(segment)
+                continue
+            }
             removedCharacters += max(0, original.count - finalText.count)
-            cleaned.segments[index].text = finalText
+            var updated = segment
+            updated.text = finalText
+            kept.append(updated)
             changedSegments += 1
         }
 
+        var cleaned = transcript
+        cleaned.segments = kept
         return Result(
             transcript: cleaned,
             changedSegments: changedSegments,
+            removedSegments: removedSegments,
             removedWords: removedWords,
             removedCharacters: removedCharacters)
     }
