@@ -48,30 +48,55 @@ final class OutcomeEvidencePolicyTests: XCTestCase {
         }
     }
 
-    func testObligationRecognitionPreservesNegationConditionsAndReportedSpeech() {
+    func testObligationRecognitionRefusesNegationQuestionsAndReportedSpeech() {
         for text in ["I don't have to review it.", "I have to not review it.", "I no longer have to review it.",
-                     "I had to review it.", "Do I have to review it?", "If approved, I have to review it.",
-                     "I think you have to review it.", "I think I might have to review it.", "We need to review it.",
-                     "Yesterday I said I have to review it.", "I need to review it unless it is cancelled."] {
+                     "I had to review it.", "Do I have to review it?", "I think you have to review it.",
+                     "I think I might have to review it.", "We need to review it.", "Yesterday I said I have to review it.",
+                     "When I have to review it, the build breaks.", "I should have reviewed it."] {
             XCTAssertFalse(OutcomeEvidencePolicy.isCommitment(text), text)
             XCTAssertEqual(resolve(text).resolution, .unresolved, text)
         }
     }
 
-    func testPersonalPlansStillRejectConditionsNegationReportsAndCollectiveOwnership() {
-        for text in ["On my side, I might send the draft.", "I plan to send the draft if approved.",
-                     "If approved, I do plan to send the draft.", "Maybe I plan to send it.",
-                     "I do not plan to send it.", "I don't plan to send it.", "I plan to not send it.",
-                     "I'm planning to never send it.", "I intend to no longer send it.",
+    /// A condition says when a task happens, not whose it is. In run-on
+    /// speech an "if" from a neighboring clause used to cost the speaker a
+    /// plain "I'll" (2026-10-05).
+    func testAConditionOrAHedgeDoesNotChangeWhoseTaskItIs() {
+        for text in ["If approved, I have to review it.", "I need to review it unless it is cancelled.",
+                     "I plan to send the draft if approved.", "If approved, I do plan to send the draft.",
+                     "Maybe I will send it.", "If I have time, I will send it.", "I will send it if approved.",
+                     "Those can be simpler if we update the plan but I'll ping Mira to get that resolved."] {
+            XCTAssertTrue(OutcomeEvidencePolicy.isCommitment(text), text)
+            XCTAssertEqual(resolve(text).resolution, .other, text)
+        }
+        for text in ["If approved, I will send it.", "I will send it if approved."] {
+            XCTAssertEqual(resolve(text, quote: "I will send it").resolution, .other, text)
+        }
+    }
+
+    func testPersonalPlansStillRejectNegationReportsAndCollectiveOwnership() {
+        for text in ["On my side, I might send the draft.", "I do not plan to send it.", "I don't plan to send it.",
+                     "I plan to not send it.", "I'm planning to never send it.", "I intend to no longer send it.",
                      "I plan to send it?", "Yesterday I said I plan to send it.",
-                     "On my side, I said I'll send it.", "On my side, we plan to send it.",
-                     "I hope to send it.", "I would like to send it."] {
+                     "On my side, I said I'll send it.", "On my side, we plan to send it.", "I hope to send it."] {
             XCTAssertFalse(OutcomeEvidencePolicy.isCommitment(text), text)
             XCTAssertEqual(resolve(text).resolution, .unresolved, text)
         }
-        for text in ["If approved, I plan to send it.", "Yesterday I said I plan to send it.",
-                     "I plan to send it if approved.", "I plan to send it?"] {
+        for text in ["Yesterday I said I plan to send it.", "I plan to send it?"] {
             XCTAssertEqual(resolve(text, quote: "I plan to send it").rejectionReason, .unsupportedCommitment, text)
+        }
+    }
+
+    func testOffersAndStatedWishesAreTheSpeakersOwn() {
+        for text in ["I can send you the numbers tomorrow morning.", "I would like to send it.", "I could share that benchmark.",
+                     "Let me do a bit more work on it.", "I have some comments from you to resolve.",
+                     "Alice and I are going to send it."] {
+            XCTAssertTrue(OutcomeEvidencePolicy.isCommitment(text), text)
+            XCTAssertEqual(resolve(text).resolution, .other, text)
+        }
+        for text in ["I have nothing to add.", "I have a question to ask.", "Let me know when it is merged.",
+                     "I'll need you to send the report."] {
+            XCTAssertFalse(OutcomeEvidencePolicy.isCommitment(text), text)
         }
     }
 
@@ -96,21 +121,27 @@ final class OutcomeEvidencePolicyTests: XCTestCase {
             quote: "Alice will send it.", basis: "assignment").resolution, .other)
     }
 
-    func testQuestionsNegationHypotheticalsPastReportsAndCollectivePlansStayUnclear() {
-        for text in ["I can do that?", "I will not send it.", "I will never do that.", "Maybe I will send it.",
-                     "If I have time, I will send it.", "I will send it if approved.",
-                     "I said I will send it.", "We are going to send it.", "Alice and I are going to send it."] {
+    func testQuestionsNegationPastReportsAndCollectivePlansStayUnclear() {
+        for text in ["I can do that?", "I will not send it.", "I will never do that.",
+                     "I said I will send it.", "We are going to send it."] {
             let result = resolve(text)
             XCTAssertEqual(result.resolution, .unresolved, text)
             XCTAssertEqual(result.rejectionReason, .unsupportedCommitment, text)
         }
     }
 
-    func testShortQuotesCannotRemoveSurroundingConditionsOrQuestions() {
-        for text in ["If approved, I will send it.", "I will send it if approved.",
-                     "Yesterday I said I will send it.", "I will send it?"] {
+    func testShortQuotesCannotRemoveSurroundingReportsOrQuestions() {
+        for text in ["Yesterday I said I will send it.", "I will send it?"] {
             XCTAssertEqual(resolve(text, quote: "I will send it").rejectionReason, .unsupportedCommitment, text)
         }
+    }
+
+    /// The model tidies what it copies. A quote without the stumble still
+    /// points at the words that were said.
+    func testATidiedQuoteStillFindsTheSpokenCommitment() {
+        let spoken = "The export change is something I I have to update and and confirm."
+        XCTAssertEqual(resolve(spoken, quote: "the export change is something I have to update and confirm").resolution, .other)
+        XCTAssertEqual(resolve(spoken, quote: "something I have to rewrite").rejectionReason, .quoteNotFound)
     }
 
     func testAcceptanceStillRequiresIndependentIdentityAndTheCorrectSpeaker() {

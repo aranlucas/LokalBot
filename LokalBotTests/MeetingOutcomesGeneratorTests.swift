@@ -50,6 +50,31 @@ final class MeetingOutcomesGeneratorTests: XCTestCase {
         XCTAssertTrue(merged.decisionRecords.isEmpty)
     }
 
+    /// Asked again about a row, the built-in 4B model returned the row's own
+    /// words as a second task beside the one already written from it.
+    func testATaskThatOnlyRepeatsItsSourceMergesIntoTheTaskWrittenFromIt() {
+        let spoken = "those can be simpler if we update the plan but I'll ping you Mira and Jonas to to get that resolved in chat"
+        let citation = OutcomeSourceCitation(segmentID: "segment-0011-0000046300-0000058000", start: 46.3, end: 58,
+                                             speaker: "me", excerpt: spoken)
+        let other = OutcomeSourceCitation(segmentID: "segment-0005-0000019400-0000024000", start: 19.4, end: 24,
+                                          speaker: "me", excerpt: "export change is something I I have to update")
+        func mine(_ text: String, _ citation: OutcomeSourceCitation) -> MeetingOutcomes.ActionItem {
+            .init(text: text, owner: "Me", isForUser: true, citations: [citation],
+                  attribution: .init(resolution: .user, speakerID: "me", basis: .commitment, quote: citation.excerpt))
+        }
+        var first = MeetingOutcomes()
+        first.actionItems = [mine("Ping Mira and Jonas in chat to resolve the plan", citation),
+                             mine("Update the export change", other)]
+        var repair = MeetingOutcomes()
+        repair.actionItems = [mine("I'll ping you Mira and Jonas to to get that resolved in chat", citation)]
+
+        for parts in [[first, repair], [repair, first]] {
+            let merged = MeetingOutcomesGenerator.merge(parts)
+            XCTAssertEqual(Set(merged.actionItems.map(\.text)),
+                           ["Ping Mira and Jonas in chat to resolve the plan", "Update the export change"])
+        }
+    }
+
     func testAcceptanceIsNotRepeatedAsADecisionWhenItsParaphraseDiffers() {
         let citation = OutcomeSourceCitation(segmentID: "s2", start: 5, end: 6,
                                              speaker: "me", excerpt: "Yeah, I can do that.")

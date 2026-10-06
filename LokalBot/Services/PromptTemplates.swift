@@ -30,16 +30,21 @@ enum PromptTemplates {
             an acceptance to a different task from minutes earlier. Conversation management such
             as promising to be more specific is not a follow-up task. Write tasks as verb phrases,
             never as completed-work or status reports.
-            Each action needs an exact ownership quote: the clause in source expressing THAT task's undertaking,
+            Each action needs an exact ownership quote: the words in source expressing THAT task's undertaking,
             assignment or request (<=1000 characters). Use "" only when ownership evidence is unclear.
-            Quote the whole clause including any condition or negation. Never borrow another task's
+            Copy the quote from one row exactly as written, repeated or stumbled words included; never
+            tidy it or join rows. Keep any condition or negation it carries. Never borrow another task's
             promise from a mixed passage: "I'll prepare the policy, and you will send the measurements"
             does not make sending the measurements the speaker's commitment. If the actors cannot
             be separated using another source, keep the owner unknown. A topical status report
             alone is not a task. Do not turn completed work, possibilities, or questions into tasks.
-            For clear "I will", "I'm going to", "I have to", "I still have to", "I need to", "I must",
-            or "I think I still have to" undertakings, use basis="commitment", owner="source"
-            and cite that undertaking as source, not an earlier status row. The app resolves its speaker.
+            When a speaker says what they themselves will, have to, need to, can or want to do
+            ("I'll", "I'm going to", "I have to", "I need to", "I can", "let me"), use basis="commitment",
+            owner="source", wherever those words sit in the sentence ("the report is something I have
+            to update") and even when a condition is attached; keep the condition in the task text.
+            A sentence can run over several consecutive rows of one speaker: cite the row holding
+            those first-person words as source, not an earlier status row, and the rows that finish
+            the sentence as context. The app resolves its speaker.
             For assignment/request, use an explicitly named target's roster ID. When another
             participant asks the user with "you" and the user answers in the next row, use the
             user's roster ID with basis="request", cite the request as source and the answer as
@@ -76,10 +81,12 @@ enum PromptTemplates {
             For an action, source is the actual undertaking/request; context contains up to two nearby sources explaining the task.
             If the source says "I can do that", find what was requested nearby and name that concrete task, such as "Send the proposal".
             Never write vague "perform the requested task" or substitute an unrelated task. Cite both acceptance and request.
-            Copy an exact ownership quote (<=1000 characters) from that source, in the original language, with its conditions intact.
+            Copy an exact ownership quote (<=1000 characters) from that source row as written, stumbled words included,
+            in the original language, with its conditions intact.
             The quote must express THIS task, not a different promise from the same passage. Use "" when ownership is unclear.
-            For "I will", "I have to", "I still have to", "I need to", "I must", "I think I still have to", or an acceptance,
-            use owner="source", basis="commitment". An explicitly named request can use the target's roster ID.
+            For a speaker's own "I'll", "I will", "I have to", "I need to", "I can", "let me", or an acceptance, wherever it
+            sits in the sentence, use owner="source", basis="commitment" and cite the row holding those words as source.
+            An explicitly named request can use the target's roster ID.
             If a passage mixes actors ("I'll prepare the policy, and you will send the measurements"), never borrow the first
             promise for the second task. Find a separate source for this task's owner, or keep owner="unknown", basis="unclear".
             A "you" request that the user answers in the next row can use the user's roster ID with basis="request".
