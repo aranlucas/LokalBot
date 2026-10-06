@@ -44,6 +44,9 @@ struct AgentApprovalDock: View {
             if let content = request.content {
                 approvalCode(label: "Content to write", value: content)
             }
+            if let arguments = request.arguments {
+                approvalCode(label: "Arguments", value: arguments)
+            }
             ForEach(Array(request.edits.enumerated()), id: \.offset) { index, edit in
                 VStack(alignment: .leading, spacing: 6) {
                     if request.edits.count > 1 {

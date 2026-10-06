@@ -35,6 +35,18 @@ final class AgentWorkspaceTests: XCTestCase {
         XCTAssertFalse(request("").canApprove)
     }
 
+    func testToolArgumentsApprovalRequiresTheCompleteArguments() {
+        func request(_ arguments: String, truncated: Bool = false) -> AgentApprovalRequest {
+            .init(id: "tool", tool: "mcp__stub__touch", workspace: root.path, path: nil, command: nil,
+                  content: nil, edits: [], summary: nil, isTruncated: truncated, arguments: arguments)
+        }
+        XCTAssertTrue(request(String(repeating: "x", count: 65_536)).canApprove)
+        XCTAssertFalse(request(String(repeating: "x", count: 65_537)).canApprove)
+        XCTAssertFalse(request(String(repeating: "😀", count: 32_769)).canApprove)
+        XCTAssertFalse(request("{}", truncated: true).canApprove)
+        XCTAssertTrue(request("{}").hasStructuredDetails)
+    }
+
     func testArchiveUsesOnlySelectedBranchAndForkPreservesOriginal() throws {
         let file = root.appendingPathComponent("original.jsonl")
         try write([

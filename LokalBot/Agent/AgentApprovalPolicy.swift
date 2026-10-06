@@ -18,8 +18,8 @@ enum AgentApprovalMode: Int, CaseIterable, Identifiable, Equatable {
 }
 
 /// Pure approval policy for gated agent tools. The bundled pi extension
-/// raises approval requests for `write`, `edit`, `bash`, and any `read` whose
-/// canonical path escapes the selected workspace. This type
+/// raises an approval request for every tool call except a `read` inside the
+/// selected workspace and outside the private library. This type
 /// decides whether a raised request can be answered automatically
 /// (approval mode, session allowances) or must be shown to the user.
 struct AgentApprovalPolicy: Equatable {

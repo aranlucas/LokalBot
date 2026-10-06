@@ -1,5 +1,5 @@
 // LokalBot pi extension: registers the app-configured local LLM as a
-// provider and gates mutating tools behind the host UI.
+// provider and gates every tool except workspace reads behind the host UI.
 //
 // Runs inside pi (RPC mode) under Bun. The env contract comes from
 // PiLaunchPlanner; the confirm() below surfaces in LokalBot as an
@@ -11,7 +11,9 @@ import { existsSync, realpathSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { homedir } from "node:os";
 
-const MUTATING_TOOLS = new Set(["write", "edit", "bash"]);
+// Tools whose approval card shows a dedicated preview. Any other tool is
+// reviewed from its exact arguments, which must fit in full.
+const PREVIEWED_TOOLS = new Set(["read", "write", "edit", "bash"]);
 const MAX_APPROVAL_TEXT = 64 * 1024;
 const API_KEY = Symbol.for("lokalbot.llmApiKey");
 
@@ -85,6 +87,12 @@ export default function lokalbotExtension(pi: ExtensionAPI) {
       const command = (event.input as Record<string, unknown> | undefined)?.command;
       if (typeof command !== "string" || command.length > MAX_APPROVAL_TEXT) {
         return { block: true, reason: "The shell command cannot be reviewed in full. Keep each command within 65,536 characters; this request was not run." };
+      }
+    }
+    if (!PREVIEWED_TOOLS.has(event.toolName)) {
+      const args = argumentsText(event.input);
+      if (args === undefined || args.length > MAX_APPROVAL_TEXT) {
+        return { block: true, reason: `The ${event.toolName} request cannot be reviewed in full. Keep its arguments within 65,536 characters; this request was not run.` };
       }
     }
     if (!requiresApproval(event.toolName, event.input, protectedRoots)) return undefined;
@@ -179,9 +187,11 @@ function privateRoots(): string[] {
   });
 }
 
+/// Allowlist: a read inside the selected workspace and outside the private
+/// library is the only call that runs without asking. Every other tool asks,
+/// including MCP tools, codemode, and tools that later Pi releases add.
 function requiresApproval(toolName: string, input: unknown, protectedRoots: string[]): boolean {
-  if (MUTATING_TOOLS.has(toolName)) return true;
-  if (toolName !== "read") return false;
+  if (toolName !== "read") return true;
   const args = (input ?? {}) as Record<string, unknown>;
   const path = canonicalPath(args.path ?? args.file_path);
   // Missing/unresolvable paths are never silently treated as in-workspace.
@@ -189,6 +199,15 @@ function requiresApproval(toolName: string, input: unknown, protectedRoots: stri
   // the private library, server credentials, or Agent history normal files.
   return !path || protectedRoots.some((root) => isInside(path, root))
     || !isInside(path, realpathSync(process.cwd()));
+}
+
+/// The exact arguments a tool without a dedicated preview will run with.
+function argumentsText(input: unknown): string | undefined {
+  try {
+    return JSON.stringify(input ?? {}, null, 2);
+  } catch {
+    return undefined;
+  }
 }
 
 function boundedText(value: unknown): { text: string; truncated: boolean } {
@@ -242,6 +261,9 @@ function approvalPayload(toolName: string, input: unknown): Record<string, unkno
       payload.path = canonicalPath(args.path ?? args.file_path) ?? requestedPath(args.path ?? args.file_path);
       break;
     }
+    default:
+      // Checked against MAX_APPROVAL_TEXT before approval is requested.
+      payload.arguments = argumentsText(input);
   }
   return payload;
 }

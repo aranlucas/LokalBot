@@ -90,7 +90,8 @@ final class AgentSessionControllerTests: XCTestCase {
         path: String?,
         content: String,
         command: String? = nil,
-        truncated: Bool = false
+        truncated: Bool = false,
+        arguments: String? = nil
     ) throws -> String {
         var payload: [String: Any] = [
             "tool": tool,
@@ -100,6 +101,7 @@ final class AgentSessionControllerTests: XCTestCase {
         ]
         if tool == "bash" { payload["command"] = command ?? "printf fixture" }
         if let path { payload["path"] = path }
+        if let arguments { payload["arguments"] = arguments }
         let payloadData = try JSONSerialization.data(withJSONObject: payload)
         let payloadString = String(decoding: payloadData, as: UTF8.self)
         let event: [String: Any] = [
@@ -801,6 +803,28 @@ final class AgentSessionControllerTests: XCTestCase {
                 $0.contains("\"id\":\"\(id)\"") && $0.contains(#""confirmed":true"#)
             })
         }
+        await controller.shutdown()
+    }
+
+    func testOtherToolsShowTheirArgumentsAndAlwaysAskEvenInFullAccessMode() async throws {
+        let controller = makeController()
+        await controller.setApprovalMode(.fullAccess)
+        await controller.start()
+        let arguments = #"{"path": "/tmp/touched.txt"}"#
+        transport.inject(try approvalEvent(id: "mcp", tool: "mcp__stub__touch",
+            workspace: controller.workspace.path, path: nil, content: "", arguments: arguments))
+        transport.inject(try approvalEvent(id: "oversized", tool: "codemode",
+            workspace: controller.workspace.path, path: nil, content: "",
+            arguments: String(repeating: "😀", count: 32_769)))
+        try await pump()
+        XCTAssertEqual(controller.pendingApprovals.map(\.id), ["mcp"])
+        let pending = try XCTUnwrap(controller.pendingApprovals.first)
+        XCTAssertEqual(pending.arguments, arguments)
+        XCTAssertFalse(controller.canAllowForSession(pending))
+        XCTAssertFalse(transport.sentLines.contains { $0.contains(#""id":"mcp""#) })
+        XCTAssertTrue(transport.sentLines.contains {
+            $0.contains(#""id":"oversized""#) && $0.contains(#""confirmed":false"#)
+        })
         await controller.shutdown()
     }
 

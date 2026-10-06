@@ -22,10 +22,16 @@ struct AgentApprovalRequest: Equatable, Identifiable {
     let edits: [Edit]
     let summary: String?
     let isTruncated: Bool
+    /// Exact JSON arguments of a tool without a dedicated preview (MCP tools,
+    /// codemode, tools added by later Pi releases).
+    var arguments: String?
 
     /// Also enforced in the extension before an approval is requested. Keep
     /// the host fail-closed for old, malformed, or locally bounded payloads.
     var canApprove: Bool {
+        if let arguments {
+            return !isTruncated && arguments.utf16.count <= 64 * 1_024
+        }
         guard ["bash", "shell"].contains(tool.lowercased()) else { return true }
         guard let command, !command.isEmpty else { return false }
         return !isTruncated && command.utf16.count <= 64 * 1_024
@@ -33,6 +39,7 @@ struct AgentApprovalRequest: Equatable, Identifiable {
 
     var hasStructuredDetails: Bool {
         workspace != nil || path != nil || command != nil || content != nil || !edits.isEmpty
+            || arguments != nil
     }
 }
 
@@ -229,6 +236,7 @@ struct AgentTranscriptFolder: Equatable {
         let workspace = consume(request.workspace)
         let path = consume(request.path)
         let command = consume(request.command)
+        let arguments = consume(request.arguments)
         let content = consume(request.content)
         var edits: [AgentApprovalRequest.Edit] = []
         for edit in request.edits where remaining > 0 {
@@ -247,7 +255,8 @@ struct AgentTranscriptFolder: Equatable {
             content: content,
             edits: edits,
             summary: summary,
-            isTruncated: truncated)
+            isTruncated: truncated,
+            arguments: arguments)
     }
 
     private static func characterCount(in item: AgentTranscriptItem) -> Int {
@@ -263,6 +272,7 @@ struct AgentTranscriptFolder: Equatable {
             if let workspace = request.workspace { count += workspace.count }
             if let path = request.path { count += path.count }
             if let command = request.command { count += command.count }
+            if let arguments = request.arguments { count += arguments.count }
             if let content = request.content { count += content.count }
             if let summary = request.summary { count += summary.count }
             for edit in request.edits {
