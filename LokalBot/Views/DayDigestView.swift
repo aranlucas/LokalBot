@@ -201,7 +201,8 @@ struct DayDigestView: View {
     private func taskRows(_ blocks: [DayDigestPresentation.FocusBlock]) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(blocks) { block in
-                DayDigestTaskRow(block: block)
+                DayDigestTaskRow(block: block,
+                                 collapsesDetails: presentation.collapsesDetails(of: block))
                     .padding(.vertical, 7)
                 if block.id != blocks.last?.id {
                     Divider().padding(.leading, DayDigestTaskRow.textInset)
@@ -226,7 +227,8 @@ struct DayDigestView: View {
             ForEach(rows.indices, id: \.self) { index in
                 GridRow {
                     ForEach(rows[index]) { block in
-                        DayDigestTaskRow(block: block)
+                        DayDigestTaskRow(block: block,
+                                         collapsesDetails: presentation.collapsesDetails(of: block))
                             .padding(WorkspaceMetric.cardPadding)
                             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                             .background(.quaternary.opacity(0.24),
@@ -351,14 +353,9 @@ private struct DayDigestTaskRow: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let block: DayDigestPresentation.FocusBlock
+    /// See `DayDigestPresentation.collapsesDetails(of:)`.
+    let collapsesDetails: Bool
     @State private var expanded = false
-
-    /// Older journals have no status; their summary is the only description,
-    /// so it stays visible as before.
-    private var collapsesDetails: Bool {
-        block.status != nil && block.title != nil
-            && (!block.summaryMarkdown.isEmpty || !block.sourceIDs.isEmpty)
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {

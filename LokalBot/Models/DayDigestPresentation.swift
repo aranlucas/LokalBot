@@ -86,6 +86,17 @@ struct DayDigestPresentation: Equatable {
     let timeAllocations: [TimeAllocation]
     let activityGroups: [ActivityHourGroup]
 
+    /// Whether a task row shows only its title and next step, with the
+    /// summary opening on demand. Task-first journals give tasks a status,
+    /// and there every titled task collapses, including the ones whose status
+    /// the generator left unknown. Older journals never carry a status; their
+    /// summary is the only description, so it stays visible.
+    func collapsesDetails(of block: FocusBlock) -> Bool {
+        block.title != nil
+            && (!block.summaryMarkdown.isEmpty || !block.sourceIDs.isEmpty)
+            && focusBlocks.contains { $0.status != nil }
+    }
+
     var taskGroups: [TaskGroup] {
         TaskGroup.Kind.allCases.compactMap { kind in
             let blocks = focusBlocks.filter { Self.groupKind(of: $0) == kind }
