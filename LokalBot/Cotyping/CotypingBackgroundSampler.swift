@@ -46,27 +46,43 @@ final class CotypingBackgroundSampler {
         guard let screen = NSScreen.screens.first(where: { $0.frame.contains(center) }) ?? NSScreen.main,
               let screenNumber = (screen.deviceDescription[
                 NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value,
-              let display = content.displays.first(where: { $0.displayID == screenNumber })
+              let display = content.displays.first(where: { $0.displayID == screenNumber }),
+              let config = captureConfiguration(
+                for: caretRect, screenFrame: screen.frame, backingScale: screen.backingScaleFactor)
         else { return nil }
-
-        // Global Cocoa (bottom-left) → the display's top-left point space, and
-        // sample the strip to the right of the caret where the ghost draws.
-        let source = CGRect(
-            x: caretRect.minX - screen.frame.minX,
-            y: screen.frame.maxY - caretRect.maxY,
-            width: max(caretRect.width, 1) + 160,
-            height: max(caretRect.height, 8))
-        let aspect = source.width > 0 ? source.height / source.width : 0.25
-
-        let config = SCStreamConfiguration()
-        config.sourceRect = source
-        config.width = 32
-        config.height = max(2, Int((32 * aspect).rounded()))  // match aspect → no letterbox
-        config.showsCursor = false
         let filter = SCContentFilter(display: display, excludingWindows: [])
         guard let image = try? await SCScreenshotManager.captureImage(
             contentFilter: filter, configuration: config) else { return nil }
         return averageLuminance(of: image)
+    }
+
+    /// The strip to the right of the caret, where the ghost draws, in the
+    /// display's top-left point space, captured at its own pixel size.
+    /// ScreenCaptureKit widens a fractional source to whole points, fits it
+    /// inside the output keeping its aspect, and leaves whatever lies off the
+    /// display black. Measured 2026-10-05: a 166×17 pt strip asked for at
+    /// 32×3 came back with its last 2–4 columns black, pulling a white field
+    /// from 0.97 to 0.85. Whole points at the backing scale need no scaling;
+    /// `scalesToFit` makes a scale mismatch stretch rather than leave black
+    /// (without it ScreenCaptureKit only scales down). `nil` off the display.
+    nonisolated static func captureConfiguration(
+        for caretRect: CGRect, screenFrame: CGRect, backingScale: CGFloat
+    ) -> SCStreamConfiguration? {
+        let strip = CGRect(
+            x: caretRect.minX - screenFrame.minX,
+            y: screenFrame.maxY - caretRect.maxY,
+            width: max(caretRect.width, 1) + 160,
+            height: max(caretRect.height, 8)
+        ).intersection(CGRect(origin: .zero, size: screenFrame.size)).integral
+        guard !strip.isEmpty else { return nil }
+        let scale = max(backingScale, 1)
+        let config = SCStreamConfiguration()
+        config.sourceRect = strip
+        config.width = Int((strip.width * scale).rounded())
+        config.height = Int((strip.height * scale).rounded())
+        config.scalesToFit = true
+        config.showsCursor = false
+        return config
     }
 
     /// Mean Rec. 601 luminance of `image`, via a 1×1 downscale that averages it.

@@ -104,6 +104,56 @@ final class CotypingFieldStyleTests: XCTestCase {
             CotypingBackgroundSampler.averageLuminance(of: solidImage(white: 0)) ?? 1, 0.05)
     }
 
+    /// A Retina strip's worth of pixels: the far end counts as much as the caret's.
+    func testAverageLuminanceCoversTheWholeStrip() {
+        let rightHalf = image(width: 334, height: 42, whiteFromX: 167)
+        XCTAssertEqual(CotypingBackgroundSampler.averageLuminance(of: rightHalf) ?? 0, 0.5, accuracy: 0.01)
+        let lastColumns = image(width: 334, height: 42, whiteFromX: 324)
+        XCTAssertEqual(CotypingBackgroundSampler.averageLuminance(of: lastColumns) ?? 0, 10.0 / 334, accuracy: 0.01)
+    }
+
+    /// A 32-pixel-wide output letterboxed some strips in black (2–4 columns,
+    /// measured), darkening the background; the strip's own pixel size never does.
+    func testTheBackgroundCaptureIsTheWholeStripAtItsOwnPixelSize() throws {
+        let ultraWide = CGRect(x: 0, y: 0, width: 3440, height: 1440)
+        let config = try XCTUnwrap(CotypingBackgroundSampler.captureConfiguration(
+            for: CGRect(x: 300.3, y: 1122.4, width: 2, height: 17.5), screenFrame: ultraWide, backingScale: 1))
+        XCTAssertTrue(config.scalesToFit)
+        XCTAssertEqual(config.sourceRect, CGRect(x: 300, y: 300, width: 163, height: 18))
+        XCTAssertEqual(config.width, 163)
+        XCTAssertEqual(config.height, 18)
+        let retina = try XCTUnwrap(CotypingBackgroundSampler.captureConfiguration(
+            for: CGRect(x: -1500.5, y: -900.25, width: 6, height: 19.5),
+            screenFrame: CGRect(x: -1728, y: -1117, width: 1728, height: 1117), backingScale: 2))
+        XCTAssertTrue(retina.scalesToFit)
+        XCTAssertEqual(retina.sourceRect, CGRect(x: 227, y: 880, width: 167, height: 21))
+        XCTAssertEqual(retina.width, 334)
+        XCTAssertEqual(retina.height, 42)
+    }
+
+    /// Off-display pixels come back black, so the strip stops at the edge.
+    func testTheBackgroundCaptureStopsAtTheDisplayEdge() throws {
+        let ultraWide = CGRect(x: 0, y: 0, width: 3440, height: 1440)
+        let config = try XCTUnwrap(CotypingBackgroundSampler.captureConfiguration(
+            for: CGRect(x: 3400, y: 700, width: 2, height: 17), screenFrame: ultraWide, backingScale: 1))
+        XCTAssertEqual(config.sourceRect, CGRect(x: 3400, y: 723, width: 40, height: 17))
+        XCTAssertEqual(config.width, 40)
+        XCTAssertNil(CotypingBackgroundSampler.captureConfiguration(
+            for: CGRect(x: 5000, y: 700, width: 2, height: 17), screenFrame: ultraWide, backingScale: 1))
+    }
+
+    /// Black, then white from column `whiteFromX` to the right edge.
+    private func image(width: Int, height: Int, whiteFromX: Int) -> CGImage {
+        let ctx = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                            space: CGColorSpaceCreateDeviceRGB(),
+                            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        ctx.setFillColor(red: 0, green: 0, blue: 0, alpha: 1)
+        ctx.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        ctx.setFillColor(red: 1, green: 1, blue: 1, alpha: 1)
+        ctx.fill(CGRect(x: whiteFromX, y: 0, width: width - whiteFromX, height: height))
+        return ctx.makeImage()!
+    }
+
     private func solidImage(white: CGFloat) -> CGImage {
         let ctx = CGContext(data: nil, width: 4, height: 4, bitsPerComponent: 8, bytesPerRow: 0,
                             space: CGColorSpaceCreateDeviceRGB(),
