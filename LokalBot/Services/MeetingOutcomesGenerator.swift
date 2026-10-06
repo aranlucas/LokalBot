@@ -58,8 +58,18 @@ enum MeetingOutcomesGenerator {
     ) -> Bool {
         guard compatibleOwners(lhs, rhs) else { return false }
         if normalized(lhs.text) == normalized(rhs.text) { return true }
-        return sharesEvidence(lhs.citations, rhs.citations)
-            && duplicateText(lhs.text, rhs.text, threshold: 0.65)
+        guard sharesEvidence(lhs.citations, rhs.citations) else { return false }
+        // Asked again about a row, a small model can hand back the row's
+        // own words as a second task.
+        return duplicateText(lhs.text, rhs.text, threshold: 0.65) || repeatsItsSource(lhs) || repeatsItsSource(rhs)
+    }
+
+    /// The task text is just what its cited speaker said ("I'll ping Mira
+    /// to get that resolved"), not a task written from it.
+    private static func repeatsItsSource(_ action: MeetingOutcomes.ActionItem) -> Bool {
+        let text = normalized(action.text)
+        return text.split(separator: " ").count >= 4
+            && action.citations.contains { normalized($0.excerpt).contains(text) }
     }
 
     private static func duplicateDecision(
@@ -91,8 +101,10 @@ enum MeetingOutcomesGenerator {
         _ rhs: MeetingOutcomes.ActionItem
     ) -> MeetingOutcomes.ActionItem {
         let isForUser = lhs.isForUser || rhs.isForUser
+        let text = repeatsItsSource(lhs) != repeatsItsSource(rhs)
+            ? (repeatsItsSource(lhs) ? rhs.text : lhs.text) : preferredText(lhs.text, rhs.text)
         return .init(
-            text: preferredText(lhs.text, rhs.text),
+            text: text,
             owner: isForUser ? "Me" : lhs.owner ?? rhs.owner,
             due: lhs.due ?? rhs.due,
             isForUser: isForUser,

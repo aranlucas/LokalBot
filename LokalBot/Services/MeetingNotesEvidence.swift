@@ -1,10 +1,9 @@
 import Foundation
-import NaturalLanguage
 
 /// Shared compact evidence for narrative facts and actionable outcomes. Model
 /// IDs are local to this immutable snapshot; durable artifacts use stable IDs.
 struct MeetingNotesEvidence {
-    static let ownershipPolicyVersion = "action-evidence-v3"
+    static let ownershipPolicyVersion = "action-evidence-v4"
 
     struct Unit: Codable, Equatable {
         var source: String
@@ -56,9 +55,10 @@ struct MeetingNotesEvidence {
         // those words, so the echo is never shown or cited as evidence.
         let transcript = transcript.markingSuspectedEcho()
         self.transcript = transcript
-        let recognizer = NLLanguageRecognizer()
-        recognizer.processString(String(transcript.languageDetectionText.prefix(20_000)))
-        isEnglishMeeting = recognizer.dominantLanguage == .english
+        // Sampled across the meeting: a foreign-language opening, or noise
+        // transcribed as one, must not decide the language of the rest.
+        let isEnglish = SummaryLanguage.isMostlyEnglish(transcript)
+        isEnglishMeeting = isEnglish
         let roster = transcript.speakerRoster
         let entries = roster.keys.sorted().enumerated().map { index, key in ("p\(index + 1)", roster[key]!) }
         speakers = Dictionary(uniqueKeysWithValues: entries)
@@ -68,15 +68,24 @@ struct MeetingNotesEvidence {
         }
         self.roster = String(decoding: (try? JSONSerialization.data(withJSONObject: values, options: [.sortedKeys])) ?? Data(), as: UTF8.self)
         let sources = transcript.segmentSourceMap
-        units = transcript.summaryPromptTurns(maxCharacters: 1_000).compactMap { turn in
+        var units = transcript.summaryPromptTurns(maxCharacters: 1_000).compactMap { turn -> Unit? in
             guard sources[turn.sourceID]?.resolvedAttribution.method != .suspectedEcho else { return nil }
-            let speaker = Transcript.canonicalSpeakerKey(turn.speaker)
-            let commitment = roster[speaker]?.identity == .user && sources[turn.sourceID].map {
-                OutcomeEvidencePolicy.hasCommitment(source: $0, visibleText: turn.text)
-            } == true
-            return Unit(source: turn.citationID, speaker: compactIDs[speaker]!, text: turn.text,
-                        isUserCommitment: commitment)
+            return Unit(source: turn.citationID, speaker: compactIDs[Transcript.canonicalSpeakerKey(turn.speaker)]!, text: turn.text)
         }
+        // The user's own undertakings are listed for the model and re-read
+        // once when no task cites them.
+        let texts = Dictionary(grouping: units, by: \.source).mapValues { $0.map(\.text).joined(separator: " ") }
+        let indices = Dictionary(uniqueKeysWithValues: transcript.segments.indices.map { (transcript.summaryCitationID(at: $0), $0) })
+        let ownership = ActionOwnership(transcript: transcript, roster: roster, isEnglish: isEnglish,
+                                        text: { texts[transcript.summaryCitationID(at: $0)] })
+        var flagged = Set<String>()
+        for index in units.indices where flagged.insert(units[index].source).inserted {
+            guard let row = indices[units[index].source],
+                  roster[Transcript.canonicalSpeakerKey(transcript.segments[row].speaker)]?.identity == .user else { continue }
+            units[index].isUserCommitment = ownership.statesCommitment(at: row)
+                || OutcomeEvidencePolicy.isBareAcceptance(texts[units[index].source] ?? "")
+        }
+        self.units = units
     }
 
     static func sections(_ template: NoteTemplate) -> [String] {
@@ -222,13 +231,10 @@ struct MeetingNotesEvidence {
             guard item["quote"] == nil || quote != nil, (quote?.count ?? 0) <= 1_000 else {
                 reject(item, "invalid_action", kind: "actions"); continue
             }
+            // A quote found word for word in one cited row re-anchors the task there.
             var anchor = primary
-            var quoteFailure: OutcomeAttribution.RejectionReason?
             if let quote, !quote.isEmpty {
-                let matches = ids.flatMap { id -> [String] in
-                    let text = normalized((visible[id] ?? []).map(\.text).joined(separator: " "))
-                    return Array(repeating: id, count: max(0, text.components(separatedBy: quote).count - 1))
-                }
+                let matches = ids.filter { normalized((visible[$0] ?? []).map(\.text).joined(separator: " ")).contains(quote) }
                 if matches.count == 1 {
                     anchor = matches[0]
                     let anchorStable = citationIDs[anchor]!
@@ -239,21 +245,8 @@ struct MeetingNotesEvidence {
                         let index = transcript.segments.indices.first { transcript.segmentID(at: $0) == citationIDs[id] }!
                         return abs(index - anchorIndex) <= 8
                     }) else { reject(item, "distant_action_context", kind: "actions"); continue }
-                    ids = [anchor] + ids.filter { $0 != anchor }
-                } else {
-                    quoteFailure = matches.isEmpty ? .quoteNotFound : .ambiguousQuote
                 }
             }
-            let source = sources[citationIDs[anchor]!]!
-            let anchorIndex = transcript.segments.indices.first { transcript.segmentID(at: $0) == citationIDs[anchor] }!
-            // A mixed primary cannot borrow a different task's promise from
-            // context. A mixed recap used only as context does not invalidate
-            // an independently quoted, unambiguous primary undertaking.
-            if OutcomeEvidencePolicy.hasCompetingActors(in: sources[stable]!.displayText) {
-                quoteFailure = .ambiguousQuote
-            }
-            var basis = claimedBasis
-            let sourceOwner = ["commitment", "unclear"].contains(basis) ? Transcript.canonicalSpeakerKey(source.speaker) : nil
             let visibleSource = (visible[anchor] ?? []).map(\.text).joined(separator: " ")
             if OutcomeEvidencePolicy.isBareAcceptance(visibleSource), ids.count == 1 {
                 reject(item, "missing_task_context", kind: "actions"); continue
@@ -261,40 +254,37 @@ struct MeetingNotesEvidence {
             if OutcomeEvidencePolicy.isConversationManagement(visibleSource) {
                 reject(item, "conversation_management", kind: "actions"); continue
             }
-            let hasCitedCommitment = ids.contains { id in
-                OutcomeEvidencePolicy.hasCommitment(source: sources[citationIDs[id]!]!,
-                    visibleText: (visible[id] ?? []).map(\.text).joined(separator: " "))
+            func row(_ id: String) -> Int {
+                transcript.segments.indices.first { transcript.segmentID(at: $0) == citationIDs[id] }!
             }
-            if basis == "commitment", quoteFailure == nil,
-               !OutcomeEvidencePolicy.hasCommitment(source: source, visibleText: visibleSource) {
+            let anchorRow = row(anchor)
+            let ownership = ActionOwnership(transcript: transcript, roster: roster, isEnglish: isEnglishMeeting, text: { index in
+                visible[transcript.summaryCitationID(at: index)].map { $0.map(\.text).joined(separator: " ") }
+            })
+            let requestAnswer = ["request", "assignment"].contains(claimedBasis) ? userReply(after: anchorRow, roster: roster) : nil
+            let finding = ownership.resolve(
+                .init(owner: speakers[owner]?.id, namesSource: owner == "source", basis: claimedBasis, quote: quote, task: rawText),
+                primary: primaryIndex, context: context.map(row), quotedRow: anchor == primary ? nil : anchorRow,
+                userReply: requestAnswer)
+            let attribution = finding.attribution
+            if claimedBasis == "commitment", attribution.resolution == .unresolved, attribution.rejectionReason != .quoteNotFound,
+               !finding.citesUndertaking {
                 // Unrecognized phrasing must not lose a task; it only loses
-                // the ownership claim. Negated, conditional, or questioned
-                // undertakings and fragments without one are still not tasks.
-                // The fragment check reads English wording, so it can only
-                // veto tasks in English meetings; elsewhere every quoted
-                // commitment would look like a fragment and be deleted.
-                let undertaking = hasCitedCommitment
-                    || OutcomeEvidencePolicy.expressesUndertaking(visibleSource)
-                    || OutcomeEvidencePolicy.offersToTakeOn(visibleSource)
-                guard undertaking || !isEnglishMeeting,
-                      !OutcomeEvidencePolicy.isQualified(visibleSource) else {
-                    reject(item, "unsupported_commitment", kind: "actions"); continue
-                }
-                basis = "unclear"
+                // the ownership claim. A negated or questioned undertaking
+                // and a status report are still not tasks. Those checks read
+                // English wording, so elsewhere only a question mark can
+                // veto; every quoted commitment would otherwise look like a
+                // status report and be deleted.
+                let contradicted = finding.citesOnlyRefusedUndertakings || (isEnglishMeeting
+                    ? !finding.looksForward || OutcomeEvidencePolicy.undertakingIsNegatedOrQuestioned(visibleSource)
+                    : visibleSource.contains("?"))
+                if contradicted { reject(item, "unsupported_commitment", kind: "actions"); continue }
             }
-            let requestAnswer = ["request", "assignment"].contains(basis)
-                ? userReply(after: anchorIndex, roster: roster) : nil
-            let ownerID = ["source", "unknown"].contains(owner) ? (sourceOwner ?? requestAnswer) : speakers[owner]?.id
-            var attribution = OutcomeEvidencePolicy.resolveFromSource(speakerID: ownerID, basis: basis,
-                source: source, visibleText: visibleSource,
-                roster: roster, addressedToUser: requestAnswer != nil, quote: quote)
-            if quoteFailure == nil, attribution.resolution == .unresolved,
-               attribution.rejectionReason == .missingBasis, hasCitedCommitment {
-                quoteFailure = .missingQuote
+            if let found = ids.first(where: { row($0) == finding.anchor }), found != ids[0] {
+                ids = [found] + ids.filter { $0 != found }
             }
-            if let quoteFailure {
-                attribution = .init(resolution: .unresolved, speakerID: ownerID, basis: .unclear, rejectionReason: quoteFailure)
-            }
+            anchor = ids[0]
+            let ownerID = attribution.speakerID
             let compactOwner = speakers.first { $0.value.id == attribution.speakerID && attribution.resolution != .unresolved }?.key
             guard let text = prose(rawText, expectedSpeaker: compactOwner ?? visible[anchor]?.first?.speaker) else {
                 reject(item, "speaker_reference", kind: "actions"); continue

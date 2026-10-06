@@ -41,8 +41,18 @@ final class ModelRecordingTests: XCTestCase {
                 language: .matchTranscript, context: [], contextTokens: 32_768, meetingID: UUID(), folder: meetingFolder)
             try save(model: model, caseName: "notes-design-review", calls: notes.calls, in: folder)
 
-            let ask = RecordingTextEngine(base: base,
-                                          requestLimit: perModelLimit - digest.requestCount - notes.requestCount)
+            let runOn = RecordingTextEngine(base: base, requestLimit: perModelLimit - digest.requestCount - notes.requestCount)
+            let runOnFolder = FileManager.default.temporaryDirectory
+                .appendingPathComponent("recording-\(UUID().uuidString)", isDirectory: true)
+            try FileManager.default.createDirectory(at: runOnFolder, withIntermediateDirectories: true)
+            _ = try? await MeetingNotesGenerator.generate(
+                transcript: SyntheticModelPrompts.runOnStandupTranscript(), engine: runOn, template: .meeting,
+                language: .matchTranscript, context: [], contextTokens: 32_768, meetingID: UUID(), folder: runOnFolder)
+            try save(model: model, caseName: "notes-run-on-standup", calls: runOn.calls, in: folder)
+
+            let ask = RecordingTextEngine(
+                base: base,
+                requestLimit: perModelLimit - digest.requestCount - notes.requestCount - runOn.requestCount)
             _ = try? await MainActor.run {
                 ChatAgent(engine: ask, runner: EmptyToolRunner())
             }.respond(history: [], latest: SyntheticModelPrompts.askQuestion) { _ in }
