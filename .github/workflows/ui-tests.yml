@@ -13,6 +13,10 @@
 # UI-test path changed, so the aggregate check always reports) and every
 # master/dev push (exact-SHA gates), plus weekly and manual dispatches. Whether it blocks merging remains a branch
 # protection decision; the workflow itself does not mutate repository state.
+#
+# The required gate runs on macos-15, the app's oldest supported macOS.
+# ui-tests-macos26.yml calls this workflow with `runner`/`xcode` to run the
+# same suite on macOS 26 in a separate, non-required run.
 
 name: UI Tests
 
@@ -37,6 +41,14 @@ on:
         description: "Exact 40-character commit SHA requested by the dispatching checkout"
         required: true
         type: string
+  workflow_call:
+    inputs:
+      runner:
+        type: string
+        default: macos-15
+      xcode:
+        type: string
+        default: "26.3"
   pull_request:
   push:
     branches:
@@ -46,7 +58,9 @@ on:
     - cron: "0 5 * * 1" # Mondays 05:00 UTC, runs against the default branch
 
 concurrency:
-  group: ui-tests-${{ github.ref }}
+  # A called run uses the caller's workflow name, so it never cancels the
+  # required macOS 15 run of the same ref.
+  group: ui-tests-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -79,7 +93,7 @@ jobs:
     if: needs.changes.outputs.relevant == 'true'
     # Move to a self-hosted Mac (runs-on: [self-hosted, macOS]) once one
     # exists — see the TCC note at the top of this file.
-    runs-on: macos-26
+    runs-on: ${{ inputs.runner || 'macos-15' }}
     # A cold checksum-pinned llama.cpp build currently takes close to an hour
     # on GitHub's hosted Macs. Match the unit-test budget so the UI suite still
     # gets time to execute before the Vendor cache has been populated.
@@ -105,7 +119,7 @@ jobs:
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: "26.4.1"
+          xcode-version: ${{ inputs.xcode || '26.3' }}
 
       - name: Install build tools
         run: |
@@ -141,7 +155,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: .build/SourcePackages
-          key: packages-${{ runner.os }}-${{ runner.arch }}-xcode26.4.1-${{ hashFiles('**/Package.resolved') }}
+          key: packages-${{ runner.os }}-${{ runner.arch }}-xcode${{ inputs.xcode || '26.3' }}-${{ hashFiles('**/Package.resolved') }}
 
       # Only the content-addressed compiler store is restored. Build products,
       # build databases and provenance always belong to this workflow attempt.
@@ -220,14 +234,14 @@ jobs:
     # Preserve this check's name and build dependency for existing branch rules.
     name: UI build and critical tests
     needs: build
-    runs-on: macos-26
+    runs-on: ${{ inputs.runner || 'macos-15' }}
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90
         with:
-          xcode-version: "26.4.1"
+          xcode-version: ${{ inputs.xcode || '26.3' }}
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: ui-products
@@ -263,14 +277,14 @@ jobs:
     name: UI reduced-motion
     needs: build
     if: github.event_name != 'workflow_dispatch' || inputs.filter == ''
-    runs-on: macos-26
+    runs-on: ${{ inputs.runner || 'macos-15' }}
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90
         with:
-          xcode-version: "26.4.1"
+          xcode-version: ${{ inputs.xcode || '26.3' }}
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: ui-products
@@ -301,7 +315,7 @@ jobs:
     name: UI ${{ matrix.phase }}
     needs: build
     if: github.event_name != 'workflow_dispatch' || inputs.filter == ''
-    runs-on: macos-26
+    runs-on: ${{ inputs.runner || 'macos-15' }}
     timeout-minutes: 35
     strategy:
       fail-fast: false
@@ -312,7 +326,7 @@ jobs:
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90
         with:
-          xcode-version: "26.4.1"
+          xcode-version: ${{ inputs.xcode || '26.3' }}
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: ui-products
