@@ -12,6 +12,28 @@ final class NemotronRuntimeTests: XCTestCase {
         var segments: [Segment]
     }
 
+    /// Opt-in hardware check on the same pinned v2 files the app downloads.
+    /// Silence still runs the model; no VAD mask bypasses inference here.
+    func testPinnedV2ModelRunsAndResetsOnCPUAndNeuralEngine() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LOKALBOT_NEMOTRON_TEST_MODEL_DIR"] else {
+            throw XCTSkip("Set LOKALBOT_NEMOTRON_TEST_MODEL_DIR to the verified v2 model directory")
+        }
+        let models = try await Nemotron3Models.load(
+            config: .offline, directory: URL(fileURLWithPath: path), computeUnits: .cpuAndNeuralEngine)
+        let diarizer = Nemotron3Diarizer(config: .offline, models: models)
+        let audio = [Float](repeating: 0, count: 16_000)
+        let first = try diarizer.processComplete(audio)
+        let second = try diarizer.processComplete(audio)
+        XCTAssertGreaterThan(first.frameCount, 0)
+        XCTAssertEqual(first.probabilities.count, first.frameCount * 8)
+        XCTAssertTrue(first.probabilities.allSatisfy { $0.isFinite })
+        XCTAssertEqual(second.frameCount, first.frameCount)
+        XCTAssertEqual(second.probabilities.count, first.probabilities.count)
+        for (a, b) in zip(first.probabilities, second.probabilities) {
+            XCTAssertEqual(a, b, accuracy: 0.00001)
+        }
+    }
+
     func testPublicRecordingResetAndVoiceCompatibility() async throws {
         guard let path = ProcessInfo.processInfo.environment["NEMOTRON_BENCH_ROOT"] else {
             throw XCTSkip("Set TEST_RUNNER_NEMOTRON_BENCH_ROOT to the prepared public benchmark directory")

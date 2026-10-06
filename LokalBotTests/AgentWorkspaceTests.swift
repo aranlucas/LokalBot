@@ -56,6 +56,25 @@ final class AgentWorkspaceTests: XCTestCase {
         XCTAssertEqual(records.first?["parentSession"] as? String, file.path)
     }
 
+    func testPiContextEditKeepsVisibleHistoryAndForkAncestors() throws {
+        let file = root.appendingPathComponent("context-edited.jsonl")
+        try write([
+            ["type": "session", "version": 3, "id": "session", "cwd": root.path],
+            entry("u1", parent: nil, role: "user", text: "Original context"),
+            ["type": "context_edit", "id": "e1", "parentId": "u1", "targetId": "u1",
+             "replacement": ["content": "Condensed context"]],
+            entry("a1", parent: "e1", role: "assistant", text: "Continued answer"),
+        ], to: file)
+        let saved = try XCTUnwrap(AgentSessionHistory.load(from: root).first)
+        let transcript = try AgentConversationArchive.transcript(for: saved, directory: root)
+        XCTAssertEqual(transcript.items.map(\.searchableText), ["Original context", "Continued answer"])
+        let fork = try AgentConversationArchive.fork(
+            saved, through: transcript.items[1], matchingOccurrenceFromEnd: 0, directory: root)
+        let branch = AgentConversationArchive.activeBranch(try AgentConversationArchive.records(for: fork, directory: root))
+        XCTAssertEqual(branch.compactMap { $0["type"] as? String }, ["message", "context_edit", "message"])
+        XCTAssertEqual(branch[1]["targetId"] as? String, "u1")
+    }
+
     func testBranchChoosesTheCorrectRepeatedMessage() throws {
         let file = root.appendingPathComponent("repeated.jsonl")
         try write([

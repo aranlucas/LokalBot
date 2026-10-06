@@ -68,4 +68,51 @@ final class QwenASREngineTests: XCTestCase {
             XCTAssertFalse(text.contains("Text decoder not loaded"))
         }
     }
+
+    func testCancellationAwareOptionsKeepExistingDecodingPolicy() {
+        let ordinary = QwenASREngine.decodingOptions(
+            sampleCount: 320_000, language: "Serbian", prompt: "  LokalBot  ", disablesRepetitionBlocking: false)
+        XCTAssertEqual(ordinary.maxTokens, 360)
+        XCTAssertEqual(ordinary.language, "Serbian")
+        XCTAssertEqual(ordinary.context, "LokalBot")
+        XCTAssertEqual(ordinary.longInputThresholdSeconds, 15)
+        XCTAssertEqual(ordinary.longInputNoRepeatNgramSize, 3)
+        XCTAssertEqual(ordinary.noRepeatNgramSize, 0)
+        XCTAssertEqual(ordinary.repetitionPenalty, 1)
+        XCTAssertEqual(ordinary.temperature, 0)
+        let merged = QwenASREngine.decodingOptions(
+            sampleCount: 960_000, language: nil, prompt: nil, disablesRepetitionBlocking: true)
+        XCTAssertEqual(merged.maxTokens, 768)
+        XCTAssertNil(merged.language)
+        XCTAssertNil(merged.context)
+        XCTAssertEqual(merged.longInputThresholdSeconds, .infinity)
+        XCTAssertEqual(merged.noRepeatNgramSize, 0)
+    }
+
+    /// Exercises the exact app entry point with real, already cached weights.
+    /// The old synchronous API returned text after cancellation, failing this.
+    func testCachedModelCancellationThrowsInsteadOfReturningTranscript() async throws {
+        guard let path = ProcessInfo.processInfo.environment["LOKALBOT_QWEN_TEST_MODEL_DIR"] else {
+            throw XCTSkip("Set LOKALBOT_QWEN_TEST_MODEL_DIR to a cached Qwen model for cancellation regression")
+        }
+        let directory = URL(fileURLWithPath: path, isDirectory: true)
+        let model = try await Qwen3ASRModel.fromPretrained(
+            modelId: "aufklarer/\(directory.lastPathComponent)", cacheDir: directory, offlineMode: true)
+        defer { model.unload() }
+        for unblocked in [false, true] {
+            let task = Task {
+                withUnsafeCurrentTask { $0?.cancel() }
+                return try QwenASREngine.transcribeWindow(
+                    samples: [Float](repeating: 0, count: 160), language: "English", prompt: nil,
+                    disablesRepetitionBlocking: unblocked, model: model)
+            }
+            do {
+                _ = try await task.value
+                XCTFail("Cancelled Qwen decode must throw without returning a partial transcript")
+            } catch is CancellationError {
+                // No cancelled transcript can be persisted by SpanTranscription.
+            }
+        }
+    }
+
 }

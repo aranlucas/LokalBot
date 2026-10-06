@@ -1,6 +1,7 @@
 // Run against a checksum-pinned, frozen-lockfile runtime:
 // LOKALBOT_PINNED_RUNTIME_ROOT=/path/to/runtime bash Scripts/tests/run-pi-runtime-tests.sh
 import { expect, test } from "bun:test";
+import { SessionManager } from "@earendil-works/pi-coding-agent";
 import { mkdir, mkdtemp, readFile, realpath, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
@@ -254,7 +255,7 @@ for (const approved of [false, true]) {
     });
     const proc = Bun.spawn([
       join(runtime!, "bun/bun"),
-      join(runtime!, "pi/node_modules/@earendil-works/pi-coding-agent/dist/cli.js"),
+      join(runtime!, "pi/node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js"),
       "--mode", "rpc", "--provider", "lokalbot", "--model", "stub-model",
       "--no-extensions", "-e", join(repo, "LokalBot/Resources/pi/lokalbot-extension"),
       "--no-skills", "--no-prompt-templates", "--no-context-files", "--no-approve",
@@ -314,3 +315,23 @@ for (const approved of [false, true]) {
     }
   }, 25_000);
 }
+
+test("Pi resumes append-only context edits without overwriting visible history", async () => {
+  const workspace = await mkdtemp(join(tmpdir(), "lokalbot-pi-context-upgrade-"));
+  try {
+    const sessions = join(workspace, "sessions");
+    const manager = SessionManager.create(workspace, sessions);
+    const original = manager.appendMessage({ role: "user", content: "Original synthetic context", timestamp: 1 });
+    manager.appendContextEdit(original, { content: "Condensed synthetic context" });
+    manager.appendMessage({ role: "user", content: "Continue the task", timestamp: 2 });
+    const file = manager.getSessionFile();
+    expect(file).toBeDefined();
+    const resumed = SessionManager.open(file!, sessions);
+    expect(resumed.buildSessionContext().messages.map(message => message.content))
+      .toEqual(["Condensed synthetic context", "Continue the task"]);
+    expect(await readFile(file!, "utf8")).toContain("Original synthetic context");
+    expect(resumed.getEntries().some(entry => entry.type === "context_edit")).toBe(true);
+  } finally {
+    await rm(workspace, { recursive: true, force: true });
+  }
+});

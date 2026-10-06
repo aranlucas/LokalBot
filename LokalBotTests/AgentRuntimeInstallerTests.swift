@@ -52,7 +52,7 @@ final class AgentRuntimeInstallerTests: XCTestCase {
     private var fakePackageInstaller: AgentRuntimeInstaller.PackageInstaller {
         { _, template, destination in
             let cliDir = destination.appendingPathComponent(
-                "node_modules/@earendil-works/pi-coding-agent/dist", isDirectory: true)
+                "node_modules/@earendil-works/pi-coding-agent/dist/bundle", isDirectory: true)
             try FileManager.default.createDirectory(at: cliDir, withIntermediateDirectories: true)
             try FileManager.default.copyItem(
                 at: template.appendingPathComponent("package.json"),
@@ -200,8 +200,8 @@ final class AgentRuntimeInstallerTests: XCTestCase {
         test "$4" = "--ignore-scripts" || exit 14
         test -f package.json || exit 15
         test -f bun.lock || exit 16
-        mkdir -p node_modules/@earendil-works/pi-coding-agent/dist
-        touch node_modules/@earendil-works/pi-coding-agent/dist/cli.js
+        mkdir -p node_modules/@earendil-works/pi-coding-agent/dist/bundle
+        touch node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js
         """
         try Data(script.utf8).write(to: fakeBun)
         try FileManager.default.setAttributes([.posixPermissions: 0o755],
@@ -218,7 +218,7 @@ final class AgentRuntimeInstallerTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(
             atPath: destination.appendingPathComponent("bun.lock").path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: destination.appendingPathComponent(
-            "node_modules/@earendil-works/pi-coding-agent/dist/cli.js").path))
+            "node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js").path))
     }
 
     func testAlreadyInstalledShortCircuits() async throws {

@@ -1,3 +1,4 @@
+import FluidAudio
 import SwiftUI
 import Combine
 import AVFoundation
@@ -17,6 +18,7 @@ enum LokalBotMain {
 
     @MainActor
     static func main() {
+        configureDependencyLogging()
         // Explicit synthetic replay runs before migration, AppState, permissions,
         // learning, or capture. Only the supplied fixture and model are read.
         if case .cotypingReplay(let input, let model)? = HeadlessCommand.parse(CommandLine.arguments) {
@@ -87,6 +89,13 @@ enum LokalBotMain {
                 MigrationRecoveryApp.initialOutcome = outcome
                 MigrationRecoveryApp.main()
             })
+    }
+
+    /// FluidAudio debug/notice lines can contain recognized words. Filter them
+    /// from both unified logging and stderr, including headless commands.
+    static func configureDependencyLogging() {
+        AppLogger.minimumLevel = .warning
+        AppLogger.mirrorsToConsole = false
     }
 
     /// Never construct `AppState` after an incomplete migration: its stored
