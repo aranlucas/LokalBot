@@ -221,6 +221,30 @@ final class DayDigestPresentationTests: XCTestCase {
                        [[2], [1], [3], [0]])
     }
 
+    func testTaskFirstDigestCollapsesEveryTitledTaskIncludingUnknownStatus() {
+        let taskFirst = DayDigestPresentation(markdown: """
+            ## Day summary
+
+            ### Tasks
+            - **Publish the release** — Completed. Pushed the release branch after signing passed.
+            - **Read the API reference** — Looked through the streaming section of the documentation.
+            - **Plan the week** — In progress.
+            """)
+        XCTAssertEqual(taskFirst.focusBlocks.map(\.status), [.completed, nil, .inProgress])
+        XCTAssertEqual(taskFirst.focusBlocks.map { taskFirst.collapsesDetails(of: $0) },
+                       [true, true, false])
+
+        let legacy = DayDigestPresentation(markdown: """
+            ## Day summary
+
+            ### Focus blocks
+            - **09:00–10:30 · Fixture implementation** — User updated the Timeline UI.
+            - Reviewed the release checklist.
+            """)
+        XCTAssertEqual(legacy.focusBlocks.map { legacy.collapsesDetails(of: $0) },
+                       [false, false])
+    }
+
     private func assertNoFollowUps(
         _ presentation: DayDigestPresentation,
         file: StaticString = #filePath,
