@@ -2,7 +2,8 @@
 
 The high and medium items that resolve safely are updated together. Existing
 transcription models, local processing defaults and consent boundaries remain
-the same. MLX has a verified upstream dependency conflict and stays pinned.
+the same. MLX stays pinned: its next release conflicts with speech-swift and
+needs a newer Swift toolchain than the hosted builds use.
 
 | Priority | Component | Update | User impact |
 | --- | --- | --- | --- |
@@ -20,8 +21,15 @@ requires MLX `0.31.4..<0.32.0`. An isolated Xcode resolution attempt with speech
 0.0.28 and MLX 0.32.3 fails with that exact conflict. The compatible
 [0.31.6 manifest](https://github.com/ml-explore/mlx-swift/blob/0.31.6/Package.swift)
 still attaches the CUDA build plugin unconditionally, retaining the repository's
-headless Xcode validation blocker. Keep 0.31.4 until the speech package adopts
-compatible MLX-LM/MLX versions; this PR adds no fork or plugin-validation bypass.
+headless Xcode validation blocker. [Upstream PR #501](https://github.com/soniqo/speech-swift/pull/501)
+raises speech-swift's MLX-LM pin to 3.32.3.
+
+MLX 0.32.3 also declares Swift tools 6.3, which needs Xcode 26.4 or newer. Every
+hosted workflow builds on `macos-15` with Xcode 26.3 (Swift 6.2.4), and that runner
+image has no newer Xcode, so package resolution fails before compiling. Keep 0.31.4
+until the speech package adopts compatible MLX-LM/MLX versions and the hosted
+workflows move to a Swift 6.3 toolchain; this PR adds no fork or plugin-validation
+bypass.
 
 ## Upgrade behavior
 
