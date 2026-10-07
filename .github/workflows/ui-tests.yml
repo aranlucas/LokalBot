@@ -19,7 +19,7 @@
 # MLX 0.32.3 and later need Swift 6.3, and the macos-15 image has no Xcode
 # newer than 26.3. ui-tests-macos26.yml calls this workflow with
 # `runner`/`xcode` to run the same suite on macOS 26 in a separate,
-# non-required run.
+# non-required run, weekly and on demand.
 
 name: UI Tests
 

@@ -23,25 +23,24 @@ concurrency:
 jobs:
   swiftlint:
     name: SwiftLint
-    runs-on: macos-26
+    # SwiftLint's official Linux image, pinned by digest like the actions here.
+    # A one-minute lint no longer waits for, or takes, a scarce macOS runner
+    # (about 150 macOS jobs a week), and the version no longer drifts with
+    # Homebrew. Update the tag and digest together.
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Install SwiftLint only when the runner image lacks it.
-      # Printing the version captures which one ran, which matters when a rule's
-      # behavior changes between releases.
-      - name: Install / verify SwiftLint
-        run: |
-          if ! command -v swiftlint >/dev/null; then
-            brew install swiftlint
-          fi
-          swiftlint version
-
       - name: Run SwiftLint
         # Strict: any violation fails the check. The ruleset (.swiftlint.yml,
         # auto-discovered at the repo root) is tuned to be clean on this code.
-        run: swiftlint lint --strict --reporter github-actions-logging
+        env:
+          IMAGE: ghcr.io/realm/swiftlint:0.65.1@sha256:f47e083201e47a136cda5ae847595bfe00226c444ca226fa74fa5dc648a9b057
+        run: |
+          docker run --rm -v "$PWD:/work" -w /work "$IMAGE" swiftlint version
+          docker run --rm -v "$PWD:/work" -w /work "$IMAGE" \
+            swiftlint lint --strict --reporter github-actions-logging
 
   generated-web:
     # Comparison pages, guides, /guides, and sitemap.xml are rendered from

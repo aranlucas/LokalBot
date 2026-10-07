@@ -202,8 +202,9 @@ and the `macos-15` image has no Xcode newer than 26.3. 0.8.0 used Xcode 26.3 bui
 **17C529**. The required UI Tests gate builds its products on `macos-26` with 26.4.1
 and runs them on `macos-15` with Xcode 26.3, the app's oldest supported macOS
 (`Scripts/ci/test-products.py` accepts that toolchain difference for UI products
-only); **UI Tests (macOS 26)** builds and runs the same suite with 26.4.1
-and is not a merge or release gate until its known macOS 26 failures are fixed. Update
+only); **UI Tests (macOS 26)** builds and runs the same suite with 26.4.1,
+weekly and on demand (`gh workflow run ui-tests-macos26.yml --ref BRANCH`), and is
+not a merge or release gate until its known macOS 26 failures are fixed. Update
 explicit versions and runners together after hosted validation. The Build gate compiles the production app and its unit-test
 target. The UI workflow builds its separate host once, runs the critical group,
 then Reduce Motion, then independent functional and visual shards covering all
