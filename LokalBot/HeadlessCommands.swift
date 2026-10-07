@@ -23,6 +23,9 @@ enum HeadlessCommand: Equatable {
     /// Print the saved autocomplete counters and typing measurements and exit.
     /// Runs before SwiftUI launches and reads one preferences value.
     case cotypingMeasurements
+    /// Print the keyboard and mouse hooks installed on this Mac, by app, and
+    /// exit. Runs before SwiftUI launches and reads no library.
+    case eventTaps
     case dictationReplay(input: URL, endpoint: URL)
     case exportDiagnostics(destination: URL)
     case health(dayKey: String?, json: Bool)
@@ -64,6 +67,7 @@ enum HeadlessCommand: Equatable {
         }
         if args.contains("--cotyping-bench") { return .cotypingBench }
         if args.contains("--cotyping-measurements") { return .cotypingMeasurements }
+        if args.contains("--event-taps") { return .eventTaps }
         if let flag = args.firstIndex(of: "--dictation-replay"), args.count > flag + 1,
            let serverFlag = args.firstIndex(of: "--server-url"), args.count > serverFlag + 1,
            let endpoint = URL(string: args[serverFlag + 1]) {
@@ -238,6 +242,7 @@ struct HeadlessCommandRunner {
         // Normally handled before launch by `LokalBotMain`.
         case .agentSessions(let dayKey): exit(CodingAgentSessionsCLI.run(dayKey: dayKey))
         case .cotypingMeasurements: exit(CotypingStatsStore.printSaved())
+        case .eventTaps: exit(EventTapAudit.printCurrent())
         }
     }
 

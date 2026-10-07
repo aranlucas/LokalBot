@@ -87,6 +87,13 @@ final class CotypingCoordinator: ObservableObject {
     var extensionGeneration: UInt64 = 0
     /// Set by Escape: no suggestions in this field until the time passes.
     var escapePause: (fieldAnchor: String, until: Date)?
+    /// When the suggestion on screen was last shown, typed through or accepted from.
+    var lastSuggestionActivity: ContinuousClock.Instant?
+    /// Takes down a suggestion left alone, so a Tab pressed long afterwards
+    /// reaches the app instead of the ghost.
+    var suggestionExpiryTask: Task<Void, Never>?
+    /// How long a suggestion may sit untouched, as in Cotypist. Tests shorten it.
+    var idleSuggestionLifetimeMilliseconds = 60_000
     var suggestionAnchorCache = CotypingSuggestionAnchorCache()
     /// Fingerprint captured from the exact request currently in flight. Cache
     /// entries are recorded against this snapshot, not settings read after the

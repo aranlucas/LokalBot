@@ -106,6 +106,7 @@ extension CotypingCoordinator {
         acceptedWordCount += CotypingAcceptanceChunker.acceptedWordCount(in: acceptedChunk)
         current = current.advanced(by: acceptedChunk.count)
         session = current
+        noteSuggestionActivity()
 
         if current.isExhausted {
             pendingInsertionConsumedCount = nil
@@ -211,6 +212,34 @@ extension CotypingCoordinator {
         syncAcceptInterception()
         lastSuggestion = text
         state = .ready(text: text)
+        noteSuggestionActivity()
+    }
+
+    /// Restarts the idle clock of the suggestion on screen. Every key either
+    /// advances the suggestion or clears it, so a minute without a call means
+    /// a minute without typing in the field.
+    func noteSuggestionActivity() {
+        lastSuggestionActivity = .now
+        guard suggestionExpiryTask == nil else { return }
+        suggestionExpiryTask = Task { [weak self] in
+            await self?.expireIdleSuggestion()
+        }
+    }
+
+    private func expireIdleSuggestion() async {
+        while session != nil, let lastActivity = lastSuggestionActivity {
+            let deadline = lastActivity.advanced(by: .milliseconds(idleSuggestionLifetimeMilliseconds))
+            guard ContinuousClock.now < deadline else {
+                suggestionExpiryTask = nil
+                clearSuggestion()
+                if case .ready = state { state = .idle }
+                return
+            }
+            // The continuous clock keeps counting while the Mac sleeps.
+            try? await Task.sleep(until: deadline, clock: .continuous)
+            guard !Task.isCancelled else { return }
+        }
+        suggestionExpiryTask = nil
     }
 
     func clearSuggestion() {
@@ -223,6 +252,9 @@ extension CotypingCoordinator {
             }
         }
         session = nil
+        suggestionExpiryTask?.cancel()
+        suggestionExpiryTask = nil
+        lastSuggestionActivity = nil
         cancelSuggestionExtension()
         pendingInsertionConsumedCount = nil
         overlay.hide()

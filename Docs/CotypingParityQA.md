@@ -22,6 +22,24 @@ LokalBot defaults:
   "Escape on a suggestion" can send the key through instead. A composing input
   method always receives its own Escape.
 - Search fields (`AXSearchField`) stay quiet, as in Cotypist.
+- Open and save dialogs stay quiet, as in Cotypist 2026.5
+  (`CotypingFileDialogDetector`). AppKit names the panel's window
+  `save-panel` or `open-panel` in every language; a sheet on the panel, such
+  as Go to Folder, is checked through the window it hangs from. Sandboxed
+  apps show the panel from another process, whose fields are never read.
+- A suggestion left alone for a minute is taken down, so a Tab pressed long
+  afterwards reaches the app. Every key either advances a suggestion or
+  clears it, so the clock restarts on each one. Cotypist 2026.5 fixed the
+  same bug.
+- When macOS's own inline predictions are on ("Show inline predictive
+  text", global default `NSAutomaticInlinePredictionEnabled`, unset means
+  on), Settings → Writing → Autocomplete says two suggestions may compete and
+  opens Keyboard settings, as Cotypist does.
+- `LokalBot --event-taps` lists the keyboard and mouse hooks on the Mac by
+  app. LokalBot holds at most three (autocomplete's key listener, its Tab tap
+  while a suggestion shows, dictation's shortcut); an app holding five or
+  more is flagged, the pattern Cotypist 2026.4 traced to leaking apps that
+  slow every keystroke.
 - Autocomplete stays quiet when the model is unsure, as Cotypist does
   (`CotypingFirstWordConfidence`). A suggestion at the start of a word is
   dropped when the model's own probability of its first word (the product of

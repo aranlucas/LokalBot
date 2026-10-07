@@ -35,6 +35,10 @@ enum LokalBotMain {
         if case .cotypingMeasurements? = HeadlessCommand.parse(CommandLine.arguments) {
             exit(CotypingStatsStore.printSaved())
         }
+        // Lists the system's event taps; needs no library, lock or window.
+        if case .eventTaps? = HeadlessCommand.parse(CommandLine.arguments) {
+            exit(EventTapAudit.printCurrent())
+        }
         routeStartup(
             migrate: { DataMigration.runIfNeeded() },
             launchApplication: {
