@@ -167,7 +167,7 @@ extension AgentApprovalMode {
         case .approveReadsAndEdits:
             "Reads and ordinary file edits run automatically, including outside the working folder. File-tool changes to LokalBot’s private data and shell commands ask first."
         case .fullAccess:
-            "Reads, ordinary file edits, and shell calls run automatically. File-tool changes to LokalBot’s private data still ask; shell commands remain unrestricted."
+            "Reads, ordinary file edits, shell calls, and every other agent tool run automatically. File-tool changes to LokalBot’s private data still ask; shell commands remain unrestricted."
         }
     }
 
@@ -180,7 +180,7 @@ extension AgentApprovalMode {
         case .approveReadsAndEdits:
             "Reads and ordinary edits are automatic; private app data changes and shell commands ask"
         case .fullAccess:
-            "Reads, ordinary edits, and shell commands are automatic; private app data changes ask"
+            "Every agent tool is automatic; private app data changes ask"
         }
     }
 
@@ -193,7 +193,7 @@ extension AgentApprovalMode {
         case .approveReadsAndEdits:
             "Reads and ordinary edits run automatically; private app data changes and shell commands ask first."
         case .fullAccess:
-            "Reads, ordinary edits, and shell calls run automatically. Private app data file-tool changes ask."
+            "Every agent tool runs automatically. Private app data file-tool changes ask."
         }
     }
 
@@ -215,7 +215,7 @@ extension AgentApprovalMode {
         case .approveReadsAndEdits:
             "The agent can read, create, overwrite, and edit ordinary files anywhere this Mac account can access without showing each request. File-tool changes to LokalBot’s private data, runtime, and app bundle will still ask, as will shell commands. This choice is remembered for future sessions."
         case .fullAccess:
-            "The agent can read and change ordinary files anywhere and run shell commands without asking. File-tool changes to LokalBot’s private data, runtime, and app bundle still ask. Shell commands may delete data, access secrets, change app files, or connect to the network. This choice is remembered for future sessions."
+            "The agent can read and change ordinary files anywhere, run shell commands, and use any other agent tool without asking. File-tool changes to LokalBot’s private data, runtime, and app bundle still ask. Shell commands and other tools may delete data, access secrets, change app files, or connect to the network. This choice is remembered for future sessions."
         }
     }
 

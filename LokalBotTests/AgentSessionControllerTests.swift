@@ -848,9 +848,9 @@ final class AgentSessionControllerTests: XCTestCase {
         await controller.shutdown()
     }
 
-    func testOtherToolsShowTheirArgumentsAndAlwaysAskEvenInFullAccessMode() async throws {
+    func testOtherToolsShowTheirArgumentsAndAskOutsideFullAccess() async throws {
         let controller = makeController()
-        await controller.setApprovalMode(.fullAccess)
+        await controller.setApprovalMode(.approveReadsAndEdits)
         await controller.start()
         let arguments = #"{"path": "/tmp/touched.txt"}"#
         transport.inject(try approvalEvent(id: "mcp", tool: "mcp__stub__touch",
@@ -864,6 +864,27 @@ final class AgentSessionControllerTests: XCTestCase {
         XCTAssertEqual(pending.arguments, arguments)
         XCTAssertFalse(controller.canAllowForSession(pending))
         XCTAssertFalse(transport.sentLines.contains { $0.contains(#""id":"mcp""#) })
+        XCTAssertTrue(transport.sentLines.contains {
+            $0.contains(#""id":"oversized""#) && $0.contains(#""confirmed":false"#)
+        })
+        await controller.shutdown()
+    }
+
+    func testFullAccessApprovesOtherToolsButNotArgumentsTooLongToShow() async throws {
+        let controller = makeController()
+        await controller.setApprovalMode(.fullAccess)
+        await controller.start()
+        transport.inject(try approvalEvent(id: "mcp", tool: "mcp__stub__touch",
+            workspace: controller.workspace.path, path: nil, content: "",
+            arguments: #"{"path": "/tmp/touched.txt"}"#))
+        transport.inject(try approvalEvent(id: "oversized", tool: "codemode",
+            workspace: controller.workspace.path, path: nil, content: "",
+            arguments: String(repeating: "😀", count: 32_769)))
+        try await pump()
+        XCTAssertTrue(controller.pendingApprovals.isEmpty)
+        XCTAssertTrue(transport.sentLines.contains {
+            $0.contains(#""id":"mcp""#) && $0.contains(#""confirmed":true"#)
+        })
         XCTAssertTrue(transport.sentLines.contains {
             $0.contains(#""id":"oversized""#) && $0.contains(#""confirmed":false"#)
         })

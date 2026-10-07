@@ -72,20 +72,23 @@ final class AgentApprovalPolicyTests: XCTestCase {
                                requestWorkspace: root), .allow)
         XCTAssertEqual(verdict(policy, tool: "edit", requestWorkspace: root), .allow)
         XCTAssertEqual(verdict(policy, tool: "bash", requestWorkspace: root), .ask)
+        XCTAssertEqual(verdict(policy, tool: "mcp__stub__touch", requestWorkspace: root), .ask)
         XCTAssertEqual(verdict(policy, tool: "write", path: "\(root)/note.txt",
                                requestWorkspace: "/private/other-workspace"), .ask)
     }
 
-    func testFullAccessAllowsKnownGatedToolsFromSelectedWorkspace() {
+    func testFullAccessAllowsEveryToolFromSelectedWorkspace() {
         var policy = AgentApprovalPolicy()
         policy.mode = .fullAccess
         let root = workspace.path
-        for tool in ["read", "write", "edit", "bash", "BASH"] {
+        for tool in ["read", "write", "edit", "bash", "BASH", "mcp__stub__touch", "codemode", "unknown"] {
             XCTAssertEqual(verdict(policy, tool: tool, requestWorkspace: root), .allow, tool)
         }
-        XCTAssertEqual(verdict(policy, tool: "unknown", requestWorkspace: root), .ask)
         XCTAssertEqual(verdict(policy, tool: "bash",
                                requestWorkspace: "/private/other-workspace"), .ask)
+        XCTAssertEqual(verdict(policy, tool: "mcp__stub__touch",
+                               requestWorkspace: "/private/other-workspace"), .ask)
+        XCTAssertEqual(verdict(policy, tool: "action"), .ask, "an unstructured request names no workspace")
     }
 
     func testAutomationAllowsOnlyWorkspaceFileChanges() {
