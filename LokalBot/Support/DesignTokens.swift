@@ -73,6 +73,9 @@ enum LBTokens {
         static let sidebarWidth: CGFloat = 216
         static let sidebarMinWidth: CGFloat = 200
         static let contentColumnWidth: CGFloat = 272
+        /// Minimums of a list-and-detail split (Meetings, Ask, People, Projects).
+        static let contentColumnMinWidth: CGFloat = 240
+        static let contentDetailMinWidth: CGFloat = 420
         static let settingsCategoriesWidth: CGFloat = 240
         static let detailsPaneWidth: CGFloat = 320
         static let contentColumnRange: ClosedRange<CGFloat> = 240...340

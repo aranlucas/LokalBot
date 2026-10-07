@@ -216,4 +216,14 @@ extension View {
             SplitPaneAccessibility(label: label, autosaveName: autosaveName, initialWidth: initialWidth)
         }
     }
+
+    /// The minimum width of an `HSplitView` in the main window's detail column:
+    /// its visible panes' minimums plus their 1 pt dividers. From macOS 26 the
+    /// detail column runs under the sidebar, an AppKit split adds the sidebar's
+    /// width to its own minimum, and NavigationSplitView then adds the sidebar
+    /// again, so Meetings could not shrink below about 1,100 pt. Stating the
+    /// panes' real minimum keeps the window resizable down to sidebar + panes.
+    func detailSplitMinimumWidth(_ paneMinimums: [CGFloat]) -> some View {
+        frame(minWidth: paneMinimums.reduce(0, +) + CGFloat(max(paneMinimums.count - 1, 0)))
+    }
 }

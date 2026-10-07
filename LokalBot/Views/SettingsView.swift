@@ -90,7 +90,8 @@ struct SettingsView: View {
                 .accessibilityLabel(queryIsEmpty ? app.settingsTab.displayName : "Search settings")
                 .splitPaneAccessibilityLabel(queryIsEmpty ? app.settingsTab.displayName : "Search settings")
         }
-        .frame(minWidth: 700, minHeight: 600)
+        .frame(minWidth: 700)
+        .workspaceMinimumHeight(600)
         .tint(Brand.teal)
         .navigationTitle(queryIsEmpty ? app.settingsTab.displayName : "Search settings")
         .onChange(of: app.focusedSettingID, initial: true) {

@@ -231,7 +231,10 @@ final class AgentModeUITests: XCTestCase {
             let answer = app.descendants(matching: .any)["agent.assistant"]
             XCTAssertTrue(answer.waitForExistence(timeout: 4))
 
-            resizeWindow(to: 760)
+            // With the sidebar shown, Agent's floor is the sidebar (216 pt, about
+            // 8 pt more on macOS 26.6) + task column 200 + conversation 350 +
+            // divider: about 751 pt on macOS 15, 767-775 pt on macOS 26 and later.
+            resizeWindow(to: 780)
             let retry = app.buttons["Retry response"].firstMatch
             let more = responseMore
             let transcript = app.scrollViews["agent.transcript"]
@@ -247,7 +250,7 @@ final class AgentModeUITests: XCTestCase {
             XCTAssertTrue(app.menuItems["Branch from here"].exists)
             XCTAssertTrue(app.menuItems["Open in results"].isEnabled)
             app.typeKey(.escape, modifierFlags: [])
-            snapshot("agent-compact-760-\(appearance)")
+            snapshot("agent-compact-780-\(appearance)")
 
             // Query the toolbar's direct child to avoid its nested AX wrapper.
             app.windows["main.window"].toolbars.firstMatch.children(matching: .button)

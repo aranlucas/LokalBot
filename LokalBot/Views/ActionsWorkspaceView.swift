@@ -199,7 +199,7 @@ struct ActionsWorkspaceView: View {
                     Button("Show Details") { selection = [reference.id] }
                 }
             }
-            .frame(minWidth: 360, maxWidth: .infinity)
+            .frame(minWidth: Self.listMinWidth, maxWidth: .infinity)
             .accessibilityIdentifier("actions.list")
             .accessibilityLabel("Actions")
             .overlay {
@@ -210,11 +210,15 @@ struct ActionsWorkspaceView: View {
             }
             .splitPaneAccessibilityLabel("Action list")
             if let inspected {
-                inspector(inspected).frame(minWidth: 280, idealWidth: LBTokens.Metric.detailsPaneWidth, maxWidth: 380)
+                inspector(inspected).frame(minWidth: Self.inspectorMinWidth, idealWidth: LBTokens.Metric.detailsPaneWidth, maxWidth: 380)
                     .splitPaneAccessibilityLabel("Action details", autosaveName: "LokalBot.actions", initialWidth: LBTokens.Metric.detailsPaneWidth)
             }
         }
+        .detailSplitMinimumWidth(inspected == nil ? [Self.listMinWidth] : [Self.listMinWidth, Self.inspectorMinWidth])
     }
+
+    private static let listMinWidth: CGFloat = 360
+    private static let inspectorMinWidth: CGFloat = 280
 
     private func header(total: Int, visible: Int, threads: Int, selected: [OutcomeActionReference]) -> some View {
         HStack(spacing: 12) {

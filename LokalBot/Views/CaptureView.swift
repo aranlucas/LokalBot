@@ -336,6 +336,7 @@ struct TimelineContentView: View {
                             autosaveName: "LokalBot.timeline.sessions.v7",
                             initialWidth: WorkspaceMetric.timelineRailIdealWidth)
                     }
+                    .detailSplitMinimumWidth([WorkspaceMetric.timelineDayMinWidth, WorkspaceMetric.timelineRailMinWidth])
                     .id("workspace.timeline")
                 }
             }
