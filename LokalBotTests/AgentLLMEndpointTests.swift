@@ -75,6 +75,28 @@ final class AgentLLMEndpointTests: XCTestCase {
         }
     }
 
+    func testEndpointsNameTheirReasoningFields() {
+        var ollama = settings(.ollama)
+        ollama.ollamaModel = "qwen3:8b"
+        var openRouter = settings(.openAICompatible)
+        openRouter.openAIBaseURL = "https://openrouter.ai/api/v1"
+        openRouter.openAIModel = "z-ai/glm-5.3-flash"
+        openRouter.approvedRemoteInferenceOrigins = ["https://openrouter.ai"]
+        var cerebras = openRouter
+        cerebras.openAIBaseURL = "https://api.cerebras.ai/v1"
+        cerebras.openAIModel = "qwen-3.8-27b"
+        cerebras.approvedRemoteInferenceOrigins = ["https://api.cerebras.ai"]
+
+        func dialect(_ s: AppSettings) -> AgentReasoningDialect? {
+            guard case .ready(let endpoint) = ThinkExecution.agentResolution(settings: s, includingCredentials: false)
+            else { return nil }
+            return endpoint.reasoningDialect
+        }
+        XCTAssertEqual(dialect(ollama), .ollama)
+        XCTAssertEqual(dialect(openRouter), .openRouter)
+        XCTAssertEqual(dialect(cerebras), .generic)
+    }
+
     func testRemoteOllamaRequiresExplicitApproval() {
         var s = settings(.ollama)
         s.ollamaBaseURL = "https://ollama.example.com"

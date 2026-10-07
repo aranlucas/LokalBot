@@ -312,6 +312,48 @@ final class AgentSessionControllerTests: XCTestCase {
         await controller.shutdown()
     }
 
+    private final class SettingsBox {
+        var settings = AppSettings()
+    }
+
+    func testAgentReasoningLevelIsWrittenForTheExtensionAndFollowsChanges() async throws {
+        let box = SettingsBox()
+        box.settings.summarizerBackend = .openAICompatible
+        box.settings.openAIBaseURL = "http://localhost:1234/v1"
+        box.settings.openAIModel = "test-model"
+        box.settings.thinkReasoningLevel = .medium
+        let fake = FakeTransport()
+        var plan: PiLaunchPlan?
+        let controller = AgentSessionController(
+            settings: { box.settings },
+            storage: fixtureStorage,
+            sessionsDirectory: fixtureRoot.appendingPathComponent("sessions"),
+            defaultWorkspace: fixtureRoot.appendingPathComponent("workspace"),
+            makeTransport: { plan = $0; return fake },
+            approvalModeDefaults: makeApprovalModeDefaults())
+        await controller.start()
+        let path = try XCTUnwrap(plan?.environment["LOKALBOT_LLM_REASONING_FILE"])
+        func written() throws -> String? {
+            let data = try Data(contentsOf: URL(fileURLWithPath: path))
+            return (try JSONSerialization.jsonObject(with: data) as? [String: Any])?["level"] as? String
+        }
+
+        XCTAssertEqual(plan?.environment["LOKALBOT_LLM_REASONING_DIALECT"], "generic")
+        XCTAssertEqual(controller.reasoningSupport, .common)
+        XCTAssertEqual(try written(), "medium", "Agent follows Think until it has its own level")
+        box.settings.agentReasoningLevel = .max
+        controller.reasoningLevelDidChange()
+        XCTAssertEqual(try written(), "high", "limited to the levels the model accepts")
+        box.settings.agentReasoningLevel = .off
+        let send = Task { await controller.send(prompt: "Go") }
+        try await pump()
+        XCTAssertEqual(try written(), "off", "a send brings the level up to date")
+        fake.inject(#"{"type":"response","id":"p1","command":"prompt","success":true}"#)
+        _ = await send.value
+        await controller.shutdown()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: path))
+    }
+
     func testStartReachesReady() async throws {
         let controller = makeController()
         await controller.start()

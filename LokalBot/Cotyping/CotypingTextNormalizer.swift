@@ -23,6 +23,8 @@ enum CotypingSuppressionReason: String, Sendable, Equatable {
     /// Caret sits at the end of a non-word fragment and the completion began
     /// with whitespace instead of extending it ("follo" + " up on that").
     case wordCompletionMismatch
+    /// The model was unsure of the first word (`CotypingFirstWordConfidence`).
+    case lowConfidence
 }
 
 struct CotypingNormalizationResult: Equatable, Sendable {

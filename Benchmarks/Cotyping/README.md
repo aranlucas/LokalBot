@@ -46,6 +46,10 @@ the model first; reported latency excludes cold loading, keyboard handling,
 debounce, AX validation and overlay presentation. Runs should be serial to avoid
 GPU contention. A nonzero exit or missing observations is not a completed run.
 
+The confidence gate (`CotypingFirstWordConfidence`) is on in replays as in the
+product; an input with `"confidenceGate": false` turns it off to compare.
+Suggestions it hides are recorded with the suppression `lowConfidence`.
+
 `--prompt` and sampling/length flags are experimental controls. A release
 qualification must use `--prompt production` and no overrides, so the actual
 product renderer and defaults are measured. No experiment changes saved settings.

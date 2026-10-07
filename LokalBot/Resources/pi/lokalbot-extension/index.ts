@@ -7,13 +7,22 @@
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { openAICompletionsApi } from "@earendil-works/pi-ai/compat";
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { homedir } from "node:os";
 
 // Tools whose approval card shows a dedicated preview. Any other tool is
 // reviewed from its exact arguments, which must fit in full.
 const PREVIEWED_TOOLS = new Set(["read", "write", "edit", "bash"]);
+const REASONING_DIALECTS = ["llama-server", "openai", "openrouter", "ollama", "generic"] as const;
+type ReasoningDialect = typeof REASONING_DIALECTS[number];
+const REASONING_LEVELS = ["automatic", "off", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
+type ReasoningLevel = typeof REASONING_LEVELS[number];
+/// ThinkReasoningLevel.budgetTokens, so a level means the same thinking
+/// allowance in Agent Mode as in summaries.
+const THINKING_BUDGETS: Record<Exclude<ReasoningLevel, "automatic">, number> = {
+  off: 0, minimal: 256, low: 512, medium: 4096, high: 8192, xhigh: 16384, max: 24576,
+};
 const MAX_APPROVAL_TEXT = 64 * 1024;
 const API_KEY = Symbol.for("lokalbot.llmApiKey");
 
@@ -54,16 +63,28 @@ export default function lokalbotExtension(pi: ExtensionAPI) {
   if (!loopback && endpoint.protocol !== "https:") {
     throw new Error("Remote LokalBot LLM endpoints must use HTTPS");
   }
+  const dialect = reasoningDialect(process.env.LOKALBOT_LLM_REASONING_DIALECT);
+  const reasoningFile = process.env.LOKALBOT_LLM_REASONING_FILE;
   const completions = openAICompletionsApi();
-  const inferenceFetch = inferenceFetchForOrigin(endpoint);
+  const inferenceFetch = retryRejectedReasoning(inferenceFetchForOrigin(endpoint));
 
   pi.registerProvider("lokalbot", {
     baseUrl,
     api: "openai-completions",
     // Pi has its own HTTP client: the host's URLSession redirect policy does
     // not cover it. Inject only this provider's supported transport hook.
+    // LokalBot writes the Agent reasoning level (already limited to what the
+    // model accepts) to a file it may change mid-task; read it per request.
     streamSimple: (selectedModel, context, options) => completions.streamSimple(
-      selectedModel, context, { ...options, fetch: inferenceFetch },
+      selectedModel, context, {
+        ...options,
+        fetch: inferenceFetch,
+        onPayload: async (payload, payloadModel) => {
+          const upstream = (await options?.onPayload?.(payload, payloadModel)) ?? payload;
+          return applyReasoningLevel(
+            upstream as Record<string, unknown>, readReasoningLevel(reasoningFile), dialect, model);
+        },
+      },
     ),
     apiKey,
     models: [
@@ -128,6 +149,96 @@ export function inferenceFetchForOrigin(endpoint: URL, implementation = globalTh
       throw new Error("Agent inference request left the task's approved origin");
     }
     return implementation(input, { ...init, redirect: "error" });
+  };
+}
+
+export function reasoningDialect(value: string | undefined): ReasoningDialect {
+  if (value === undefined || value === "") return "generic";
+  if (!(REASONING_DIALECTS as readonly string[]).includes(value)) {
+    throw new Error("Invalid reasoning dialect in the LokalBot launch configuration");
+  }
+  return value as ReasoningDialect;
+}
+
+/// `{"level": "<ThinkReasoningLevel>"}`. Missing or unreadable: Automatic,
+/// which leaves every request exactly as pi built it.
+export function readReasoningLevel(path: string | undefined): ReasoningLevel {
+  if (!path) return "automatic";
+  try {
+    const level = (JSON.parse(readFileSync(path, "utf8")) as { level?: unknown }).level;
+    return (REASONING_LEVELS as readonly unknown[]).includes(level) ? level as ReasoningLevel : "automatic";
+  } catch {
+    return "automatic";
+  }
+}
+
+/// Mirrors OpenAICompatibleEngine.applyGenerationOptions for a level the host
+/// already limited to the model's (ReasoningSupport). Automatic leaves every
+/// request exactly as pi built it.
+export function applyReasoningLevel(
+  payload: Record<string, unknown>,
+  level: ReasoningLevel,
+  dialect: ReasoningDialect,
+  model: string,
+): Record<string, unknown> {
+  if (level === "automatic") return payload;
+  const effort = level === "off" ? "none" : level;
+  switch (dialect) {
+    case "llama-server": {
+      const ceiling = payload.max_tokens ?? payload.max_completion_tokens;
+      const budget = typeof ceiling === "number"
+        ? Math.min(THINKING_BUDGETS[level], Math.floor(ceiling / 2))
+        : THINKING_BUDGETS[level];
+      const shaped: Record<string, unknown> = { ...payload, thinking_budget_tokens: budget };
+      if (budget === 0) {
+        // A zero budget alone still opens Qwen's thinking turn.
+        const kwargs = (payload.chat_template_kwargs ?? {}) as Record<string, unknown>;
+        shaped.chat_template_kwargs = { ...kwargs, enable_thinking: false };
+      }
+      return shaped;
+    }
+    case "openai":
+      return /^(o1|o3|o4|gpt-5)/i.test(model) ? { ...payload, reasoning_effort: effort } : payload;
+    case "openrouter":
+      return { ...payload, reasoning: { effort } };
+    case "ollama":
+      // Only gpt-oss takes a graded level; other thinking models can only be
+      // switched off, which the host limits the level to.
+      return level === "off" || /gpt-oss/i.test(model) ? { ...payload, reasoning_effort: effort } : payload;
+    case "generic":
+      return { ...payload, reasoning_effort: effort };
+  }
+}
+
+/// A chosen level can be one the selected model does not accept. When the
+/// server names reasoning in a 400/422, retry once: `none` becomes `low` for
+/// models that always reason; any other level falls back to the server's
+/// default. Mirrors OpenAICompatibleEngine.shouldRetryRejectedReasoningLevel.
+export function retryRejectedReasoning(implementation: typeof globalThis.fetch) {
+  return async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const response = await implementation(input, init);
+    if ((response.status !== 400 && response.status !== 422) || typeof init?.body !== "string") {
+      return response;
+    }
+    let body: Record<string, unknown>;
+    try {
+      body = JSON.parse(init.body) as Record<string, unknown>;
+    } catch {
+      return response;
+    }
+    const nested = body.reasoning as Record<string, unknown> | undefined;
+    const effort = body.reasoning_effort ?? nested?.effort;
+    if (typeof effort !== "string") return response;
+    if (!/reasoning/i.test(await response.clone().text())) return response;
+    const retried = { ...body };
+    if (effort === "none") {
+      if (body.reasoning_effort !== undefined) retried.reasoning_effort = "low";
+      else retried.reasoning = { ...nested, effort: "low" };
+    } else {
+      delete retried.reasoning_effort;
+      delete retried.reasoning;
+    }
+    return implementation(input, { ...init, body: JSON.stringify(retried) });
   };
 }
 

@@ -66,7 +66,8 @@ struct MeetingListView: View {
                         SectionHeader(text: group.label)
                             .selectionDisabled(true)
                         ForEach(group.items) { meeting in
-                            MeetingRowView(meeting: meeting)
+                            MeetingRowView(meeting: meeting,
+                                           isSelected: app.selectedMeetingIDs.contains(meeting.id))
                                 .tag(meeting.id)
                         }
                     }
@@ -242,7 +243,10 @@ struct MeetingListView: View {
 struct MeetingRowView: View {
     @EnvironmentObject var app: AppState
     let meeting: Meeting
-    @Environment(\.backgroundProminence) private var prominence
+    /// Comes from the list's selection, not `backgroundProminence`: the row
+    /// never saw `.increased` on the teal highlight, which left the
+    /// light-mode supporting grey on teal.
+    var isSelected = false
 
     var body: some View {
         if meeting.endedAt == nil {
@@ -273,9 +277,12 @@ struct MeetingRowView: View {
                 Text(meeting.isMergedMeeting ? "\(time) · \(duration)"
                      : "\(meeting.appName) · \(time) · \(duration)")
                     .font(.scaled(.callout))
-                    .foregroundStyle(prominence == .increased
-                                     ? Color.white.opacity(0.85)
-                                     : Color(nsColor: WorkspaceTextColor.supporting))
+                    // Selected rows take the title's own foreground, which the
+                    // list turns white on teal and keeps dark on the inactive
+                    // highlight. White is only 4.7:1 on teal, so no dimming.
+                    .foregroundStyle(isSelected
+                                     ? AnyShapeStyle(.primary)
+                                     : AnyShapeStyle(Color(nsColor: WorkspaceTextColor.supporting)))
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)

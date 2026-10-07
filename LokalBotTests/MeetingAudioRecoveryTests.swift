@@ -19,6 +19,27 @@ final class MeetingAudioRecoveryTests: XCTestCase {
                                                            frontmostPID: teams.pid), zoom)
     }
 
+    /// #179: an unbound recording may hold only an always-open stream. A
+    /// stream that is call evidence (Zoom's) goes through the verified path,
+    /// and a closed modulehost leaves nothing to hold.
+    func testOnlyAnAlwaysOpenStreamCanBeHeld() {
+        let teams = RunningApp(processIdentifier: 11, bundleIdentifier: "com.microsoft.teams2",
+                               localizedName: "Microsoft Teams")
+        let zoom = RunningApp(processIdentifier: 10, bundleIdentifier: "us.zoom.xos", localizedName: "zoom.us")
+        var moduleHost = AudioProcess(id: 21, name: "Microsoft Teams ModuleHost",
+                                      bundleID: "com.microsoft.teams2.modulehost", objectID: 21,
+                                      isRunningOutput: true)
+        let zoomAudio = AudioProcess(id: 10, name: "zoom.us", bundleID: "us.zoom.xos", objectID: 10,
+                                     isRunningOutput: true)
+
+        let held = MeetingDetector.alwaysOpenCaptureCandidate(
+            in: [zoom, teams], processes: [moduleHost, zoomAudio], frontmostPID: zoom.processIdentifier)
+        XCTAssertEqual(held?.bundleID, "com.microsoft.teams2")
+        XCTAssertNil(MeetingDetector.alwaysOpenCaptureCandidate(in: [zoom], processes: [zoomAudio], frontmostPID: nil))
+        moduleHost.isRunningOutput = false
+        XCTAssertNil(MeetingDetector.alwaysOpenCaptureCandidate(in: [teams], processes: [moduleHost], frontmostPID: nil))
+    }
+
     func testSourceFoundAfterOldRetryDeadlineAttachesOnceToExistingRecording() async {
         let recovery = MeetingAudioRecovery()
         let recording = UUID()

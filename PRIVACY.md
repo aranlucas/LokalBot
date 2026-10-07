@@ -171,7 +171,11 @@ The app may make these outbound connections:
   Before writing meeting notes with an approved OpenRouter origin, LokalBot
   also reads the selected model's published endpoint list from that origin to
   learn its context window. That request carries only the model id, with no
-  API key or content, and the answer is kept in local preferences.
+  API key or content, and the answer is kept in local preferences. To offer
+  the reasoning levels a model accepts, LokalBot reads OpenRouter's public
+  model list from that approved origin at most once a day, or asks an allowed
+  Ollama server for the selected model's capabilities. These requests carry
+  no API key or content; the Ollama one names only the model.
   Meeting notes sent to an approved server can include the calendar title,
   invited participants' names, titles of documents on screen during the call,
   and, when enabled, the invitation agenda; each has its own setting.

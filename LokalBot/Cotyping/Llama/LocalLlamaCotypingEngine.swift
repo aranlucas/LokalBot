@@ -11,6 +11,9 @@ final class LocalLlamaCotypingEngine: CotypingCompleting {
     private let modelPath: String
     private var memoryPressureSource: DispatchSourceMemoryPressure?
     private var inflightPrewarmTask: Task<Void, Never>?
+    /// The confidence gate for suggestions at the start of a word; 0 turns it
+    /// off (the quality replay does, to compare).
+    var minimumFirstWordProbability = CotypingFirstWordConfidence.minimumProbability
 
     init(runtime: LlamaCotypingRuntime, modelPath: String) {
         self.runtime = runtime
@@ -125,7 +128,10 @@ final class LocalLlamaCotypingEngine: CotypingCompleting {
                 requiredPrefixUTF8: healed.requiredPrefixUTF8,
                 // A fragment that is not a valid standalone word must keep
                 // being spelled across the caret, not merely reach it.
-                preferWordExtendingOvershoot: !request.wordPrefixIsValidWord
+                preferWordExtendingOvershoot: !request.wordPrefixIsValidWord,
+                // Inside a word the first token is forced, so it is not weighed.
+                minimumFirstWordProbability: request.wordPrefixAtCaret.isEmpty ? minimumFirstWordProbability : 0,
+                onLowConfidence: { accumulator.markUnsure() }
             ) { piece in
                 if Task.isCancelled { return false }
                 accumulator.append(piece)
@@ -143,6 +149,9 @@ final class LocalLlamaCotypingEngine: CotypingCompleting {
         }
 
         if Task.isCancelled { throw CancellationError() }
+        if accumulator.isUnsure {
+            return CotypingNormalizationResult(text: "", suppression: .lowConfidence)
+        }
         return CotypingTextNormalizer.normalizeDetailed(raw, for: request)
     }
 
@@ -167,5 +176,7 @@ final class LocalLlamaCotypingEngine: CotypingCompleting {
 private final class TokenAccumulator: @unchecked Sendable {
     private(set) var raw = ""
     private(set) var count = 0
+    private(set) var isUnsure = false
     func append(_ piece: String) { raw += piece; count += 1 }
+    func markUnsure() { isUnsure = true }
 }

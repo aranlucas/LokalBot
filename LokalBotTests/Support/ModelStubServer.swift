@@ -107,10 +107,11 @@ enum StubRule {
         return rule(behaviour, system: system, nth: nth, times: times)
     }
 
-    static func http(_ status: Int, retryAfter: Int? = nil, system: String? = nil,
+    static func http(_ status: Int, retryAfter: Int? = nil, message: String? = nil, system: String? = nil,
                      nth: Int? = nil, times: Int? = nil) -> [String: Any] {
         var behaviour: [String: Any] = ["kind": "http", "status": status]
         if let retryAfter { behaviour["retryAfter"] = retryAfter }
+        if let message { behaviour["message"] = message }
         return rule(behaviour, system: system, nth: nth, times: times)
     }
 
