@@ -26,6 +26,7 @@ enum PiLaunchPlanner {
                      sessionDirectory: URL,
                      workspace: URL,
                      endpoint: AgentLLMEndpoint,
+                     reasoningLevelFile: URL? = nil,
                      helpersDirectory: URL?,
                      privateRoots: [URL] = [],
                      agentAccessCapability: String? = nil,
@@ -60,6 +61,10 @@ enum PiLaunchPlanner {
         environment["LOKALBOT_LLM_BASE_URL"] = endpoint.baseURL.absoluteString
         environment["LOKALBOT_LLM_MODEL"] = endpoint.model
         environment["LOKALBOT_LLM_CTX"] = String(endpoint.contextTokens)
+        environment["LOKALBOT_LLM_REASONING_DIALECT"] = endpoint.reasoningDialect.rawValue
+        // The host rewrites this file when the Agent reasoning level changes;
+        // the extension reads it for every model request. Absent: Automatic.
+        environment["LOKALBOT_LLM_REASONING_FILE"] = reasoningLevelFile?.path
         let privateRootsJSON = try? JSONEncoder().encode(privateRoots.map { $0.standardizedFileURL.path })
         // An encoding failure must stop the extension at startup, never omit
         // the protected roots. `null` is rejected by its launch validation.

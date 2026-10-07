@@ -5,7 +5,9 @@ import { SessionManager } from "@earendil-works/pi-coding-agent";
 import { mkdir, mkdtemp, readFile, realpath, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
-import lokalbotExtension, { inferenceFetchForOrigin } from "../../LokalBot/Resources/pi/lokalbot-extension/index";
+import lokalbotExtension, {
+  applyReasoningLevel, inferenceFetchForOrigin, readReasoningLevel, retryRejectedReasoning,
+} from "../../LokalBot/Resources/pi/lokalbot-extension/index";
 
 const runtime = process.env.LOKALBOT_PINNED_RUNTIME_ROOT;
 const repo = resolve(import.meta.dir, "../..");
@@ -85,7 +87,7 @@ async function withExtensionFixture(run: (fixture: {
   call: (toolName: string, input: unknown) => Promise<any>;
   approvals: any[];
   provider: any;
-}) => Promise<void>, baseUrl = "http://127.0.0.1:1234/v1") {
+}) => Promise<void>, baseUrl = "http://127.0.0.1:1234/v1", extraEnvironment: Record<string, string> = {}) {
   const root = await realpath(await mkdtemp(join(tmpdir(), "lokalbot-agent-boundary-")));
   const workspace = join(root, "workspace");
   const library = join(root, "private-library");
@@ -98,6 +100,7 @@ async function withExtensionFixture(run: (fixture: {
     process.env.LOKALBOT_LLM_MODEL = "fixture";
     process.env.LOKALBOT_LLM_API_KEY = "synthetic-token";
     process.env.LOKALBOT_AGENT_PRIVATE_ROOTS = JSON.stringify([library]);
+    Object.assign(process.env, extraEnvironment);
     let handler: any;
     let provider: any;
     lokalbotExtension({ registerProvider(_name: string, config: any) { provider = config; }, on(name: string, callback: any) {
@@ -335,3 +338,101 @@ test("Pi resumes append-only context edits without overwriting visible history",
     await rm(workspace, { recursive: true, force: true });
   }
 });
+
+test("a reasoning level becomes each server's own request fields", () => {
+  const base = { model: "m", max_completion_tokens: 2_000 };
+  expect(applyReasoningLevel(base, "automatic", "generic", "m")).toBe(base);
+  expect(applyReasoningLevel(base, "off", "generic", "qwen-3.8-27b").reasoning_effort).toBe("none");
+  expect(applyReasoningLevel(base, "xhigh", "openai", "gpt-5.4-mini").reasoning_effort).toBe("xhigh");
+  expect(applyReasoningLevel(base, "high", "openai", "gpt-4.1").reasoning_effort).toBeUndefined();
+  expect(applyReasoningLevel(base, "max", "openrouter", "z-ai/glm-5.3-flash").reasoning).toEqual({ effort: "max" });
+  expect(applyReasoningLevel(base, "high", "ollama", "gpt-oss:20b").reasoning_effort).toBe("high");
+  expect(applyReasoningLevel(base, "off", "ollama", "qwen3:8b").reasoning_effort).toBe("none");
+  expect(applyReasoningLevel(base, "high", "ollama", "qwen3:8b").reasoning_effort).toBeUndefined();
+  const medium = applyReasoningLevel(base, "medium", "llama-server", "qwen3.5-4b");
+  expect(medium.thinking_budget_tokens).toBe(1_000);
+  expect(medium.reasoning_effort).toBeUndefined();
+  const off = applyReasoningLevel({ ...base, chat_template_kwargs: { keep: 1 } }, "off", "llama-server", "q");
+  expect(off.thinking_budget_tokens).toBe(0);
+  expect(off.chat_template_kwargs).toEqual({ keep: 1, enable_thinking: false });
+});
+
+test("the level file is read fresh and anything unreadable is Automatic", async () => {
+  const root = await mkdtemp(join(tmpdir(), "lokalbot-reasoning-"));
+  try {
+    const file = join(root, "level.json");
+    expect(readReasoningLevel(undefined)).toBe("automatic");
+    expect(readReasoningLevel(file)).toBe("automatic");
+    await writeFile(file, JSON.stringify({ level: "low" }));
+    expect(readReasoningLevel(file)).toBe("low");
+    await writeFile(file, JSON.stringify({ level: "extreme" }));
+    expect(readReasoningLevel(file)).toBe("automatic");
+    await writeFile(file, "not json");
+    expect(readReasoningLevel(file)).toBe("automatic");
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test("a rejected reasoning level is retried once without blocking the request", async () => {
+  const bodies: any[] = [];
+  const reply = (status: number, text: string) => new Response(text, { status });
+  const replies = [reply(400, "reasoning_effort 'none' is not supported"), reply(200, "ok")];
+  const fetchOnce = retryRejectedReasoning((async (_input: any, init: any) => {
+    bodies.push(JSON.parse(init.body)); return replies.shift()!;
+  }) as typeof fetch);
+  expect((await fetchOnce("https://x/v1/chat/completions", {
+    method: "POST", body: JSON.stringify({ model: "gpt-oss-120b", reasoning_effort: "none" }),
+  })).status).toBe(200);
+  expect(bodies.map((body) => body.reasoning_effort)).toEqual(["none", "low"]);
+
+  bodies.length = 0;
+  replies.push(reply(422, "unknown field reasoning"), reply(200, "ok"));
+  await fetchOnce("https://x/v1", { method: "POST", body: JSON.stringify({ reasoning: { effort: "high" } }) });
+  expect(bodies[1].reasoning).toBeUndefined();
+
+  bodies.length = 0;
+  replies.push(reply(400, "context length exceeded"));
+  expect((await fetchOnce("https://x/v1", {
+    method: "POST", body: JSON.stringify({ reasoning_effort: "low" }),
+  })).status).toBe(400);
+  expect(bodies).toHaveLength(1);
+});
+
+test("the registered provider sends the level LokalBot writes, and follows a change", async () => {
+  const bodies: any[] = [];
+  const server = Bun.serve({ hostname: "127.0.0.1", port: 0,
+    async fetch(request) {
+      bodies.push(await request.json());
+      const chunk = (delta: object, finish: string | null) =>
+        `data: ${JSON.stringify({ id: "c", object: "chat.completion.chunk", created: 0, model: "fixture",
+          choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`;
+      return new Response(chunk({ role: "assistant", content: "ok" }, null) + chunk({}, "stop") + "data: [DONE]\n\n",
+        { headers: { "content-type": "text/event-stream" } });
+    },
+  });
+  const root = await mkdtemp(join(tmpdir(), "lokalbot-reasoning-"));
+  const file = join(root, "level.json");
+  try {
+    const baseUrl = `http://127.0.0.1:${server.port}/v1`;
+    await withExtensionFixture(async ({ provider }) => {
+      const model = { ...provider.models[0], provider: "lokalbot", api: provider.api,
+        baseUrl, maxTokens: 128, name: "Fixture", reasoning: false };
+      const ask = async () => {
+        const stream = provider.streamSimple(model, {
+          messages: [{ role: "user", content: "hi", timestamp: Date.now() }],
+        }, { apiKey: "synthetic-token", maxRetries: 0, timeoutMs: 2_000 });
+        for await (const _ of stream) {}
+      };
+      await ask();
+      await writeFile(file, JSON.stringify({ level: "low" }));
+      await ask();
+      await writeFile(file, JSON.stringify({ level: "off" }));
+      await ask();
+    }, baseUrl, { LOKALBOT_LLM_REASONING_DIALECT: "generic", LOKALBOT_LLM_REASONING_FILE: file });
+    expect(bodies.map((body) => body.reasoning_effort)).toEqual([undefined, "low", "none"]);
+    expect(bodies[0].messages[0].role).not.toBe("developer");
+  } finally {
+    server.stop(true);
+    await rm(root, { recursive: true, force: true });
+  }
+});
+

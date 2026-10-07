@@ -15,7 +15,8 @@ final class PiLaunchPlannerTests: XCTestCase {
                           helpers: URL? = URL(fileURLWithPath: "/app/Contents/Helpers"),
                           capability: String? = nil,
                           continuePrevious: Bool = false,
-                          specificSession: URL? = nil) -> PiLaunchPlan {
+                          specificSession: URL? = nil,
+                          reasoningLevelFile: URL? = nil) -> PiLaunchPlan {
         var environment = ["PATH": "/usr/bin:/bin", "HOME": "/Users/x"]
         environment["LOKALBOT_LLM_API_KEY"] = inheritedAPIKey
         return PiLaunchPlanner.plan(
@@ -26,7 +27,9 @@ final class PiLaunchPlannerTests: XCTestCase {
             sessionDirectory: URL(fileURLWithPath: "/store/agent/sessions"),
             workspace: URL(fileURLWithPath: "/work"),
             endpoint: AgentLLMEndpoint(baseURL: endpoint.baseURL, model: endpoint.model,
-                                       contextTokens: endpoint.contextTokens, apiKey: apiKey),
+                                       contextTokens: endpoint.contextTokens, apiKey: apiKey,
+                                       reasoningDialect: .llamaServer),
+            reasoningLevelFile: reasoningLevelFile,
             helpersDirectory: helpers,
             privateRoots: [URL(fileURLWithPath: "/store"), URL(fileURLWithPath: "/app-support")],
             agentAccessCapability: capability,
@@ -62,6 +65,13 @@ final class PiLaunchPlannerTests: XCTestCase {
         XCTAssertEqual(env["PI_CODING_AGENT_DIR"], "/store/agent/pi-config")
         XCTAssertEqual(env["PATH"], "/app/Contents/Helpers:/usr/bin:/bin")
         XCTAssertEqual(env["HOME"], "/Users/x", "base environment is preserved")
+    }
+
+    func testEnvironmentNamesTheReasoningFieldsAndLevelFile() {
+        let file = URL(fileURLWithPath: "/tmp/lokalbot-agent-reasoning-x.json")
+        XCTAssertEqual(makePlan(reasoningLevelFile: file).environment["LOKALBOT_LLM_REASONING_FILE"], file.path)
+        XCTAssertEqual(makePlan().environment["LOKALBOT_LLM_REASONING_DIALECT"], "llama-server")
+        XCTAssertNil(makePlan().environment["LOKALBOT_LLM_REASONING_FILE"])
     }
 
     func testAPIKeyIsPassedWhenPresent() {

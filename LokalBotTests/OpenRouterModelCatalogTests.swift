@@ -68,6 +68,71 @@ final class OpenRouterModelCatalogTests: XCTestCase {
         XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
     }
 
+    private let modelList = Data(#"""
+        {"data": [
+          {"id": "z-ai/glm-5.3-flash",
+           "reasoning": {"mandatory": true, "default_enabled": true,
+                         "supported_efforts": ["max", "high", "low"], "default_effort": "max"}},
+          {"id": "openai/gpt-5.4-mini",
+           "reasoning": {"mandatory": false, "default_enabled": false,
+                         "supported_efforts": ["xhigh", "high", "medium", "low", "none"],
+                         "default_effort": "medium"}},
+          {"id": "qwen/qwen3.6-35b-a3b", "reasoning": {"mandatory": false, "default_enabled": true}},
+          {"id": "meta-llama/llama-3.3-70b-instruct"}
+        ]}
+        """#.utf8)
+
+    func testModelListGivesEachModelItsPublishedReasoningLevels() throws {
+        let parsed = try XCTUnwrap(OpenRouterModelCatalog.reasoningSupport(inModels: modelList))
+
+        XCTAssertEqual(parsed["z-ai/glm-5.3-flash"],
+                       ReasoningSupport(levels: [.low, .high, .max], defaultLevel: .max), "mandatory: no Off")
+        XCTAssertEqual(parsed["openai/gpt-5.4-mini"],
+                       ReasoningSupport(levels: [.off, .low, .medium, .high, .xhigh], defaultLevel: .off))
+        XCTAssertEqual(parsed["qwen/qwen3.6-35b-a3b"], ReasoningSupport(levels: [.off]))
+        XCTAssertEqual(parsed["meta-llama/llama-3.3-70b-instruct"], .unavailable)
+    }
+
+    func testReadsReasoningLevelsOnceFromAnApprovedOriginWithoutAKey() async throws {
+        let server = Server([.endpoints(modelList)])
+        let clock = Clock()
+        let catalog = catalog(server, defaults: defaults(), clock: clock)
+
+        let unapproved = await catalog.reasoningSupport(model: "z-ai/glm-5.3-flash", baseURL: base, approvedOrigins: [])
+        let first = await catalog.reasoningSupport(model: "Z-AI/GLM-5.3-Flash", baseURL: base, approvedOrigins: approved)
+        clock.now += 3_600
+        let cached = await catalog.reasoningSupport(model: "openai/gpt-5.4-mini", baseURL: base,
+                                                    approvedOrigins: approved)
+        let unlisted = await catalog.reasoningSupport(model: "acme/unlisted", baseURL: base, approvedOrigins: approved)
+
+        XCTAssertNil(unapproved)
+        XCTAssertEqual(first?.levels, [.low, .high, .max])
+        XCTAssertEqual(cached?.levels, [.off, .low, .medium, .high, .xhigh])
+        XCTAssertNil(unlisted)
+        let requests = await server.recorded()
+        XCTAssertEqual(requests.map { $0.url?.absoluteString }, ["https://openrouter.ai/api/v1/models"])
+        XCTAssertNil(requests.first?.value(forHTTPHeaderField: "Authorization"))
+        XCTAssertNil(requests.first?.httpBody)
+    }
+
+    func testAFailedReasoningLookupWaitsBeforeAskingAgain() async throws {
+        let server = Server([.failure, .endpoints(modelList)])
+        let clock = Clock()
+        let catalog = catalog(server, defaults: defaults(), clock: clock)
+
+        let failed = await catalog.reasoningSupport(model: "z-ai/glm-5.3-flash", baseURL: base, approvedOrigins: approved)
+        clock.now += 60
+        let waiting = await catalog.reasoningSupport(model: "z-ai/glm-5.3-flash", baseURL: base, approvedOrigins: approved)
+        clock.now += OpenRouterModelCatalog.reasoningRetryInterval
+        let retried = await catalog.reasoningSupport(model: "z-ai/glm-5.3-flash", baseURL: base, approvedOrigins: approved)
+
+        XCTAssertNil(failed)
+        XCTAssertNil(waiting)
+        XCTAssertEqual(retried?.levels, [.low, .high, .max])
+        let requests = await server.recorded()
+        XCTAssertEqual(requests.count, 2)
+    }
+
     func testSendsNothingWithoutApprovalToOtherServersOrForUnsafeModelIDs() async throws {
         let server = Server([])
         let catalog = catalog(server, defaults: defaults())
