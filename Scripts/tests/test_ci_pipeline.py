@@ -212,15 +212,36 @@ class NightlyTests(unittest.TestCase):
         build = (ROOT / '.github/workflows/build.yml').read_text()
         nightly = (ROOT / '.github/workflows/nightly.yml').read_text()
         self.assertIn('products_only:', build.split('workflow_call:', 1)[1].split('pull_request:', 1)[0])
-        for job in ['tests', 'day-in-the-life']:
-            block = build.split(f'\n  {job}:\n', 1)[1].split('    steps:', 1)[0]
-            self.assertIn('if: ${{ !inputs.products_only }}', block, job)
+        tests = build.split('\n  tests:\n', 1)[1].split('    steps:', 1)[0]
+        self.assertIn('if: ${{ !inputs.products_only }}', tests)
+        # The workday check reports from the tests job, so it is skipped with it.
+        report = build.split('\n  day-in-the-life:\n', 1)[1].split('    steps:', 1)[0]
+        self.assertIn('needs: tests', report)
+        self.assertIn("needs.tests.result != 'skipped'", report)
         call = nightly.split('\n  build:\n', 1)[1].split('\n  model-drift:', 1)[0]
         self.assertIn('products_only: true', call)
         failed = nightly.split('\n  build-failed:\n', 1)[1]
         self.assertIn('needs: build', failed)
         self.assertIn("if: failure() && github.event_name == 'schedule'", failed)
         self.assertIn('gh issue create', failed)
+
+
+class WorkdayBesideUnitTestsTests(unittest.TestCase):
+    def test_workday_is_awaited_and_keeps_its_own_required_check(self):
+        build = (ROOT / '.github/workflows/build.yml').read_text()
+        tests = build.split('\n  tests:\n', 1)[1].split('\n  day-in-the-life:\n', 1)[0]
+        self.assertIn('workday: ${{ steps.workday.outcome }}', tests)
+        workday = tests.split('id: workday\n', 1)[1].split('      - name:', 1)[0]
+        # A failed workday must not fail the unit-test check, and must not hang it.
+        for setting in ['background: true', 'continue-on-error: true', 'timeout-minutes:']:
+            self.assertIn(setting, workday)
+        wait = tests.index('wait: [workday, audio-recovery]')
+        self.assertLess(tests.index('Run unit tests without rebuilding'), wait)
+        self.assertLess(wait, tests.index('Keep the failed library'))
+        report = build.split('\n  day-in-the-life:\n', 1)[1]
+        self.assertIn('name: Day in the life (macOS)', report)
+        self.assertIn('runs-on: ubuntu-latest', report)
+        self.assertIn('needs.tests.outputs.workday', report)
 
 
 class CompilerCacheTests(unittest.TestCase):

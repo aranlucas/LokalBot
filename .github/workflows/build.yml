@@ -169,7 +169,10 @@ jobs:
         id: compiler-seal
         if: steps.compile.outputs.cache_save == 'true' && steps.compiler-restore.outputs.cache-hit != 'true'
         run: python3 Scripts/ci/compiler-cache.py seal
+      # The cache and the evidence live in their own folders, so they upload
+      # while the products the test jobs need are packed and handed over.
       - name: Save compiler cache
+        background: true
         timeout-minutes: 3
         continue-on-error: true
         if: steps.compiler-seal.outputs.save == 'true'
@@ -178,6 +181,7 @@ jobs:
           path: .build/compilation-cache
           key: ${{ steps.compiler-key.outputs.key }}
       - name: Save compiler evidence
+        background: true
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
@@ -200,6 +204,8 @@ jobs:
           retention-days: 2
           compression-level: 0
           if-no-files-found: error
+      - name: Wait for the compiler cache and evidence
+        wait-all:
 
   tests:
     name: xcodebuild test (macOS)
@@ -207,6 +213,8 @@ jobs:
     if: ${{ !inputs.products_only }}
     runs-on: macos-26
     timeout-minutes: 30
+    outputs:
+      workday: ${{ steps.workday.outcome }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Select Xcode
@@ -223,6 +231,23 @@ jobs:
         run: python3 Scripts/ci/test-products.py unpack unit
       - name: Fetch pinned Bun for the model stub
         run: echo "TEST_RUNNER_LOKALBOT_TEST_BUN=$(bash Scripts/ci/fetch-bun.sh | tail -1)" >> "$GITHUB_ENV"
+      # The workday and the crash probe run beside the unit tests instead of
+      # waiting for another macOS runner. Each keeps its own library, defaults
+      # suite, temp folder and stub port. The workday reports through the
+      # day-in-the-life job, so its failure does not fail the unit tests.
+      - name: Run one synthetic workday through the real pipelines
+        id: workday
+        background: true
+        continue-on-error: true
+        timeout-minutes: 15
+        run: |
+          export LOKALBOT_TEST_BUN="$TEST_RUNNER_LOKALBOT_TEST_BUN"
+          export LOKALBOT_APP="$PWD/.build/dd/Build/Products/Debug/LokalBot.app"
+          bash Scripts/day-in-the-life.sh 2>&1 | tee .build/day-in-the-life.log
+      - name: Verify audio recovery after SIGKILL
+        id: audio-recovery
+        background: true
+        run: bash Scripts/tests/audio-recovery-crash.sh
       - name: Run unit tests without rebuilding
         env:
           TEST_RUNNER_CI: "true"
@@ -232,8 +257,8 @@ jobs:
           xcodebuild test-without-building -xctestrun "${runs[0]}" \
             -destination 'platform=macOS' -derivedDataPath .build/dd \
             -only-testing:LokalBotTests -resultBundlePath .build/unit.xcresult
-      - name: Verify audio recovery after SIGKILL
-        run: bash Scripts/tests/audio-recovery-crash.sh
+      - name: Wait for the workday and the crash probe
+        wait: [workday, audio-recovery]
       - name: Save unit results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
@@ -242,38 +267,29 @@ jobs:
           name: unit-results
           path: .build/unit.xcresult
           retention-days: 14
-
-  day-in-the-life:
-    name: Day in the life (macOS)
-    needs: build
-    if: ${{ !inputs.products_only }}
-    runs-on: macos-26
-    timeout-minutes: 25
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - name: Select Xcode
-        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90
-        with:
-          xcode-version: "26.4.1"
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-        with:
-          name: unit-products
-          path: .build/transfer
-      - name: Verify and restore compiled products
-        env:
-          CODE_SIGNING_ALLOWED: "NO"
-        run: python3 Scripts/ci/test-products.py unpack unit
-      - name: Run one synthetic workday through the real pipelines
-        run: |
-          export LOKALBOT_TEST_BUN="$(bash Scripts/ci/fetch-bun.sh | tail -1)"
-          export LOKALBOT_APP="$PWD/.build/dd/Build/Products/Debug/LokalBot.app"
-          bash Scripts/day-in-the-life.sh 2>&1 | tee .build/day-in-the-life.log
       - name: Keep the failed library
-        if: failure()
+        if: ${{ !cancelled() && steps.workday.outcome == 'failure' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
+          overwrite: true # full reruns replace artifacts from earlier attempts
           name: day-in-the-life
           path: |
             .build/day-in-the-life.log
             /tmp/lokalbot-day.*
           retention-days: 14
+
+  # Keeps the required check name; the workday itself runs in the tests job.
+  day-in-the-life:
+    name: Day in the life (macOS)
+    needs: tests
+    if: ${{ !cancelled() && needs.tests.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require the workday from the unit-test runner
+        env:
+          WORKDAY: ${{ needs.tests.outputs.workday }}
+        run: |
+          [[ "$WORKDAY" == success ]] && exit 0
+          echo "::error::Synthetic workday outcome: ${WORKDAY:-did not run}. Its log is in the xcodebuild test (macOS) job; a failed library is in the day-in-the-life artifact." >&2
+          exit 1
