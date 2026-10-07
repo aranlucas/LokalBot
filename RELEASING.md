@@ -214,8 +214,12 @@ Test products are shared only within the same workflow attempt and exact SHA,
 with clean build inputs, matching toolchain and digest verification; missing or
 stale products fail instead of rebuilding silently. Use **Re-run all jobs** when
 retrying a shared-products workflow: a failed-jobs-only retry cannot consume
-artifacts from the preceding attempt. Every master/dev push runs full UI
-validation so a release tip always has an eligible push gate.
+artifacts from the preceding attempt. UI Tests runs on pull requests that are
+ready for review, weekly on `master`, and for each release candidate when
+`Scripts/prepare-release.sh` dispatches it with the candidate's SHA; it no longer
+runs on every `master` push. Build, Lint and XcodeGen still do. Build skips its
+macOS jobs on pull requests that change only docs, the website, assets, video
+or distribution notes (`Scripts/ci/build-relevance.py`).
 
 ### Optional: prepare the signed archive while CI validates
 
@@ -225,10 +229,12 @@ After pushing the complete candidate commit to `master`, run:
 Scripts/prepare-release.sh 0.8.1
 ```
 
-This explicitly dispatches the Release workflow in preparation mode. It validates
-candidate metadata and signs/exports the app while the normal push CI runs. It
-creates no tag, sends nothing to notarization and publishes no release. Wait for
-preparation and all five exact-commit push gates before creating the release tag.
+This explicitly dispatches the Release workflow in preparation mode and the full
+UI Tests suite for the candidate's exact SHA. Preparation validates candidate
+metadata and signs/exports the app while the normal push CI runs. It creates no
+tag, sends nothing to notarization and publishes no release. Wait for
+preparation, that UI Tests run and the Build, Lint and XcodeGen push runs on the
+exact commit before creating the release tag.
 
 Build and unit execution are separate jobs in `build.yml`, sharing one compile.
 The UI aggregate checks smoke, Reduce Motion, both functional shards, all three
@@ -236,8 +242,11 @@ visual sizes and every capture. Filtered or legacy-comparison runs cannot replac
 the complete UI gate. All UI execution remains on hosted runners.
 
 On a tag push, Release requires the candidate to remain the current `master` tip
-and verifies successful **push** runs for Build (both jobs), UI Tests, Lint and
-XcodeGen. It retrieves prepared apps only from successful `release.yml` manual
+and verifies successful **push** runs for Build (both jobs), Lint and XcodeGen,
+and a successful UI Tests run on that exact SHA, either a push run or the
+exact-SHA dispatch from `prepare-release.sh`; only a full run reports
+`XCUITest (macOS)`. If a UI Tests job fails to get a runner, use **Re-run all
+jobs** on that dispatch. It retrieves prepared apps only from successful `release.yml` manual
 runs on that exact trusted master SHA and verifies source/tree, version/build,
 Xcode, architecture, lockfile, run identity and archive digest before reuse.
 A missing/expired preparation uses the existing cold archive flow; a mismatched

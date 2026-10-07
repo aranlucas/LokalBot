@@ -54,8 +54,31 @@ defaults:
     shell: bash # enable -e -o pipefail, including outer evidence/log pipelines
 
 jobs:
+  changes:
+    # Pull requests that change only docs, the website, assets, video or
+    # distribution notes skip the macOS jobs below (24 of 103 pull requests in
+    # the week to 2026-10-07). Their required checks report as skipped, which
+    # GitHub treats as passing. Everything else, and every non-PR event, builds.
+    name: Build relevance
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      relevant: ${{ steps.decide.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Decide whether the build must run
+        id: decide
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: python3 Scripts/ci/build-relevance.py "$BASE_SHA" "$HEAD_SHA"
+
   build:
     name: xcodebuild (macOS)
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
     runs-on: macos-26
     # A cold checksum-pinned llama.cpp source build can take more than 40
     # minutes on GitHub's macOS runners. Keep enough headroom for that first

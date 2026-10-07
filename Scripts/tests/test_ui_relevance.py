@@ -1,7 +1,10 @@
 """Pull requests that cannot affect the UI still report a passing UI gate."""
 import importlib.util
+import os
 from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
 SOURCE = Path(__file__).resolve().parents[2]
 spec = importlib.util.spec_from_file_location("relevance", SOURCE / "Scripts/ci/ui-relevance.py")
@@ -23,6 +26,17 @@ class UIRelevanceTests(unittest.TestCase):
     def test_prefix_patterns_do_not_match_sibling_names(self):
         self.assertFalse(relevance.relevant(["LokalBotTests/Foo.swift"]))
         self.assertFalse(relevance.relevant(["LokalBot-notes.md"]))
+
+    def test_draft_pull_requests_wait_for_ready_for_review(self):
+        with tempfile.NamedTemporaryFile("r") as output, patch.dict(os.environ, {
+                "GITHUB_EVENT_NAME": "pull_request", "PULL_REQUEST_DRAFT": "true", "GITHUB_OUTPUT": output.name}), \
+                patch.object(relevance, "changed_paths", return_value=["LokalBot/AppState.swift"]):
+            self.assertEqual(relevance.main(["ui-relevance.py", "base", "head"]), 0)
+            self.assertEqual(Path(output.name).read_text(), "relevant=false\n")
+        workflow = (SOURCE / ".github/workflows/ui-tests.yml").read_text()
+        trigger = workflow.split("\n  pull_request:\n", 1)[1].split("\n  schedule:", 1)[0]
+        self.assertIn("ready_for_review", trigger)
+        self.assertIn("PULL_REQUEST_DRAFT: ${{ github.event.pull_request.draft }}", workflow)
 
     def test_size_warning_only_above_sixty_files(self):
         self.assertIsNone(relevance.size_warning([f"f{i}" for i in range(60)]))
