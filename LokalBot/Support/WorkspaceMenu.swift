@@ -24,13 +24,17 @@ struct WorkspaceMenu: NSViewRepresentable {
     var font: NSFont = .systemFont(ofSize: NSFont.smallSystemFontSize)
     @Environment(\.isEnabled) private var isEnabled
 
+    /// AppKit gives the menu its button's font. A symbol button shows no
+    /// text, so its menu keeps the standard menu size.
+    private var buttonFont: NSFont { symbol == nil ? font : .menuFont(ofSize: 0) }
+
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeNSView(context: Context) -> PopUpButton {
         let button = PopUpButton(frame: .zero, pullsDown: true)
         button.isBordered = false
         button.controlSize = .small
-        button.font = font
+        button.font = buttonFont
         return button
     }
 
@@ -74,7 +78,7 @@ struct WorkspaceMenu: NSViewRepresentable {
             append(items, to: menu)
             button.menu = menu
         }
-        if button.font != font { button.font = font }
+        if button.font != buttonFont { button.font = buttonFont }
         button.isEnabled = isEnabled
         button.setAccessibilityLabel(label ?? title)
         button.setAccessibilityTitle(label ?? title)

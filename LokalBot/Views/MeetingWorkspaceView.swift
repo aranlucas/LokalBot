@@ -477,7 +477,12 @@ private struct MeetingWorkspaceDetail: View {
     }
 
     private var meetingActionMenuItems: [WorkspaceMenu.Item] {
-        var items: [WorkspaceMenu.Item] = [
+        let hasNotes = summary?.isEmpty == false || transcript?.segments.isEmpty == false
+        var items: [WorkspaceMenu.Item] = ExternalAgentHandoff.installed.map { target in
+            .init(title: "Open in \(target.rawValue)", identifier: "toolbar.openIn\(target.rawValue)",
+                  enabled: hasNotes, action: { open(in: target) })
+        }
+        items += [
             .init(title: "Draft follow-up…", identifier: "toolbar.followUp",
                   enabled: projection != nil && partialNotes == nil, action: { app.draftFollowUp(for: meeting) }),
             .separator,
@@ -498,12 +503,19 @@ private struct MeetingWorkspaceDetail: View {
             .init(title: isExportingAudio ? "Exporting audio..." : "Export audio",
                   enabled: !isExportingAudio && player.isLoaded, action: exportAudio),
             .init(title: "Show in Finder", action: { NSWorkspace.shared.activateFileViewerSelecting([folder]) }),
+            .init(title: "Copy Meeting Path", identifier: "toolbar.copyMeetingPath",
+                  action: { MeetingMarkdownActions.copyText(folder.path(percentEncoded: false)) }),
         ]
         if meeting.isMergedMeeting {
             items += [.separator, .init(title: "Undo merge…", identifier: "toolbar.undoMerge",
                                        action: { undoMergeConfirmation = true })]
         }
         return items
+    }
+
+    private func open(in target: ExternalAgentHandoff) {
+        exportError = target.open(prompt: ExternalAgentHandoff.prompt(for: meeting))
+            ? nil : "Couldn't open \(target.rawValue)."
     }
 
     @ViewBuilder private var meetingOverviewContent: some View {
