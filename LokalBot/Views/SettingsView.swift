@@ -381,7 +381,7 @@ struct SettingsView: View {
                 Toggle(isOn: $app.settings.cotypingUseVisibleContext) {
                     VStack(alignment: .leading, spacing: 3) {
                         SettingsLabel("Use visible text above the field",
-                                      help: "Use nearby messages and labels to suggest relevant replies. Processed locally, never saved; capture exclusions apply.")
+                                      help: "Use nearby messages and labels to suggest relevant replies. Processed locally, never saved; capture exclusions apply and private browser windows are skipped.")
                         CotypingContextStateLabel(state: context.visibleText)
                     }
                 }

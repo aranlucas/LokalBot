@@ -329,13 +329,16 @@ discarded; only the outcome is counted. No typed text, app name, or window title
 is stored. **Reset** clears the counters, and **Copy measurements** puts the
 counts on the clipboard only when you click it.
 
-Autocomplete also has a separate, off-by-default **Use visible text above the
-field** setting. It reads Accessibility labels and messages in the focused
+Autocomplete also has a separate **Use visible text above the field** setting.
+It is on for new installs and only takes effect while Autocomplete itself is on;
+settings saved by earlier versions keep their choice, which was off unless you
+turned it on. Onboarding says so where Autocomplete is prepared, and Settings →
+Writing turns it off. It reads Accessibility labels and messages in the focused
 field's column, up to 600 points above it, within the same visible window/pane.
 It selects at most three excerpts within 420 characters. Hidden/offscreen text,
 other inputs, sidebars, toolbars, secure fields, credential-bearing snippets,
-and excluded apps/sites do not enter the prompt. Unknown browser origins
-abstain. Shared capture exclusions and autocomplete exclusions both apply.
+and excluded apps/sites do not enter the prompt, and private or incognito
+browser windows are never read. Unknown browser origins abstain. Shared capture exclusions and autocomplete exclusions both apply.
 This setting does not enable screen recording, screenshots, OCR, saved screen
 memory, or external access. Context is processed locally and held only in memory;
 context-grounded acceptances are excluded from saved learning. The setup preview

@@ -113,7 +113,7 @@ final class CotypingCoordinatorTests: XCTestCase {
     func testSharedCaptureExclusionAndVisibleConsentChangesInvalidateLifecycle() {
         let original = AppSettings()
         var changed = original
-        changed.cotypingUseVisibleContext = true
+        changed.cotypingUseVisibleContext.toggle()
         XCTAssertTrue(AppState.cotypingLifecycleChanged(from: original, to: changed))
         changed = original
         changed.excludedApps += ", Mail"
@@ -305,6 +305,8 @@ final class CotypingCoordinatorTests: XCTestCase {
 
     func testRehearsalOffersTheSampleConversationOnlyWithTheVisibleTextGrant() async throws {
         let box = CotypingSettingsBox(settings)
+        // On for new installs; this test starts without the grant.
+        box.value.cotypingUseVisibleContext = false
         let coordinator = makeCoordinator(settingsBox: box)
         let sample = CotypingRehearsalConversation.sample
         engine.result = .success(" up on the timeline")
