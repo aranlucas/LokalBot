@@ -164,6 +164,54 @@ final class TextEngineTests: XCTestCase {
         XCTAssertNil(ThinkReasoningLevel(effort: "automatic"))
     }
 
+    /// On 2026-10-07, on Automatic, Cerebras Qwen reasoned at its default for
+    /// every notes request and returned no notes.
+    func testAutomaticSwitchesReasoningOffForANoReasoningTaskOnAModelThatReasonsByDefault() throws {
+        let qwen = ReasoningSupport.known(provider: .cerebras, model: "qwen-3.8-27b")
+        XCTAssertEqual(qwen.requestLevel(.automatic, taskBudget: 0), .off)
+        XCTAssertNil(qwen.requestLevel(.automatic, taskBudget: nil), "other tasks keep the server default")
+        XCTAssertNil(qwen.requestLevel(.automatic, taskBudget: 1_024))
+        XCTAssertEqual(ReasoningSupport.known(provider: .openAI, model: "gpt-5.4-mini")
+            .requestLevel(.automatic, taskBudget: 0), .off)
+        XCTAssertNil(ReasoningSupport.known(provider: .cerebras, model: "gemma-4-31b")
+            .requestLevel(.automatic, taskBudget: 0), "already off by default")
+        XCTAssertNil(ReasoningSupport.known(provider: .cerebras, model: "gpt-oss-120b")
+            .requestLevel(.automatic, taskBudget: 0), "cannot switch reasoning off")
+        XCTAssertNil(ReasoningSupport.common.requestLevel(.automatic, taskBudget: 0), "an unknown server's default")
+
+        let engine = OpenAICompatibleEngine(baseURL: URL(string: "https://api.cerebras.ai/v1")!,
+                                            model: "qwen-3.8-27b", apiKey: "test-token", reasoningLevel: .automatic)
+        func effort(_ options: TextGenerationOptions?) throws -> String? {
+            let request = try engine.makeChatRequest(system: "s", prompt: "p", context: [], schema: nil, options: options)
+            let body = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: Any])
+            return body["reasoning_effort"] as? String
+        }
+        XCTAssertEqual(try effort(.init(reasoningBudgetTokens: 0)), "none")
+        XCTAssertNil(try effort(nil))
+    }
+
+    /// What a no-reasoning notes request sends to popular models on Automatic.
+    func testPopularModelsGetNoReasoningForNotesOrTheLeastTheyAllow() throws {
+        func body(_ baseURL: String, _ model: String, dialect: ChatCompletionDialect? = nil) throws -> [String: Any] {
+            let url = URL(string: baseURL)!
+            let engine = OpenAICompatibleEngine(baseURL: url, model: model, apiKey: "test-token",
+                                                chatDialect: dialect ?? .inferred(from: url), reasoningLevel: .automatic)
+            let request = try engine.makeChatRequest(system: "s", prompt: "p", context: [], schema: nil,
+                                                     options: .init(maxTokens: 4_096, reasoningBudgetTokens: 0))
+            return try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: Any])
+        }
+        XCTAssertEqual(try body("https://api.cerebras.ai/v1", "qwen-3.8-27b")["reasoning_effort"] as? String, "none")
+        let luna = try body("https://api.openai.com/v1", "gpt-5.6-luna")
+        XCTAssertEqual(luna["reasoning_effort"] as? String, "none")
+        XCTAssertEqual(luna["max_completion_tokens"] as? Int, 4_096)
+        for model in ["openai/gpt-5.6-luna", "qwen/qwen3.8-27b"] {
+            let reasoning = try body("https://openrouter.ai/api/v1", model)["reasoning"] as? [String: Any]
+            XCTAssertEqual(reasoning?["effort"] as? String, "none", model)
+        }
+        let glm = try body("https://openrouter.ai/api/v1", "z-ai/glm-5.3-flash")["reasoning"] as? [String: Any]
+        XCTAssertEqual(glm?["effort"] as? String, "low", "GLM 5.3 cannot switch reasoning off")
+    }
+
     func testKnownReasoningLevelsFollowProviderAndModel() {
         func levels(_ provider: ReasoningSupport.Provider, _ model: String) -> [ThinkReasoningLevel] {
             ReasoningSupport.known(provider: provider, model: model).levels

@@ -96,8 +96,16 @@ struct ReasoningSupport: Equatable, Sendable {
 
     /// The level one request carries: the chosen level, no higher than the
     /// task's own budget allows, clamped to what the model accepts.
+    ///
+    /// Automatic leaves the server at its default, except that a task tuned
+    /// for no reasoning is not handed to a model that reasons by default. On
+    /// 2026-10-07 Cerebras Qwen, left at its default on Automatic, spent every
+    /// notes request's output on hidden reasoning and returned no notes.
     func requestLevel(_ level: ThinkReasoningLevel, taskBudget: Int?) -> ThinkReasoningLevel? {
-        guard level != .automatic else { return nil }
+        guard level != .automatic else {
+            guard taskBudget == 0, let defaultLevel, defaultLevel > .off, levels.contains(.off) else { return nil }
+            return .off
+        }
         let ceiling = taskBudget.map(ThinkReasoningLevel.ceiling(forTaskBudget:)) ?? level
         return clamp(Swift.min(level, ceiling))
     }
