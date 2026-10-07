@@ -31,6 +31,9 @@ extension MeetingNotesGenerator {
         var number: Int
         var remainingParts: Int
         var budget: MeetingGenerationBudget
+        /// The part's size in standard parts (at least 1).
+        var outputScale: Double = 1
+        var retryingStopped = false
     }
 
     /// At most three extraction pages and two repair calls per part in this
@@ -53,6 +56,13 @@ extension MeetingNotesGenerator {
             // terminal provider failure. Clear that marker before the guard
             // below so the fresh scan can actually run.
             recovery.terminalFailure = nil
+        }
+        // The stop exists so automatic runs do not cycle on a provider that
+        // keeps failing. A person asking again may have changed the model or
+        // its reasoning; on 2026-10-07 every "Summarize again" failed in 0.2 s.
+        if job.retryingStopped, recovery.terminalFailure != nil {
+            recovery.terminalFailure = nil
+            recovery.noProgressAttempts = nil
         }
         if let failure = recovery.terminalFailure { throw TextEngineError.badResponse(failure) }
         let minimum = job.engine.minimumStructuredOutputTokens
@@ -97,8 +107,14 @@ extension MeetingNotesGenerator {
         var extractionRecoveryRetryPending = false
         for _ in 0..<3 where !recovery.scanComplete {
             try Task.checkCancellation()
-            let allowance = try await job.budget.allowance(remainingParts: job.remainingParts, minimum: minimum)
-            let stage = recovery.nextPage == 0 ? "extract-\(job.number)" : "continue-\(job.number)-\(recovery.nextPage)"
+            let allowance = try await job.budget.allowance(
+                remainingParts: job.remainingParts, desired: min(16_384, Int(4_096 * job.outputScale)), minimum: minimum)
+            // Continue only from accepted records. A page cut off before any
+            // record (reasoning used the whole output) is scanned again; on
+            // 2026-10-07 "continue the unfinished work" with an empty ledger
+            // got empty answers until the part was stopped.
+            let continuing = !recovery.records.isEmpty
+            let stage = continuing ? "continue-\(job.number)-\(recovery.nextPage)" : "extract-\(job.number)"
             let evidenceRows = prompt(units: job.units, roster: job.evidence.roster)
             var retryInstruction = ""
             if extractionRecoveryRetryPending {
@@ -111,9 +127,9 @@ extension MeetingNotesGenerator {
             }
             let system = systemPrompt(template: job.template, language: job.language)
             let (userPrompt, tokens) = try await fittedPage(rows: evidenceRows, suffix: retryInstruction,
-                ledger: recovery.nextPage == 0 ? nil : recovery.records, system: system, allowance: allowance, job: job)
-            let maximumNotes = min(12, max(3, tokens / 200))
-            let maximumActions = min(10, max(2, tokens / 350))
+                ledger: continuing ? recovery.records : nil, system: system, allowance: allowance, job: job)
+            let maximumNotes = min(Int(12 * job.outputScale), max(3, tokens / 200))
+            let maximumActions = min(Int(10 * job.outputScale), max(2, tokens / 350))
             let raw = try await request(engine: job.engine, system: system, prompt: userPrompt, context: job.context,
                 schema: MeetingNotesEvidence.schema(units: job.units, speakers: Array(job.evidence.speakers.keys),
                     template: job.template, maximumNotes: maximumNotes, maximumActions: maximumActions),

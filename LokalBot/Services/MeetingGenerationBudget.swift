@@ -141,11 +141,15 @@ actor MeetingGenerationBudget {
         phases[phase, default: 0] += seconds
     }
 
-    func recordPlan(model: String, transcriptRevision: String, parts: Int) {
+    /// `standardParts` counts the work in standard-size parts, so a model
+    /// that plans fewer, larger parts keeps the allowance the same meeting
+    /// gets in standard parts.
+    func recordPlan(model: String, transcriptRevision: String, parts: Int, standardParts: Double? = nil) {
         self.model = model
         self.transcriptRevision = transcriptRevision
         plannedParts = parts
-        if limits.scalesWithParts { scale = max(1, Double(parts) / Double(Self.partsPerBudget)) }
+        let work = max(Double(parts), standardParts ?? 0)
+        if limits.scalesWithParts { scale = max(1, work / Double(Self.partsPerBudget)) }
     }
 
     struct ValidationTelemetry: Codable {

@@ -38,6 +38,7 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         var script: Script
         var hasTokenizer = true
         var minimumStructuredOutputTokens = 512
+        var structuredOutputEnumLimit: Int?
         var displayName: String { "Notes fixture" }
         func tokenCount(_ text: String) async throws -> Int? { hasTokenizer ? await script.count(text) : nil }
         func generate(system: String, prompt: String, context: [String]) async throws -> String {
@@ -1182,6 +1183,26 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         config = openRouterConfig("qwen/qwen3.8-flash")
         config.summarizerBackend = .ollama
         XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), 16_384)
+
+        config = openRouterConfig("qwen-3.8-27b")
+        config.openAIBaseURL = "https://api.cerebras.ai/v1"
+        XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), 64_000)
+        config.openAIModel = "some-new-model"
+        XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), 16_384)
+        config.openAIModel = "qwen-3.8-27b"
+        config.openAIBaseURL = "http://localhost:1234/v1"
+        XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), 16_384,
+                       "the model name alone does not prove another server's window")
+
+        config.openAIBaseURL = "https://api.openai.com/v1"
+        for (model, window) in [("gpt-5.4-mini", 128_000), ("gpt-4.1-mini", 1_000_000), ("gpt-4o", 128_000),
+                                ("o4-mini", 128_000), ("gpt-3.5-turbo", 16_384)] {
+            config.openAIModel = model
+            XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), window, model)
+        }
+        config.openAIModel = "gpt-5.4-mini"
+        config.openAIBaseURL = "https://gateway.example.com/v1"
+        XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), 16_384)
     }
 
     func testVerifiedWindowHalvesAThirtyMinuteMeetingsPartsAndKeepsTheByteBound() async throws {
@@ -1201,35 +1222,192 @@ final class MeetingNotesGeneratorTests: XCTestCase {
         XCTAssertEqual(verified.last?.last?.source, evidence.units.last?.source)
         for chunk in verified {
             let bytes = (system + "\n\n" + MeetingNotesGenerator.prompt(units: chunk, roster: evidence.roster)).utf8.count
-            // Even at one token per byte a part stays inside the smallest
-            // verified window with the existing output and envelope headroom.
-            XCTAssertLessThanOrEqual(bytes, 18_000)
-            XCTAssertLessThanOrEqual(bytes + 4_096 + 1_536, 32_768)
+            // Even at one token per byte a part stays inside its window with
+            // the full output and envelope headroom.
+            XCTAssertLessThanOrEqual(bytes + 4_096 + 1_536, window)
         }
     }
 
-    func testWindowsAbove32KPlanTheSamePartsSoExistingCheckpointsSurvive() async throws {
+    /// Parts follow the model's window in steps: windows within a step plan
+    /// identical parts, so a window that drifts between lookups keeps a
+    /// meeting's saved parts, and each larger step plans fewer, larger parts.
+    func testWindowsInOneStepPlanTheSamePartsAndLargerStepsPlanFewer() async throws {
         let multilingual = Transcript(segments: (0..<240).map { index in
             .init(start: Double(index), end: Double(index + 1), speaker: index.isMultiple(of: 3) ? "me" : "them",
                   text: String(repeating: "计划审查会议 Преглед документације !?123=", count: 8))
         }, engine: "fixture")
         let engine = Engine(script: Script([]), hasTokenizer: false)
         let system = MeetingNotesGenerator.systemPrompt(template: .meeting, language: .matchTranscript)
+        let steps = [[32_768, 48_000, 63_999], [64_000, 100_000], [128_000, 262_144, 1_000_000]]
         for transcript in [thirtyMinuteTranscript(), multilingual] {
             let evidence = MeetingNotesEvidence(transcript: transcript)
-            var plans: [[[String]]] = []
-            for window in [32_768, 262_144, 1_000_000] {
-                let chunks = try await MeetingNotesGenerator.makeChunks(evidence: evidence, engine: engine,
-                    system: system, context: [], contextTokens: window)
-                plans.append(chunks.map { $0.map(\.source) })
-                for chunk in chunks {
-                    let text = system + "\n\n" + MeetingNotesGenerator.prompt(units: chunk, roster: evidence.roster)
-                    XCTAssertLessThanOrEqual(text.utf8.count + 4_096 + 1_536, 32_768)
+            var counts: [Int] = []
+            for windows in steps {
+                var plans: [[[String]]] = []
+                for window in windows {
+                    let chunks = try await MeetingNotesGenerator.makeChunks(evidence: evidence, engine: engine,
+                        system: system, context: [], contextTokens: window)
+                    plans.append(chunks.map { $0.map(\.source) })
+                    XCTAssertEqual(Set(chunks.flatMap { $0.map(\.source) }), Set(evidence.units.map(\.source)))
+                    for chunk in chunks {
+                        let text = system + "\n\n" + MeetingNotesGenerator.prompt(units: chunk, roster: evidence.roster)
+                        XCTAssertLessThanOrEqual(text.utf8.count + 4_096 + 1_536, windows[0])
+                    }
                 }
+                XCTAssertTrue(plans.allSatisfy { $0 == plans[0] }, "windows \(windows) must plan the same parts")
+                counts.append(plans[0].count)
             }
-            XCTAssertGreaterThan(plans[0].count, 1)
-            XCTAssertEqual(plans[1], plans[0], "GLM's 32K plan must not change with its verified window")
-            XCTAssertEqual(plans[2], plans[0])
+            XCTAssertGreaterThan(counts[0], 1)
+            XCTAssertLessThan(counts[1], counts[0])
+            XCTAssertLessThanOrEqual(counts[2], counts[1])
+        }
+    }
+
+    /// On 2026-10-07 a 21-minute standup on Cerebras Qwen (64K window) was
+    /// planned as four standard parts. A larger part now gets the output and
+    /// record caps of the standard parts it covers.
+    func testALargerPartGetsTheOutputAndRecordsOfTheStandardPartsItCovers() async throws {
+        let transcript = longTranscript(segments: 200)
+        let evidence = MeetingNotesEvidence(transcript: transcript)
+        let notes = evidence.units.prefix(20).enumerated().map { index, unit in
+            note(unit.source, "Task \(index) waits on the dependency review.")
+        }
+        let script = Script([.text(try response(notes: notes))])
+        let result = try await generate(script, transcript: transcript, contextTokens: 128_000,
+                                        engine: Engine(script: script, hasTokenizer: false))
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 1, "the whole meeting fits one part")
+        XCTAssertGreaterThan(try XCTUnwrap(calls.first?.options.maxTokens), 4_096)
+        XCTAssertEqual(result.claims.count, 20, "more than one standard part's 12 notes")
+    }
+
+    /// On 2026-10-07 reasoning used every output token of a standup's first
+    /// part. The next runs asked the model to continue from an empty list of
+    /// accepted records, got empty answers, and stopped the part for good.
+    func testAPartCutOffBeforeAnyRecordIsScannedAgainNotContinued() async throws {
+        let output = try folder()
+        let transcript = longTranscript(segments: 3)
+        let cutOff = Script([.truncated(""), .truncated("")])
+        do {
+            _ = try await generate(cutOff, transcript: transcript, folder: output)
+            XCTFail("expected incomplete notes")
+        } catch {}
+        let cutOffCalls = await cutOff.recorded()
+        XCTAssertEqual(cutOffCalls.count, 2, "the cut-off page and its expanded retry")
+
+        let script = Script([.text(try response(notes: [note("s1", "Task 0 will be finished.")]))])
+        let result = try await generate(script, transcript: transcript, folder: output)
+        let calls = await script.recorded()
+        XCTAssertEqual(calls.count, 1)
+        XCTAssertFalse(try XCTUnwrap(calls.first?.prompt).contains("Continue only the unfinished work"))
+        XCTAssertEqual(result.claims.count, 1)
+    }
+
+    /// Automatic runs keep a stopped part stopped; asking again scans it.
+    func testSummarizeAgainRetriesAPartAnEarlierRunStopped() async throws {
+        let output = try folder()
+        let transcript = longTranscript(segments: 3)
+        func run(_ script: Script, requested: Bool = false) async throws -> MeetingNotesGenerator.Result {
+            try await MeetingNotesGenerator.generate(transcript: transcript, engine: Engine(script: script),
+                template: .meeting, language: .matchTranscript, context: [], contextTokens: 32_768,
+                meetingID: UUID(uuidString: "AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA")!, folder: output,
+                retryingStoppedParts: requested)
+        }
+        for _ in 0..<2 {
+            do { _ = try await run(Script([.text(try response(more: true))])); XCTFail("expected no progress") } catch {}
+        }
+        let automatic = Script([])
+        do {
+            _ = try await run(automatic)
+            XCTFail("an automatic run keeps the stop")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("no further source-linked progress"))
+        }
+        let automaticCalls = await automatic.recorded()
+        XCTAssertTrue(automaticCalls.isEmpty)
+
+        let requested = Script([.text(try response(notes: [note("s1", "Task 0 will be finished.")]))])
+        let result = try await run(requested, requested: true)
+        let calls = await requested.recorded()
+        XCTAssertEqual(calls.count, 1)
+        XCTAssertEqual(result.claims.count, 1)
+    }
+
+    func testLargerPartsKeepTheBudgetOfTheStandardPartsTheyCover() async throws {
+        let larger = MeetingGenerationBudget(limits: .init(scalesWithParts: true))
+        await larger.recordPlan(model: "fixture", transcriptRevision: "revision", parts: 1, standardParts: 8)
+        let plain = MeetingGenerationBudget(limits: .init(scalesWithParts: true))
+        await plain.recordPlan(model: "fixture", transcriptRevision: "revision", parts: 1)
+        let largerAllowance = try await larger.allowance(remainingParts: 1, desired: 40_000)
+        let plainAllowance = try await plain.allowance(remainingParts: 1, desired: 40_000)
+        XCTAssertGreaterThan(largerAllowance, plainAllowance)
+    }
+
+    /// Each popular model resolves its provider's window without a network
+    /// lookup, and a 20-minute meeting with calendar context (like the
+    /// 2026-10-07 standup, planned as four parts) becomes one or two requests
+    /// whose schemas fit the provider.
+    func testPopularModelsPlanAMeetingFromTheirProvidersWindow() async throws {
+        func config(_ baseURL: String, _ model: String) -> AppSettings {
+            var config = openRouterConfig(model)
+            config.openAIBaseURL = baseURL
+            return config
+        }
+        let models: [(AppSettings, Int)] = [
+            (config("https://api.cerebras.ai/v1", "qwen-3.8-27b"), 64_000),
+            (config("https://api.openai.com/v1", "gpt-5.6-luna"), 128_000),
+            (openRouterConfig("openai/gpt-5.6-luna"), 922_000),
+            (openRouterConfig("openai/gpt-5.4-mini"), 128_000),
+            (openRouterConfig("z-ai/glm-5.3-flash"), 262_144),
+            (openRouterConfig("qwen/qwen3.8-27b"), 65_536),
+        ]
+        let transcript = Transcript(segments: Array(thirtyMinuteTranscript().segments.prefix(200)), engine: "fixture")
+        let evidence = MeetingNotesEvidence(transcript: transcript)
+        let system = MeetingNotesGenerator.systemPrompt(template: .meeting, language: .matchTranscript)
+        let context = [String(repeating: "Invited: a teammate from the product group. ", count: 100)]
+        let unknown = try await MeetingNotesGenerator.makeChunks(evidence: evidence,
+            engine: Engine(script: Script([]), hasTokenizer: false, structuredOutputEnumLimit: 500),
+            system: system, context: context, contextTokens: 16_384)
+        XCTAssertGreaterThan(unknown.count, 2)
+        for (config, window) in models {
+            XCTAssertEqual(MeetingSummaryGenerator.contextTokenLimit(for: config), window, config.openAIModel)
+            let limit = OpenAICompatibleEngine(baseURL: URL(string: config.openAIBaseURL)!, model: config.openAIModel,
+                chatDialect: .inferred(from: URL(string: config.openAIBaseURL)!)).structuredOutputEnumLimit
+            let chunks = try await MeetingNotesGenerator.makeChunks(evidence: evidence,
+                engine: Engine(script: Script([]), hasTokenizer: false, structuredOutputEnumLimit: limit),
+                system: system, context: context, contextTokens: window)
+            XCTAssertLessThanOrEqual(chunks.count, 2, config.openAIModel)
+            for chunk in chunks {
+                let schema = MeetingNotesEvidence.schema(units: chunk, speakers: Array(evidence.speakers.keys),
+                                                         template: .meeting, maximumNotes: 1, maximumActions: 1)
+                XCTAssertLessThanOrEqual(MeetingNotesEvidence.enumValueCount(in: schema), try XCTUnwrap(limit))
+            }
+        }
+    }
+
+    /// On 2026-10-07 the standup's 228 rows became one part whose schema held
+    /// 709 enum values, and Cerebras rejected it ("cannot exceed 500").
+    func testPartsKeepTheirSchemaWithinTheProvidersEnumLimit() async throws {
+        let transcript = Transcript(segments: (0..<228).map { index in
+            .init(start: Double(index * 5), end: Double(index * 5 + 5), speaker: index.isMultiple(of: 2) ? "me" : "them",
+                  text: "Short update \(index).")
+        }, engine: "fixture")
+        let evidence = MeetingNotesEvidence(transcript: transcript)
+        let system = MeetingNotesGenerator.systemPrompt(template: .meeting, language: .matchTranscript)
+        func plan(limit: Int?) async throws -> [[MeetingNotesEvidence.Unit]] {
+            try await MeetingNotesGenerator.makeChunks(evidence: evidence,
+                engine: Engine(script: Script([]), hasTokenizer: false, structuredOutputEnumLimit: limit),
+                system: system, context: [], contextTokens: 64_000)
+        }
+        let unlimited = try await plan(limit: nil)
+        XCTAssertEqual(unlimited.count, 1, "a grammar-backed server takes the whole meeting")
+        let limited = try await plan(limit: 500)
+        XCTAssertEqual(limited.count, 2)
+        XCTAssertEqual(Set(limited.flatMap { $0.map(\.source) }), Set(evidence.units.map(\.source)))
+        for chunk in limited {
+            let schema = MeetingNotesEvidence.schema(units: chunk, speakers: Array(evidence.speakers.keys),
+                                                     template: .meeting, maximumNotes: 1, maximumActions: 1)
+            XCTAssertLessThanOrEqual(MeetingNotesEvidence.enumValueCount(in: schema), 500)
         }
     }
 

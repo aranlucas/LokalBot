@@ -74,14 +74,21 @@ enum MeetingNotesGenerator {
             + units.map(\.line).joined(separator: "\n")
     }
 
+    /// Parts fit the window's step and, on hosted servers, the provider's
+    /// limit on schema enum values: each part's schema lists its source IDs
+    /// three times.
     static func makeChunks(evidence: MeetingNotesEvidence, engine: TextEngine, system: String,
-                           context: [String], contextTokens: Int) async throws -> [[MeetingNotesEvidence.Unit]] {
+                           context: [String], contextTokens: Int,
+                           template: NoteTemplate = .meeting) async throws -> [[MeetingNotesEvidence.Unit]] {
         guard !evidence.units.isEmpty else { return [] }
         let contextCeiling = contextTokens - 4_096 - 1_536
-        // Without a tokenizer the 6,000-token target admits about 18 KB, so
-        // any window above ~24K plans identical parts (and keeps checkpoints).
-        let planningCeiling = min(6_000, contextCeiling)
+        // Without a tokenizer the 6,000-token step admits about 18 KB, so
+        // windows from ~24K up to 64K plan identical parts (and keep
+        // checkpoints); larger known windows take larger steps.
+        let planningCeiling = min(MeetingSummaryGenerator.notesPartTokens(contextTokens: contextTokens), contextCeiling)
         let fixed = ([system] + context).joined(separator: "\n\n") + "\n\n"
+        let enumLimit = engine.structuredOutputEnumLimit
+        let speakers = Array(evidence.speakers.keys)
         var chunks: [[MeetingNotesEvidence.Unit]] = []
         var start = 0
         while start < evidence.units.count {
@@ -90,14 +97,18 @@ enum MeetingNotesGenerator {
             while true {
                 let units = Array(evidence.units[start..<end])
                 let size = try await promptSize(fixed + prompt(units: units, roster: evidence.roster), engine: engine)
-                if size.upperBound <= contextCeiling, size.planningEstimate <= planningCeiling {
+                let enums = enumLimit == nil ? 0 : MeetingNotesEvidence.enumValueCount(in: MeetingNotesEvidence.schema(
+                    units: units, speakers: speakers, template: template, maximumNotes: 1, maximumActions: 1))
+                if size.upperBound <= contextCeiling, size.planningEstimate <= planningCeiling,
+                   enumLimit.map({ enums <= $0 }) ?? true {
                     chunks.append(units); break
                 }
                 guard end > start + 1 else {
                     throw TextEngineError.badResponse("meeting context cannot fit the model's input allowance")
                 }
-                let ratio = min(Double(max(1, contextCeiling)) / Double(size.upperBound),
+                var ratio = min(Double(max(1, contextCeiling)) / Double(size.upperBound),
                                 Double(max(1, planningCeiling)) / Double(size.planningEstimate))
+                if let enumLimit { ratio = min(ratio, Double(enumLimit) / Double(max(1, enums))) }
                 let fraction = max(0.1, min(0.9, ratio * 0.9))
                 end = start + max(1, Int(Double(end - start) * fraction))
             }
@@ -109,9 +120,12 @@ enum MeetingNotesGenerator {
         return chunks
     }
 
+    /// `retryingStoppedParts` is a person's explicit request: a part an earlier
+    /// run stopped (no further progress, invalid evidence IDs) gets another
+    /// scan instead of failing at once. Automatic runs keep the stop.
     static func generate(transcript: Transcript, engine: TextEngine, template: NoteTemplate,
                          language: SummaryLanguage, context: [String], contextTokens: Int,
-                         meetingID: UUID, folder: URL,
+                         meetingID: UUID, folder: URL, retryingStoppedParts: Bool = false,
                          budget: MeetingGenerationBudget = MeetingGenerationBudget()) async throws -> Result {
         // The pipeline installs the allowance before model preparation; direct
         // callers (including offline replays) get the same deadline here.
@@ -120,7 +134,8 @@ enum MeetingNotesGenerator {
                 let result = try await budget.run {
                     try await generate(transcript: transcript, engine: engine, template: template,
                         language: language, context: context, contextTokens: contextTokens,
-                        meetingID: meetingID, folder: folder, budget: budget)
+                        meetingID: meetingID, folder: folder, retryingStoppedParts: retryingStoppedParts,
+                        budget: budget)
                 }
                 await budget.saveMetrics(in: folder, outcome: "complete")
                 return result
@@ -132,8 +147,18 @@ enum MeetingNotesGenerator {
         let evidence = MeetingNotesEvidence(transcript: transcript)
         let system = systemPrompt(template: template, language: language)
         let chunks = try await makeChunks(evidence: evidence, engine: engine, system: system,
-                                          context: context, contextTokens: contextTokens)
-        await budget.recordPlan(model: engine.displayName, transcriptRevision: transcript.evidenceRevision, parts: chunks.count)
+                                          context: context, contextTokens: contextTokens, template: template)
+        // A part larger than the standard step gets proportionally more
+        // output and records, so fewer, larger parts keep the same coverage.
+        let fixed = ([system] + context).joined(separator: "\n\n") + "\n\n"
+        var outputScales: [Double] = []
+        for chunk in chunks {
+            let estimate = try await promptSize(fixed + prompt(units: chunk, roster: evidence.roster), engine: engine)
+                .planningEstimate
+            outputScales.append(max(1, Double(estimate) / Double(MeetingSummaryGenerator.standardNotesPartTokens)))
+        }
+        await budget.recordPlan(model: engine.displayName, transcriptRevision: transcript.evidenceRevision,
+                                parts: chunks.count, standardParts: outputScales.reduce(0, +))
         let fingerprintText = (["notes-v1", MeetingNotesEvidence.ownershipPolicyVersion,
                                 transcript.evidenceRevision, engine.checkpointIdentity, system,
                                 PromptTemplates.meetingNotesRepairSystem(language: language)]
@@ -164,7 +189,8 @@ enum MeetingNotesGenerator {
             if checkpoint.parts[key]?.complete == true { continue }
             let job = PartJob(evidence: evidence, units: chunks[index], engine: engine, template: template,
                 language: language, context: context, contextTokens: contextTokens, meetingID: meetingID,
-                number: index + 1, remainingParts: chunks.count - index, budget: budget)
+                number: index + 1, remainingParts: chunks.count - index, budget: budget,
+                outputScale: outputScales[index], retryingStopped: retryingStoppedParts)
             try await generatePart(checkpoint.parts[key] ?? Part(), job: job) { part in
                 checkpoint.parts[key] = part
                 try save()

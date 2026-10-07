@@ -804,7 +804,8 @@ final class ProcessingPipeline: ObservableObject {
                 await budget.recordPhase("queue", seconds: queueSeconds)
                 do {
                     let generated = try await budget.run {
-                        try await self.summarize(transcript, meeting: meeting, config: config, budget: budget)
+                        try await self.summarize(transcript, meeting: meeting, config: config, budget: budget,
+                                                 requestedByPerson: resolvedJob.origin == .userInitiated)
                     }
                     try Task.checkCancellation()
                     try MeetingAttributionArtifacts.requireCurrent(transcript, in: folder)
@@ -1190,7 +1191,8 @@ final class ProcessingPipeline: ObservableObject {
     // MARK: - Summarization
 
     private func summarize(_ transcript: Transcript, meeting: Meeting,
-                           config: AppSettings, budget: MeetingGenerationBudget) async throws -> MeetingNotesGenerator.Result {
+                           config: AppSettings, budget: MeetingGenerationBudget,
+                           requestedByPerson: Bool = false) async throws -> MeetingNotesGenerator.Result {
         let started = Date()
         stages[meeting.id] = .preparingSummaryModel
         let preparing = ProcessInfo.processInfo.systemUptime
@@ -1219,7 +1221,8 @@ final class ProcessingPipeline: ObservableObject {
             transcript: transcript, engine: engine, template: config.noteTemplate,
             language: language, context: noteContext,
             contextTokens: contextTokens,
-            meetingID: meeting.id, folder: meeting.folderURL(in: storage), budget: budget)
+            meetingID: meeting.id, folder: meeting.folderURL(in: storage),
+            retryingStoppedParts: requestedByPerson, budget: budget)
 
         let date = meeting.startedAt.formatted(date: .long, time: .shortened)
         var header = "# \(meeting.title) — \(date)\n"
