@@ -56,6 +56,7 @@ final class DayDigestLifecycle: ObservableObject {
     private let generator: Generator
     private let onGenerated: (Date) -> Void
     private let calendar: Calendar
+    private let now: () -> Date
     private let scheduler: DayDigestScheduler
     private var invalidatedDays: Set<String> = []
     /// Runs in start order; manual and scheduled runs may overlap.
@@ -70,6 +71,7 @@ final class DayDigestLifecycle: ObservableObject {
     init(
         storageRoot: URL,
         calendar: Calendar = .current,
+        now: @escaping () -> Date = Date.init,
         scheduler: DayDigestScheduler? = nil,
         blocks: @escaping (Date) -> [ActivityBlock],
         screenContexts: @escaping (Date) -> [DayScreenContext],
@@ -83,6 +85,7 @@ final class DayDigestLifecycle: ObservableObject {
     ) {
         self.storageRoot = storageRoot
         self.calendar = calendar
+        self.now = now
         self.scheduler = scheduler ?? DayDigestScheduler()
         self.blocks = blocks
         self.screenContexts = screenContexts
@@ -151,14 +154,25 @@ final class DayDigestLifecycle: ObservableObject {
         let url = journalURL(for: day)
         let text = try? String(contentsOf: url, encoding: .utf8)
         let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
-        let signature = text == nil ? nil : try? evidenceInput(for: day).digestEvidence(calendar: calendar).contentSignature
+        let checksEvidence = text != nil && !evidenceHasExpired(on: day)
+        let signature = !checksEvidence ? nil
+            : try? evidenceInput(for: day).digestEvidence(calendar: calendar).contentSignature
         return Snapshot(
             text: text,
             modifiedAt: attributes?[.modificationDate] as? Date,
             latestEvidenceAt: latestEvidenceAt(for: day),
-            evidenceMatches: text == nil || signature.map {
+            evidenceMatches: !checksEvidence || signature.map {
                 DayDigestGenerationMetadataStore.isCurrent(for: url, evidenceSignature: $0)
             } == true)
+    }
+
+    /// Scheduled retention thins a day's sources after its digest was written,
+    /// and the digest outlives them (PRIVACY.md). Past the window a fingerprint
+    /// mismatch is expiry, not new activity, so it must not invite a rewrite
+    /// from what is left.
+    private func evidenceHasExpired(on day: Date) -> Bool {
+        let retainedSince = now().addingTimeInterval(-Double(settings().retentionDays) * 86_400)
+        return calendar.startOfDay(for: day) < retainedSince
     }
 
     /// Capture the meeting list on its owner, then validate files and complete
@@ -166,11 +180,13 @@ final class DayDigestLifecycle: ObservableObject {
     func backgroundSnapshotLoader(for day: Date) -> @Sendable (ActivityStore) -> Snapshot {
         let root = storageRoot, calendar = calendar
         let finished = meetings(for: day, includeInProgress: false)
+        let expired = evidenceHasExpired(on: day)
         return { store in
             let url = root.appendingPathComponent("journal/\(DreamDay.key(for: day, calendar: calendar)).md")
             let text = try? String(contentsOf: url, encoding: .utf8)
             let attributes = try? FileManager.default.attributesOfItem(atPath: url.path)
-            let signature = text == nil ? nil : try? FileDailyEvidenceSource(root: root, calendar: calendar)
+            let checksEvidence = text != nil && !expired
+            let signature = !checksEvidence ? nil : try? FileDailyEvidenceSource(root: root, calendar: calendar)
                 .snapshot(for: day, meetings: finished, activityBlocks: store.blocks(on: day),
                           screenContexts: store.screenContexts(on: day),
                           codingAgentBursts: store.codingAgentBursts(on: day), includeScreenSummary: false)
@@ -182,7 +198,7 @@ final class DayDigestLifecycle: ObservableObject {
                 text: text, modifiedAt: attributes?[.modificationDate] as? Date,
                 latestEvidenceAt: [store.latestEvidenceAt(on: day), finished.compactMap(\.endedAt).max(), latestArtifact]
                     .compactMap { $0 }.max(),
-                evidenceMatches: text == nil || signature.map {
+                evidenceMatches: !checksEvidence || signature.map {
                     DayDigestGenerationMetadataStore.isCurrent(for: url, evidenceSignature: $0)
                 } == true)
         }

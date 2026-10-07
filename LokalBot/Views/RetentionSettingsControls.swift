@@ -62,7 +62,7 @@ struct RetentionSettingsControls: View {
     private func apply(_ proposal: RetentionReview) {
         do {
             let days = Set(proposal.evidenceDates.map { Calendar.current.startOfDay(for: $0) })
-            let failures = try app.withPrimaryEvidenceChange(on: Array(days)) {
+            let failures = try app.withPrimaryEvidenceChange(on: Array(days), .removal) {
                 try app.screenshots.applyRetentionReview(proposal)
             }
             app.primaryEvidenceDidChange(on: Array(days))

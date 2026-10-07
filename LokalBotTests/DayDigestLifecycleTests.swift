@@ -36,6 +36,34 @@ final class DayDigestLifecycleTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: lifecycle.journalURL(for: legacy).path))
     }
 
+    /// Retention clears a day's titles and screen text after its digest was
+    /// written. The digest outlives them, so expiry must not read as new work.
+    func testExpiredEvidenceDoesNotMarkTheDigestOutOfDate() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("digest-expiry-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let day = try date("2026-08-23T12:00:00Z")
+        var blocks = [ActivityBlock(id: 1, app: "Notes", title: "Launch plan", start: day, end: day.addingTimeInterval(600))]
+        var now = try date("2026-08-24T08:00:00Z")
+        let lifecycle = DayDigestLifecycle(
+            storageRoot: root, calendar: calendar, now: { now },
+            blocks: { _ in blocks }, screenContexts: { _ in [] }, meetings: { [] },
+            latestActivityEvidenceAt: { _ in nil }, settings: AppSettings.init,
+            generator: { _, _, _, _ in throw CancellationError() })
+        let evidence = try FileDailyEvidenceSource(root: root, calendar: calendar)
+            .snapshot(for: day, meetings: [], activityBlocks: blocks, screenContexts: [], codingAgentBursts: [],
+                      includeScreenSummary: false)
+            .digestEvidence(calendar: calendar)
+        try DayDigestJournalWriter.write("Worked on the launch plan", to: lifecycle.journalURL(for: day),
+                                        replacing: .init(digest: nil), evidence: evidence, quality: .complete)
+        XCTAssertFalse(lifecycle.snapshot(for: day).isStale)
+
+        blocks[0].title = ""
+        XCTAssertTrue(lifecycle.snapshot(for: day).isStale, "inside the retention window a changed source is new evidence")
+
+        now = try date("2026-09-10T08:00:00Z")
+        XCTAssertFalse(lifecycle.snapshot(for: day).isStale, "past the window the change is expiry, not new work")
+    }
+
     func testScheduledDigestRunsOnlyAfterTheRemoteOriginIsApproved() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("digest-consent-\(UUID())")
         defer { try? FileManager.default.removeItem(at: root) }
@@ -211,8 +239,10 @@ final class DayDigestLifecycleTests: XCTestCase {
             [.modificationDate: digestAt],
             ofItemAtPath: journal.path)
 
+        let viewedAt = try date("2026-08-23T19:00:00Z")
         let lifecycle = makeLifecycle(
             root: root,
+            now: { viewedAt },
             meetings: { [meeting] },
             latestActivityEvidenceAt: { _ in nil })
         XCTAssertTrue(lifecycle.snapshot(for: day).isStale, "Legacy journals have no evidence proof")
@@ -408,7 +438,7 @@ final class DayDigestLifecycleTests: XCTestCase {
 
         let regenerated = expectation(description: "Deleted evidence is removed from yesterday's digest")
         let lifecycle = DayDigestLifecycle(
-            storageRoot: root, calendar: calendar,
+            storageRoot: root, calendar: calendar, now: { now },
             scheduler: DayDigestScheduler(calendar: calendar, now: { now }),
             blocks: { _ in [] }, screenContexts: { _ in [] }, meetings: { [] },
             latestActivityEvidenceAt: { _ in nil }, settings: AppSettings.init,
@@ -448,12 +478,14 @@ final class DayDigestLifecycleTests: XCTestCase {
 
     private func makeLifecycle(
         root: URL,
+        now: @escaping () -> Date = Date.init,
         meetings: @escaping () -> [Meeting] = { [] },
         latestActivityEvidenceAt: @escaping (Date) -> Date?
     ) -> DayDigestLifecycle {
         DayDigestLifecycle(
             storageRoot: root,
             calendar: calendar,
+            now: now,
             blocks: { _ in [] },
             screenContexts: { _ in [] },
             meetings: meetings,

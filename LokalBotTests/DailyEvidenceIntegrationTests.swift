@@ -85,75 +85,45 @@ final class DailyEvidenceIntegrationTests: XCTestCase {
             "My notes after recovery")
     }
 
-    func testSummaryReprocessingRetractsDigestWhenAutomaticRepairIsUnavailable() async throws {
+    /// On 2026-10-07 a summary rerun started 17 s after a manual digest and
+    /// deleted it before any new notes existed. Revising or expiring a day's
+    /// sources keeps its digest; only deleting them withdraws it.
+    func testOnlyDeletingSourcesWithdrawsTheDayDigest() throws {
         let root = try temporaryRoot()
-        let storage = StorageManager(rootURL: root)
+        let previousRoot = ProcessInfo.processInfo.environment["LOKALBOT_STORAGE_ROOT"]
+        setenv("LOKALBOT_STORAGE_ROOT", root.path, 1)
+        defer {
+            if let previousRoot { setenv("LOKALBOT_STORAGE_ROOT", previousRoot, 1) } else { unsetenv("LOKALBOT_STORAGE_ROOT") }
+        }
+        let app = AppState()
         let day = Date()
+        let journal = app.dayDigest.journalURL(for: day)
+        try DayDigestJournalWriter.write(
+            "Generated digest",
+            to: journal,
+            replacing: .init(digest: nil),
+            evidence: FileDailyEvidenceSource(root: root).snapshot(for: day).digestEvidence(),
+            quality: .complete)
         let meeting = Meeting(
             id: UUID(),
-            title: "Review",
+            title: "Standup",
             appName: "Meet",
             startedAt: day,
             endedAt: day.addingTimeInterval(60),
-            relativePath: "meetings/review")
-        let folder = meeting.folderURL(in: storage)
-        try FileManager.default.createDirectory(
-            at: folder,
-            withIntermediateDirectories: true)
-        var settings = AppSettings()
-        settings.dayDigestAutoEnabled = false
-        let pipeline = ProcessingPipeline(
-            storage: storage,
-            settings: { settings },
-            builtInModelPreparer: { _, _ in
-                throw IntegrationError.unavailable
-            })
-        try pipeline.saveTranscript(
-            Transcript(
-                segments: [.init(
-                    start: 0,
-                    end: 1,
-                    speaker: "me",
-                    text: "Review the generated digest lifecycle",
-                    confidence: 1,
-                    timingPrecision: .span)],
-                engine: "test"),
-            for: meeting)
-        let source = FileDailyEvidenceSource(root: root)
-        let snapshot = try source.snapshot(for: day, meetings: [meeting])
-        let journal = root.appendingPathComponent(
-            "journal/\(DreamDay.key(for: day)).md")
-        try DayDigestJournalWriter.write(
-            "Generated from the old transcript",
-            to: journal,
-            replacing: .init(digest: nil),
-            evidence: snapshot.digestEvidence(),
-            quality: .complete)
-        let lifecycle = DayDigestLifecycle(
-            storageRoot: root,
-            blocks: { _ in [] },
-            screenContexts: { _ in [] },
-            meetings: { [meeting] },
-            latestActivityEvidenceAt: { _ in nil },
-            settings: { settings },
-            generator: { _, _, _, _ in throw IntegrationError.unavailable })
-        pipeline.onArtifactsWillChange = { changedMeeting in
-            try lifecycle.retractGeneratedJournals(
-                for: [changedMeeting.startedAt])
-            lifecycle.reconsiderEvidence(for: changedMeeting.startedAt)
-        }
+            relativePath: "meetings/standup")
 
-        pipeline.enqueue(
-            meeting,
-            transcribe: false,
-            summarize: true)
-        await waitUntil { pipeline.stages[meeting.id]?.isFailure == true }
+        app.meetingArtifactsWillChange(meeting)
+        try app.withPrimaryEvidenceChange(on: [day], .revision) {}
+        try app.withScheduledRetention(on: [day]) {}
 
-        XCTAssertEqual(pipeline.stages[meeting.id]?.isFailure, true)
+        XCTAssertEqual(try String(contentsOf: journal, encoding: .utf8), "Generated digest",
+                       "reprocessing, corrections, and expiry must not delete the digest")
+        XCTAssertNotNil(DayDigestGenerationMetadataStore.load(for: journal))
+
+        try app.withPrimaryEvidenceChange(on: [day], .removal) {}
+
         XCTAssertFalse(FileManager.default.fileExists(atPath: journal.path),
-                       "model availability must not gate evidence retraction")
-        XCTAssertFalse(FileManager.default.fileExists(atPath:
-            DayDigestGenerationMetadataStore.metadataURL(for: journal).path))
+                       "deleting the sources still withdraws their generated digest")
     }
 
     func testCorrectionRefreshesExportAgainAfterDigestPersistence() async throws {
@@ -441,12 +411,6 @@ final class DailyEvidenceIntegrationTests: XCTestCase {
             try? await Task.sleep(for: .milliseconds(20))
         }
         XCTFail("Expected \(text) in \(url.lastPathComponent)")
-    }
-
-    private func waitUntil(_ condition: () -> Bool) async {
-        for _ in 0..<300 where !condition() {
-            try? await Task.sleep(for: .milliseconds(10))
-        }
     }
 
     private func temporaryRoot() throws -> URL {

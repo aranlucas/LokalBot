@@ -90,7 +90,7 @@ final class DreamLoopTests: XCTestCase {
         XCTAssertTrue(store.hasReport(forDayKey: dayKey(16)), "expiry is not a deletion")
         XCTAssertEqual(try store.loadMemory()?.activeProjects.map(\.name), ["Atlas"])
 
-        try app.withPrimaryEvidenceChange(on: [noon(16)]) {}
+        try app.withPrimaryEvidenceChange(on: [noon(16)], .removal) {}
         XCTAssertFalse(store.hasReport(forDayKey: dayKey(16)), "deleting the captures still revokes what read them")
         XCTAssertEqual(try store.loadMemory()?.activeProjects, [])
     }

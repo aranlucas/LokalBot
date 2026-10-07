@@ -126,7 +126,7 @@ struct CaptureRangeDeletionView: View {
     private func deleteReviewed(_ review: CaptureDeletionReview) {
         do {
             let days = Set(review.captures.map { Calendar.current.startOfDay(for: $0.ts) })
-            deletionFailures = try app.withPrimaryEvidenceChange(on: Array(days)) {
+            deletionFailures = try app.withPrimaryEvidenceChange(on: Array(days), .removal) {
                 try app.screenshots.applyCaptureDeletionReview(review)
             }
             deletionReview = nil
