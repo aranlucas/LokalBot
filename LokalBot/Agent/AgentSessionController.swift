@@ -674,7 +674,8 @@ final class AgentSessionController: ObservableObject {
         }
         let approval = Self.parseApprovalPayload(request)
         guard approval.canApprove else {
-            folder.appendNotice("The shell command could not be reviewed in full and was declined. Nothing ran.", isError: true)
+            let subject = approval.arguments == nil ? "The shell command" : "The \(approval.tool) request"
+            folder.appendNotice("\(subject) could not be reviewed in full and was declined. Nothing ran.", isError: true)
             try? await client.sendResponse(.uiConfirmResponse(requestID: request.id, confirmed: false))
             return
         }
@@ -971,7 +972,8 @@ final class AgentSessionController: ObservableObject {
                     AgentApprovalRequest.Edit(oldText: $0.oldText, newText: $0.newText)
                 },
                 summary: payload.summary,
-                isTruncated: payload.truncated ?? false)
+                isTruncated: payload.truncated ?? false,
+                arguments: payload.arguments)
         }
         return AgentApprovalRequest(
             id: request.id,
@@ -1104,6 +1106,7 @@ final class AgentSessionController: ObservableObject {
         let edits: [Edit]?
         let summary: String?
         let truncated: Bool?
+        let arguments: String?
     }
 
     private enum LaunchMode {

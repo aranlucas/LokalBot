@@ -229,91 +229,188 @@ test("malformed shell requests cannot obtain approval through a fallback preview
   });
 });
 
+test("every tool outside the allowlist asks with its exact arguments", async () => {
+  await withExtensionFixture(async ({ call, approvals }) => {
+    const input = { path: "/tmp/anywhere", nested: { text: "synthetic" } };
+    const tools = ["mcp__stub__touch", "codemode", "tool_search", "grep", "future_tool"];
+    for (const toolName of tools) expect(await call(toolName, input)).toBeUndefined();
+    expect(approvals.map(approval => approval.tool)).toEqual(tools);
+    for (const approval of approvals) expect(approval.arguments).toBe(JSON.stringify(input, null, 2));
+  });
+});
+
+test("arguments of a tool without a preview must fit in full before approval", async () => {
+  await withExtensionFixture(async ({ call, approvals }) => {
+    const wrapper = JSON.stringify({ code: "" }, null, 2).length;
+    expect(await call("codemode", { code: "#".repeat(65_536 - wrapper) })).toBeUndefined();
+    expect((await call("codemode", { code: "#".repeat(65_536 - wrapper + 1) })).block).toBe(true);
+    expect(approvals).toHaveLength(1);
+    expect(approvals[0].arguments).toHaveLength(65_536);
+  });
+});
+
+// One Pi RPC turn against a stub model that requests `toolCall` and then
+// replies STUB-REPLY. Every approval prompt is answered with `approved`.
+async function piTurn(options: {
+  workspace: string; toolCall: { name: string; arguments: unknown }; approved: boolean;
+  extensions?: string[]; piConfig?: string; beforeAnswer?: (payload: any) => Promise<void>;
+}) {
+  const requests: any[] = [];
+  const server = Bun.serve({
+    hostname: "127.0.0.1", port: 0,
+    async fetch(req) {
+      expect(new URL(req.url).pathname).toBe("/v1/chat/completions");
+      const body = await req.json();
+      requests.push(body);
+      const toolResult = body.messages.find((message: any) => message.role === "tool");
+      const delta = toolResult ? { content: "STUB-REPLY" } : {
+        tool_calls: [{ index: 0, id: "tool-test", type: "function", function: {
+          name: options.toolCall.name, arguments: JSON.stringify(options.toolCall.arguments),
+        } }],
+      };
+      const base = { id: "stub", object: "chat.completion.chunk", model: "stub-model" };
+      const chunks = [
+        { ...base, choices: [{ index: 0, delta: { role: "assistant" } }] },
+        { ...base, choices: [{ index: 0, delta }] },
+        { ...base, choices: [{ index: 0, delta: {}, finish_reason: toolResult ? "stop" : "tool_calls" }] },
+      ];
+      return new Response(chunks.map(chunk => `data: ${JSON.stringify(chunk)}\n\n`).join("") + "data: [DONE]\n\n",
+        { headers: { "content-type": "text/event-stream" } });
+    },
+  });
+  const proc = Bun.spawn([
+    join(runtime!, "bun/bun"),
+    join(runtime!, "pi/node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js"),
+    "--mode", "rpc", "--provider", "lokalbot", "--model", "stub-model",
+    "--no-extensions", "-e", join(repo, "LokalBot/Resources/pi/lokalbot-extension"),
+    ...(options.extensions ?? []).flatMap(extension => ["-e", extension]),
+    "--no-skills", "--no-prompt-templates", "--no-context-files", "--no-approve",
+    "--session-dir", join(options.workspace, "sessions"), "--offline",
+  ], {
+    cwd: options.workspace, stdin: "pipe", stdout: "pipe", stderr: "pipe",
+    env: { PATH: process.env.PATH, HOME: options.workspace,
+      PI_SKIP_VERSION_CHECK: "1", PI_TELEMETRY: "0",
+      PI_CODING_AGENT_DIR: options.piConfig ?? join(options.workspace, "pi-config"),
+      LOKALBOT_LLM_BASE_URL: `http://127.0.0.1:${server.port}/v1`,
+      LOKALBOT_LLM_MODEL: "stub-model", LOKALBOT_LLM_CTX: "16384" },
+  });
+  const send = (message: unknown) => { proc.stdin.write(JSON.stringify(message) + "\n"); proc.stdin.flush(); };
+  const stderr = new Response(proc.stderr).text();
+  const approvals: any[] = [];
+  let reply = false;
+  const timeout = setTimeout(() => proc.kill(), 20_000);
+  try {
+    send({ type: "prompt", id: "test", message: "Run the requested tool." });
+    let pending = "";
+    const decoder = new TextDecoder();
+    outer: for await (const bytes of proc.stdout) {
+      pending += decoder.decode(bytes, { stream: true });
+      let newline: number;
+      while ((newline = pending.indexOf("\n")) !== -1) {
+        const line = pending.slice(0, newline);
+        pending = pending.slice(newline + 1);
+        if (!line.trim()) continue;
+        const event = JSON.parse(line);
+        if (event.type === "extension_error") throw new Error(JSON.stringify(event));
+        if (event.type === "response" && !event.success) throw new Error(event.error);
+        if (event.type === "extension_ui_request" && event.method === "confirm") {
+          expect(event.title).toBe("lokalbot_tool_approval");
+          const payload = JSON.parse(event.message);
+          approvals.push(payload);
+          await options.beforeAnswer?.(payload);
+          send({ type: "extension_ui_response", id: event.id, confirmed: options.approved });
+        }
+        if (event.type === "message_end" && event.message.role === "assistant") {
+          reply ||= event.message.content.some((part: any) => part.text === "STUB-REPLY");
+        }
+        if (event.type === "agent_end") break outer;
+      }
+    }
+    return { approvals, reply, requests };
+  } finally {
+    clearTimeout(timeout);
+    proc.kill();
+    await proc.exited;
+    const errors = await stderr;
+    if (errors.trim()) console.error(errors);
+    server.stop(true);
+  }
+}
+
 for (const approved of [false, true]) {
   test.skipIf(!runtime)(`Pi requires approval before writing; confirmed=${approved}`, async () => {
     const workspace = await mkdtemp(join(tmpdir(), "lokalbot-pi-upgrade-"));
     const output = join(workspace, "approved.txt");
-    const requests: any[] = [];
-    const server = Bun.serve({
-      hostname: "127.0.0.1", port: 0,
-      async fetch(req) {
-        expect(new URL(req.url).pathname).toBe("/v1/chat/completions");
-        const body = await req.json();
-        requests.push(body);
-        const toolResult = body.messages.find((message: any) => message.role === "tool");
-        const delta = toolResult ? { content: "STUB-REPLY" } : {
-          tool_calls: [{ index: 0, id: "write-test", type: "function", function: {
-            name: "write", arguments: JSON.stringify({ path: output, content: "approved content" }),
-          } }],
-        };
-        const base = { id: "stub", object: "chat.completion.chunk", model: "stub-model" };
-        const chunks = [
-          { ...base, choices: [{ index: 0, delta: { role: "assistant" } }] },
-          { ...base, choices: [{ index: 0, delta }] },
-          { ...base, choices: [{ index: 0, delta: {}, finish_reason: toolResult ? "stop" : "tool_calls" }] },
-        ];
-        return new Response(chunks.map(chunk => `data: ${JSON.stringify(chunk)}\n\n`).join("") + "data: [DONE]\n\n",
-          { headers: { "content-type": "text/event-stream" } });
-      },
-    });
-    const proc = Bun.spawn([
-      join(runtime!, "bun/bun"),
-      join(runtime!, "pi/node_modules/@earendil-works/pi-coding-agent/dist/bundle/cli.js"),
-      "--mode", "rpc", "--provider", "lokalbot", "--model", "stub-model",
-      "--no-extensions", "-e", join(repo, "LokalBot/Resources/pi/lokalbot-extension"),
-      "--no-skills", "--no-prompt-templates", "--no-context-files", "--no-approve",
-      "--session-dir", join(workspace, "sessions"), "--offline",
-    ], {
-      cwd: workspace, stdin: "pipe", stdout: "pipe", stderr: "pipe",
-      env: { PATH: process.env.PATH, HOME: workspace,
-        PI_SKIP_VERSION_CHECK: "1", PI_TELEMETRY: "0",
-        PI_CODING_AGENT_DIR: join(workspace, "pi-config"),
-        LOKALBOT_LLM_BASE_URL: `http://127.0.0.1:${server.port}/v1`,
-        LOKALBOT_LLM_MODEL: "stub-model", LOKALBOT_LLM_CTX: "16384" },
-    });
-    const send = (message: unknown) => { proc.stdin.write(JSON.stringify(message) + "\n"); proc.stdin.flush(); };
-    const stderr = new Response(proc.stderr).text();
-    let approvals = 0;
-    let reply = false;
-    const timeout = setTimeout(() => proc.kill(), 20_000);
     try {
-      send({ type: "prompt", id: "test", message: "Write the requested file." });
-      let pending = "";
-      const decoder = new TextDecoder();
-      outer: for await (const bytes of proc.stdout) {
-        pending += decoder.decode(bytes, { stream: true });
-        let newline: number;
-        while ((newline = pending.indexOf("\n")) !== -1) {
-          const line = pending.slice(0, newline);
-          pending = pending.slice(newline + 1);
-          if (!line.trim()) continue;
-          const event = JSON.parse(line);
-          if (event.type === "extension_error") throw new Error(JSON.stringify(event));
-          if (event.type === "response" && !event.success) throw new Error(event.error);
-          if (event.type === "extension_ui_request" && event.method === "confirm") {
-            approvals++;
-            expect(event.title).toBe("lokalbot_tool_approval");
-            expect(await stat(output).catch(() => null)).toBeNull();
-            send({ type: "extension_ui_response", id: event.id, confirmed: approved });
-          }
-          if (event.type === "message_end" && event.message.role === "assistant") {
-            reply ||= event.message.content.some((part: any) => part.text === "STUB-REPLY");
-          }
-          if (event.type === "agent_end") break outer;
-        }
-      }
-      expect(approvals).toBe(1);
-      expect(reply).toBe(true);
-      expect(requests).toHaveLength(2);
+      const turn = await piTurn({
+        workspace, approved,
+        toolCall: { name: "write", arguments: { path: output, content: "approved content" } },
+        beforeAnswer: async () => { expect(await stat(output).catch(() => null)).toBeNull(); },
+      });
+      expect(turn.approvals).toHaveLength(1);
+      expect(turn.reply).toBe(true);
+      expect(turn.requests).toHaveLength(2);
       if (approved) expect(await readFile(output, "utf8")).toBe("approved content");
       else expect(await stat(output).catch(() => null)).toBeNull();
     } finally {
-      clearTimeout(timeout);
-      proc.kill();
-      await proc.exited;
-      const errors = await stderr;
-      if (errors.trim()) console.error(errors);
-      server.stop(true);
+      await rm(workspace, { recursive: true, force: true });
+    }
+  }, 25_000);
+}
+
+// Pi's MCP client is a built-in extension that Agent Mode's --no-extensions
+// leaves off. Loading it explicitly proves its tools still pass the gate.
+const STUB_MCP_SERVER = String.raw`
+import { writeFileSync } from "node:fs";
+let pending = "";
+const send = (message) => process.stdout.write(JSON.stringify({ jsonrpc: "2.0", ...message }) + "\n");
+process.stdin.setEncoding("utf8");
+process.stdin.on("data", chunk => {
+  pending += chunk;
+  let newline;
+  while ((newline = pending.indexOf("\n")) !== -1) {
+    const line = pending.slice(0, newline).trim();
+    pending = pending.slice(newline + 1);
+    if (!line) continue;
+    const message = JSON.parse(line);
+    if (message.id === undefined) continue;
+    if (message.method === "initialize") send({ id: message.id, result: {
+      protocolVersion: message.params.protocolVersion, capabilities: { tools: {} },
+      serverInfo: { name: "stub", version: "1.0.0" } } });
+    else if (message.method === "tools/list") send({ id: message.id, result: { tools: [{ name: "touch",
+      description: "Create a file.", inputSchema: { type: "object", properties: { path: { type: "string" } } } }] } });
+    else if (message.method === "tools/call") {
+      writeFileSync(message.params.arguments.path, "touched by MCP");
+      send({ id: message.id, result: { content: [{ type: "text", text: "done" }] } });
+    } else send({ id: message.id, error: { code: -32601, message: "method not found" } });
+  }
+});
+`;
+
+for (const approved of [false, true]) {
+  test.skipIf(!runtime)(`an MCP tool call requires approval; confirmed=${approved}`, async () => {
+    const workspace = await mkdtemp(join(tmpdir(), "lokalbot-pi-mcp-"));
+    const output = join(workspace, "touched.txt");
+    const piConfig = join(workspace, "pi-config");
+    try {
+      await mkdir(piConfig);
+      await writeFile(join(workspace, "stub-mcp.js"), STUB_MCP_SERVER);
+      await writeFile(join(piConfig, "mcp.json"), JSON.stringify({ mcpServers: { stub: {
+        command: join(runtime!, "bun/bun"), args: [join(workspace, "stub-mcp.js")], exposure: "direct",
+      } } }));
+      const turn = await piTurn({
+        workspace, approved, piConfig, extensions: ["builtin:mcp"],
+        toolCall: { name: "mcp__stub__touch", arguments: { path: output } },
+        beforeAnswer: async () => { expect(await stat(output).catch(() => null)).toBeNull(); },
+      });
+      expect(turn.requests[0].tools.map((tool: any) => tool.function.name)).toContain("mcp__stub__touch");
+      expect(turn.approvals).toHaveLength(1);
+      expect(turn.approvals[0].tool).toBe("mcp__stub__touch");
+      expect(JSON.parse(turn.approvals[0].arguments)).toEqual({ path: output });
+      expect(turn.reply).toBe(true);
+      if (approved) expect(await readFile(output, "utf8")).toBe("touched by MCP");
+      else expect(await stat(output).catch(() => null)).toBeNull();
+    } finally {
       await rm(workspace, { recursive: true, force: true });
     }
   }, 25_000);
@@ -435,4 +532,3 @@ test("the registered provider sends the level LokalBot writes, and follows a cha
     await rm(root, { recursive: true, force: true });
   }
 });
-

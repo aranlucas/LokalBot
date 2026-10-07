@@ -18,8 +18,8 @@ enum AgentApprovalMode: Int, CaseIterable, Identifiable, Equatable {
 }
 
 /// Pure approval policy for gated agent tools. The bundled pi extension
-/// raises approval requests for `write`, `edit`, `bash`, and any `read` whose
-/// canonical path escapes the selected workspace. This type
+/// raises an approval request for every tool call except a `read` inside the
+/// selected workspace and outside the private library. This type
 /// decides whether a raised request can be answered automatically
 /// (approval mode, session allowances) or must be shown to the user.
 struct AgentApprovalPolicy: Equatable {
@@ -41,10 +41,9 @@ struct AgentApprovalPolicy: Equatable {
            Self.isProtected(path, roots: protectedWriteRoots) { return .ask }
 
         // Automatic modes only apply to structured approvals emitted by the
-        // process for this selected workspace. Unknown future tools and stale
-        // or malformed cross-workspace requests remain fail-closed.
-        if Self.isKnownGatedTool(normalizedTool),
-           Self.requestMatchesSelectedWorkspace(
+        // process for this selected workspace. Stale or malformed
+        // cross-workspace requests remain fail-closed.
+        if Self.requestMatchesSelectedWorkspace(
             requestWorkspace: requestWorkspace,
             selectedWorkspace: selectedWorkspace) {
             switch mode {
@@ -57,6 +56,8 @@ struct AgentApprovalPolicy: Equatable {
                     return .allow
                 }
             case .fullAccess:
+                // Every agent tool, including MCP tools and tools that later
+                // Pi releases add. Protected file changes already asked above.
                 return .allow
             }
         }
@@ -128,10 +129,6 @@ struct AgentApprovalPolicy: Equatable {
               let requestedRoot = canonicalFileURL(URL(fileURLWithPath: requestWorkspace)),
               let selectedRoot = canonicalFileURL(selectedWorkspace) else { return false }
         return requestedRoot.path == selectedRoot.path
-    }
-
-    private static func isKnownGatedTool(_ tool: String) -> Bool {
-        tool == "read" || isFileChange(tool: tool) || tool == "bash"
     }
 
     private static func isFileChange(tool: String) -> Bool {
