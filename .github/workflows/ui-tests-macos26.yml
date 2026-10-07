@@ -1,0 +1,30 @@
+# The UI suite on macOS 26 with Xcode 26.4.1, alongside the required macOS 15
+# run in ui-tests.yml. Its checks are not branch-protection or release gates:
+# known macOS 26 layout, contrast and timing differences still fail here.
+# Make it required once they are fixed.
+
+name: UI Tests (macOS 26)
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - dev
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC, an hour after the macOS 15 run
+
+concurrency:
+  group: ui-tests-macos26-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  macos26:
+    name: macOS 26
+    uses: ./.github/workflows/ui-tests.yml
+    with:
+      runner: macos-26
+      xcode: "26.4.1"
