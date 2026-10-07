@@ -86,15 +86,24 @@ enum MeetingSummaryGenerator {
         return contextTokenLimit(for: config.summarizerBackend)
     }
 
-    /// The window OpenRouter publishes for the selected model wins, including
-    /// one smaller than 16K; otherwise the provider's documented window, then
-    /// 16K.
-    static func contextTokenLimit(for config: AppSettings, catalog: OpenRouterModelCatalog) async -> Int {
-        if config.summarizerBackend == .openAICompatible,
-           let url = URL(string: config.openAIBaseURL),
-           let published = await catalog.contextTokens(model: config.openAIModel, baseURL: url,
-                                                       approvedOrigins: config.approvedRemoteInferenceOrigins) {
-            return published
+    /// The window the server reports for the selected model wins, including
+    /// one smaller than 16K: OpenRouter's published endpoints, or another
+    /// server's model list (`ServerContextWindowCatalog`). Otherwise the
+    /// provider's documented window, then 16K.
+    static func contextTokenLimit(for config: AppSettings, catalog: OpenRouterModelCatalog,
+                                  servers: ServerContextWindowCatalog = .shared,
+                                  apiKey: (@Sendable () -> String?)? = nil) async -> Int {
+        if config.summarizerBackend == .openAICompatible, let url = URL(string: config.openAIBaseURL) {
+            let origins = config.approvedRemoteInferenceOrigins
+            if let published = await catalog.contextTokens(model: config.openAIModel, baseURL: url,
+                                                           approvedOrigins: origins) {
+                return published
+            }
+            if let reported = await servers.contextTokens(model: config.openAIModel, baseURL: url,
+                                                          approvedOrigins: origins,
+                                                          apiKey: apiKey ?? { config.openAIAPIKey }) {
+                return reported
+            }
         }
         return contextTokenLimit(for: config)
     }

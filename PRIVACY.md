@@ -178,7 +178,13 @@ The app may make these outbound connections:
   Before writing meeting notes with an approved OpenRouter origin, LokalBot
   also reads the selected model's published endpoint list from that origin to
   learn its context window. That request carries only the model id, with no
-  API key or content, and the answer is kept in local preferences. To offer
+  API key or content, and the answer is kept in local preferences. With any
+  other OpenAI-compatible server allowed for inference, LokalBot reads that
+  server's model list for the same purpose, at most once a day; for a server
+  on this Mac it may also read llama-server's settings or LM Studio's details
+  for the selected model. These requests carry the API key you configured,
+  which the server already receives with every inference request, and no
+  content. The answer is kept in local preferences. To offer
   the reasoning levels a model accepts, LokalBot reads OpenRouter's public
   model list from that approved origin at most once a day, or asks an allowed
   Ollama server for the selected model's capabilities. These requests carry
