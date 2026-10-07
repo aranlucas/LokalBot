@@ -398,6 +398,28 @@ class TestArtifactTests(unittest.TestCase):
             actual = products.identity()
         self.assertEqual(set(actual), set(identity) - {'root', 'job'})
 
+    def test_ui_products_may_run_on_an_older_toolchain_but_unit_products_may_not(self):
+        built = dict(commit='sha', run='42', attempt='1', xcode='Xcode 26.4.1', sdk='26.4',
+                     architecture='arm64', signing='NO', lock='dependencies')
+        tested = dict(built, xcode='Xcode 26.3', sdk='26.2')
+        self.assertTrue(products.matches(built, tested, 'ui'))
+        self.assertFalse(products.matches(built, tested, 'unit'))
+        for key in ['commit', 'run', 'attempt', 'architecture', 'signing', 'lock']:
+            with self.subTest(key=key):
+                self.assertFalse(products.matches(built, dict(tested, **{key: 'changed'}), 'ui'))
+
+    def test_required_ui_gate_builds_on_macos_26_and_tests_on_macos_15(self):
+        workflow = (ROOT / '.github/workflows/ui-tests.yml').read_text()
+        build = workflow.split('\n  build:\n', 1)[1].split('\n  build-smoke:\n', 1)[0]
+        self.assertIn("runs-on: ${{ inputs.build_runner || 'macos-26' }}", build)
+        self.assertIn("xcode-version: ${{ inputs.build_xcode || '26.4.1' }}", build)
+        self.assertIn("xcode${{ inputs.build_xcode || '26.4.1' }}", build)
+        for job in ['build-smoke', 'reduced-motion', 'shards']:
+            block = workflow.split(f'\n  {job}:\n', 1)[1].split('      - name: Verify and restore compiled UI tests', 1)[0]
+            with self.subTest(job=job):
+                self.assertIn("runs-on: ${{ inputs.runner || 'macos-15' }}", block)
+                self.assertIn("xcode-version: ${{ inputs.xcode || '26.3' }}", block)
+
     def test_tar_round_trip_preserves_executables_and_rejects_stale_or_tampered_products(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp).resolve()

@@ -14,9 +14,12 @@
 # master/dev push (exact-SHA gates), plus weekly and manual dispatches. Whether it blocks merging remains a branch
 # protection decision; the workflow itself does not mutate repository state.
 #
-# The required gate runs on macos-15, the app's oldest supported macOS.
-# ui-tests-macos26.yml calls this workflow with `runner`/`xcode` to run the
-# same suite on macOS 26 in a separate, non-required run.
+# The required gate tests on macos-15, the app's oldest supported macOS. Its
+# products are built on macos-26 with Xcode 26.4.1, like the shipped app:
+# MLX 0.32.3 and later need Swift 6.3, and the macos-15 image has no Xcode
+# newer than 26.3. ui-tests-macos26.yml calls this workflow with
+# `runner`/`xcode` to run the same suite on macOS 26 in a separate,
+# non-required run.
 
 name: UI Tests
 
@@ -49,6 +52,12 @@ on:
       xcode:
         type: string
         default: "26.3"
+      build_runner:
+        type: string
+        default: macos-26
+      build_xcode:
+        type: string
+        default: "26.4.1"
   pull_request:
   push:
     branches:
@@ -91,9 +100,10 @@ jobs:
     name: UI build (macOS)
     needs: changes
     if: needs.changes.outputs.relevant == 'true'
-    # Move to a self-hosted Mac (runs-on: [self-hosted, macOS]) once one
-    # exists — see the TCC note at the top of this file.
-    runs-on: ${{ inputs.runner || 'macos-15' }}
+    # Builds with the release toolchain; the test jobs below run the products
+    # on `runner`. Move to a self-hosted Mac (runs-on: [self-hosted, macOS])
+    # once one exists — see the TCC note at the top of this file.
+    runs-on: ${{ inputs.build_runner || 'macos-26' }}
     # A cold checksum-pinned llama.cpp build currently takes close to an hour
     # on GitHub's hosted Macs. Match the unit-test budget so the UI suite still
     # gets time to execute before the Vendor cache has been populated.
@@ -119,7 +129,7 @@ jobs:
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: ${{ inputs.xcode || '26.3' }}
+          xcode-version: ${{ inputs.build_xcode || '26.4.1' }}
 
       - name: Install build tools
         run: |
@@ -155,7 +165,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: .build/SourcePackages
-          key: packages-${{ runner.os }}-${{ runner.arch }}-xcode${{ inputs.xcode || '26.3' }}-${{ hashFiles('**/Package.resolved') }}
+          key: packages-${{ runner.os }}-${{ runner.arch }}-xcode${{ inputs.build_xcode || '26.4.1' }}-${{ hashFiles('**/Package.resolved') }}
 
       # Only the content-addressed compiler store is restored. Build products,
       # build databases and provenance always belong to this workflow attempt.
