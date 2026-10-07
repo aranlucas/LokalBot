@@ -1212,6 +1212,30 @@ final class MeetingDetector {
         return bound.first { $0.pid == frontmostPID }
     }
 
+    /// A meeting app whose process family holds an always-open output stream,
+    /// for an unbound recording to hold while nothing verified is available.
+    ///
+    /// New Teams plays call audio only through `modulehost`, which is open
+    /// whether or not a call is running (#179). ``captureCandidateApp`` can
+    /// never return it: emitting evidence skips always-open streams, and an
+    /// idle app needs a binding. Because an idle app looks the same, the caller
+    /// taps this without binding the recording, and any verified source may
+    /// replace it until the tap has carried the call itself. When several
+    /// apps qualify, only a frontmost one is chosen.
+    nonisolated static func alwaysOpenCaptureCandidate(
+        in running: [RunningApp] = CaptureEnvironment.current.workspace.runningApplications(),
+        processes: [AudioProcess] = MeetingDetector.currentAudioProcesses(),
+        frontmostPID: pid_t? = CaptureEnvironment.current.workspace.frontmostApplication()?.processIdentifier
+    ) -> DetectedApp? {
+        let nativeCandidates = meetingAppCandidates(bundleIDs: running.compactMap { app in
+            guard let bundleID = app.bundleIdentifier else { return nil }
+            return (bundleID: bundleID, pid: app.processIdentifier)
+        })
+        let holdable = nativeCandidates.filter { bestAlwaysOpenAudioProcess(for: $0, in: processes) != nil }
+        if holdable.count == 1 { return holdable[0] }
+        return holdable.first { $0.pid == frontmostPID }
+    }
+
     nonisolated static func currentCaptureTargetProcess(
         for app: DetectedApp,
         excluding excludedPIDs: Set<pid_t> = []

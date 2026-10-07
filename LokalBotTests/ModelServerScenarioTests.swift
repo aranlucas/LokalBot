@@ -88,6 +88,23 @@ final class ModelServerScenarioTests: XCTestCase {
         XCTAssertEqual(requests[0].user, requests[1].user)
     }
 
+    /// A model that always reasons rejects `none`; the chosen level must not
+    /// fail the request, and the retry must be the only extra call.
+    func testRejectedReasoningLevelRetriesOnceAtLow() async throws {
+        try await server.load([
+            StubRule.http(400, message: "reasoning_effort 'none' is not supported for this model", nth: 1),
+            StubRule.reply("Done"),
+        ])
+        let generic = OpenAICompatibleEngine(baseURL: server.baseURL, model: "stub-model", apiKey: nil,
+                                             reasoningLevel: .off)
+
+        let reply = try await generic.generate(system: "system", prompt: "prompt", context: [])
+
+        XCTAssertEqual(reply, "Done")
+        let requests = try await server.requests()
+        XCTAssertEqual(requests.map { $0.body["reasoning_effort"] as? String }, ["none", "low"])
+    }
+
     func testRetryAfterFromA429IsHonoured() async throws {
         try await server.load([
             StubRule.http(429, retryAfter: 7, system: focus, nth: 1),

@@ -19,6 +19,12 @@ actor OpenRouterModelCatalog {
     private let defaults: UserDefaults
     private let now: @Sendable () -> Date
     private var fetched: [String: (tokens: Int, at: Date)] = [:]
+    private var reasoningByModel: [String: ReasoningSupport] = [:]
+    private var reasoningFetchedAt: Date?
+    private var reasoningAttemptedAt: Date?
+    /// A failed list read waits this long, so an offline Mac does not add a
+    /// timeout to every Think request.
+    static let reasoningRetryInterval: TimeInterval = 600
 
     init(fetch: Fetch? = nil, defaults: UserDefaults? = nil, now: @escaping @Sendable () -> Date = { Date() }) {
         self.fetch = fetch ?? { try await OpenRouterModelCatalog.session.data(for: $0) }
@@ -48,6 +54,56 @@ actor OpenRouterModelCatalog {
             return tokens
         }
         return fetched[key]?.tokens ?? stored()[key]
+    }
+
+    /// The selected model's reasoning levels from OpenRouter's model list
+    /// (`GET <base>/models`, read at most daily). Same rules as the context
+    /// window: an approved OpenRouter origin, no key, no content. Nil when
+    /// the origin does not qualify or the model is not listed.
+    func reasoningSupport(model: String, baseURL: URL, approvedOrigins: [String]) async -> ReasoningSupport? {
+        guard ChatCompletionDialect.inferred(from: baseURL) == .openRouter,
+              (try? InferenceEndpointPolicy.validate(baseURL, approvedOrigins: approvedOrigins)) != nil
+        else { return nil }
+        let current = now()
+        let stale = reasoningFetchedAt.map { current.timeIntervalSince($0) >= Self.refreshInterval } ?? true
+        let waiting = reasoningAttemptedAt.map { current.timeIntervalSince($0) < Self.reasoningRetryInterval } ?? false
+        if stale, !waiting {
+            reasoningAttemptedAt = current
+            var request = URLRequest(url: baseURL.appendingPathComponent("models"))
+            request.setValue("application/json", forHTTPHeaderField: "Accept")
+            if let (data, response) = try? await fetch(request),
+               (response as? HTTPURLResponse)?.statusCode == 200,
+               let parsed = Self.reasoningSupport(inModels: data) {
+                reasoningByModel = parsed
+                reasoningFetchedAt = current
+            }
+        }
+        return reasoningByModel[model.lowercased()]
+    }
+
+    static func reasoningSupport(inModels data: Data) -> [String: ReasoningSupport]? {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let models = object["data"] as? [[String: Any]] else { return nil }
+        var result: [String: ReasoningSupport] = [:]
+        for model in models {
+            guard let id = (model["id"] as? String)?.lowercased() else { continue }
+            result[id] = reasoningSupport(model["reasoning"] as? [String: Any])
+        }
+        return result
+    }
+
+    /// A model's `reasoning` object: `supported_efforts`, whether reasoning is
+    /// `mandatory` (no Off), and its defaults. No object: the model does not
+    /// reason. Without listed efforts, reasoning can only be switched off.
+    static func reasoningSupport(_ reasoning: [String: Any]?) -> ReasoningSupport {
+        guard let reasoning else { return .unavailable }
+        let mandatory = reasoning["mandatory"] as? Bool ?? false
+        var levels = Set((reasoning["supported_efforts"] as? [String] ?? [])
+            .compactMap(ThinkReasoningLevel.init(effort:)))
+        if mandatory { levels.remove(.off) } else { levels.insert(.off) }
+        let defaultLevel: ThinkReasoningLevel? = !mandatory && reasoning["default_enabled"] as? Bool == false
+            ? .off : (reasoning["default_effort"] as? String).flatMap(ThinkReasoningLevel.init(effort:))
+        return ReasoningSupport(levels: Array(levels), defaultLevel: defaultLevel)
     }
 
     /// `<base>/models/<author>/<slug>/endpoints`. Ids that are not a plain

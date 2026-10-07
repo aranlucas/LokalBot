@@ -563,6 +563,113 @@ extension View {
     }
 }
 
+// MARK: - Toolbar tabs
+
+/// Equal-width tabs with a sliding accent capsule, for a toolbar's principal
+/// item. A segmented picker there drew a square selection inside the
+/// toolbar's capsule and spread its segments unevenly at a fixed width. From
+/// macOS 26 the toolbar's own glass is the track; earlier systems draw one.
+struct ToolbarTabs<Tab: Hashable & Identifiable>: View {
+    let label: String
+    let tabs: [Tab]
+    @Binding var selection: Tab
+    let title: (Tab) -> String
+
+    @Environment(\.controlSize) private var controlSize
+    @Environment(\.appearsActive) private var appearsActive
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorSchemeContrast) private var contrast
+    @State private var hovered: Tab?
+
+    private var compact: Bool { controlSize == .small || controlSize == .mini }
+
+    var body: some View {
+        EqualWidthHStack {
+            ForEach(tabs) { segment($0) }
+        }
+        .background { knob }
+        .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: selection)
+        .padding(3)
+        .background { track }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(label)
+    }
+
+    private func segment(_ tab: Tab) -> some View {
+        let selected = tab == selection
+        let font = Font.system(size: NSFont.systemFontSize(for: compact ? .small : .regular))
+        return Button { selection = tab } label: {
+            // The hidden semibold copy reserves the selected width, so the
+            // control never changes size as the selection moves.
+            ZStack {
+                Text(title(tab)).font(font.weight(.semibold)).hidden()
+                Text(title(tab))
+                    .font(font.weight(selected ? .semibold : .medium))
+                    .foregroundStyle(foreground(selected: selected, hovered: hovered == tab))
+            }
+            .lineLimit(1)
+            .padding(.horizontal, compact ? 7 : 10)
+            .padding(.vertical, compact ? 3 : 5)
+            .frame(maxWidth: .infinity)
+            .background {
+                if !selected && hovered == tab {
+                    Capsule().fill(Color.primary.opacity(0.06))
+                }
+            }
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .onHover { inside in hovered = inside ? tab : (hovered == tab ? nil : hovered) }
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    /// White on the deep accent while the window is active (4.7:1); an
+    /// inactive window gets AppKit's unemphasized selection, like list rows.
+    private var knob: some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width / CGFloat(max(tabs.count, 1))
+            Capsule()
+                .fill(appearsActive ? Brand.tealFill
+                                    : Color(nsColor: .unemphasizedSelectedContentBackgroundColor))
+                .frame(width: width)
+                .offset(x: CGFloat(tabs.firstIndex(of: selection) ?? 0) * width)
+        }
+        .accessibilityHidden(true)
+    }
+
+    @ViewBuilder private var track: some View {
+        if #available(macOS 26, *) {
+            Color.clear
+        } else {
+            Capsule().fill(LBTokens.Palette.groupFill)
+        }
+    }
+
+    private func foreground(selected: Bool, hovered: Bool) -> Color {
+        if selected { return appearsActive ? .white : .primary }
+        if hovered || contrast == .increased { return .primary }
+        return Color(nsColor: WorkspaceTextColor.supporting)
+    }
+}
+
+/// Places children side by side, each at the widest child's ideal width.
+private struct EqualWidthHStack: Layout {
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let width = sizes.map(\.width).max() ?? 0
+        return CGSize(width: width * CGFloat(subviews.count), height: sizes.map(\.height).max() ?? 0)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let width = bounds.width / CGFloat(max(subviews.count, 1))
+        for (index, subview) in subviews.enumerated() {
+            subview.place(at: CGPoint(x: bounds.minX + width * CGFloat(index), y: bounds.midY),
+                          anchor: .leading,
+                          proposal: ProposedViewSize(width: width, height: bounds.height))
+        }
+    }
+}
+
 // MARK: - Button roles
 
 /// Three button weights: `primaryActionButton()` for the one filled call to

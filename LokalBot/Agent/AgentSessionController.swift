@@ -52,6 +52,8 @@ final class AgentSessionController: ObservableObject {
     @Published private(set) var activeSessionFile: URL?
     /// Bound to this process's connection, even if Settings changes later.
     @Published private(set) var modelContext: ModelContext?
+    /// The levels the launched model accepts; nil until a launch resolves them.
+    @Published private(set) var reasoningSupport: ReasoningSupport?
     @Published var workspace: URL
     @Published var draft = ""
     @Published var attachments: [AgentAttachment] = []
@@ -126,6 +128,11 @@ final class AgentSessionController: ObservableObject {
     /// unrelated model load.
     private var llmLease: InferenceLease?
     private var accessCapability: AgentAccessCapability?
+    /// The extension reads the Agent reasoning level from this file before
+    /// every model call, so a change applies from the agent's next step.
+    private let reasoningLevelFile = FileManager.default.temporaryDirectory
+        .appendingPathComponent("lokalbot-agent-reasoning-\(UUID().uuidString).json")
+    private var writtenReasoningLevel: ThinkReasoningLevel?
 
     init(settings: @escaping () -> AppSettings,
          storage: StorageManager,
@@ -202,6 +209,11 @@ final class AgentSessionController: ObservableObject {
         state = .starting
         recoveryAction = nil
         do {
+            let support = await ReasoningSupport.resolve(for: configuration)
+            guard generation == lifecycleGeneration else { return }
+            reasoningSupport = support
+            writtenReasoningLevel = nil
+            writeReasoningLevel()
             let endpoint = try await resolveEndpoint(settings: configuration)
             guard generation == lifecycleGeneration else {
                 // shutdown() may have run while the broker was still ensuring,
@@ -301,6 +313,9 @@ final class AgentSessionController: ObservableObject {
         modelContext = nil
         resetApprovalPolicy()
         releaseLLMLease()
+        try? FileManager.default.removeItem(at: reasoningLevelFile)
+        writtenReasoningLevel = nil
+        reasoningSupport = nil
         state = .idle
     }
 
@@ -407,6 +422,7 @@ final class AgentSessionController: ObservableObject {
         state = .running
         defer { if generation == lifecycleGeneration { isSending = false } }
         do {
+            writeReasoningLevel()
             let command: PiCommand = steer && wasRunning
                 ? .steer(id: freshID("steer"), message: wirePrompt)
                 : .prompt(id: freshID("p"), message: wirePrompt, streamingBehavior: wasRunning ? "followUp" : nil)
@@ -707,6 +723,27 @@ final class AgentSessionController: ObservableObject {
         return connection.endpoint
     }
 
+    /// Call after the Agent or Think reasoning setting changes. A running
+    /// agent picks the level up at its next model call; `send` also checks.
+    func reasoningLevelDidChange() {
+        guard reasoningSupport != nil else { return }
+        writeReasoningLevel()
+    }
+
+    /// The chosen level, clamped to what the launched model accepts.
+    private func writeReasoningLevel() {
+        guard let reasoningSupport else { return }
+        let level = reasoningSupport.clamp(settings().effectiveAgentReasoningLevel) ?? .automatic
+        guard level != writtenReasoningLevel else { return }
+        do {
+            let data = try JSONSerialization.data(withJSONObject: ["level": level.rawValue])
+            try data.write(to: reasoningLevelFile, options: .atomic)
+            writtenReasoningLevel = level
+        } catch {
+            lokalbotLog("agent reasoning level write failed: \(error.localizedDescription)")
+        }
+    }
+
     private func makePlan(endpoint: AgentLLMEndpoint, capabilityToken: String?) -> PiLaunchPlan {
         let resources = Bundle.main.resourceURL
         let extensionDir = resources?.appendingPathComponent("pi/lokalbot-extension")
@@ -724,6 +761,7 @@ final class AgentSessionController: ObservableObject {
             sessionDirectory: sessions,
             workspace: workspace,
             endpoint: endpoint,
+            reasoningLevelFile: reasoningLevelFile,
             helpersDirectory: FileManager.default.fileExists(atPath: helpers.path) ? helpers : nil,
             privateRoots: privateWorkspaceRoots,
             agentAccessCapability: capabilityToken,

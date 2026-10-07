@@ -114,13 +114,13 @@ final class MainWindowUITests: XCTestCase {
         XCTAssertTrue(timeline.waitForExistence(timeout: 5), "sidebar did not return")
 
         let window = app.windows.firstMatch
-        // The redesigned footer has a 10-point content inset; a restored
-        // split must preserve that inset without adding an empty column.
+        // A restored split must keep the footer's inset without adding an
+        // empty column.
         let privacyFooter = identified("sidebar.localPrivacy")
         XCTAssertTrue(privacyFooter.waitForExistence(timeout: 3),
                       "sidebar footer did not return")
-        XCTAssertEqual(privacyFooter.frame.minX - window.frame.minX, 10, accuracy: 4,
-                          "restored sidebar left an empty column at the window edge")
+        assertFooterAtLeadingEdge(privacyFooter, in: window,
+                                  "restored sidebar left an empty column at the window edge")
     }
 
     func testToolbarToggleWorksInThreeColumnSection() {
@@ -141,8 +141,8 @@ final class MainWindowUITests: XCTestCase {
 
         let privacyFooter = identified("sidebar.localPrivacy")
         XCTAssertTrue(privacyFooter.waitForExistence(timeout: 4), "sidebar footer missing")
-        XCTAssertEqual(privacyFooter.frame.minX - app.windows.firstMatch.frame.minX, 10, accuracy: 4,
-                          "three-column sidebar restored with an empty leading column")
+        assertFooterAtLeadingEdge(privacyFooter, in: app.windows.firstMatch,
+                                  "three-column sidebar restored with an empty leading column")
     }
 
     /// The sidebar content must stay attached to the window edge even when
@@ -169,8 +169,8 @@ final class MainWindowUITests: XCTestCase {
         sidebarDivider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
             .press(forDuration: 0.1, thenDragTo: destination)
 
-        XCTAssertEqual(privacyFooter.frame.minX - window.frame.minX, 10, accuracy: 4,
-                          "resizing centered the sidebar inside an oversized column")
+        assertFooterAtLeadingEdge(privacyFooter, in: window,
+                                  "resizing centered the sidebar inside an oversized column")
 
         toolbarSidebarButtons.firstMatch.click()
         XCTAssertTrue(UITestHarness.waitUntil {
@@ -179,8 +179,19 @@ final class MainWindowUITests: XCTestCase {
         toolbarSidebarButtons.firstMatch.click()
         XCTAssertTrue(privacyFooter.waitForExistence(timeout: 5),
                       "resized sidebar did not return")
-        XCTAssertEqual(privacyFooter.frame.minX - window.frame.minX, 10, accuracy: 4,
-                          "restored resized sidebar detached from the window edge")
+        assertFooterAtLeadingEdge(privacyFooter, in: window,
+                                  "restored resized sidebar detached from the window edge")
+    }
+
+    /// The sidebar footer's inset from the window edge: 10 pt on macOS 15,
+    /// 18 pt on macOS 26.6, whose floating sidebar sits 8 pt further in. An
+    /// empty leading column, or a sidebar centered in an oversized one, moves
+    /// it by roughly the sidebar's width or more.
+    private func assertFooterAtLeadingEdge(_ footer: XCUIElement, in window: XCUIElement, _ message: String,
+                                           file: StaticString = #filePath, line: UInt = #line) {
+        let inset = footer.frame.minX - window.frame.minX
+        XCTAssertGreaterThanOrEqual(inset, 6, message, file: file, line: line)
+        XCTAssertLessThanOrEqual(inset, 24, message, file: file, line: line)
     }
 
     /// Query the native sidebar control among direct toolbar children so nested
@@ -814,7 +825,8 @@ final class MainWindowUITests: XCTestCase {
         }
         app.typeKey(.escape, modifierFlags: [])
         identified("toolbar.meetingActions").click()
-        for label in ["Transcribe & Summarize", "Transcribe only", "Summarize again", "Export audio"] {
+        for label in ["Transcribe & Summarize", "Transcribe only", "Summarize again", "Export audio",
+                      "Copy Meeting Path"] {
             XCTAssertTrue(app.menuItems[label].waitForExistence(timeout: 3), "Missing meeting action: \(label)")
         }
         app.typeKey(.escape, modifierFlags: [])

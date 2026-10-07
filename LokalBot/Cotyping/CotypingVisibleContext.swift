@@ -42,6 +42,9 @@ enum CotypingVisibleContext {
             // Unlike activity tracking, a missing browser origin always abstains.
             guard !ScreenContextPrivacy.isBrowser(observation) && !target.hasWebContent
                     || ScreenContextPrivacy.sanitizedURL(target.sourceURL) != nil else { return false }
+            // Nearby text never comes from a private or incognito window, as
+            // PRIVACY.md promises; activity tracking keeps its own rule.
+            guard !ScreenContextPrivacy.isPrivateWindow(title: target.windowTitle ?? "") else { return false }
             return ScreenContextPrivacy.permitsContent(
                 observation, excludedApps: excludedApps, excludedDomains: excludedDomains)
         }

@@ -103,7 +103,7 @@ struct ModelsView: View {
         case "settings.dictationCompositionBuiltInModelID": sheet = .dictation
         case "settings.openAIBaseURL", "settings.openAIModel", "settings.ollamaBaseURL", "settings.openAIAPIKey":
             page.wrappedValue = .connections
-        case "settings.generationBudgetPreset":
+        case "settings.generationBudgetPreset", "settings.thinkReasoningLevel":
             page.wrappedValue = .active
         default: sheet = .assistant
         }

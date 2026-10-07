@@ -345,6 +345,16 @@ struct AppSettings: Codable, Equatable {
     /// Processing budget for meeting-notes generation. Applies to every Think
     /// backend, not only the connection it is edited alongside.
     var generationBudgetPreset: GenerationBudgetPreset = .standard
+    /// How much the Think model reasons. Automatic keeps per-task budgets and
+    /// each server's own default; a chosen level also caps those budgets.
+    var thinkReasoningLevel: ThinkReasoningLevel = .automatic
+    /// Agent Mode's own reasoning level, chosen in the Agent composer. Nil
+    /// follows `thinkReasoningLevel`.
+    var agentReasoningLevel: ThinkReasoningLevel?
+
+    var effectiveAgentReasoningLevel: ThinkReasoningLevel {
+        agentReasoningLevel ?? thinkReasoningLevel
+    }
 
     /// True only when the selected Think backend may actually send meeting or
     /// workday text to an approved remote server. Configured-but-unapproved,
@@ -475,7 +485,8 @@ struct AppSettings: Codable, Equatable {
     /// Separately opt in to relevant meeting notes/outcomes and attributed work
     /// memory. Screen-derived facts require their independent permission too.
     /// Transient Accessibility text above the focused field. Separate from saved screen memory.
-    var cotypingUseVisibleContext: Bool = false
+    /// On for new installs; settings saved before this default keep theirs (see the decoder).
+    var cotypingUseVisibleContext: Bool = true
     var cotypingUseMeetingMemory: Bool = false
     var cotypingUseScreenMemory: Bool = false
     /// Match the host field's font and text color so ghost text reads as a
@@ -650,6 +661,8 @@ struct AppSettings: Codable, Equatable {
         var s = self
         s.summarizerBackend = .builtIn
         s.builtInModelID = dictationCompositionBuiltInModelID
+        // The Think reasoning level belongs to the Think model, not this one.
+        s.thinkReasoningLevel = .automatic
         return s
     }
 
@@ -766,6 +779,8 @@ struct AppSettings: Codable, Equatable {
         case openRouterDataPolicy
         case approvedRemoteInferenceOrigins
         case generationBudgetPreset
+        case thinkReasoningLevel
+        case agentReasoningLevel
         case noteTemplate
         case summaryLanguage
         case rememberSpeakersOnMac
@@ -943,6 +958,8 @@ struct AppSettings: Codable, Equatable {
         try c.encode(openRouterDataPolicy, forKey: .openRouterDataPolicy)
         try c.encode(approvedRemoteInferenceOrigins, forKey: .approvedRemoteInferenceOrigins)
         try c.encode(generationBudgetPreset, forKey: .generationBudgetPreset)
+        try c.encode(thinkReasoningLevel, forKey: .thinkReasoningLevel)
+        try c.encodeIfPresent(agentReasoningLevel, forKey: .agentReasoningLevel)
         try c.encode(noteTemplate, forKey: .noteTemplate)
         try c.encode(summaryLanguage, forKey: .summaryLanguage)
         try c.encode(multiSpeakerDiarization, forKey: .multiSpeakerDiarization)
@@ -1106,6 +1123,8 @@ struct AppSettings: Codable, Equatable {
             .approvedRemoteInferenceOrigins, defaults.approvedRemoteInferenceOrigins)
         generationBudgetPreset = decode(
             .generationBudgetPreset, defaults.generationBudgetPreset)
+        thinkReasoningLevel = decode(.thinkReasoningLevel, defaults.thinkReasoningLevel)
+        agentReasoningLevel = decode(.agentReasoningLevel, defaults.agentReasoningLevel)
         noteTemplate = decode(.noteTemplate, defaults.noteTemplate)
         summaryLanguage = decode(.summaryLanguage, defaults.summaryLanguage)
         multiSpeakerDiarization = decode(.multiSpeakerDiarization, defaults.multiSpeakerDiarization)
@@ -1143,7 +1162,9 @@ struct AppSettings: Codable, Equatable {
             defaults.cotypingSuggestInIntegratedTerminals)
         cotypingUseAppContext = decode(.cotypingUseAppContext, defaults.cotypingUseAppContext)
         cotypingUseClipboard = decode(.cotypingUseClipboard, defaults.cotypingUseClipboard)
-        cotypingUseVisibleContext = decode(.cotypingUseVisibleContext, defaults.cotypingUseVisibleContext)
+        // Saved settings without the key predate it and keep it off: the
+        // on-by-default applies to new installs only.
+        cotypingUseVisibleContext = decode(.cotypingUseVisibleContext, false)
         cotypingUseMeetingMemory = decode(.cotypingUseMeetingMemory, defaults.cotypingUseMeetingMemory)
         cotypingUseScreenMemory = decode(.cotypingUseScreenMemory, defaults.cotypingUseScreenMemory)
         cotypingMatchHostStyle = decode(.cotypingMatchHostStyle, defaults.cotypingMatchHostStyle)

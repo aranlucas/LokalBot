@@ -48,7 +48,7 @@ jobs:
   release:
     if: github.event_name == 'push' || github.ref == 'refs/heads/master'
     name: Prepare or publish exact candidate
-    runs-on: macos-15
+    runs-on: macos-26
     # A cache miss includes a full llama.cpp source build before archive,
     # export, two notarization submissions, stapling, and publication.
     timeout-minutes: 150
@@ -60,7 +60,7 @@ jobs:
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
-          xcode-version: "26.3"
+          xcode-version: "26.4.1"
 
       - name: Validate trusted candidate preparation
         if: github.event_name == 'workflow_dispatch'
@@ -169,7 +169,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: .build/SourcePackages
-          key: packages-${{ runner.os }}-${{ runner.arch }}-xcode26.3-${{ hashFiles('**/Package.resolved') }}
+          key: packages-${{ runner.os }}-${{ runner.arch }}-xcode26.4.1-${{ hashFiles('**/Package.resolved') }}
 
       - name: Resolve Swift packages before unlocking signing authority
         if: steps.prepared.outputs.reused != 'true'

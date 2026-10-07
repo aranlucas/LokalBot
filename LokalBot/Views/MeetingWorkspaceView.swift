@@ -407,9 +407,7 @@ private struct MeetingWorkspaceDetail: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 contentTabPicker
-                    .pickerStyle(.segmented).tint(Brand.tealFill)
                     .controlSize(compactToolbar ? .small : .regular)
-                    .frame(width: compactToolbar ? 250 : 320)
             }
             ToolbarItem(placement: .navigation) {
                 if let section = app.evidenceReturnSection {
@@ -473,15 +471,18 @@ private struct MeetingWorkspaceDetail: View {
     }
 
     private var contentTabPicker: some View {
-        Picker("Meeting content", selection: Binding(get: { tab }, set: { tab = $0 })) {
-            ForEach(MeetingWorkspaceTab.allCases) { Text($0.rawValue).tag($0) }
-        }
-        .labelsHidden()
-        .accessibilityIdentifier("meeting.contentTabs")
+        ToolbarTabs(label: "Meeting content", tabs: MeetingWorkspaceTab.allCases,
+                    selection: Binding(get: { tab }, set: { tab = $0 }), title: \.rawValue)
+            .accessibilityIdentifier("meeting.contentTabs")
     }
 
     private var meetingActionMenuItems: [WorkspaceMenu.Item] {
-        var items: [WorkspaceMenu.Item] = [
+        let hasNotes = summary?.isEmpty == false || transcript?.segments.isEmpty == false
+        var items: [WorkspaceMenu.Item] = ExternalAgentHandoff.installed.map { target in
+            .init(title: "Open in \(target.rawValue)", identifier: "toolbar.openIn\(target.rawValue)",
+                  enabled: hasNotes, action: { open(in: target) })
+        }
+        items += [
             .init(title: "Draft follow-up…", identifier: "toolbar.followUp",
                   enabled: projection != nil && partialNotes == nil, action: { app.draftFollowUp(for: meeting) }),
             .separator,
@@ -502,12 +503,19 @@ private struct MeetingWorkspaceDetail: View {
             .init(title: isExportingAudio ? "Exporting audio..." : "Export audio",
                   enabled: !isExportingAudio && player.isLoaded, action: exportAudio),
             .init(title: "Show in Finder", action: { NSWorkspace.shared.activateFileViewerSelecting([folder]) }),
+            .init(title: "Copy Meeting Path", identifier: "toolbar.copyMeetingPath",
+                  action: { MeetingMarkdownActions.copyText(folder.path(percentEncoded: false)) }),
         ]
         if meeting.isMergedMeeting {
             items += [.separator, .init(title: "Undo merge…", identifier: "toolbar.undoMerge",
                                        action: { undoMergeConfirmation = true })]
         }
         return items
+    }
+
+    private func open(in target: ExternalAgentHandoff) {
+        exportError = target.open(prompt: ExternalAgentHandoff.prompt(for: meeting))
+            ? nil : "Couldn't open \(target.rawValue)."
     }
 
     @ViewBuilder private var meetingOverviewContent: some View {

@@ -65,14 +65,14 @@ jobs:
     name: Model drift
     needs: build
     if: github.event_name != 'workflow_dispatch' || inputs.jobs == 'all' || inputs.jobs == 'model-drift'
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90
         with:
-          xcode-version: "26.3"
+          xcode-version: "26.4.1"
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: unit-products
@@ -118,14 +118,14 @@ jobs:
     name: Day in the life with real Parakeet
     needs: build
     if: github.event_name == 'schedule' || inputs.jobs == 'all' || inputs.jobs == 'day-in-the-life'
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90
         with:
-          xcode-version: "26.3"
+          xcode-version: "26.4.1"
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: unit-products
@@ -177,14 +177,14 @@ jobs:
     name: Scale and concurrency
     needs: build
     if: github.event_name == 'schedule' || inputs.jobs == 'all' || inputs.jobs == 'scale'
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90
         with:
-          xcode-version: "26.3"
+          xcode-version: "26.4.1"
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
         with:
           name: unit-products

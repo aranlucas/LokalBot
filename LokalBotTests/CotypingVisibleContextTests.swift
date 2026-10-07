@@ -340,6 +340,36 @@ final class CotypingVisibleContextTests: XCTestCase {
         XCTAssertFalse(settings.cotypingUseMeetingMemory)
         XCTAssertFalse(settings.cotypingUseScreenMemory)
     }
+
+    /// On for new installs only: settings saved by an earlier version keep
+    /// what they had, and a missing key there means off.
+    func testVisibleTextIsOnForNewInstallsOnly() throws {
+        XCTAssertTrue(AppSettings().cotypingUseVisibleContext)
+        let decoder = JSONDecoder()
+        let saved = try JSONSerialization.data(withJSONObject: ["cotypingEnabled": true])
+        XCTAssertFalse(try decoder.decode(AppSettings.self, from: saved).cotypingUseVisibleContext)
+        for choice in [true, false] {
+            var settings = AppSettings()
+            settings.cotypingUseVisibleContext = choice
+            let roundTrip = try decoder.decode(AppSettings.self, from: JSONEncoder().encode(settings))
+            XCTAssertEqual(roundTrip.cotypingUseVisibleContext, choice)
+        }
+    }
+
+    /// PRIVACY.md promises nearby text never comes from a private window.
+    func testPrivateWindowsAreNeverRead() {
+        var settings = AppSettings()
+        settings.cotypingEnabled = true
+        settings.cotypingUseVisibleContext = true
+        let policy = CotypingVisibleContext.Policy(settings: settings)
+        var target = Self.fixture().target
+        XCTAssertTrue(policy.permits(target), "control: an ordinary window is read")
+        for title in ["Juniper launch — Private Browsing", "Juniper launch - Google Chrome (Incognito)",
+                      "Juniper launch — InPrivate"] {
+            target.windowTitle = title
+            XCTAssertFalse(policy.permits(target), title)
+        }
+    }
 }
 
 /// A value shared with a cache's clock or background reads.

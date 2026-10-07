@@ -191,7 +191,11 @@ struct OnboardingView: View {
                                 remoteText: "Selected transcript and work context is sent to the approved model server.")
             Toggle("Also prepare Autocomplete (optional)", isOn: $includeAutocomplete)
                 .accessibilityLabel("Also prepare Autocomplete (optional)")
-            if includeAutocomplete { modelRow("Autocomplete", model: app.settings.cotypingBuiltInModelID, role: .autocomplete) }
+            if includeAutocomplete {
+                modelRow("Autocomplete", model: app.settings.cotypingBuiltInModelID, role: .autocomplete)
+                Text("Autocomplete also reads the text just above where you type, such as the message you are answering, to fit its suggestions. It stays on this Mac and is never saved; turn it off in Settings → Writing.")
+                    .workspaceTextRole(.supporting)
+            }
             Button("Prepare Selected Models") {
                 app.modelRoles.startCoreModelDownloads(includeAutocomplete: includeAutocomplete)
             }.buttonStyle(.bordered).accessibilityIdentifier("onboarding.downloadModels")

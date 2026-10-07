@@ -171,7 +171,11 @@ The app may make these outbound connections:
   Before writing meeting notes with an approved OpenRouter origin, LokalBot
   also reads the selected model's published endpoint list from that origin to
   learn its context window. That request carries only the model id, with no
-  API key or content, and the answer is kept in local preferences.
+  API key or content, and the answer is kept in local preferences. To offer
+  the reasoning levels a model accepts, LokalBot reads OpenRouter's public
+  model list from that approved origin at most once a day, or asks an allowed
+  Ollama server for the selected model's capabilities. These requests carry
+  no API key or content; the Ollama one names only the model.
   Meeting notes sent to an approved server can include the calendar title,
   invited participants' names, titles of documents on screen during the call,
   and, when enabled, the invitation agenda; each has its own setting.
@@ -254,6 +258,12 @@ meeting access does not enable screen-memory access, or vice versa. A connected
 MCP client may transmit tool inputs and results under that client's own privacy
 terms.
 
+**Open in Claude** and **Open in Codex**, in a meeting's More menu, start a new
+conversation in that installed app with the meeting's title, summary, and as much
+of its transcript as fits already typed into the composer. LokalBot hands the
+text only to that app on this Mac; it is sent only if you press Send there, under
+that app's privacy terms. This does not enable Agent Access.
+
 Screen pixels and captured text follow the configured retention window by
 default. A screen moment you explicitly save retains its encrypted pixels,
 captured text, and semantic search vector until you unsave or delete that
@@ -319,13 +329,16 @@ discarded; only the outcome is counted. No typed text, app name, or window title
 is stored. **Reset** clears the counters, and **Copy measurements** puts the
 counts on the clipboard only when you click it.
 
-Autocomplete also has a separate, off-by-default **Use visible text above the
-field** setting. It reads Accessibility labels and messages in the focused
+Autocomplete also has a separate **Use visible text above the field** setting.
+It is on for new installs and only takes effect while Autocomplete itself is on;
+settings saved by earlier versions keep their choice, which was off unless you
+turned it on. Onboarding says so where Autocomplete is prepared, and Settings →
+Writing turns it off. It reads Accessibility labels and messages in the focused
 field's column, up to 600 points above it, within the same visible window/pane.
 It selects at most three excerpts within 420 characters. Hidden/offscreen text,
 other inputs, sidebars, toolbars, secure fields, credential-bearing snippets,
-and excluded apps/sites do not enter the prompt. Unknown browser origins
-abstain. Shared capture exclusions and autocomplete exclusions both apply.
+and excluded apps/sites do not enter the prompt, and private or incognito
+browser windows are never read. Unknown browser origins abstain. Shared capture exclusions and autocomplete exclusions both apply.
 This setting does not enable screen recording, screenshots, OCR, saved screen
 memory, or external access. Context is processed locally and held only in memory;
 context-grounded acceptances are excluded from saved learning. The setup preview

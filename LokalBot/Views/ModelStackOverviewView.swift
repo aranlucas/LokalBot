@@ -7,6 +7,7 @@ struct ModelStackOverviewView: View {
     @ObservedObject private var roles: ModelRoles
     @ObservedObject private var checks: ModelCheckController
     @ObservedObject private var setup: ModelSetupController
+    @State private var resolvedReasoning: ResolvedReasoningSupport?
     let present: (ModelsSettingsSheet) -> Void
     let connections: () -> Void
     let choosePreset: (ModelStackPreset) -> Void
@@ -170,6 +171,9 @@ struct ModelStackOverviewView: View {
             Text(model).font(.scaled(.body).weight(.semibold)).textSelection(.enabled)
             Label(locationLabel(role, status: status), systemImage: destination.icon)
                 .font(.scaled(.callout)).settingsModelLocation(destination)
+            if role == .think, app.settings.summarizerBackend != .appleIntelligence {
+                reasoningPicker.padding(.top, 2)
+            }
             if checks.testingRole == role {
                 Label("Checking…", systemImage: "ellipsis.circle")
                     .font(.scaled(.callout)).settingsSecondary()
@@ -191,6 +195,41 @@ struct ModelStackOverviewView: View {
                     .lineLimit(2)
                     .accessibilityIdentifier("models.stack.status.\(role.rawValue)")
             }
+        }
+    }
+
+    private var reasoningSupport: ReasoningSupport {
+        resolvedReasoning?.support(for: app.settings) ?? .known(for: app.settings)
+    }
+
+    /// Offers only the levels the selected model accepts (see
+    /// `ReasoningSupport`); a stored level it lacks shows as the one it maps to.
+    private var reasoningPicker: some View {
+        let support = reasoningSupport
+        return HStack(spacing: 6) {
+            Text("Reasoning").font(.scaled(.callout)).settingsSecondary()
+            if support.isAdjustable {
+                Picker("Reasoning", selection: Binding(
+                    get: { support.displayed(app.settings.thinkReasoningLevel) },
+                    set: { app.settings.thinkReasoningLevel = $0 })) {
+                    Text(support.automaticTitle).tag(ThinkReasoningLevel.automatic)
+                    ForEach(support.levels) { Text($0.displayName).tag($0) }
+                }
+                .labelsHidden().pickerStyle(.menu).controlSize(.small).fixedSize()
+                .accessibilityLabel("Think reasoning level")
+                .accessibilityIdentifier("models.think.reasoning")
+            } else {
+                Text("Set by the model").font(.scaled(.callout)).settingsSecondary()
+                    .accessibilityIdentifier("models.think.reasoning")
+            }
+        }
+        .help("How much the Think model reasons before it answers in summaries and Ask. The levels are the "
+              + "ones this model accepts. Automatic keeps LokalBot's per-task amounts and the server's own "
+              + "default. A level sets the most any task uses. Agent Mode follows this unless you pick its "
+              + "own level in the Agent composer.")
+        .settingTarget("settings.thinkReasoningLevel", selected: app.focusedSettingID)
+        .task(id: ReasoningSupport.lookupKey(for: app.settings)) {
+            resolvedReasoning = await .resolve(for: app.settings)
         }
     }
 
