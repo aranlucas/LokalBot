@@ -11,18 +11,18 @@ Each id is the repo the app downloads, taken from the source file listed.
 | 1 | Transcription | `aufklarer/Qwen3-ASR-1.7B-MLX-8bit` | 8-bit MLX weights (2.47 GB) | `LokalBot/Engines/PinnedSpeechModels.swift` | Default transcription. 8-bit MLX conversion of Qwen/Qwen3-ASR-1.7B (2.47 GB). Apache-2.0. |
 | 2 | Speaker diarization | `FluidInference/nemotron-3-diarization-coreml` | `Nemotron3Diarizer_offline.mlmodelc` (0.2 GB) | `LokalBot/Services/NemotronDiarizationModels.swift` | Default speaker diarization. Core ML offline model (0.2 GB) of nvidia/Nemotron-3-Diarization, run through FluidAudio. 14.6% DER vs 43.4% for the previous Pyannote setup on AMI. OpenMDW-1.1. |
 | 3 | Summaries and chat | `unsloth/Qwen3.5-4B-GGUF` | `Qwen3.5-4B-Q4_K_M.gguf` (2.74 GB) | `LokalBot/Engines/ModelCatalog.swift` | Default for summaries and chat. Q4_K_M (2.74 GB): a 26-minute meeting to notes in 33 s warm, about 85 tok/s decode on M4 Max. Apache-2.0. |
-| 4 | Semantic search | `mradermacher/harrier-oss-v1-0.6b-GGUF` | `harrier-oss-v1-0.6b.Q8_0.gguf` (0.64 GB) | `LokalBot/Services/EmbeddingIndex.swift` | Default semantic search. Q8_0 (0.64 GB) on a dedicated llama-server with embeddings enabled. Correct passage first for 40/48 test queries vs 35/48 for Qwen3 Embedding 0.6B. MIT. |
+| 4 | Semantic search | `ggml-org/embeddinggemma-2-GGUF` | `embeddinggemma-2-Q8_0.gguf` (0.31 GB) | `LokalBot/Services/EmbeddingIndex.swift` | Default semantic search. Q8_0 (0.31 GB) on a dedicated llama-server with embeddings enabled. Correct passage first for 43/48 test queries vs 40/48 for Harrier 0.6B, at half the size. Apache-2.0. |
 | 5 | Autocomplete | `unsloth/LFM2.5-1.2B-Instruct-GGUF` (quant of `LiquidAI/LFM2.5-1.2B-Instruct`) | `LFM2.5-1.2B-Instruct-Q4_K_M.gguf` (0.73 GB) | `LokalBot/Engines/ModelCatalog.swift` | Default autocomplete. Q4_K_M (0.73 GB) of LiquidAI's model; 484 ms p95 in LokalBot's cotyping gate. LFM Open License: check revenue eligibility. |
 
-The five files total 6.8 GB, matching the README's "Local AI, your choice" section. Screen text uses Apple Vision, which ships with macOS and has no repo to link. Every figure in the notes comes from the reports indexed in `Benchmarks/README.md`.
+The five files total 6.5 GB, matching the README's "Local AI, your choice" section. Screen text uses Apple Vision, which ships with macOS and has no repo to link. Every figure in the notes comes from the reports indexed in `Benchmarks/README.md`.
 
-Removed on 2026-09-30, because they are no longer defaults: `ibm-granite/granite-speech-4.1-2b-GGUF`, `unsloth/gemma-4-E4B-it-GGUF`, `Qwen/Qwen3-Embedding-0.6B-GGUF`, and `FluidInference/speaker-diarization-coreml`. Granite Speech, Gemma 4 E4B, and Pyannote Community-1 diarization remain optional in the app. Harrier replaced Qwen3 Embedding for search.
+Removed on 2026-09-30, because they are no longer defaults: `ibm-granite/granite-speech-4.1-2b-GGUF`, `unsloth/gemma-4-E4B-it-GGUF`, `Qwen/Qwen3-Embedding-0.6B-GGUF`, and `FluidInference/speaker-diarization-coreml`. Granite Speech, Gemma 4 E4B, and Pyannote Community-1 diarization remain optional in the app. Harrier replaced Qwen3 Embedding for search. On 2026-10-07 `mradermacher/harrier-oss-v1-0.6b-GGUF` was removed when EmbeddingGemma 2 replaced Harrier.
 
 Verification method (reproduce before publishing): query `https://huggingface.co/api/models/<id>` and confirm the file LokalBot loads exists in `siblings`. `scripts/create_collection.py` runs this check before it writes anything.
 
 ## Collection description (paste as-is; 143 characters)
 
-> LokalBot 6.8 GB default stack: transcription, diarization, summaries, search, autocomplete. Links only. https://github.com/stevyhacker/lokalbot
+> LokalBot 6.5 GB default stack: transcription, diarization, summaries, search, autocomplete. Links only. https://github.com/stevyhacker/lokalbot
 
 ## Updating the collection
 

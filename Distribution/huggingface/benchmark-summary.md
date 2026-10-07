@@ -4,14 +4,14 @@ Every number below is copied verbatim from a file in this repository; the **Sour
 
 ## Current default stack
 
-The defaults on a fresh install total about **6.8 GB** of model files if every role is used (`README.md`, "Local AI, your choice").
+The defaults on a fresh install total about **6.5 GB** of model files if every role is used (`README.md`, "Local AI, your choice").
 
 | Role | Default model | Format | Model files | Headline result | Source |
 | --- | --- | --- | ---: | --- | --- |
 | Transcription | Qwen3-ASR 1.7B | MLX 8-bit | 2.47 GB | Not yet measured (see gaps) | `README.md` |
 | Speaker diarization | Nemotron 3 (preview) via FluidAudio | Core ML | ~0.20 GB | 14.56% DER vs 43.44% for the previous default; 500× real time | `Benchmarks/NemotronDiarization/results/2026-09-23/REPORT.md` |
 | Summaries and chat | Qwen3.5 4B | `Q4_K_M` | 2.74 GB | 26-minute meeting summarized in 33.4 s warm / 59.8 s cold | `Benchmarks/SummaryEfficiency/results-2026-09-09.json` |
-| Semantic search | Harrier OSS v1 0.6B | `Q8_0` | 0.64 GB | Correct passage first for 40/48 queries vs 35/48 for Qwen3 Embedding 0.6B | `Benchmarks/ModelAlternatives/2026-09-07/REPORT.md` |
+| Semantic search | EmbeddingGemma 2 | `Q8_0` | 0.31 GB | Correct passage first for 43/48 queries vs 40/48 for Harrier 0.6B | `Benchmarks/EmbeddingGemma2/2026-10-07/REPORT.md` |
 | Autocomplete | LFM2.5 1.2B Instruct | `Q4_K_M` | 0.73 GB | 28/28 safety, 12/13 completions, 484–494 ms p95 | `Benchmarks/Cotyping/results/2026-07-21-model-debounce-benchmark.md` |
 | Screen text (opt-in) | Apple Vision | Built into macOS | — | 0.971 token F1 at 119.6 ms per synthetic screenshot | `Benchmarks/OCR/SYNTHETIC-RESULTS-2026-06-24.md` |
 
@@ -44,20 +44,21 @@ Decode speed across these runs was about 85 tokens/s (`Benchmarks/README.md`). T
 
 In the 2026-09-07 pilot, MiniCPM5-2B `Q4_K_M` was smaller (1.561 GB vs 2.741 GB) and faster on long context (18.68 s vs 32.41 s), but it looped on one summary and misattributed action items, so Qwen3.5 4B remains the default (`Benchmarks/ModelAlternatives/2026-09-07/REPORT.md`).
 
-## Semantic search — Harrier vs Qwen3 Embedding
+## Semantic search — EmbeddingGemma 2 vs Harrier
 
-48 authored queries (24 English, 24 Serbian/Montenegrin in Latin and Cyrillic) against a 110-document corpus; relevant passage IDs fixed before inference. Both models used Q8 weights, 1,024 dimensions, and the app's query/document prefixes. Source: `Benchmarks/ModelAlternatives/2026-09-07/REPORT.md`.
+48 authored queries (24 English, 24 Serbian/Montenegrin in Latin and Cyrillic) against a 60-passage synthetic corpus; relevant passage IDs fixed before inference. Both models used Q8 weights on the same llama.cpp build, each with its own prompts: Harrier returns 1,024 dimensions, EmbeddingGemma 2 returns 768. Source: `Benchmarks/EmbeddingGemma2/2026-10-07/REPORT.md`.
 
-| Measure | Qwen3 Embedding 0.6B Q8 (previous default) | Harrier 0.6B Q8 (current default) |
+| Measure | Harrier 0.6B Q8 (previous default) | EmbeddingGemma 2 Q8 (current default) |
 | --- | ---: | ---: |
-| Correct passage ranked first | 35/48 (72.9%) | **40/48 (83.3%)** |
-| Correct passage in top five | 45/48 (93.8%) | **47/48 (97.9%)** |
-| English top one | 22/24 | 22/24 |
-| Serbian/Montenegrin top one | 13/24 | **18/24** |
-| Mean reciprocal rank | 0.814 | **0.903** |
-| Repeated query latency, median | 11.85 ms | 11.97 ms |
+| Correct passage ranked first | 40/48 (83.3%) | **43/48 (89.6%)** |
+| Correct passage in top five | 47/48 (97.9%) | **48/48 (100%)** |
+| English top one | 22/24 | **23/24** |
+| Serbian/Montenegrin top one | 18/24 | **20/24** |
+| Mean reciprocal rank | 0.903 | **0.944** |
+| Repeated query latency, median | 13.1 ms | **9.0 ms** |
+| Model file | 0.64 GB | **0.31 GB** |
 
-The gain came from the Serbian/Montenegrin queries; English tied. 48 correlated, authored queries make this a pilot, not a general retrieval benchmark.
+The 6-point gain is within noise on 48 correlated queries (95% interval −4 to +17 points); EmbeddingGemma 2 was adopted because it matched or beat Harrier at half the size, half the idle memory, and faster queries. Harrier had replaced Qwen3 Embedding 0.6B (35/48) in September (`Benchmarks/ModelAlternatives/2026-09-07/REPORT.md`).
 
 ## Speech recognition — Granite Speech 4.1 vs Granite Speech 5
 
@@ -131,7 +132,7 @@ Notes from the same file: PP-OCRv6 was the only open-source option slightly abov
 | Single-chip coverage: every number above is one M4 Max (48 GB); no 16 GB, M1, M2, or M3 results | Re-run the summary replay, `--cotyping-bench`, and the OCR harness on M1, M2, and M3 machines before claiming per-chip guidance. |
 | No word-error rate or realtime factor for Qwen3-ASR 1.7B, the default transcription model | Run it through the 44-clip set from `Benchmarks/ModelAlternatives/2026-09-07/REPORT.md` alongside Parakeet and Whisper large-v3 turbo. |
 | Diarization tested only on four-speaker English AMI meetings | Add five-to-eight-speaker and non-English recordings, plus LokalBot's own mic/system-track captures. |
-| Search pilot is 48 authored queries | Validate Harrier with annotated queries over a larger real library. |
+| Search pilot is 48 authored queries | Validate EmbeddingGemma 2 with human-annotated queries over a larger real library. |
 | No summarization-quality evaluation for Qwen3.5 4B | Human-rate recaps on a fixed meeting corpus (faithfulness, action-item completeness); publish rubric + raw ratings. |
 | OCR sets are small (15 real + 5 synthetic screenshots) | Grow the synthetic manifest to ≥50 fixtures across app categories and re-run `score_text_outputs.py`. |
 | Cotyping keyword-hit count is self-declared a weak signal | Replace with a curated expected-completion suite reviewed by humans before quoting relevance numbers. |

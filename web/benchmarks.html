@@ -46,7 +46,7 @@
       <p class="eyebrow">Benchmarks</p>
       <h1>LokalBot local model benchmarks</h1>
       <p class="guide-hero__lead">Accuracy and speed of the models that transcribe, label speakers, search, summarize, and autocomplete on your Mac, with the methods, sources, and what has not been measured.</p>
-      <p class="guide-byline"><time datetime="2026-09-30">Updated September 30, 2026</time> · Measured on Apple M4 Max, 48 GB</p>
+      <p class="guide-byline"><time datetime="2026-10-07">Updated October 7, 2026</time> · Measured on Apple M4 Max, 48 GB</p>
     </header>
 
     <article class="guide-article">
@@ -54,7 +54,7 @@
         <ul>
           <li><strong>Speech recognition:</strong> Granite Speech 4.1 (Q4) scored a 4.42% normalized word error rate on 44 public clips and processed 33× realtime once warm.</li>
           <li><strong>Speaker diarization:</strong> Nemotron 3 cut the diarization error rate from 43.4% to 14.6% on 8 public AMI recordings, found the right number of speakers in all 8, and ran 500× realtime. It is now the default speaker model on new installs.</li>
-          <li><strong>Semantic search:</strong> Harrier 0.6B ranked the correct passage first for 40 of 48 queries (83.3%), against 35 of 48 for Qwen3-Embedding 0.6B. Harrier is now LokalBot's search model.</li>
+          <li><strong>Semantic search:</strong> EmbeddingGemma 2 ranked the correct passage first for 43 of 48 queries (89.6%), against 40 of 48 for Harrier 0.6B, with half the download and faster queries. EmbeddingGemma 2 is now LokalBot's search model.</li>
           <li><strong>Summaries:</strong> Qwen3.5 4B produced a recap and action list for a 26-minute meeting in 33 seconds with a warm runtime, and for a 91-minute meeting in 71–74 seconds.</li>
           <li><strong>Autocomplete:</strong> LFM2.5 1.2B passed all 28 safety scenarios with a 143 ms average and about 490 ms p95 latency.</li>
           <li><strong>Screenshot text:</strong> Apple Vision averaged 243 ms per real screenshot with 0.971 token F1 on the ground-truth set. Every open-source OCR engine tested was several times slower.</li>
@@ -95,21 +95,22 @@
         <p>Nemotron 3 ran as full-precision Core ML through FluidAudio. It reduced speaker confusion from 8.87 to 1.77 points, missed speech from 15.34 to 8.40, and false alarms from 19.23 to 4.38, and it beat the baseline on all eight recordings. The baseline is the pinned FluidAudio implementation of Pyannote Community-1; keeping overlapping output or switching to community defaults did not close the gap. That makes this a comparison with one implementation, not with every Pyannote setup. Pyannote Community-1 remains selectable in the app. Source: <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/NemotronDiarization/results/2026-09-23/REPORT.md" target="_blank" rel="noopener">diarization report</a>.</p>
 
         <h2>Semantic search quality</h2>
-        <p>Search was tested on 48 authored queries: 24 in English and 24 in Serbian/Montenegrin, across Latin and Cyrillic scripts. Queries ran against 110 passages, 86 of them distractors. The relevant passage for each query was fixed before inference. Both models used Q8 weights and 1,024-dimension vectors.</p>
+        <p>Search was tested on 48 authored queries: 24 in English and 24 in Serbian/Montenegrin, across Latin and Cyrillic scripts, against 60 synthetic passages. The relevant passage for each query was fixed before inference. Both models used Q8 weights on the same llama.cpp build; Harrier returns 1,024-dimension vectors and EmbeddingGemma 2 returns 768.</p>
         <div class="guide-table-wrap">
           <table class="guide-table">
-            <thead><tr><th>Measure</th><th>Qwen3-Embedding 0.6B</th><th>Harrier 0.6B</th></tr></thead>
+            <thead><tr><th>Measure</th><th>Harrier 0.6B</th><th>EmbeddingGemma 2</th></tr></thead>
             <tbody>
-              <tr><td>Correct passage ranked first</td><td>35/48 (72.9%)</td><td><strong>40/48 (83.3%)</strong></td></tr>
-              <tr><td>Correct passage in top five</td><td>45/48 (93.8%)</td><td><strong>47/48 (97.9%)</strong></td></tr>
-              <tr><td>English, ranked first</td><td>22/24</td><td>22/24</td></tr>
-              <tr><td>Serbian/Montenegrin, ranked first</td><td>13/24</td><td><strong>18/24</strong></td></tr>
-              <tr><td>Mean reciprocal rank</td><td>0.814</td><td><strong>0.903</strong></td></tr>
-              <tr><td>Median query latency</td><td>11.85 ms</td><td>11.97 ms</td></tr>
+              <tr><td>Correct passage ranked first</td><td>40/48 (83.3%)</td><td><strong>43/48 (89.6%)</strong></td></tr>
+              <tr><td>Correct passage in top five</td><td>47/48 (97.9%)</td><td><strong>48/48 (100%)</strong></td></tr>
+              <tr><td>English, ranked first</td><td>22/24</td><td><strong>23/24</strong></td></tr>
+              <tr><td>Serbian/Montenegrin, ranked first</td><td>18/24</td><td><strong>20/24</strong></td></tr>
+              <tr><td>Mean reciprocal rank</td><td>0.903</td><td><strong>0.944</strong></td></tr>
+              <tr><td>Median query latency</td><td>13.1 ms</td><td><strong>9.0 ms</strong></td></tr>
+              <tr><td>Model download</td><td>0.64 GB</td><td><strong>0.31 GB</strong></td></tr>
             </tbody>
           </table>
         </div>
-        <p>The gain came almost entirely from non-English queries. Forty-eight correlated queries are a pilot, not a general retrieval benchmark. Source: <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/ModelAlternatives/2026-09-07/REPORT.md" target="_blank" rel="noopener">model alternatives report</a>.</p>
+        <p>On 48 correlated queries the 6-point gain is within noise (95% interval −4 to +17 points), so EmbeddingGemma 2 was adopted because it matched or beat Harrier at half the download, half the idle memory, and faster queries, not for a proven quality jump. Harrier had replaced Qwen3-Embedding 0.6B (35/48) in September. Sources: <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/EmbeddingGemma2/2026-10-07/REPORT.md" target="_blank" rel="noopener">EmbeddingGemma 2 report</a>, <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/ModelAlternatives/2026-09-07/REPORT.md" target="_blank" rel="noopener">model alternatives report</a>.</p>
 
         <h2>Meeting summary and action-item speed</h2>
         <p>This replay runs LokalBot's production summary and action extractor against two meeting transcripts with Qwen3.5 4B (Q4_K_M) on llama.cpp b10173. &ldquo;Cold&rdquo; includes starting the model runtime; &ldquo;warm&rdquo; reuses a loaded runtime. Transcription time is excluded. Run date: September 9, 2026.</p>

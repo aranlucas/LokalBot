@@ -160,14 +160,14 @@ Yes. Export meeting content or enable Markdown, Obsidian, or Logseq memory expor
 
 Start with the built-in models, then change them in **Settings → Models**. LokalBot supports its bundled llama.cpp runtime, Ollama, OpenAI-compatible servers, and Apple Intelligence on supported Macs running macOS 26 or later. Remote servers require approval before receiving context.
 
-Different jobs use different models. These are the defaults on a fresh install, about 6.8 GB of model files if you use every role. They are not a RAM requirement:
+Different jobs use different models. These are the defaults on a fresh install, about 6.5 GB of model files if you use every role. They are not a RAM requirement:
 
 | Role | Default model | Format | Approx. model files |
 | --- | --- | --- | ---: |
 | Transcription | Qwen3-ASR 1.7B | MLX 8-bit | 2.47 GB |
 | Summaries and chat | Qwen3.5 4B | `Q4_K_M` | 2.74 GB |
 | Autocomplete | LFM2.5 1.2B Instruct | `Q4_K_M` | 0.73 GB |
-| Semantic search | Harrier OSS v1 0.6B | `Q8_0` | 0.64 GB |
+| Semantic search | EmbeddingGemma 2 | `Q8_0` | 0.31 GB |
 | Speaker diarization | Nemotron 3 (preview) via FluidAudio | Core ML | ~0.20 GB |
 
 Qwen3-ASR covers 52 languages and dialects. Transcription alternatives include Parakeet, Granite Speech, Whisper large-v3 turbo, SenseVoice for Chinese, Japanese, and Korean, and GigaAM for Russian; Pyannote Community-1 remains available for diarization. Model choices can vary by release; Settings shows the active selections and available presets. Speed and memory use depend on your Mac, model, context length, and other workloads.

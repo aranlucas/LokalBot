@@ -428,9 +428,9 @@ final class ActivityStoreTests: XCTestCase {
         XCTAssertEqual(ranked[0].score, ranked[1].score)
     }
 
-    /// Harrier scores unrelated screen text above the old 0.35 floor, so that
-    /// floor let every capture into semantic results.
-    func testSemanticScreenRankingDropsCapturesBelowTheHarrierFloor() {
+    /// EmbeddingGemma 2 scores unrelated screen text around 0.61, so Harrier's
+    /// 0.45 floor would let nearly every capture into semantic results.
+    func testSemanticScreenRankingDropsCapturesBelowTheEmbeddingFloor() {
         let now = Date(timeIntervalSince1970: 1_700_000_000)
         let vectorData: ([Float]) -> Data = { values in
             values.withUnsafeBufferPointer { buffer in
@@ -440,10 +440,10 @@ final class ActivityStoreTests: XCTestCase {
         let candidates = [
             EmbeddingIndex.ScreenCandidate(
                 snapshotID: 1, ts: now, app: "Terminal", text: "unrelated",
-                vector: vectorData([0.40, 0.92])),
+                vector: vectorData([0.52, 0.85])),
             EmbeddingIndex.ScreenCandidate(
                 snapshotID: 2, ts: now, app: "Notion", text: "related",
-                vector: vectorData([0.55, 0.84])),
+                vector: vectorData([0.66, 0.75])),
         ]
 
         let ranked = EmbeddingIndex.rankScreen(

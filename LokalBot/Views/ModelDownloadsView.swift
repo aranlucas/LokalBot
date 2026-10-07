@@ -94,11 +94,11 @@ struct ModelDownloadsView: View {
                 sectionTitle("Read aloud")
                 speechRow
             }
-            if !unusedOnly, matches("Harrier Search by meaning") {
+            if !unusedOnly, matches("EmbeddingGemma Search by meaning") {
                 HStack(spacing: 12) {
                     Image(systemName: "magnifyingglass").settingsModelIcon().frame(width: 24)
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Harrier 0.6B").font(.scaled(.body).weight(.medium))
+                        Text("EmbeddingGemma 2").font(.scaled(.body).weight(.medium))
                         Text("Search by meaning · Managed automatically")
                             .font(.scaled(.callout)).settingsSecondary()
                     }
@@ -112,7 +112,7 @@ struct ModelDownloadsView: View {
                 ContentUnavailableView("No unused models", systemImage: "checkmark.circle",
                                        description: Text("Models assigned to a feature are kept out of this list."))
             } else if !query.isEmpty, entries.isEmpty, transcriptionChoices.isEmpty,
-                      !matches("Kokoro Read aloud Speech"), !matches("Harrier Search by meaning") {
+                      !matches("Kokoro Read aloud Speech"), !matches("EmbeddingGemma Search by meaning") {
                 ContentUnavailableView.search(text: query)
             }
         }

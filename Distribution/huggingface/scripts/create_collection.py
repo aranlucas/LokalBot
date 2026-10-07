@@ -19,7 +19,7 @@ from huggingface_hub.errors import HfHubHTTPError
 NAMESPACE = "stevyhacker"
 TITLE = "LokalBot recommended local stack"
 DESCRIPTION = (
-    "LokalBot 6.8 GB default stack: transcription, diarization, summaries, "
+    "LokalBot 6.5 GB default stack: transcription, diarization, summaries, "
     "search, autocomplete. Links only. https://github.com/stevyhacker/lokalbot"
 )
 
@@ -39,9 +39,9 @@ ITEMS = [
         "about 85 tok/s decode on M4 Max. Apache-2.0.",
     ),
     (
-        "mradermacher/harrier-oss-v1-0.6b-GGUF",
-        "Default semantic search. Q8_0 (0.64 GB) on a dedicated llama-server with embeddings enabled. "
-        "Correct passage first for 40/48 test queries vs 35/48 for Qwen3 Embedding 0.6B. MIT.",
+        "ggml-org/embeddinggemma-2-GGUF",
+        "Default semantic search. Q8_0 (0.31 GB) on a dedicated llama-server with embeddings enabled. "
+        "Correct passage first for 43/48 test queries vs 40/48 for Harrier 0.6B, at half the size. Apache-2.0.",
     ),
     (
         "unsloth/LFM2.5-1.2B-Instruct-GGUF",
@@ -54,7 +54,7 @@ VERIFICATION = {
     "aufklarer/Qwen3-ASR-1.7B-MLX-8bit": ("model.safetensors",),
     "FluidInference/nemotron-3-diarization-coreml": ("Nemotron3Diarizer_offline.mlmodelc",),
     "unsloth/Qwen3.5-4B-GGUF": ("Q4_K_M",),
-    "mradermacher/harrier-oss-v1-0.6b-GGUF": ("Q8_0",),
+    "ggml-org/embeddinggemma-2-GGUF": ("Q8_0",),
     "LiquidAI/LFM2.5-1.2B-Instruct": (),
     "unsloth/LFM2.5-1.2B-Instruct-GGUF": ("Q4_K_M",),
 }
