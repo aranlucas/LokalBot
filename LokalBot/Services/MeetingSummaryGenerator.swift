@@ -56,8 +56,8 @@ enum MeetingSummaryGenerator {
     /// Notes parts target 6,000 estimated tokens on the built-in model and on
     /// servers whose window is unknown: small windows, slow prefill, and
     /// frequent checkpoints. A model with a known larger window takes bigger
-    /// parts, so a 20-minute meeting on Cerebras Qwen is one request instead
-    /// of four. Fixed steps, not a fraction of the window, keep a window that
+    /// parts, so a 20-minute meeting on Cerebras Qwen is two requests instead
+    /// of four (its schema enum limit keeps it from one; see `makeChunks`). Fixed steps, not a fraction of the window, keep a window that
     /// drifts between OpenRouter lookups from re-planning a meeting and
     /// discarding its saved parts. Even at one token per UTF-8 byte a part
     /// stays well inside its step's window beside the output allowance.

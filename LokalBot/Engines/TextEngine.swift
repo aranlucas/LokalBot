@@ -15,6 +15,11 @@ protocol TextEngine {
     /// dropped connections) itself. Callers must then not add a replay of
     /// their own, or one failure would be retried twice over.
     var handlesTransientRetries: Bool { get }
+    /// The most enum values a structured-output schema may hold in total, or
+    /// nil when the server has no such limit (it compiles schemas to a local
+    /// grammar). Notes parts list their source IDs as enums and are sized to
+    /// fit.
+    var structuredOutputEnumLimit: Int? { get }
     /// Nil means this provider has no supported tokenizer endpoint.
     func tokenCount(_ text: String) async throws -> Int?
     func generate(system: String, prompt: String, context: [String]) async throws -> String
@@ -350,6 +355,7 @@ extension TextEngine {
     var accountsForGenerationRequests: Bool { false }
     var minimumStructuredOutputTokens: Int { 512 }
     var handlesTransientRetries: Bool { false }
+    var structuredOutputEnumLimit: Int? { nil }
     func tokenCount(_ text: String) async throws -> Int? { nil }
     /// Backends without an output-budget control keep their existing behavior.
     func generate(system: String, prompt: String, context: [String],
@@ -548,6 +554,18 @@ struct OpenAICompatibleEngine: TextEngine {
     var accountsForGenerationRequests: Bool { true }
     var minimumStructuredOutputTokens: Int {
         reasoningCompatibility(options: .init(reasoningBudgetTokens: 0)) == .effort ? 2_048 : 512
+    }
+    /// Cerebras rejected a 709-value notes schema on 2026-10-07 ("cannot
+    /// exceed 500"); OpenAI documents 1,000. OpenRouter and other hosted
+    /// servers route to providers with unknown limits and get the smaller
+    /// one. Servers on this Mac compile the schema to a grammar.
+    var structuredOutputEnumLimit: Int? {
+        switch chatDialect {
+        case .llamaServer: nil
+        case .openAI: 1_000
+        case .openRouter: 500
+        case .generic: InferenceEndpointPolicy.isLoopback(baseURL) ? nil : 500
+        }
     }
 
     func tokenCount(_ text: String) async throws -> Int? {

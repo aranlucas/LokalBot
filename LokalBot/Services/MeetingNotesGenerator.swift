@@ -74,8 +74,12 @@ enum MeetingNotesGenerator {
             + units.map(\.line).joined(separator: "\n")
     }
 
+    /// Parts fit the window's step and, on hosted servers, the provider's
+    /// limit on schema enum values: each part's schema lists its source IDs
+    /// three times.
     static func makeChunks(evidence: MeetingNotesEvidence, engine: TextEngine, system: String,
-                           context: [String], contextTokens: Int) async throws -> [[MeetingNotesEvidence.Unit]] {
+                           context: [String], contextTokens: Int,
+                           template: NoteTemplate = .meeting) async throws -> [[MeetingNotesEvidence.Unit]] {
         guard !evidence.units.isEmpty else { return [] }
         let contextCeiling = contextTokens - 4_096 - 1_536
         // Without a tokenizer the 6,000-token step admits about 18 KB, so
@@ -83,6 +87,8 @@ enum MeetingNotesGenerator {
         // checkpoints); larger known windows take larger steps.
         let planningCeiling = min(MeetingSummaryGenerator.notesPartTokens(contextTokens: contextTokens), contextCeiling)
         let fixed = ([system] + context).joined(separator: "\n\n") + "\n\n"
+        let enumLimit = engine.structuredOutputEnumLimit
+        let speakers = Array(evidence.speakers.keys)
         var chunks: [[MeetingNotesEvidence.Unit]] = []
         var start = 0
         while start < evidence.units.count {
@@ -91,14 +97,18 @@ enum MeetingNotesGenerator {
             while true {
                 let units = Array(evidence.units[start..<end])
                 let size = try await promptSize(fixed + prompt(units: units, roster: evidence.roster), engine: engine)
-                if size.upperBound <= contextCeiling, size.planningEstimate <= planningCeiling {
+                let enums = enumLimit == nil ? 0 : MeetingNotesEvidence.enumValueCount(in: MeetingNotesEvidence.schema(
+                    units: units, speakers: speakers, template: template, maximumNotes: 1, maximumActions: 1))
+                if size.upperBound <= contextCeiling, size.planningEstimate <= planningCeiling,
+                   enumLimit.map({ enums <= $0 }) ?? true {
                     chunks.append(units); break
                 }
                 guard end > start + 1 else {
                     throw TextEngineError.badResponse("meeting context cannot fit the model's input allowance")
                 }
-                let ratio = min(Double(max(1, contextCeiling)) / Double(size.upperBound),
+                var ratio = min(Double(max(1, contextCeiling)) / Double(size.upperBound),
                                 Double(max(1, planningCeiling)) / Double(size.planningEstimate))
+                if let enumLimit { ratio = min(ratio, Double(enumLimit) / Double(max(1, enums))) }
                 let fraction = max(0.1, min(0.9, ratio * 0.9))
                 end = start + max(1, Int(Double(end - start) * fraction))
             }
@@ -137,7 +147,7 @@ enum MeetingNotesGenerator {
         let evidence = MeetingNotesEvidence(transcript: transcript)
         let system = systemPrompt(template: template, language: language)
         let chunks = try await makeChunks(evidence: evidence, engine: engine, system: system,
-                                          context: context, contextTokens: contextTokens)
+                                          context: context, contextTokens: contextTokens, template: template)
         // A part larger than the standard step gets proportionally more
         // output and records, so fewer, larger parts keep the same coverage.
         let fixed = ([system] + context).joined(separator: "\n\n") + "\n\n"

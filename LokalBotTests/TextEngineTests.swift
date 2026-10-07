@@ -212,6 +212,21 @@ final class TextEngineTests: XCTestCase {
         XCTAssertEqual(glm?["effort"] as? String, "low", "GLM 5.3 cannot switch reasoning off")
     }
 
+    func testHostedServersLimitSchemaEnumsAndLocalServersDoNot() {
+        func limit(_ baseURL: String, _ dialect: ChatCompletionDialect? = nil) -> Int? {
+            let url = URL(string: baseURL)!
+            return OpenAICompatibleEngine(baseURL: url, model: "m", chatDialect: dialect ?? .inferred(from: url))
+                .structuredOutputEnumLimit
+        }
+        XCTAssertEqual(limit("https://api.cerebras.ai/v1"), 500)
+        XCTAssertEqual(limit("https://api.openai.com/v1"), 1_000)
+        XCTAssertEqual(limit("https://openrouter.ai/api/v1"), 500)
+        XCTAssertEqual(limit("https://api.groq.com/openai/v1"), 500)
+        XCTAssertNil(limit("http://localhost:1234/v1"))
+        XCTAssertNil(limit("http://127.0.0.1:17872/v1", .llamaServer))
+        XCTAssertNil(OllamaEngine(baseURL: URL(string: "http://localhost:11434")!, model: "m").structuredOutputEnumLimit)
+    }
+
     func testKnownReasoningLevelsFollowProviderAndModel() {
         func levels(_ provider: ReasoningSupport.Provider, _ model: String) -> [ThinkReasoningLevel] {
             ReasoningSupport.known(provider: provider, model: model).levels

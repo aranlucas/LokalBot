@@ -94,6 +94,17 @@ struct MeetingNotesEvidence {
         return sections
     }
 
+    /// Every enum value in a schema, counted the way hosted servers limit
+    /// them: once per occurrence.
+    static func enumValueCount(in schema: Any) -> Int {
+        if let object = schema as? [String: Any] {
+            return (object["enum"] as? [Any])?.count ?? 0
+                + object.filter { $0.key != "enum" }.values.reduce(0) { $0 + enumValueCount(in: $1) }
+        }
+        if let array = schema as? [Any] { return array.reduce(0) { $0 + enumValueCount(in: $1) } }
+        return 0
+    }
+
     static func schema(units: [Unit], speakers: [String], template: NoteTemplate,
                        maximumNotes: Int, maximumActions: Int, actionTexts: [String]? = nil) -> [String: Any] {
         let source: [String: Any] = ["type": "string", "enum": Array(Set(units.map(\.source))).sorted()]
