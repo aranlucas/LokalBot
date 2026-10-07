@@ -258,6 +258,12 @@ meeting access does not enable screen-memory access, or vice versa. A connected
 MCP client may transmit tool inputs and results under that client's own privacy
 terms.
 
+**Open in Claude** and **Open in Codex**, in a meeting's More menu, start a new
+conversation in that installed app with the meeting's title, summary, and as much
+of its transcript as fits already typed into the composer. LokalBot hands the
+text only to that app on this Mac; it is sent only if you press Send there, under
+that app's privacy terms. This does not enable Agent Access.
+
 Screen pixels and captured text follow the configured retention window by
 default. A screen moment you explicitly save retains its encrypted pixels,
 captured text, and semantic search vector until you unsave or delete that
