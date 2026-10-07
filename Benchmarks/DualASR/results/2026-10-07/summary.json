@@ -1,0 +1,181 @@
+{
+ "reference_note": "FLEURS: human reference. Meeting: gemini-3.8-flash verbatim prompt, windows >=5 s with >=5 mostly-Latin words, truncated references dropped (23 of 36 windows).",
+ "wer": {
+  "Serbian": {
+   "q-Serbian": 14.9,
+   "q-auto": 17.3,
+   "q-en": 17.5,
+   "q-hr": 18.1,
+   "q-sr": 14.5,
+   "q-vote": 17.3,
+   "q-vote-bcms": 14.5,
+   "w-auto": 13.2,
+   "w-bs": 13.0,
+   "w-hr": 13.2,
+   "w-sr": 13.0
+  },
+  "Croatian": {
+   "q-Serbian": 29.4,
+   "q-auto": 26.8,
+   "q-en": 27.1,
+   "q-hr": 24.8,
+   "q-sr": 29.2,
+   "q-vote": 26.8,
+   "q-vote-bcms": 29.2,
+   "w-auto": 15.7,
+   "w-bs": 13.0,
+   "w-hr": 15.7,
+   "w-sr": 15.7
+  },
+  "Bosnian": {
+   "q-Serbian": 35.8,
+   "q-auto": 36.8,
+   "q-en": 37.1,
+   "q-hr": 36.8,
+   "q-sr": 36.5,
+   "q-vote": 36.8,
+   "q-vote-bcms": 36.5,
+   "w-auto": 22.5,
+   "w-bs": 22.3,
+   "w-hr": 22.8,
+   "w-sr": 28.5
+  },
+  "Mostly Serbian + English": {
+   "q-Serbian": 32.6,
+   "q-auto": 32.8,
+   "q-en": 33.0,
+   "q-hr": 29.5,
+   "q-sr": 32.5,
+   "q-vote": 32.8,
+   "q-vote-bcms": 32.5,
+   "w-auto": 30.0,
+   "w-bs": 28.0,
+   "w-hr": 28.4,
+   "w-sr": 28.5
+  },
+  "Mostly English + Serbian": {
+   "q-Serbian": 68.2,
+   "q-auto": 12.4,
+   "q-en": 14.3,
+   "q-hr": 40.9,
+   "q-sr": 46.7,
+   "q-vote": 14.3,
+   "q-vote-bcms": 14.3,
+   "w-auto": 46.9,
+   "w-bs": 51.8,
+   "w-hr": 78.8,
+   "w-sr": 69.7
+  },
+  "Meeting (cloud ref)": {
+   "q-Serbian": 41.9,
+   "q-auto": 38.3,
+   "q-en": 39.1,
+   "q-hr": 38.5,
+   "q-sr": 38.8,
+   "q-vote": 38.3,
+   "q-vote-bcms": 38.8,
+   "w-auto": 31.8,
+   "w-bs": 26.9,
+   "w-hr": 27.4,
+   "w-sr": 36.2
+  }
+ },
+ "ref_words": {
+  "Serbian": 531,
+  "Croatian": 616,
+  "Bosnian": 628,
+  "Mostly Serbian + English": 536,
+  "Mostly English + Serbian": 623,
+  "Meeting (cloud ref)": 1589
+ },
+ "speed_x_realtime": {
+  "q-Serbian": 39.4,
+  "q-auto": 32.9,
+  "q-en": 41.7,
+  "q-hr": 43.4,
+  "q-sr": 36.1,
+  "q-vote": 35.9,
+  "q-vote-bcms": 19.8,
+  "w-auto": 15.9,
+  "w-bs": 17.4,
+  "w-hr": 16.4,
+  "w-sr": 15.8
+ },
+ "oracle": {
+  "q-auto|w-auto": {
+   "Serbian": 13.0,
+   "Croatian": 14.3,
+   "Bosnian": 22.3,
+   "Mostly Serbian + English": 28.2,
+   "Mostly English + Serbian": 12.4,
+   "Meeting (cloud ref)": 29.6
+  },
+  "w-bs|q-auto": {
+   "Serbian": 12.8,
+   "Croatian": 13.0,
+   "Bosnian": 22.1,
+   "Mostly Serbian + English": 26.3,
+   "Mostly English + Serbian": 12.4,
+   "Meeting (cloud ref)": 26.5
+  },
+  "w-bs|q-hr": {
+   "Serbian": 13.0,
+   "Croatian": 13.0,
+   "Bosnian": 22.1,
+   "Mostly Serbian + English": 26.3,
+   "Mostly English + Serbian": 29.5,
+   "Meeting (cloud ref)": 26.5
+  },
+  "w-bs|q-sr": {
+   "Serbian": 12.2,
+   "Croatian": 13.0,
+   "Bosnian": 22.0,
+   "Mostly Serbian + English": 24.6,
+   "Mostly English + Serbian": 35.5,
+   "Meeting (cloud ref)": 26.9
+  }
+ },
+ "judges_q-auto_vs_w-bs": {
+  "groups": [
+   "FLEURS Serbian/Croatian/Bosnian",
+   "FLEURS code-switched",
+   "Meeting (cloud ref)"
+  ],
+  "always Qwen auto": [
+   28.7,
+   21.8,
+   38.3
+  ],
+  "always Whisper bs": [
+   19.0,
+   40.8,
+   26.9
+  ],
+  "oracle": [
+   18.5,
+   18.8,
+   26.5
+  ],
+  "rule": [
+   27.8,
+   23.5,
+   37.9
+  ],
+  "logistic (leave-one-item-out)": [
+   19.0,
+   40.8,
+   31.8
+  ],
+  "llm Qwen3.5-4B Q4_K_M A/B": [
+   20.9,
+   24.6,
+   29.6
+  ]
+ },
+ "cloud_reference_calibration": {
+  "model": "gemini-3.8-flash",
+  "fleurs_serbian_wer": 2.8,
+  "fleurs_serbian_and_mixed_wer_excluding_one_truncated_window": 5.3,
+  "truncated_windows": 1
+ }
+}
