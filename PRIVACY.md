@@ -84,10 +84,17 @@ corrected. If cleanup fails, a durable revocation record blocks that memory
 from further use until cleanup succeeds. Exported copies remain where you saved
 them.
 
-Unchanged, app-generated daily journals retract when their primary evidence is
-removed or corrected, including scheduled capture retention. Edited and legacy
-unsigned journals are user-owned files and remain in the library's `journal`
-folder until you remove them. Saved Ask conversations and Agent history also
+Unchanged, app-generated daily journals are withdrawn when you delete their
+sources: a meeting, a meeting's trimmed boundaries, a captured screen or
+capture range, saved agent sessions, or older captures when you apply a shorter
+retention. Reprocessing a meeting, transcript and action-item edits, saved
+moments, and re-read agent sessions keep the journal, marked out of date, until
+it is regenerated. Scheduled retention is not a deletion for this purpose
+either: like Dream reports, a day's journal outlasts the screen text, titles,
+and agent sessions it was written from, so it can hold text that has since
+expired. Delete a day's journal from the library's `journal` folder to remove
+it. Edited and legacy unsigned journals are user-owned files and remain there
+until you remove them. Saved Ask conversations and Agent history also
 have independent lifetimes: delete conversations in Ask or use **Clear saved
 Agent history**. Source expiry does not erase text already copied into those
 conversations. Daily-memory exports and routine outputs remain in your chosen

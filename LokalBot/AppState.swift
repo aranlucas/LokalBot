@@ -499,7 +499,7 @@ final class AppState: ObservableObject {
         storage: storage,
         mutateEvidence: { [weak self] meetings, mutation in
             guard let self else { throw CancellationError() }
-            try self.withPrimaryEvidenceChange(for: meetings, mutation)
+            try self.withPrimaryEvidenceChange(for: meetings, .revision, mutation)
         },
         onEvidenceChanged: { [weak self] meetings in
             self?.primaryEvidenceDidChange(for: meetings)
@@ -673,7 +673,7 @@ final class AppState: ObservableObject {
         store: activityStore,
         configuration: { [store = settingsStore] in .init(settings: store.current) },
         mutateEvidence: { [weak self] days, mutation in
-            try self?.withPrimaryEvidenceChange(on: days, mutation)
+            try self?.withPrimaryEvidenceChange(on: days, .revision, mutation)
         },
         onChange: { [weak self] days in self?.codingAgentEvidenceDidChange(on: days) })
     /// Meeting-recording lifecycle: recorders, watchdog, timer tick, prewarm.
@@ -1016,9 +1016,7 @@ final class AppState: ObservableObject {
             self?.objectWillChange.send()
         }
         pipeline.onArtifactsWillChange = { [weak self] meeting in
-            guard let self else { return }
-            try self.dayDigest.retractGeneratedJournals(for: [meeting.startedAt])
-            self.dayDigest.reconsiderEvidence(for: meeting.startedAt)
+            self?.meetingArtifactsWillChange(meeting)
         }
         pipeline.onArtifactsWritten = { [weak self] meeting in
             guard let self else { return }
@@ -1603,7 +1601,7 @@ final class AppState: ObservableObject {
             do {
                 await pipeline.forget(meetingIDs: [mergedMeeting.id])
                 try await speakerIdentity.prepareDeletion(meeting: mergedMeeting)
-                try withPrimaryEvidenceChange(for: [mergedMeeting]) {
+                try withPrimaryEvidenceChange(for: [mergedMeeting], .removal) {
                     try self.storage.deleteMeeting(mergedMeeting)
                 }
                 meetings.removeAll { $0.id == mergedMeeting.id }
@@ -1672,7 +1670,7 @@ final class AppState: ObservableObject {
         let folder = updated.folderURL(in: storage)
         let existing = try pipeline.loadTranscript(from: folder)
         // Invalidate derived claims even when no complete segment survives.
-        try withPrimaryEvidenceChange(for: [updated]) {
+        try withPrimaryEvidenceChange(for: [updated], .removal) {
             try MeetingAttributionArtifacts.invalidate(in: folder)
             try pipeline.saveTranscript(range.applying(to: existing), for: updated)
             try storage.saveMeta(updated)
@@ -1721,7 +1719,7 @@ final class AppState: ObservableObject {
 
     func saveTranscript(_ transcript: Transcript, for meeting: Meeting) throws {
         let transcript = speakerIdentity.applyingLatestDecision(to: transcript, meetingID: meeting.id)
-        try withPrimaryEvidenceChange(for: [meeting]) {
+        try withPrimaryEvidenceChange(for: [meeting], .revision) {
             try pipeline.saveTranscript(transcript, for: meeting)
         }
         outcomeIndex.refresh(meeting: meeting)
@@ -1802,43 +1800,64 @@ final class AppState: ObservableObject {
                          activityOnly: activityOnly)
     }
 
-    func withPrimaryEvidenceChange<T>(on days: [Date], _ mutation: () throws -> T) throws -> T {
+    /// Reprocessing revises a meeting; it does not delete it. On 2026-10-07 a
+    /// summary rerun started 17 s after a manual digest and removed it before
+    /// any new notes existed. The digest now stays, marked out of date, until
+    /// it is regenerated.
+    func meetingArtifactsWillChange(_ meeting: Meeting) {
+        dayDigest.reconsiderEvidence(for: meeting.startedAt)
+    }
+
+    /// What an evidence write means for that day's generated digest.
+    enum EvidenceChange {
+        /// Reprocessing, corrections, outcome edits, saved moments, and
+        /// re-read agent sessions. The digest stays, marked out of date,
+        /// until it is regenerated.
+        case revision
+        /// The person deleted the source. Its unedited generated digest is
+        /// withdrawn with it (PRIVACY.md).
+        case removal
+    }
+
+    func withPrimaryEvidenceChange<T>(on days: [Date], _ change: EvidenceChange,
+                                      _ mutation: () throws -> T) throws -> T {
         if settings.cotypingUseMeetingMemory || settings.cotypingUseScreenMemory { cotyping.invalidateMemoryContext() }
         defer { primaryEvidenceDidChange(on: days) }
         purgeDigestSegmentAnswers(for: days)
         return try dreamStore.withScreenEvidenceMutation(on: days) {
-            try dayDigest.retractGeneratedJournals(for: days)
+            if change == .removal { try dayDigest.retractGeneratedJournals(for: days) }
             return try mutation()
         }
     }
 
     /// Scheduled retention expires screen text, titles, and agent sessions on
-    /// their own clock; nobody deleted or corrected them. Generated journals
-    /// still retract with their evidence (PRIVACY.md), but Dream reports and
-    /// work memory are long-term memory: they outlive the screen window and
-    /// go only when a source is deleted or corrected, or the memory is cleared.
-    /// Before, every pass wiped nearly all of it, because each memory change
-    /// inherits the sources of every other item.
+    /// their own clock; nobody deleted or corrected them. Day digests, Dream
+    /// reports, and work memory are long-term memory: they outlive the screen
+    /// window and go only when a source is deleted, or the memory is cleared.
+    /// Before, every pass wiped nearly all Dream memory, because each memory
+    /// change inherits the sources of every other item, and each expiring day
+    /// lost its digest.
     func withScheduledRetention<T>(on days: [Date], _ mutation: () throws -> T) throws -> T {
         defer { scheduledRetentionDidRemoveEvidence(on: days) }
         purgeDigestSegmentAnswers(for: days)
-        try dayDigest.retractGeneratedJournals(for: days)
         return try mutation()
     }
 
+    /// The digest is not reconsidered: rebuilt from what retention left, it
+    /// would replace the fuller one.
     private func scheduledRetentionDidRemoveEvidence(on days: [Date]) {
         guard !days.isEmpty else { return }
-        dayDigest.reconsiderEvidence(for: days)
         dailyMemoryExportScheduler.reconsider(days: days)
         memoryRoutines.reconsiderEvidence()
     }
 
-    private func withPrimaryEvidenceChange<T>(for meetings: [Meeting], _ mutation: () throws -> T) throws -> T {
+    private func withPrimaryEvidenceChange<T>(for meetings: [Meeting], _ change: EvidenceChange,
+                                              _ mutation: () throws -> T) throws -> T {
         if settings.cotypingUseMeetingMemory || settings.cotypingUseScreenMemory { cotyping.invalidateMemoryContext() }
         defer { primaryEvidenceDidChange(for: meetings) }
         purgeDigestSegmentAnswers(for: meetings.map(\.startedAt))
         return try dreamStore.withMeetingEvidenceMutation(for: meetings) {
-            try dayDigest.retractGeneratedJournals(for: meetings.map(\.startedAt))
+            if change == .removal { try dayDigest.retractGeneratedJournals(for: meetings.map(\.startedAt)) }
             return try mutation()
         }
     }
@@ -1981,7 +2000,7 @@ final class AppState: ObservableObject {
         let starts = try activityStore.codingAgentBurstStarts()
         guard !starts.isEmpty else { return }
         let days = Array(Set(starts.values.map { Calendar.current.startOfDay(for: $0) }))
-        try withPrimaryEvidenceChange(on: days) {
+        try withPrimaryEvidenceChange(on: days, .removal) {
             try activityStore.deleteCodingAgentBursts(ids: Array(starts.keys))
         }
         NotificationCenter.default.post(name: .codingAgentEvidenceChanged, object: nil)
@@ -2371,7 +2390,7 @@ final class AppState: ObservableObject {
                         // not just those of the generated parent. Delete the
                         // parent last so partial failure cannot restore sources.
                         try await speakerIdentity.prepareDeletion(meeting: item)
-                        try withPrimaryEvidenceChange(for: [item]) {
+                        try withPrimaryEvidenceChange(for: [item], .removal) {
                             try storage.deleteMeeting(item)
                         }
                         embeddingIndexTasks.removeValue(forKey: item.id)?.task.cancel()
