@@ -11,15 +11,9 @@ struct SettingsView: View {
     @StateObject private var updates = AppUpdateManager.shared
     @State private var cliMessage: String?
     @State private var writingAdvancedExpanded = false
-    @State private var writingSection = WritingSection.autocomplete
     @State private var forgettingCotypingLearning = false
     @State private var confirmingDreamMemoryClear = false
     @State private var cotypingLearningMessage: String?
-
-    private enum WritingSection: String, CaseIterable {
-        case autocomplete = "Autocomplete"
-        case dictation = "Dictation"
-    }
 
     // Settings search + live system readouts.
     @State private var settingsQuery = ""
@@ -83,7 +77,7 @@ struct SettingsView: View {
                                 DispatchQueue.main.async { proxy.scrollTo(id, anchor: .center) }
                             }
                     }
-                    .id("\(app.settingsTab)-\(writingSection.rawValue)")
+                    .id(app.settingsTab)
                 }
             }.frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity)
                 .accessibilityElement(children: .contain)
@@ -94,11 +88,6 @@ struct SettingsView: View {
         .workspaceMinimumHeight(600)
         .tint(Brand.teal)
         .navigationTitle(Text(LocalizedStringKey(queryIsEmpty ? app.settingsTab.displayName : "Search settings")))
-        .onChange(of: app.focusedSettingID, initial: true) {
-            if let id = app.focusedSettingID, app.settingsTab == .writing {
-                writingSection = id.hasPrefix("settings.dictation") ? .dictation : .autocomplete
-            }
-        }
         .onAppear {
             power.start()
             permissions.startPolling()
@@ -163,7 +152,9 @@ struct SettingsView: View {
         case .dayMemory:
             "Activity, captured context, daily briefs, routines, and exports."
         case .writing:
-            "Dictation, autocomplete, and your writing profile."
+            "Autocomplete and your writing profile."
+        case .dictation:
+            "The dictation shortcut, speech model, and where the text goes."
         case .models:
             "Choose the models behind Transcribe, Think, and Autocomplete."
         case .privacy:
@@ -184,20 +175,11 @@ struct SettingsView: View {
         case .dayMemory:
             dayTrackingSection; routinesSection; dreamingSection
         case .writing:
-            Section {
-                Picker("Writing tool", selection: $writingSection) {
-                    ForEach(WritingSection.allCases, id: \.self) { Text(LocalizedStringKey($0.rawValue)).tag($0) }
-                }
-                .pickerStyle(.segmented).tint(Brand.tealFill)
-                .accessibilityIdentifier("settings.writing.sections")
-            }
-            if writingSection == .autocomplete {
-                AutocompleteExperienceView()
-                cotypingSection
-            } else {
-                Section("Dictation") { DictationSettingsControls() }
-                DictationView(dictation: app.dictation, embedded: true)
-            }
+            AutocompleteExperienceView()
+            cotypingSection
+        case .dictation:
+            Section("Dictation") { DictationSettingsControls() }
+            DictationView(dictation: app.dictation, embedded: true)
         case .models:
             EmptyView() // handled by the ModelsView branch in body
         case .privacy:
@@ -217,7 +199,6 @@ struct SettingsView: View {
                 app.settingsTab = result.category
                 app.focusedSettingID = result.focusTarget(in: app.settings)
                 writingAdvancedExpanded = result.category == .writing
-                writingSection = result.id.hasPrefix("settings.dictation") ? .dictation : .autocomplete
                 settingsQuery = ""
             } label: {
                 VStack(alignment: .leading, spacing: 4) {

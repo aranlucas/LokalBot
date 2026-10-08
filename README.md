@@ -59,7 +59,7 @@ Today brings your day digest and open meeting actions together. Timeline groups 
 
 ### Talk instead of typing. Finish the sentence.
 
-Turn on Dictation in **Settings → Writing**, then hold **⌥ Space**, speak, and release to insert text at your cursor in any app. Turn on local Autocomplete in the same place for suggestions as you type: press **Tab** to accept, or keep typing. Transcription and suggestions run on your Mac, and you can rehearse Autocomplete in the app before using it everywhere.
+Turn on Dictation in **Settings → Dictation**, then hold **⌥ Space** (or a shortcut you choose there), speak, and release to insert text at your cursor in any app. Turn on local Autocomplete in **Settings → Writing** for suggestions as you type: press **Tab** to accept, or keep typing. Transcription and suggestions run on your Mac, and you can rehearse Autocomplete in the app before using it everywhere.
 
 <div align="center"><a href="Assets/screenshots/cotyping.png"><img src="Assets/screenshots/cotyping.png" alt="Settings → Writing showing Autocomplete readiness and a local suggestion preview you can rehearse" width="920" /></a></div>
 

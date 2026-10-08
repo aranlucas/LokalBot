@@ -99,6 +99,7 @@
 "Autocomplete" = "自动补全";
 "Autocomplete also reads the text just above where you type, such as the message you are answering, to fit its suggestions. It stays on this Mac and is never saved; turn it off in Settings → Writing." = "自动补全还会读取输入位置上方的文字，例如正在回复的消息，以提供合适的建议。这些文字仅留在本机且不会保存；可在“设置 → 写作”中关闭。";
 "Autocomplete and global dictation shortcuts can be enabled later from Write." = "稍后可在写作设置中启用自动补全和全局听写快捷键。";
+"Autocomplete and your writing profile." = "自动补全和个人写作偏好。";
 "Autocomplete model" = "自动补全模型";
 "Autocorrect the current word" = "自动纠正当前单词";
 "Automatic" = "自动";
@@ -265,6 +266,7 @@
 "Dictation composition follows Think and will also run locally." = "听写撰写使用思考模型，也将在本机运行。";
 "Dictation composition will also use this model." = "听写撰写也将使用此模型。";
 "Dictation output" = "听写输出方式";
+"Dictation settings…" = "听写设置…";
 "Dictation shortcut" = "听写快捷键";
 "Dictation trigger" = "听写触发方式";
 "Dictation, autocomplete, and your writing profile." = "听写、自动补全和个人写作偏好。";
@@ -935,6 +937,7 @@
 "Text size" = "文字大小";
 "The answer can retrieve passages from these meetings and screen moments, including collapsed matches. It may use only the passages relevant to your question." = "回答可检索这些会议和屏幕时刻中的片段，包括折叠的匹配项。可能只使用与你的问题相关的片段。";
 "The command-line helper is not included in this build. Install a current LokalBot release to use Agent CLI access." = "此构建未包含命令行工具。请安装新版 LokalBot 以使用智能体命令行访问。";
+"The dictation shortcut, speech model, and where the text goes." = "听写快捷键、语音模型以及文字的去向。";
 "The model downloads when semantic search is first used. Meeting text and text captured from your screen are indexed locally." = "首次使用语义搜索时下载模型。会议文字和从屏幕采集的文字会在本机建立索引。";
 "The opened source remains visible outside these filters." = "已打开的来源不受这些筛选条件影响，仍会显示。";
 "The original action, due phrase and citations stay available." = "原始行动项、截止时间表述和引用仍会保留。";

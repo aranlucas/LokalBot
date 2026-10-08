@@ -99,6 +99,7 @@
 "Autocomplete" = "Autocomplete";
 "Autocomplete also reads the text just above where you type, such as the message you are answering, to fit its suggestions. It stays on this Mac and is never saved; turn it off in Settings → Writing." = "Autocomplete also reads the text just above where you type, such as the message you are answering, to fit its suggestions. It stays on this Mac and is never saved; turn it off in Settings → Writing.";
 "Autocomplete and global dictation shortcuts can be enabled later from Write." = "Autocomplete and global dictation shortcuts can be enabled later from Write.";
+"Autocomplete and your writing profile." = "Autocomplete and your writing profile.";
 "Autocomplete model" = "Autocomplete model";
 "Autocorrect the current word" = "Autocorrect the current word";
 "Automatic" = "Automatic";
@@ -265,6 +266,7 @@
 "Dictation composition follows Think and will also run locally." = "Dictation composition follows Think and will also run locally.";
 "Dictation composition will also use this model." = "Dictation composition will also use this model.";
 "Dictation output" = "Dictation output";
+"Dictation settings…" = "Dictation settings…";
 "Dictation shortcut" = "Dictation shortcut";
 "Dictation trigger" = "Dictation trigger";
 "Dictation, autocomplete, and your writing profile." = "Dictation, autocomplete, and your writing profile.";
@@ -935,6 +937,7 @@
 "Text size" = "Text size";
 "The answer can retrieve passages from these meetings and screen moments, including collapsed matches. It may use only the passages relevant to your question." = "The answer can retrieve passages from these meetings and screen moments, including collapsed matches. It may use only the passages relevant to your question.";
 "The command-line helper is not included in this build. Install a current LokalBot release to use Agent CLI access." = "The command-line helper is not included in this build. Install a current LokalBot release to use Agent CLI access.";
+"The dictation shortcut, speech model, and where the text goes." = "The dictation shortcut, speech model, and where the text goes.";
 "The model downloads when semantic search is first used. Meeting text and text captured from your screen are indexed locally." = "The model downloads when semantic search is first used. Meeting text and text captured from your screen are indexed locally.";
 "The opened source remains visible outside these filters." = "The opened source remains visible outside these filters.";
 "The original action, due phrase and citations stay available." = "The original action, due phrase and citations stay available.";

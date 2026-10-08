@@ -32,7 +32,7 @@ struct DictationView: View {
                     "Shortcut",
                     value: app.settings.dictationEnabled ? app.settings.dictationShortcut.displayLabel : "Off")
                 LabeledContent("Shortcut output", value: app.settings.dictationOutputMode.label)
-                Button("Writing settings…") { app.openSettings(tab: .writing) }
+                Button("Dictation settings…") { app.openSettings(tab: .dictation) }
             }
         }
         modelSection
