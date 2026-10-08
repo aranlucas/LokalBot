@@ -1,0 +1,56 @@
+{
+  "appSHA256": "c12fd858b051a914c3089b5256aa280fed61f4c7463963e7438ec3e57c1ac56e",
+  "serverSHA256": "9c7232e055e96b6594884e407094ded43bc66ec48e1ef2fca3404a4940057511",
+  "modelSHA256": "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4",
+  "modelFile": "Qwen3.5-4B-Q4_K_M.gguf",
+  "corpusSHA256": "7063219ea6bd61a439b07ed8042142844e259f7fb81298b53872f1bcfdfff17c",
+  "scriptSHA256": "9129b7d3eab6f371138467dccf5e83ab1c087fe1fab8d5b36da5d2747a2a7b06",
+  "split": "development",
+  "caseIDs": [
+    "dev-deadline",
+    "dev-memory",
+    "dev-linked",
+    "dev-conflict",
+    "dev-fidelity",
+    "dev-transcribe"
+  ],
+  "serverArguments": [
+    "/private/tmp/lokalbot-bench-stage/LokalBot.app/Contents/Resources/llama-cpp/llama-server",
+    "-m",
+    "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "53606",
+    "-c",
+    "32768",
+    "-ngl",
+    "99",
+    "--parallel",
+    "1",
+    "--jinja",
+    "--no-webui",
+    "--seed",
+    "12648430"
+  ],
+  "variants": [
+    "neither",
+    "visible",
+    "memory",
+    "both",
+    "all"
+  ],
+  "windowPolicies": {
+    "head": {
+      "limit": 12000,
+      "keepsEnd": false
+    },
+    "tail": {
+      "limit": 2000,
+      "keepsEnd": true
+    }
+  },
+  "routing": "relays",
+  "settings": "Production Compose: temperature 0.2, max 4096 output tokens, reasoning disabled; fixed server seed",
+  "scope": "Synthetic recognized speech, AX trees and saved facts. No microphone, live screen or user library."
+}
