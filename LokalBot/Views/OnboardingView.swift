@@ -61,7 +61,7 @@ struct OnboardingView: View {
                     .accessibilityValue("Step \(step.rawValue + 1) of 4")
                     .accessibilityIdentifier("onboarding.progress")
                 }
-                Text(step.title).font(.scaled(.largeTitle).bold()).multilineTextAlignment(.center)
+                Text(LocalizedStringKey(step.title)).font(.scaled(.largeTitle).bold()).multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 28).padding(.top, 24).padding(.bottom, 8)
@@ -84,6 +84,15 @@ struct OnboardingView: View {
             }
             Divider()
             HStack {
+                Picker("App language", selection: $app.settings.appLanguage) {
+                    ForEach(AppLanguage.allCases) { language in
+                        Text(LocalizedStringKey(language.displayName)).tag(language)
+                    }
+                }
+                .labelsHidden()
+                .controlSize(.small)
+                .fixedSize()
+                .accessibilityIdentifier("onboarding.appLanguage")
                 if mode == .welcome {
                     Text("Step \(step.rawValue + 1) of 4").font(.scaled(.callout)).foregroundStyle(.secondary)
                 }
@@ -101,7 +110,7 @@ struct OnboardingView: View {
                         dismiss()
                     }.primaryActionButton().accessibilityIdentifier("onboarding.finish")
                 } else {
-                    Button(step == .permissions ? "Continue with Current Access" : "Continue") {
+                    Button(LocalizedStringKey(step == .permissions ? "Continue with Current Access" : "Continue")) {
                         go(to: Step(rawValue: step.rawValue + 1) ?? .review)
                     }.primaryActionButton().keyboardShortcut(.defaultAction)
                 }
@@ -133,7 +142,7 @@ struct OnboardingView: View {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
                     Picker("Detected Meetings", selection: $draft.meetingMode) {
-                        ForEach(AppSettings.AutoRecordMode.allCases) { Text($0.rawValue).tag($0) }
+                        ForEach(AppSettings.AutoRecordMode.allCases) { Text(LocalizedStringKey($0.rawValue)).tag($0) }
                     }.accessibilityIdentifier("onboarding.meetingMode")
                     Text("Ask via notification waits for you to start recording. Manual mode keeps Record Now available.")
                         .workspaceTextRole(.supporting)
@@ -149,9 +158,9 @@ struct OnboardingView: View {
                 Divider()
                 VStack(alignment: .leading, spacing: 6) {
                     Picker("Day-Memory Detail", selection: $draft.contextMode) {
-                        ForEach(AppSettings.ScreenContextCaptureMode.allCases) { Text($0.rawValue).tag($0) }
+                        ForEach(AppSettings.ScreenContextCaptureMode.allCases) { Text(LocalizedStringKey($0.rawValue)).tag($0) }
                     }.disabled(!draft.dayMemory)
-                    Text(draft.contextMode.detail).workspaceTextRole(.trust)
+                    Text(LocalizedStringKey(draft.contextMode.detail)).workspaceTextRole(.trust)
                 }
             }.workspacePanel()
             VStack(alignment: .leading, spacing: 8) {
@@ -207,7 +216,7 @@ struct OnboardingView: View {
     private func modelRow(_ title: String, model: String, role: ModelRole) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(AppFont.scaled(.body).weight(.semibold))
+                Text(LocalizedStringKey(title)).font(AppFont.scaled(.body).weight(.semibold))
                 Text(model).font(AppFont.scaled(.callout)).foregroundStyle(.secondary)
             }
             Spacer()

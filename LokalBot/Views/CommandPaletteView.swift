@@ -127,6 +127,15 @@ struct CommandPaletteView: View {
                 .init(id: "agent.find", icon: "text.magnifyingglass", title: "Find in this task", subtitle: "⌘F", action: { app.agentSessions.findRequest += 1 }),
                 .init(id: "agent.results", icon: "sidebar.right", title: "Toggle results and sources", subtitle: "⌘⌥B", action: { app.agentSessions.resultsRequest += 1 })
             ]
+        }
+        // Translate app commands before adding user-owned task/meeting titles.
+        actions = actions.map { item in
+            PaletteItem(id: item.id, icon: item.icon,
+                        title: app.settings.appLanguage.localized(item.title),
+                        subtitle: app.settings.appLanguage.localized(item.subtitle),
+                        searchAliases: item.title + " " + item.subtitle, action: item.action)
+        }
+        if app.navSection == .agent {
             actions += app.agentSessions.orderedTasks.filter { !$0.record.isArchived }.prefix(30).map { task in
                 PaletteItem(id: "agent.task.\(task.id)", icon: "text.bubble", title: task.title,
                             subtitle: "Agent task · \(task.controller.workspaceDisplayName)", action: { app.agentSessions.select(task.id) })
@@ -147,7 +156,7 @@ struct CommandPaletteView: View {
         // (spec §2.3: the palette's meeting-search rows hand off to Ask).
         let tokens = q.split(separator: " ").map(String.init)
         let matched = actions.filter { item in
-            let hay = (item.title + " " + item.subtitle).lowercased()
+            let hay = (item.title + " " + item.subtitle + " " + item.searchAliases).lowercased()
             return tokens.allSatisfy { hay.contains($0) }
         }
         let raw = query.trimmingCharacters(in: .whitespaces)
@@ -179,6 +188,7 @@ private struct PaletteItem: Identifiable {
     let icon: String
     let title: String
     let subtitle: String
+    var searchAliases: String = ""
     let action: () -> Void
 }
 

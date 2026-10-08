@@ -104,16 +104,16 @@ struct TrackingPauseButton: View {
         switch presentation {
         case .overflowMenu:
             Button(action: toggle) {
-                Label(actionTitle,
+                Label(LocalizedStringKey(actionTitle),
                       systemImage: sampler.isPaused ? "play.fill" : "pause.fill")
             }
 
         case .toolbar:
             Button(action: toggle) {
-                Label(actionTitle,
+                Label(LocalizedStringKey(actionTitle),
                       systemImage: sampler.isPaused ? "play.fill" : "pause.fill")
             }
-            .help(actionTitle)
+            .help(Text(LocalizedStringKey(actionTitle)))
         }
     }
 
@@ -186,15 +186,15 @@ struct MenuBarView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 statusDot
-                Text(statusTitle).font(.scaled(.headline))
+                Text(LocalizedStringKey(statusTitle)).font(.scaled(.headline))
                 Spacer()
                 if app.isRecording || app.dictation.state.isWorking {
                     primaryTimer.font(.scaled(.body).monospacedDigit())
                 }
             }
-            Text(statusSubtitle).font(.scaled(.callout)).foregroundStyle(.secondary).lineLimit(2)
+            statusSubtitle.font(.scaled(.callout)).foregroundStyle(.secondary).lineLimit(2)
             if app.isRecording || app.dictation.state.isWorking {
-                Label(audioSourceLabel, systemImage: "waveform")
+                Label(LocalizedStringKey(audioSourceLabel), systemImage: "waveform")
                     .font(.scaled(.callout)).foregroundStyle(.secondary)
             }
             HStack(spacing: 8) {
@@ -207,7 +207,7 @@ struct MenuBarView: View {
                         app.startRecording(context: app.recordingContext(for: app.detector.activeApp), source: "menubar")
                     }
                 } label: {
-                    Label(primaryActionTitle, systemImage: primaryActionIcon)
+                    Label(LocalizedStringKey(primaryActionTitle), systemImage: primaryActionIcon)
                 }
                 .buttonStyle(.bordered)
                 .tint((app.isRecording || app.dictation.state.isRecording) ? .red : Brand.tealFill)
@@ -242,28 +242,29 @@ struct MenuBarView: View {
         }
     }
 
-    private var statusSubtitle: String {
-        if app.dictation.isStarting { return "Connecting to the microphone" }
+    private var statusSubtitle: Text {
+        if app.dictation.isStarting { return Text("Connecting to the microphone") }
         switch app.dictation.state {
         case .recording:
-            return "Release \(DictationShortcut.label) to compose"
+            return Text("Release \(DictationShortcut.label) to compose")
         case .transcribing:
-            return "Turning speech into a writing request"
+            return Text("Turning speech into a writing request")
         case .composing:
-            return "Writing for the focused app"
+            return Text("Writing for the focused app")
         case .idle:
             break
         }
         if app.isRecording {
-            return app.currentMeeting?.title ?? "In progress"
+            if let title = app.currentMeeting?.title { return Text(verbatim: title) }
+            return Text("In progress")
         }
         if let detected = app.detector.activeApp {
-            return "\(detected.name) detected — ready"
+            return Text("\(detected.name) detected — ready")
         }
         switch app.settings.autoRecordMode {
-        case .automatic: return "Auto-records detected meetings"
-        case .ask: return "Asks before recording meetings"
-        case .manual: return "Manual recording only"
+        case .automatic: return Text("Auto-records detected meetings")
+        case .ask: return Text("Asks before recording meetings")
+        case .manual: return Text("Manual recording only")
         }
     }
 
@@ -407,7 +408,7 @@ struct MenuBarView: View {
 
     private func menuAction(_ title: String, icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Label(title, systemImage: icon)
+            Label(LocalizedStringKey(title), systemImage: icon)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 8).padding(.vertical, 6)
                 .contentShape(Rectangle())

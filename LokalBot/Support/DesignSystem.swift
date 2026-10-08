@@ -536,10 +536,19 @@ struct IconTile: View {
 /// Native caption header for list groupings (meeting-list day labels,
 /// menu-bar Recent, inspector headings) — one treatment everywhere.
 struct SectionHeader: View {
-    let text: String
+    let text: Text
+
+    init(text: LocalizedStringKey) {
+        self.text = Text(text)
+    }
+
+    @_disfavoredOverload
+    init(text: String) {
+        self.text = Text(verbatim: text)
+    }
 
     var body: some View {
-        Text(text)
+        text
             .font(AppFont.scaled(.subheadline).weight(.semibold))
             .foregroundStyle(.secondary)
     }

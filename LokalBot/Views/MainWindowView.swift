@@ -234,7 +234,7 @@ struct MainWindowView: View {
         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
         .listRowBackground(sidebarRowBackground(section))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(title)
+        .accessibilityLabel(Text(LocalizedStringKey(title)))
         .accessibilityIdentifier(identifier)
         .accessibilityAddTraits(app.navSection == section ? .isSelected : [])
     }
@@ -254,7 +254,7 @@ struct MainWindowView: View {
 
     @ViewBuilder
     private func sidebarSectionHeader(_ title: String) -> some View {
-        Text(title)
+        Text(LocalizedStringKey(title))
             .font(.scaled(.subheadline).bold())
             .foregroundStyle(isScriptedCapture ? scriptedSidebarHeaderColor : Color.secondary)
             .padding(.leading, 11)
@@ -299,7 +299,7 @@ private struct SidebarDestinationLabel: View {
                 .foregroundStyle(prominence == .increased ? AnyShapeStyle(.primary) : AnyShapeStyle(Brand.teal))
                 .frame(width: 18)
                 .accessibilityHidden(true)
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.scaled(.body))
                 .foregroundStyle(scriptedLabelColor.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.primary))
             Spacer(minLength: 0)

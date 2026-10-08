@@ -18,7 +18,7 @@ struct ExclusionRulesEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
-            Text(title).font(AppFont.scaled(.callout).weight(.semibold))
+            Text(LocalizedStringKey(title)).font(AppFont.scaled(.callout).weight(.semibold))
             VStack(spacing: 0) {
                 List(selection: $selectedRule) {
                     ForEach(Array(rules.enumerated()), id: \.offset) { index, rule in
@@ -36,7 +36,7 @@ struct ExclusionRulesEditor: View {
                 }
                 .listStyle(.inset)
                 .frame(height: CGFloat(min(max(rules.count, 2), 6)) * 28 + 8)
-                .accessibilityLabel(title)
+                .accessibilityLabel(Text(LocalizedStringKey(title)))
                 Divider()
                 HStack(spacing: 12) {
                     Button { draft = ""; error = nil; addingRule = true } label: { Image(systemName: "plus") }

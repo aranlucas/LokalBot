@@ -200,6 +200,26 @@ Models auto-download on first use (Hugging Face; the ONNX specialists fetch sher
 
 ## Configuration
 
+### Interface language
+
+Choose **Settings → General → Appearance → App language** (or the picker in
+first-run setup) to follow the system, use English, or use Simplified Chinese.
+The choice is saved with app settings and updates open windows without a restart.
+It does not change transcription or notes languages, model prompts, or saved content.
+System mode uses the first supported language in the macOS preference list,
+maps Chinese variants to Simplified Chinese, and falls back to English.
+
+Interface translations live in `LokalBot/Resources/{en,zh-Hans}.lproj/Localizable.strings`.
+SwiftUI window roots set the selected locale; app-owned dynamic labels explicitly
+use `LocalizedStringKey`, while native menus use `AppLanguage.localized`.
+Keep user content verbatim and add matching entries to both tables.
+`AppLanguageTests` covers preference migration, persistence, language resolution,
+bundled lookup, and translated settings search. Run
+`python3 -m unittest discover -s Scripts/tests -p test_localization.py` to check
+translation key parity and format arguments without building the app.
+
+### Settings categories
+
 Everything lives in **Settings**, organized into searchable categories:
 
 - **General** — launch at login, menu-bar-only mode, appearance (theme: Match System / Light / Dark; five text sizes applied through `AppFont` and the `\appTextScale` environment, since macOS text styles ignore SwiftUI Dynamic Type; Default renders body text at 14 pt, one point above macOS, and Small is the unscaled system size), the opt-in `⌃⇧Space` Quick Recall shortcut, permission status + repair, storage location, update checks.

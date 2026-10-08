@@ -158,8 +158,8 @@ struct ModelStackOverviewView: View {
                 .settingsModelIcon(role == .think ? InferencePresentation(settings: app.settings) : .onDevice)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
-                Text(role.settingsTitle).font(.scaled(.body).weight(.semibold))
-                Text(detail).font(.scaled(.callout)).settingsSecondary()
+                Text(LocalizedStringKey(role.settingsTitle)).font(.scaled(.body).weight(.semibold))
+                Text(LocalizedStringKey(detail)).font(.scaled(.callout)).settingsSecondary()
             }
         }
     }
@@ -212,7 +212,7 @@ struct ModelStackOverviewView: View {
                 Picker("Reasoning", selection: Binding(
                     get: { support.displayed(app.settings.thinkReasoningLevel) },
                     set: { app.settings.thinkReasoningLevel = $0 })) {
-                    Text(support.automaticTitle).tag(ThinkReasoningLevel.automatic)
+                    Text(LocalizedStringKey(support.automaticTitle)).tag(ThinkReasoningLevel.automatic)
                     ForEach(support.levels) { Text($0.displayName).tag($0) }
                 }
                 .labelsHidden().pickerStyle(.menu).controlSize(.small).fixedSize()
@@ -263,8 +263,8 @@ struct ModelStackOverviewView: View {
                     .settingsModelIcon(destination)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(title).font(.scaled(.body).weight(.medium))
-                    if let detail { Text(detail).font(.scaled(.callout)).settingsSecondary() }
+                    Text(LocalizedStringKey(title)).font(.scaled(.body).weight(.medium))
+                    if let detail { Text(LocalizedStringKey(detail)).font(.scaled(.callout)).settingsSecondary() }
                 }
                 Spacer(minLength: 12)
                 Text(value).font(.scaled(.callout)).settingsModelLocation(destination)

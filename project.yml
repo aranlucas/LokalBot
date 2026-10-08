@@ -6,6 +6,7 @@ options:
   minimumXcodeGenVersion: "2.40"
   createIntermediateGroups: true
   generateEmptyDirectories: true
+  developmentLanguage: en
   groupSortPosition: top
 
 # Shared across EVERY target (incl. LokalBotTests, which `import LlamaCore`
@@ -151,6 +152,7 @@ targetTemplates:
       path: LokalBot/Info.plist
       properties:
         CFBundleDisplayName: LokalBot
+        CFBundleDevelopmentRegion: en
         CFBundleIconFile: AppIcon
         CFBundleShortVersionString: "0.10.0"
         CFBundleVersion: "44"

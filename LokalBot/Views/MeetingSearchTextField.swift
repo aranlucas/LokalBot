@@ -5,6 +5,7 @@ import SwiftUI
 /// accessibility role and first-responder transition so a bar inserted by a
 /// Command-F request is immediately exposed to VoiceOver and XCUITest.
 struct MeetingSearchTextField: NSViewRepresentable {
+    @Environment(\.locale) private var locale
     @Binding var text: String
     let focusRequest: Int
     let onSubmit: () -> Void
@@ -20,7 +21,7 @@ struct MeetingSearchTextField: NSViewRepresentable {
         let field = FocusOwningTextField()
         field.delegate = context.coordinator
         field.stringValue = text
-        field.placeholderString = placeholder
+        field.placeholderString = AppLanguage.matching(locale).localized(placeholder)
         field.isBordered = false
         field.drawsBackground = false
         field.focusRingType = .none
@@ -29,15 +30,15 @@ struct MeetingSearchTextField: NSViewRepresentable {
         field.cell?.usesSingleLineMode = true
         field.identifier = NSUserInterfaceItemIdentifier("meeting.search.field")
         field.setAccessibilityIdentifier("meeting.search.field")
-        field.setAccessibilityLabel(placeholder)
+        field.setAccessibilityLabel(AppLanguage.matching(locale).localized(placeholder))
         if focusesOnAppear { field.requestFocus() }
         return field
     }
 
     func updateNSView(_ field: FocusOwningTextField, context: Context) {
         context.coordinator.update(parent: self)
-        field.placeholderString = placeholder
-        field.setAccessibilityLabel(placeholder)
+        field.placeholderString = AppLanguage.matching(locale).localized(placeholder)
+        field.setAccessibilityLabel(AppLanguage.matching(locale).localized(placeholder))
         if field.stringValue != text {
             field.stringValue = text
         }

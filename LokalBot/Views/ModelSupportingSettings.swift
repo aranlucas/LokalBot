@@ -120,7 +120,7 @@ struct ModelTranscriptionOptionsSheet: View {
             VStack(alignment: .leading, spacing: 18) {
                 Text(app.settings.transcriptionModelDisplayName).font(.scaled(.body).weight(.semibold))
                 Picker("Language", selection: $app.settings.transcriptionLanguage) {
-                    ForEach(TranscriptionLanguage.allCases) { Text($0.displayName).tag($0) }
+                    ForEach(TranscriptionLanguage.allCases) { Text(LocalizedStringKey($0.displayName)).tag($0) }
                 }
                 .disabled(app.settings.transcriptionModel == .graniteTurbo)
                 .settingTarget("settings.transcriptionLanguage", selected: app.focusedSettingID)

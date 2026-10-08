@@ -147,8 +147,8 @@ struct GettingStartedCard: View {
             Image(systemName: icon)
                 .font(.scaled(.title2))
                 .foregroundStyle(isRecording == true ? AnyShapeStyle(Brand.amber) : AnyShapeStyle(.tint))
-            Text(title).font(.scaled(.headline))
-            Text(body).font(.scaled(.caption)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            Text(LocalizedStringKey(title)).font(.scaled(.headline))
+            Text(LocalizedStringKey(body)).font(.scaled(.caption)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)

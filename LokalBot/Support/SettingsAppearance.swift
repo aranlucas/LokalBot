@@ -93,7 +93,7 @@ struct SettingsHelp: View {
     }
 
     var body: some View {
-        Text(text)
+        Text(LocalizedStringKey(text))
             .font(.scaled(.callout))
             .settingsSecondary()
             .fixedSize(horizontal: false, vertical: true)
@@ -113,7 +113,7 @@ struct SettingsLabel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(title)
+            Text(LocalizedStringKey(title))
             if let help { SettingsHelp(help) }
         }
     }
@@ -136,7 +136,7 @@ struct SettingsDetails: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 4)
         } label: {
-            Text(title).font(.scaled(.callout).weight(.medium)).settingsSecondary()
+            Text(LocalizedStringKey(title)).font(.scaled(.callout).weight(.medium)).settingsSecondary()
         }
     }
 }
