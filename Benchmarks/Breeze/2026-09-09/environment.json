@@ -1,0 +1,115 @@
+{
+  "evaluation_date": "2026-09-09",
+  "hardware": {
+    "chip": "Apple M4 Max",
+    "physical_memory_bytes": 51539607552,
+    "os": "macOS 27.0",
+    "machine": "arm64",
+    "verification": "sysctl and sw_vers during the evaluation"
+  },
+  "repository_head": "5cb2d9f38acb2508c386aabb5b16c2ec05ea7d75",
+  "harness_python": "3.13.13 (main, May 10 2026, 19:20:37) [Clang 22.1.3 ]",
+  "runtime_scratch": "/private/tmp/lokalbot-breeze-eval.q3p6Ds",
+  "breeze": {
+    "model": "BreezeBlue/Breeze-TTS-2",
+    "quantization": "Q8_0 GGUF",
+    "weights": {
+      "path": "/private/tmp/lokalbot-breeze-eval.q3p6Ds/breeze-tts-2-q8_0.gguf",
+      "bytes": 5079668352,
+      "sha256": "0de52d61560f9f6b2dfeca79f9100f8fce0c2b17c52ec30622e23e150df1ad88"
+    },
+    "gguf_repository": "audio-cpp/audio.cpp-gguf",
+    "gguf_revision": "056144d2744697c9439bd32647279674dba0c964",
+    "gguf_url": "https://huggingface.co/audio-cpp/audio.cpp-gguf/resolve/056144d2744697c9439bd32647279674dba0c964/Breeze-TTS-2-GGUF/breeze-tts-2-q8_0.gguf",
+    "runtime": "audio.cpp v0.7.3 macOS arm64 Metal",
+    "runtime_source_commit": "9c6a282337cc83f227cc10428867a478947706ad",
+    "runtime_archive": {
+      "path": "/private/tmp/lokalbot-breeze-eval.q3p6Ds/audio-runtime.tar.gz",
+      "bytes": 24663447,
+      "sha256": "418fe246b606e818c2d198fcc88b6095c9b642c5929cb135dd6bc767d5ec5141"
+    },
+    "runtime_archive_url": "https://github.com/0xShug0/audio.cpp/releases/download/v0.7.3/audio-v0.7.3-bin-macos-arm64-metal.tar.gz",
+    "server_binary": {
+      "path": "/private/tmp/lokalbot-breeze-eval.q3p6Ds/runtime/audiocpp_server",
+      "bytes": 34730896,
+      "sha256": "0bd28d822f6c1a9688c970eaa325f6568bdcbdc6e9ae02eff524ae6408685905"
+    },
+    "license": {
+      "name": "BreezeBlue Research and Non-Commercial License Agreement",
+      "version": "1.1",
+      "date": "2026-09-01",
+      "url": "https://huggingface.co/BreezeBlue/Breeze-TTS-2/blob/ee9fc7c/LICENSE",
+      "local_snapshot": {
+        "path": "/private/tmp/lokalbot-breeze-eval.q3p6Ds/LICENSE-Breeze",
+        "bytes": 18718,
+        "sha256": "44c5d53ee309bc36b5ea3ec2144abc6f3996ce431dedbe262f302a85956bc94b"
+      }
+    },
+    "reference_voice": "Synthetic Kokoro af_heart sample, 30 words, 8.270375 seconds",
+    "backend": "metal",
+    "threads": 4,
+    "sample_rate_hz": 24000,
+    "reference_cache_note": "Warm requests reuse the server/model and the same reference; the runtime may also reuse reference conditioning."
+  },
+  "kokoro": {
+    "model": "kokoro-multi-lang-v1_0",
+    "voice": "af_heart",
+    "speaker_id": 3,
+    "speed": 1.0,
+    "threads": 2,
+    "binary": {
+      "path": "/Applications/LokalBot.app/Contents/Resources/sherpa-onnx/sherpa-onnx-offline-tts",
+      "bytes": 2115216,
+      "sha256": "4070e7fb85cf99e61ba74bed004c3ee238a2162d92e2be3de91b6449951d0bfc"
+    },
+    "model_files": {
+      "model.onnx": {
+        "path": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/sherpa-models/kokoro-multi-lang-v1_0/model.onnx",
+        "bytes": 325630829,
+        "sha256": "c436dc6a842b62aba06af67e40bafcfb9c60ac3af895358f1974ad9a7f7c026b"
+      },
+      "voices.bin": {
+        "path": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/sherpa-models/kokoro-multi-lang-v1_0/voices.bin",
+        "bytes": 27678720,
+        "sha256": "8a77c0d397026208d22211f37670b5b3b11e03f190756b25a1d24041fced82a9"
+      },
+      "tokens.txt": {
+        "path": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/sherpa-models/kokoro-multi-lang-v1_0/tokens.txt",
+        "bytes": 687,
+        "sha256": "6ebb6bb288f20f3ae8d004d3c2ca27697da27c037d75e81a60e2a6a663f95425"
+      },
+      "lexicon-us-en.txt": {
+        "path": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/sherpa-models/kokoro-multi-lang-v1_0/lexicon-us-en.txt",
+        "bytes": 5956885,
+        "sha256": "7daaab53a181be9885b853a8582bf1838186317e5dadacbcef9c426d6fa0da14"
+      },
+      "lexicon-zh.txt": {
+        "path": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/sherpa-models/kokoro-multi-lang-v1_0/lexicon-zh.txt",
+        "bytes": 2364621,
+        "sha256": "509a1f55bf9c62e3f7e598e7544b114eadef1e00266f2badff4f281153f9f327"
+      }
+    },
+    "data_dir": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/sherpa-models/kokoro-multi-lang-v1_0/espeak-ng-data",
+    "comparison_scope": "Installed subprocess and model, invoked with current KokoroSpeechEngine arguments; not full app UI timing."
+  },
+  "asr": {
+    "model": "/private/tmp/lokalbot-funasr-comparison-20260908/models/Qwen/Qwen3-ASR-1.7B",
+    "qwen_asr_version": "0.0.6",
+    "torch_version": "2.8.0",
+    "device": "mps:0",
+    "dtype": "torch.bfloat16"
+  },
+  "scope": {
+    "language": "English",
+    "reference_voices": 1,
+    "full_breeze_requests": 8,
+    "smoke_breeze_requests": 2,
+    "kokoro_cases_including_reference": 6,
+    "human_listening": false,
+    "app_integration_test": false,
+    "ui_tests": false,
+    "private_meeting_audio_used": false,
+    "network_inference": false
+  },
+  "conditions": "Sequential local runs; system not isolated, OS page cache not purged, no concurrent inference benchmark. Cold means a new lazy-load server process after health readiness. Client timings include model loading on its first request. Hardware telemetry other than process memory was not sampled."
+}

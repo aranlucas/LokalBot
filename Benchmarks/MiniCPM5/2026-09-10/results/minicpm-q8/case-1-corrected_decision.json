@@ -1,0 +1,78 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"final_launch_date\": \"2026-09-18\",\n  \"beta_invitation_owner\": \"Iva\",\n  \"paid_campaign_active\": false\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 42,
+    "prompt_tokens": 177,
+    "total_tokens": 219,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 177,
+    "prompt_ms": 73.742,
+    "prompt_per_token_ms": 0.4166214689265537,
+    "prompt_per_second": 2400.2603672262753,
+    "predicted_n": 42,
+    "predicted_ms": 298.857,
+    "predicted_per_token_ms": 7.115642857142857,
+    "predicted_per_second": 140.53544002650096
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"final_launch_date\": \"2026-09-18\",\n  \"beta_invitation_owner\": \"Iva\",\n  \"paid_campaign_active\": false\n}"
+        }
+      }
+    ],
+    "created": 1789023566,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q8_0.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 42,
+      "prompt_tokens": 177,
+      "total_tokens": 219,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-tQTWot5owes3EZW29A1vWZIGwgXLpYdy",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 177,
+      "prompt_ms": 73.742,
+      "prompt_per_token_ms": 0.4166214689265537,
+      "prompt_per_second": 2400.2603672262753,
+      "predicted_n": 42,
+      "predicted_ms": 298.857,
+      "predicted_per_token_ms": 7.115642857142857,
+      "predicted_per_second": 140.53544002650096
+    }
+  },
+  "wall_seconds": 0.37527424993459135,
+  "memory": {
+    "samples": 2,
+    "peak_rss_bytes": 4241702912,
+    "peak_physical_footprint_bytes": 1682526048
+  },
+  "id": "corrected_decision",
+  "group": "extraction",
+  "repeat": 1,
+  "score": {
+    "passed": true,
+    "json_valid": true,
+    "correct_fields": 3,
+    "total_fields": 3,
+    "wrong": {}
+  }
+}

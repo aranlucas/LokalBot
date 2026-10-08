@@ -1,0 +1,107 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "",
+    "reasoning_content": "The user wants me to use the calculator to work out 17 * 29 + 122. I need to use the calculate function with the expression \"17 * 29 + 122\".\n",
+    "tool_calls": [
+      {
+        "type": "function",
+        "function": {
+          "name": "calculate",
+          "arguments": "{\"expression\":\"17 * 29 + 122\"}"
+        },
+        "id": "K01BKk3iky7uTlUDH1vNh3JSGI4lpAa9"
+      }
+    ]
+  },
+  "finish_reason": "tool_calls",
+  "usage": {
+    "completion_tokens": 86,
+    "prompt_tokens": 491,
+    "total_tokens": 577,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 491,
+    "prompt_ms": 424.334,
+    "prompt_per_token_ms": 0.864224032586558,
+    "prompt_per_second": 1157.1073729656357,
+    "predicted_n": 86,
+    "predicted_ms": 868.31,
+    "predicted_per_token_ms": 10.096627906976744,
+    "predicted_per_second": 99.04296852506594
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "reasoning_content": "The user wants me to use the calculator to work out 17 * 29 + 122. I need to use the calculate function with the expression \"17 * 29 + 122\".\n",
+          "tool_calls": [
+            {
+              "type": "function",
+              "function": {
+                "name": "calculate",
+                "arguments": "{\"expression\":\"17 * 29 + 122\"}"
+              },
+              "id": "K01BKk3iky7uTlUDH1vNh3JSGI4lpAa9"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1789023071,
+    "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 86,
+      "prompt_tokens": 491,
+      "total_tokens": 577,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-S03UdTR4Nk7JLRVSvADMUxlmiRB8CWxE",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 491,
+      "prompt_ms": 424.334,
+      "prompt_per_token_ms": 0.864224032586558,
+      "prompt_per_second": 1157.1073729656357,
+      "predicted_n": 86,
+      "predicted_ms": 868.31,
+      "predicted_per_token_ms": 10.096627906976744,
+      "predicted_per_second": 99.04296852506594
+    }
+  },
+  "wall_seconds": 1.3016793749993667,
+  "memory": {
+    "samples": 6,
+    "peak_rss_bytes": 6916489216,
+    "peak_physical_footprint_bytes": 4363523952
+  },
+  "id": "tool_calculate",
+  "group": "tools",
+  "repeat": 1,
+  "score": {
+    "passed": true,
+    "native_calls": [
+      {
+        "name": "calculate",
+        "args": {
+          "expression": "17 * 29 + 122"
+        }
+      }
+    ],
+    "xml_calls_diagnostic": [],
+    "parse_errors": [],
+    "xml_semantically_correct": false
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "hardware": {
+    "chip": "Apple M4 Max",
+    "cpu_cores": 16,
+    "memory_gib": 48,
+    "macos": "27.0"
+  },
+  "python": "3.12.8",
+  "lokalbot_revision": "73afd4a8069cf370bf3972ce0ec310153f076554",
+  "laya_revision": "23a17522aa4942da6cce53a995a275760320b691",
+  "laya_apple_revision": "e45e40b92a067ffec6ab6e594339e0609adaac85",
+  "upstream_weights": {
+    "laya": {
+      "current_revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "current_weight_sha256": "891102d372688fc2a094dac56a384bc537b87c63f21f9f3dac0be2b7cbc8d86c",
+      "pinned_revision": "c5d78730f3493e4fe16d61507ef4b78eef7318cf",
+      "pinned_weight_sha256": "891102d372688fc2a094dac56a384bc537b87c63f21f9f3dac0be2b7cbc8d86c",
+      "identical_to_current_weights": true,
+      "configs": {
+        "rl_agent_config.json": {
+          "same_json_as_current": true,
+          "pinned_sha256": "ae287b56bbcf5f8c4f4541ae9dfd00c914c4c48b940b8398c3058af37ba92bbd",
+          "current_sha256": "ae287b56bbcf5f8c4f4541ae9dfd00c914c4c48b940b8398c3058af37ba92bbd"
+        },
+        "encoder/config.json": {
+          "same_json_as_current": true,
+          "pinned_sha256": "bf3ab80598fdccf414855a2ce80f22859e4492d06ca8a62ddd1cfb63972f8979",
+          "current_sha256": "bf3ab80598fdccf414855a2ce80f22859e4492d06ca8a62ddd1cfb63972f8979"
+        }
+      }
+    },
+    "laya-multilingual": {
+      "current_revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+      "current_weight_sha256": "9d628fd971b700382ac6f65920a86f149777b2e748e0c955fb3b19695aa8f204",
+      "pinned_revision": "052592a15d198d9ad47da779604259b10b47b7aa",
+      "pinned_weight_sha256": "9d628fd971b700382ac6f65920a86f149777b2e748e0c955fb3b19695aa8f204",
+      "identical_to_current_weights": true,
+      "configs": {
+        "rl_agent_config.json": {
+          "same_json_as_current": true,
+          "pinned_sha256": "25061739243b617ad88d1219ba6f8a9c86c5881ca28df024fa2d9b3b2fcc30c6",
+          "current_sha256": "25061739243b617ad88d1219ba6f8a9c86c5881ca28df024fa2d9b3b2fcc30c6"
+        },
+        "encoder/config.json": {
+          "same_json_as_current": true,
+          "pinned_sha256": "83f6916d13ef0f556ac461f28308dc2bffa7ebeadee8ec9e2db5812020ea5bb4",
+          "current_sha256": "83f6916d13ef0f556ac461f28308dc2bffa7ebeadee8ec9e2db5812020ea5bb4"
+        }
+      }
+    },
+    "laya-typed-decisions": {
+      "current_revision": "1a793eb568e6718f15941d08f85432581df534e3",
+      "current_weight_sha256": "4fa56de72383a9d3efa9cfa78955733c81b9fc8067a587ca4beb82c78107a24e",
+      "pinned_revision": "f9ab0b228f0fc0f14d873dbc99038f135c2da1b2",
+      "pinned_weight_sha256": "4fa56de72383a9d3efa9cfa78955733c81b9fc8067a587ca4beb82c78107a24e",
+      "identical_to_current_weights": true,
+      "configs": {
+        "rl_agent_config.json": {
+          "same_json_as_current": true,
+          "pinned_sha256": "ebf0cd524d92342a6be5e48e9fca3d7c2babfb5a56ccd79d2171ef5d8c7f7be8",
+          "current_sha256": "ebf0cd524d92342a6be5e48e9fca3d7c2babfb5a56ccd79d2171ef5d8c7f7be8"
+        },
+        "encoder/config.json": {
+          "same_json_as_current": true,
+          "pinned_sha256": "5268d24ad3b77c8151de5dcb0762ba4391619aad9ab0bda33e36fb083cfeae6d",
+          "current_sha256": "5268d24ad3b77c8151de5dcb0762ba4391619aad9ab0bda33e36fb083cfeae6d"
+        }
+      }
+    }
+  },
+  "fixture_sha256": "010540797af02a4494cf0a86d703d59ebc8e096364ccce80b83cd071e153c263",
+  "notes": [
+    "Synthetic fixture authored before inference; no private data.",
+    "Inference offline; model metadata and downloads accessed Hugging Face.",
+    "MPS unavailable inside sandbox; GPU runs used approved unsandboxed execution.",
+    "Cold means fresh process with downloaded, potentially filesystem-cached weights."
+  ],
+  "benchmark_files_sha256": {
+    "make_cases.py": "afef09cd0c028a30dd8abae7d83a4b9645f02d2e4820cd3727efe6edd0c2c8cb",
+    "run.py": "cbc583ae70dfd61bc0cabffdaddbe367c23e15c5aa73f69ea8c35221ba9f7c7f",
+    "run_all.py": "2b2b30c9780a3432025571bce4059117d042a46f50ee4d1d7d150ba17ec644ed",
+    "score.py": "169482f059d2e379c8a6c105ea399d43cca00692ff83cd094521507ec0876cc9",
+    "cases.jsonl": "010540797af02a4494cf0a86d703d59ebc8e096364ccce80b83cd071e153c263",
+    "requirements-lock.txt": "968f7217d598a94a573bb9c34d5571f518d2bd84286e0c7cd382478cc4cc93a8",
+    "README.md": "c9320265af091eb509d6f638453abd17e33452c2816815fa8e69967ba6cdff56"
+  }
+}

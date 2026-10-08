@@ -1,0 +1,986 @@
+{
+  "config": {
+    "host": "127.0.0.1",
+    "port": 18649,
+    "backend": "metal",
+    "device": 0,
+    "threads": 4,
+    "lazy_load": true,
+    "log_request_body": false,
+    "max_loaded_models": 1,
+    "models": [
+      {
+        "id": "breeze",
+        "family": "breeze_tts",
+        "path": "/private/tmp/lokalbot-breeze-eval.q3p6Ds/breeze-tts-2-q8_0.gguf",
+        "task": "tts",
+        "mode": "streaming",
+        "session_options": {
+          "breeze_tts.attention": "auto"
+        }
+      }
+    ]
+  },
+  "rows": [
+    {
+      "id": "short",
+      "phase": "cold",
+      "memory_before": {
+        "resident_size": 81117184,
+        "phys_footprint": 74662464,
+        "lifetime_max_phys_footprint": 75235904
+      },
+      "first_audio_s": 10.35133695800323,
+      "events": [
+        {
+          "elapsed_s": 10.35133695800323,
+          "pcm_bytes": 15360
+        },
+        {
+          "elapsed_s": 11.13867399992887,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 12.016729124938138,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 12.913514707935974,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 13.694436249905266,
+          "pcm_bytes": 92160
+        }
+      ],
+      "done": {
+        "type": "speech.audio.done",
+        "timing": {
+          "ttft_ms": 1241.93
+        }
+      },
+      "errors": [],
+      "request": {
+        "model": "breeze",
+        "input": "Your meeting summary is ready. You have three action items and one decision to review.",
+        "stream": true,
+        "stream_format": "sse",
+        "response_format": "pcm",
+        "voice_ref": "/Users/0xmithrandir/Documents/GitHub/LokalBot/Benchmarks/Breeze/2026-09-09/audio/kokoro_reference.wav",
+        "reference_text": "Today we will review the decisions from our meeting, the work that is still in progress, and the next steps. Take a moment to check the details before we continue.",
+        "options": {
+          "instruction": "Speak clearly and naturally in a calm, helpful voice.",
+          "guidance_scale": 1.0,
+          "seed": 42,
+          "max_tokens": 1500,
+          "text_chunk_size": 600,
+          "stream_frames_per_event": 16,
+          "stream_lookahead_margin": 12
+        }
+      },
+      "headers_s": 0.000680374912917614,
+      "elapsed_s": 13.694570624968037,
+      "sample_rate": 24000,
+      "samples": 145920,
+      "duration_s": 6.08,
+      "peak_amplitude": 0.390655517578125,
+      "rms": 0.053944291660682514,
+      "clipped_fraction": 0.0,
+      "rtf": 2.252396484369743,
+      "memory_after": {
+        "resident_size": 9472638976,
+        "phys_footprint": 5676032304,
+        "lifetime_max_phys_footprint": 6893626344
+      },
+      "server_returncode": null
+    },
+    {
+      "id": "short",
+      "phase": "warm",
+      "memory_before": {
+        "resident_size": 9472638976,
+        "phys_footprint": 5676032304,
+        "lifetime_max_phys_footprint": 6893626344
+      },
+      "first_audio_s": 0.8486014580121264,
+      "events": [
+        {
+          "elapsed_s": 0.8486014580121264,
+          "pcm_bytes": 15360
+        },
+        {
+          "elapsed_s": 1.6351131660630926,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 2.505764583009295,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 3.4065400410909206,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 4.174565916066058,
+          "pcm_bytes": 92160
+        }
+      ],
+      "done": {
+        "type": "speech.audio.done",
+        "timing": {
+          "ttft_ms": 846.941
+        }
+      },
+      "errors": [],
+      "request": {
+        "model": "breeze",
+        "input": "Your meeting summary is ready. You have three action items and one decision to review.",
+        "stream": true,
+        "stream_format": "sse",
+        "response_format": "pcm",
+        "voice_ref": "/Users/0xmithrandir/Documents/GitHub/LokalBot/Benchmarks/Breeze/2026-09-09/audio/kokoro_reference.wav",
+        "reference_text": "Today we will review the decisions from our meeting, the work that is still in progress, and the next steps. Take a moment to check the details before we continue.",
+        "options": {
+          "instruction": "Speak clearly and naturally in a calm, helpful voice.",
+          "guidance_scale": 1.0,
+          "seed": 42,
+          "max_tokens": 1500,
+          "text_chunk_size": 600,
+          "stream_frames_per_event": 16,
+          "stream_lookahead_margin": 12
+        }
+      },
+      "headers_s": 0.0014656661078333855,
+      "elapsed_s": 4.174696000060067,
+      "sample_rate": 24000,
+      "samples": 145920,
+      "duration_s": 6.08,
+      "peak_amplitude": 0.390655517578125,
+      "rms": 0.053944291660682514,
+      "clipped_fraction": 0.0,
+      "rtf": 0.6866276315888268,
+      "memory_after": {
+        "resident_size": 9473392640,
+        "phys_footprint": 5676785968,
+        "lifetime_max_phys_footprint": 6893626344
+      },
+      "server_returncode": null
+    },
+    {
+      "id": "short",
+      "phase": "warm_seed43",
+      "memory_before": {
+        "resident_size": 9473392640,
+        "phys_footprint": 5676785968,
+        "lifetime_max_phys_footprint": 6893626344
+      },
+      "first_audio_s": 0.835986457997933,
+      "events": [
+        {
+          "elapsed_s": 0.835986457997933,
+          "pcm_bytes": 15360
+        },
+        {
+          "elapsed_s": 1.6207515000132844,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 2.4888251669472083,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 3.38386920792982,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 3.5775236670160666,
+          "pcm_bytes": 46080
+        }
+      ],
+      "done": {
+        "type": "speech.audio.done",
+        "timing": {
+          "ttft_ms": 835.25
+        }
+      },
+      "errors": [],
+      "request": {
+        "model": "breeze",
+        "input": "Your meeting summary is ready. You have three action items and one decision to review.",
+        "stream": true,
+        "stream_format": "sse",
+        "response_format": "pcm",
+        "voice_ref": "/Users/0xmithrandir/Documents/GitHub/LokalBot/Benchmarks/Breeze/2026-09-09/audio/kokoro_reference.wav",
+        "reference_text": "Today we will review the decisions from our meeting, the work that is still in progress, and the next steps. Take a moment to check the details before we continue.",
+        "options": {
+          "instruction": "Speak clearly and naturally in a calm, helpful voice.",
+          "guidance_scale": 1.0,
+          "seed": 43,
+          "max_tokens": 1500,
+          "text_chunk_size": 600,
+          "stream_frames_per_event": 16,
+          "stream_lookahead_margin": 12
+        }
+      },
+      "headers_s": 0.0005706249503418803,
+      "elapsed_s": 3.5776047919644043,
+      "sample_rate": 24000,
+      "samples": 122880,
+      "duration_s": 5.12,
+      "peak_amplitude": 0.37005615234375,
+      "rms": 0.05601609929525908,
+      "clipped_fraction": 0.0,
+      "rtf": 0.6987509359305477,
+      "memory_after": {
+        "resident_size": 9473425408,
+        "phys_footprint": 5676802352,
+        "lifetime_max_phys_footprint": 6893626344
+      },
+      "server_returncode": null
+    },
+    {
+      "id": "digest",
+      "phase": "warm",
+      "memory_before": {
+        "resident_size": 9473425408,
+        "phys_footprint": 5676802352,
+        "lifetime_max_phys_footprint": 6893626344
+      },
+      "first_audio_s": 0.9908850829815492,
+      "events": [
+        {
+          "elapsed_s": 0.9908850829815492,
+          "pcm_bytes": 15360
+        },
+        {
+          "elapsed_s": 1.7710636669071391,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 2.630514624994248,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 3.5164524579886347,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 4.3901632078923285,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 5.265823832945898,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 6.142891582916491,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 7.019001332926564,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 7.899945916957222,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 8.77759883296676,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 9.659923792001791,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 10.54108274995815,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 11.419625916983932,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 11.85667604196351,
+          "pcm_bytes": 65280
+        }
+      ],
+      "done": {
+        "type": "speech.audio.done",
+        "timing": {
+          "ttft_ms": 990.125
+        }
+      },
+      "errors": [],
+      "request": {
+        "model": "breeze",
+        "input": "Here is your daily summary. The team approved the new onboarding flow. Maya will finish the first draft by Friday, while Daniel will check the export feature. The launch date is still undecided. Your next meeting starts at two thirty. Before then, review the customer feedback and send your comments to the design team.",
+        "stream": true,
+        "stream_format": "sse",
+        "response_format": "pcm",
+        "voice_ref": "/Users/0xmithrandir/Documents/GitHub/LokalBot/Benchmarks/Breeze/2026-09-09/audio/kokoro_reference.wav",
+        "reference_text": "Today we will review the decisions from our meeting, the work that is still in progress, and the next steps. Take a moment to check the details before we continue.",
+        "options": {
+          "instruction": "Read this work summary clearly and naturally, with calm pacing and brief pauses between sentences.",
+          "guidance_scale": 1.0,
+          "seed": 42,
+          "max_tokens": 1500,
+          "text_chunk_size": 600,
+          "stream_frames_per_event": 16,
+          "stream_lookahead_margin": 12
+        }
+      },
+      "headers_s": 0.0005808749701827765,
+      "elapsed_s": 11.856766916927882,
+      "sample_rate": 24000,
+      "samples": 408960,
+      "duration_s": 17.04,
+      "peak_amplitude": 0.27978515625,
+      "rms": 0.044851103141459146,
+      "clipped_fraction": 0.0,
+      "rtf": 0.6958196547492889,
+      "memory_after": {
+        "resident_size": 9075736576,
+        "phys_footprint": 5278130072,
+        "lifetime_max_phys_footprint": 6893626344
+      },
+      "server_returncode": null
+    },
+    {
+      "id": "names_numbers",
+      "phase": "warm",
+      "memory_before": {
+        "resident_size": 9075736576,
+        "phys_footprint": 5278130072,
+        "lifetime_max_phys_footprint": 6893626344
+      },
+      "first_audio_s": 0.8700884580612183,
+      "events": [
+        {
+          "elapsed_s": 0.8700884580612183,
+          "pcm_bytes": 15360
+        },
+        {
+          "elapsed_s": 1.6493881670758128,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 2.5058630000567064,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 3.3941620000405237,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 4.27246341702994,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 5.150900250067934,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 6.031465833075345,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 6.91473641700577,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 7.796980082988739,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 8.676783542032354,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 9.55918737500906,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 10.439629375003278,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 11.32022966700606,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 12.19234333303757,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 13.07356804201845,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 13.505689833080396,
+          "pcm_bytes": 65280
+        }
+      ],
+      "done": {
+        "type": "speech.audio.done",
+        "timing": {
+          "ttft_ms": 869.221
+        }
+      },
+      "errors": [],
+      "request": {
+        "model": "breeze",
+        "input": "LokalBot version 0.8.0 is ready for review. The meeting starts at 14:30 on September 9, 2026. Revenue increased by 12.5 percent to 2,450 euros. Please check the API, the PDF export, and the GitHub pull request before Friday.",
+        "stream": true,
+        "stream_format": "sse",
+        "response_format": "pcm",
+        "voice_ref": "/Users/0xmithrandir/Documents/GitHub/LokalBot/Benchmarks/Breeze/2026-09-09/audio/kokoro_reference.wav",
+        "reference_text": "Today we will review the decisions from our meeting, the work that is still in progress, and the next steps. Take a moment to check the details before we continue.",
+        "options": {
+          "instruction": "Read this update accurately and clearly, preserving every name, number, and abbreviation.",
+          "guidance_scale": 1.0,
+          "seed": 42,
+          "max_tokens": 1500,
+          "text_chunk_size": 600,
+          "stream_frames_per_event": 16,
+          "stream_lookahead_margin": 12
+        }
+      },
+      "headers_s": 0.0006448749918490648,
+      "elapsed_s": 13.505784958018921,
+      "sample_rate": 24000,
+      "samples": 470400,
+      "duration_s": 19.6,
+      "peak_amplitude": 0.4703369140625,
+      "rms": 0.04524068338436162,
+      "clipped_fraction": 0.0,
+      "rtf": 0.6890706611234143,
+      "memory_after": {
+        "resident_size": 9136586752,
+        "phys_footprint": 5338849296,
+        "lifetime_max_phys_footprint": 6893626344
+      },
+      "server_returncode": null
+    },
+    {
+      "id": "neutral",
+      "phase": "warm",
+      "memory_before": {
+        "resident_size": 9136586752,
+        "phys_footprint": 5338849296,
+        "lifetime_max_phys_footprint": 6893626344
+      },
+      "first_audio_s": 0.8780947499908507,
+      "events": [
+        {
+          "elapsed_s": 0.8780947499908507,
+          "pcm_bytes": 15360
+        },
+        {
+          "elapsed_s": 1.6353721669875085,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 2.4760409579612315,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 3.340738583006896,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 4.197858999948949,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 5.0522325419588014,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 5.911288582952693,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 6.703419666970149,
+          "pcm_bytes": 96000
+        }
+      ],
+      "done": {
+        "type": "speech.audio.done",
+        "timing": {
+          "ttft_ms": 877.219
+        }
+      },
+      "errors": [],
+      "request": {
+        "model": "breeze",
+        "input": "I thought the door was locked. Then I heard a quiet click, and the handle began to turn. Someone was standing on the other side. For a moment, neither of us moved.",
+        "stream": true,
+        "stream_format": "sse",
+        "response_format": "pcm",
+        "voice_ref": "/Users/0xmithrandir/Documents/GitHub/LokalBot/Benchmarks/Breeze/2026-09-09/audio/kokoro_reference.wav",
+        "reference_text": "Today we will review the decisions from our meeting, the work that is still in progress, and the next steps. Take a moment to check the details before we continue.",
+        "options": {
+          "instruction": "Read this passage in a neutral, even tone with natural pauses.",
+          "guidance_scale": 1.0,
+          "seed": 42,
+          "max_tokens": 1500,
+          "text_chunk_size": 600,
+          "stream_frames_per_event": 16,
+          "stream_lookahead_margin": 12
+        }
+      },
+      "headers_s": 0.000682624988257885,
+      "elapsed_s": 6.703587374999188,
+      "sample_rate": 24000,
+      "samples": 240000,
+      "duration_s": 10.0,
+      "peak_amplitude": 0.277130126953125,
+      "rms": 0.05161745371263066,
+      "clipped_fraction": 0.0,
+      "rtf": 0.6703587374999188,
+      "memory_after": {
+        "resident_size": 9138896896,
+        "phys_footprint": 5341093928,
+        "lifetime_max_phys_footprint": 6893626344
+      },
+      "server_returncode": null
+    },
+    {
+      "id": "directed",
+      "phase": "warm",
+      "memory_before": {
+        "resident_size": 9138896896,
+        "phys_footprint": 5341093928,
+        "lifetime_max_phys_footprint": 6893626344
+      },
+      "first_audio_s": 1.1187747080111876,
+      "events": [
+        {
+          "elapsed_s": 1.1187747080111876,
+          "pcm_bytes": 15360
+        },
+        {
+          "elapsed_s": 2.0074555000755936,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 2.9784553750650957,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 3.974046125076711,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 4.960615542018786,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 5.949211416998878,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 6.936065167072229,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 7.926464667078108,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 8.451142917037942,
+          "pcm_bytes": 69120
+        }
+      ],
+      "done": {
+        "type": "speech.audio.done",
+        "timing": {
+          "ttft_ms": 1117.95
+        }
+      },
+      "errors": [],
+      "request": {
+        "model": "breeze",
+        "input": "I thought the door was locked. Then I heard a quiet click, and the handle began to turn. Someone was standing on the other side. For a moment, neither of us moved.",
+        "stream": true,
+        "stream_format": "sse",
+        "response_format": "pcm",
+        "voice_ref": "/Users/0xmithrandir/Documents/GitHub/LokalBot/Benchmarks/Breeze/2026-09-09/audio/kokoro_reference.wav",
+        "reference_text": "Today we will review the decisions from our meeting, the work that is still in progress, and the next steps. Take a moment to check the details before we continue.",
+        "options": {
+          "instruction": "Read slowly with restrained suspense. Keep the same speaker identity. Lower your voice slightly and pause briefly before the final sentence.",
+          "guidance_scale": 4.0,
+          "seed": 42,
+          "max_tokens": 1500,
+          "text_chunk_size": 600,
+          "stream_frames_per_event": 16,
+          "stream_lookahead_margin": 12
+        }
+      },
+      "headers_s": 0.0006456250557675958,
+      "elapsed_s": 8.451245375094004,
+      "sample_rate": 24000,
+      "samples": 257280,
+      "duration_s": 10.72,
+      "peak_amplitude": 0.336517333984375,
+      "rms": 0.04645986015627914,
+      "clipped_fraction": 0.0,
+      "rtf": 0.7883624417065301,
+      "memory_after": {
+        "resident_size": 9061842944,
+        "phys_footprint": 5263335200,
+        "lifetime_max_phys_footprint": 6893626344
+      },
+      "server_returncode": null
+    },
+    {
+      "id": "long",
+      "phase": "warm",
+      "memory_before": {
+        "resident_size": 9061842944,
+        "phys_footprint": 5263335200,
+        "lifetime_max_phys_footprint": 6893626344
+      },
+      "first_audio_s": 0.903410041006282,
+      "events": [
+        {
+          "elapsed_s": 0.903410041006282,
+          "pcm_bytes": 15360
+        },
+        {
+          "elapsed_s": 1.682401208090596,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 2.538875916041434,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 3.4244645830476657,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 4.304404958034866,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 5.190602250047959,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 6.073965541087091,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 6.955946916015819,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 7.839628541027196,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 8.721576875075698,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 9.605781499994919,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 10.489881166024134,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 11.374543791054748,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 12.26050291606225,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 13.146901500062086,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 14.03109125001356,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 14.915476166061126,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 15.791739666019566,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 16.677485208027065,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 17.5631155410083,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 18.447352666058578,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 19.333129208069295,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 20.222526833065785,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 21.11047779105138,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 21.99263916607015,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 22.672160583082587,
+          "pcm_bytes": 84480
+        },
+        {
+          "elapsed_s": 23.525434166076593,
+          "pcm_bytes": 15360
+        },
+        {
+          "elapsed_s": 24.283192125032656,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 25.125195208005607,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 25.98796483303886,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 26.84073216607794,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 27.69581108307466,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 28.550368249998428,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 29.408006665995345,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 30.2649410830345,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 31.122051416081376,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 31.979234958067536,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 32.83715075009968,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 33.69420033309143,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 34.552680291002616,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 35.41197808308061,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 36.27263216604479,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 37.13420558301732,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 37.994415375054814,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 38.853140166029334,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 39.717010125052184,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 40.582497458090074,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 41.44547933305148,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 42.30925849999767,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 43.17331575008575,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 44.035577166010626,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 44.405363583005965,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 45.276305583072826,
+          "pcm_bytes": 15360
+        },
+        {
+          "elapsed_s": 46.05976862506941,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 46.92946070805192,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 47.82159891608171,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 48.70777579105925,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 49.59361229103524,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 50.47738350008149,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 51.36197362502571,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 52.24670720810536,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 53.13165466603823,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 54.00754175009206,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 54.89118658308871,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 55.77370483300183,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 56.66363945801277,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 57.5524615830509,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 58.43937254103366,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 59.32990524999332,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 60.220051625045016,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 61.105336750042625,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 61.990327791078016,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 62.875211208011024,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 63.11965450004209,
+          "pcm_bytes": 49920
+        }
+      ],
+      "done": {
+        "type": "speech.audio.done",
+        "timing": {
+          "ttft_ms": 902.677
+        }
+      },
+      "errors": [],
+      "request": {
+        "model": "breeze",
+        "input": "This morning, the team met to review the first week of the project. The goal was simple: understand what worked, identify what still needed attention, and agree on a realistic plan for the next few days. Everyone had read the notes in advance, so the discussion began with the questions that mattered most. First, the group reviewed the new onboarding flow. Several people found the opening screen clear, but the next step still needed a better explanation. Maya offered to revise the instructions and bring a new draft to the next meeting. Daniel agreed to check the export feature using a small sample document. No one committed to a launch date. The group wanted to see the results of those two tasks before making that decision. After a short break, the conversation moved to customer feedback. One customer asked for a simpler way to find earlier decisions. Another wanted action items to include the person responsible and the original deadline. The team agreed that both requests were useful, although they had different priorities. Improving the search experience could help immediately. Changing how deadlines were stored would require more careful planning. By the end of the meeting, there were three clear next steps. Maya would update the onboarding draft. Daniel would test document exports. The project lead would gather a few examples of missing or confusing deadlines. They would review the results together on Friday. Until then, the existing release would remain available, and the team would focus on making the next version easier to understand.",
+        "stream": true,
+        "stream_format": "sse",
+        "response_format": "pcm",
+        "voice_ref": "/Users/0xmithrandir/Documents/GitHub/LokalBot/Benchmarks/Breeze/2026-09-09/audio/kokoro_reference.wav",
+        "reference_text": "Today we will review the decisions from our meeting, the work that is still in progress, and the next steps. Take a moment to check the details before we continue.",
+        "options": {
+          "instruction": "Read this work summary clearly and naturally, with calm pacing and brief pauses between sentences.",
+          "guidance_scale": 1.0,
+          "seed": 42,
+          "max_tokens": 1500,
+          "text_chunk_size": 600,
+          "stream_frames_per_event": 16,
+          "stream_lookahead_margin": 12
+        }
+      },
+      "headers_s": 0.0005237500881776214,
+      "elapsed_s": 63.119760291068815,
+      "sample_rate": 24000,
+      "samples": 2209920,
+      "duration_s": 92.08,
+      "peak_amplitude": 0.723541259765625,
+      "rms": 0.0507142583090544,
+      "clipped_fraction": 0.0,
+      "rtf": 0.6854882742296787,
+      "memory_after": {
+        "resident_size": 9083797504,
+        "phys_footprint": 5284896592,
+        "lifetime_max_phys_footprint": 6893626344
+      },
+      "server_returncode": null
+    }
+  ]
+}

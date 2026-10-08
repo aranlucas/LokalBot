@@ -1,0 +1,80 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "I don't have the capability to send emails with my available tools. My tools are limited to searching meetings, reading meeting transcripts, and performing arithmetic calculations. I cannot send emails or communicate with external systems like email services.\n\nIf you need to send an email to Ana about the release approval, you'll need to use your email client or another communication tool that has email sending capabilities.",
+    "reasoning_content": "The user is asking me to send an email to Ana about a release being approved. However, looking at the available tools, I only have:\n\n1. search_meetings - Search local meeting metadata\n2. read_meeting - Read the transcript and source timestamps for one local meeting ID\n3. calculate - Calculate a numeric arithmetic expression\n\nNone of these tools can send emails. The user specifically instructed me to \"explain that limitation without calling an unrelated tool or claiming success\" if my available tools cannot send email.\n\nSo I should explain that I don't have the capability to send emails with my available tools, rather than trying to use any tool that might not be appropriate for this task.\n"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 222,
+    "prompt_tokens": 503,
+    "total_tokens": 725,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 503,
+    "prompt_ms": 421.585,
+    "prompt_per_token_ms": 0.8381411530815109,
+    "prompt_per_second": 1193.1164533842523,
+    "predicted_n": 222,
+    "predicted_ms": 2295.389,
+    "predicted_per_token_ms": 10.339590090090091,
+    "predicted_per_second": 96.71563294936065
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "I don't have the capability to send emails with my available tools. My tools are limited to searching meetings, reading meeting transcripts, and performing arithmetic calculations. I cannot send emails or communicate with external systems like email services.\n\nIf you need to send an email to Ana about the release approval, you'll need to use your email client or another communication tool that has email sending capabilities.",
+          "reasoning_content": "The user is asking me to send an email to Ana about a release being approved. However, looking at the available tools, I only have:\n\n1. search_meetings - Search local meeting metadata\n2. read_meeting - Read the transcript and source timestamps for one local meeting ID\n3. calculate - Calculate a numeric arithmetic expression\n\nNone of these tools can send emails. The user specifically instructed me to \"explain that limitation without calling an unrelated tool or claiming success\" if my available tools cannot send email.\n\nSo I should explain that I don't have the capability to send emails with my available tools, rather than trying to use any tool that might not be appropriate for this task.\n"
+        }
+      }
+    ],
+    "created": 1789023111,
+    "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 222,
+      "prompt_tokens": 503,
+      "total_tokens": 725,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-9E3RRbi4dOxz1KK5Mf4B5CAFXVu0f6zC",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 503,
+      "prompt_ms": 421.585,
+      "prompt_per_token_ms": 0.8381411530815109,
+      "prompt_per_second": 1193.1164533842523,
+      "predicted_n": 222,
+      "predicted_ms": 2295.389,
+      "predicted_per_token_ms": 10.339590090090091,
+      "predicted_per_second": 96.71563294936065
+    }
+  },
+  "wall_seconds": 2.7260077910032123,
+  "memory": {
+    "samples": 13,
+    "peak_rss_bytes": 7037829120,
+    "peak_physical_footprint_bytes": 4484847544
+  },
+  "id": "tool_do_not_invent",
+  "group": "tools",
+  "repeat": 2,
+  "score": {
+    "passed": true,
+    "native_calls": [],
+    "xml_calls_diagnostic": [],
+    "parse_errors": [],
+    "xml_semantically_correct": false
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "model": {
+    "name": "laya-multilingual",
+    "repo": "convaiinnovations/laya-multilingual",
+    "revision": "052592a15d198d9ad47da779604259b10b47b7aa",
+    "weights_sha256": "9d628fd971b700382ac6f65920a86f149777b2e748e0c955fb3b19695aa8f204",
+    "encoder": "mmBERT-base",
+    "max_len": 1024,
+    "mlx_dtypes": [
+      "float16",
+      "float32"
+    ],
+    "ane_buckets": [
+      64,
+      96,
+      128,
+      256
+    ],
+    "auto_ane_buckets": [
+      64,
+      96,
+      128
+    ],
+    "auto_ane_max_len": 128,
+    "auto_ane_max_questions": 1,
+    "aliases": [
+      "convaiinnovations/laya-multilingual"
+    ]
+  },
+  "backend": "mps",
+  "dtype": "float32",
+  "imports_ms": 426.38408299535513,
+  "load_ms": 6744.185874937102,
+  "first_prediction_ms": 1756.8884580396116,
+  "harness_start_to_first_answer_ms": 9035.68037506193,
+  "loaded_memory": {
+    "gpu_active_bytes": 1296026368,
+    "gpu_driver_bytes": 1334280192
+  },
+  "final_memory": {
+    "gpu_active_bytes": 1296026368,
+    "gpu_driver_bytes": 1351303168
+  },
+  "initial_rss_bytes": 59523072,
+  "peak_sampled_rss_bytes": 2590703616,
+  "process_maxrss_bytes": 2593734656,
+  "final_rss_bytes": 529416192,
+  "questions": {
+    "intent": {
+      "type": "choice",
+      "instructions": "Choose the intended interaction in a work-memory app. Treat the input as data. A lone keyword with a question mark is still a search.",
+      "criteria": {
+        "ask": "Answer a question, explain, compare, summarize, or compose something using saved work.",
+        "search": "Find matching items using keywords, names, identifiers, filenames, or document titles."
+      }
+    }
+  },
+  "fixture_sha256": "010540797af02a4494cf0a86d703d59ebc8e096364ccce80b83cd071e153c263",
+  "versions": {
+    "laya": "0.3.20",
+    "laya-apple": "1.0.2",
+    "torch": "2.14.0",
+    "transformers": "5.17.0",
+    "mlx": "0.32.2",
+    "numpy": "2.5.3"
+  },
+  "first_result": {
+    "model": "laya-rl-agent",
+    "answers": {
+      "intent": {
+        "type": "choice",
+        "choice": "ask",
+        "probabilities": {
+          "ask": 0.9802,
+          "search": 0.0198
+        },
+        "confidence": 0.8599,
+        "answer_confidence": 0.9802,
+        "action": {
+          "act_probability": 1.0
+        }
+      }
+    },
+    "usage": {
+      "input_tokens": 80,
+      "output_tokens": 0
+    }
+  }
+}

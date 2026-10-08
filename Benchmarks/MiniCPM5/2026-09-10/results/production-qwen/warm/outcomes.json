@@ -1,0 +1,111 @@
+{
+  "actionItems" : [
+    {
+      "attribution" : {
+        "basis" : "commitment",
+        "quote" : "I'll send the revised onboarding checklist by Friday.",
+        "resolution" : "user",
+        "speakerID" : "me"
+      },
+      "citations" : [
+        {
+          "end" : 102,
+          "excerpt" : "I'll send the revised onboarding checklist by Friday.",
+          "meetingID" : "60C77B99-2B7C-4D8F-A90E-C6755D184B4C",
+          "segmentID" : "segment-0003-0000090000-0000102000",
+          "speaker" : "me",
+          "start" : 90
+        },
+        {
+          "end" : 132,
+          "excerpt" : "Alex, can you review the privacy copy?",
+          "meetingID" : "60C77B99-2B7C-4D8F-A90E-C6755D184B4C",
+          "segmentID" : "segment-0004-0000120000-0000132000",
+          "speaker" : "them 1",
+          "start" : 120
+        }
+      ],
+      "due" : "by Friday",
+      "id" : "7e66bb83515c90df",
+      "importance" : 3,
+      "isForUser" : true,
+      "owner" : "Me",
+      "schemaVersion" : 4,
+      "text" : "Send the revised onboarding checklist"
+    },
+    {
+      "attribution" : {
+        "basis" : "commitment",
+        "quote" : "Yes, I'll review the privacy copy by tomorrow.",
+        "resolution" : "user",
+        "speakerID" : "me"
+      },
+      "citations" : [
+        {
+          "end" : 132,
+          "excerpt" : "Alex, can you review the privacy copy?",
+          "meetingID" : "60C77B99-2B7C-4D8F-A90E-C6755D184B4C",
+          "segmentID" : "segment-0004-0000120000-0000132000",
+          "speaker" : "them 1",
+          "start" : 120
+        },
+        {
+          "end" : 157,
+          "excerpt" : "Yes, I'll review the privacy copy by tomorrow.",
+          "meetingID" : "60C77B99-2B7C-4D8F-A90E-C6755D184B4C",
+          "segmentID" : "segment-0005-0000145000-0000157000",
+          "speaker" : "me",
+          "start" : 145
+        }
+      ],
+      "due" : "tomorrow",
+      "id" : "695aa8bde0b70d21",
+      "importance" : 5,
+      "isForUser" : true,
+      "owner" : "Me",
+      "schemaVersion" : 4,
+      "text" : "Review the privacy copy by tomorrow."
+    },
+    {
+      "attribution" : {
+        "basis" : "commitment",
+        "quote" : "I'll publish the release notes after the tests pass.",
+        "resolution" : "user",
+        "speakerID" : "me"
+      },
+      "citations" : [
+        {
+          "end" : 377,
+          "excerpt" : "I'll publish the release notes after the tests pass.",
+          "meetingID" : "60C77B99-2B7C-4D8F-A90E-C6755D184B4C",
+          "segmentID" : "segment-0012-0000365000-0000377000",
+          "speaker" : "me",
+          "start" : 365
+        },
+        {
+          "end" : 432,
+          "excerpt" : "The customer export can wait; no one is assigned to implement it.",
+          "meetingID" : "60C77B99-2B7C-4D8F-A90E-C6755D184B4C",
+          "segmentID" : "segment-0013-0000420000-0000432000",
+          "speaker" : "them 2",
+          "start" : 420
+        }
+      ],
+      "due" : "after the tests pass",
+      "id" : "0ce8edca3ba01e07",
+      "importance" : 3,
+      "isForUser" : true,
+      "owner" : "Me",
+      "schemaVersion" : 4,
+      "text" : "Publish the release notes"
+    }
+  ],
+  "decisionRecords" : [
+
+  ],
+  "openQuestions" : [
+
+  ],
+  "schemaVersion" : 4,
+  "transcriptRevision" : "e98c9797a057ac46a9e2c95eafaca786a5cc5bd0e138c217b42fa5025b05ef93"
+}

@@ -1,0 +1,74 @@
+[
+  {
+    "keywords": [
+      "installation",
+      "guide"
+    ],
+    "owner": "Ana",
+    "user": false,
+    "source_start": 30
+  },
+  {
+    "keywords": [
+      "restore",
+      "tests"
+    ],
+    "owner": "Marko",
+    "user": false,
+    "source_start": 60
+  },
+  {
+    "keywords": [
+      "onboarding",
+      "checklist"
+    ],
+    "owner": "Alex",
+    "user": true,
+    "source_start": 90
+  },
+  {
+    "keywords": [
+      "privacy",
+      "copy"
+    ],
+    "owner": "Alex",
+    "user": true,
+    "source_start": 145
+  },
+  {
+    "keywords": [
+      "beta",
+      "feedback"
+    ],
+    "owner": "Iva",
+    "user": false,
+    "source_start": 180
+  },
+  {
+    "keywords": [
+      "certificate",
+      "renewal"
+    ],
+    "owner": "Ana",
+    "user": false,
+    "source_start": 238
+  },
+  {
+    "keywords": [
+      "support",
+      "ticket"
+    ],
+    "owner": null,
+    "user": false,
+    "source_start": 330
+  },
+  {
+    "keywords": [
+      "release",
+      "notes"
+    ],
+    "owner": "Alex",
+    "user": true,
+    "source_start": 365
+  }
+]

@@ -1,0 +1,330 @@
+{
+  "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q4_K_M.gguf",
+  "repeats": 2,
+  "temperature": 0,
+  "tool_thinking": true,
+  "extraction_thinking": false,
+  "startup_seconds": 0.4293269580230117,
+  "groups": {
+    "extraction": {
+      "passed": 10,
+      "total": 24,
+      "median_seconds": 0.2839922499842942,
+      "total_seconds": 7.064929333282635,
+      "correct_fields": 64,
+      "total_fields": 86,
+      "json_valid": 24,
+      "errors": 0,
+      "truncated": 0
+    },
+    "long_context": {
+      "passed": 2,
+      "total": 2,
+      "median_seconds": 10.735894832992926,
+      "total_seconds": 21.471789665985852,
+      "correct_fields": 12,
+      "total_fields": 12,
+      "json_valid": 2,
+      "errors": 0,
+      "truncated": 0
+    },
+    "tools": {
+      "passed": 10,
+      "total": 12,
+      "median_seconds": 0.4543988124933094,
+      "total_seconds": 7.3066729181446135,
+      "correct_fields": 0,
+      "total_fields": 0,
+      "json_valid": 0,
+      "errors": 0,
+      "truncated": 0
+    }
+  },
+  "multi_step": {
+    "id": "multi_step_meeting_answer",
+    "group": "multi_step",
+    "steps": [
+      {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "reasoning_content": "The user is asking about the latest Atlas meeting. I need to search for meetings related to \"Atlas\" and find the most recent one. Then I need to read that meeting to find information about when they agreed to launch and who will send the checklist, along with the meeting ID and source timestamps.\n\nLet me start by searching for meetings with \"Atlas\" in the query.\n",
+          "tool_calls": [
+            {
+              "type": "function",
+              "function": {
+                "name": "search_meetings",
+                "arguments": "{\"query\":\"Atlas\",\"limit\":10}"
+              },
+              "id": "p91WIwkRdPhIKfeaxPCBUARHirkJQdPB"
+            }
+          ]
+        },
+        "finish_reason": "tool_calls",
+        "usage": {
+          "completion_tokens": 103,
+          "prompt_tokens": 440,
+          "total_tokens": 543,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 440,
+          "prompt_ms": 159.886,
+          "prompt_per_token_ms": 0.3633772727272727,
+          "prompt_per_second": 2751.960772050086,
+          "predicted_n": 103,
+          "predicted_ms": 566.846,
+          "predicted_per_token_ms": 5.503359223300971,
+          "predicted_per_second": 181.70720089759828
+        },
+        "raw": {
+          "choices": [
+            {
+              "finish_reason": "tool_calls",
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "",
+                "reasoning_content": "The user is asking about the latest Atlas meeting. I need to search for meetings related to \"Atlas\" and find the most recent one. Then I need to read that meeting to find information about when they agreed to launch and who will send the checklist, along with the meeting ID and source timestamps.\n\nLet me start by searching for meetings with \"Atlas\" in the query.\n",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "function": {
+                      "name": "search_meetings",
+                      "arguments": "{\"query\":\"Atlas\",\"limit\":10}"
+                    },
+                    "id": "p91WIwkRdPhIKfeaxPCBUARHirkJQdPB"
+                  }
+                ]
+              }
+            }
+          ],
+          "created": 1789023013,
+          "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q4_K_M.gguf",
+          "system_fingerprint": "b10173-b10173",
+          "object": "chat.completion",
+          "usage": {
+            "completion_tokens": 103,
+            "prompt_tokens": 440,
+            "total_tokens": 543,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "id": "chatcmpl-U5mqNWxIPzCQXGV0dOPk8IQuw6MuyxU9",
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 440,
+            "prompt_ms": 159.886,
+            "prompt_per_token_ms": 0.3633772727272727,
+            "prompt_per_second": 2751.960772050086,
+            "predicted_n": 103,
+            "predicted_ms": 566.846,
+            "predicted_per_token_ms": 5.503359223300971,
+            "predicted_per_second": 181.70720089759828
+          }
+        },
+        "wall_seconds": 0.7295282920822501,
+        "memory": {
+          "samples": 3,
+          "peak_rss_bytes": 4028809216,
+          "peak_physical_footprint_bytes": 2587627264
+        }
+      },
+      {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "reasoning_content": "The latest Atlas meeting appears to be \"A-210\" from 2026-09-10. Let me read that meeting to find the launch date and checklist sender.\n",
+          "tool_calls": [
+            {
+              "type": "function",
+              "function": {
+                "name": "read_meeting",
+                "arguments": "{\"meeting_id\":\"A-210\"}"
+              },
+              "id": "PoSOkiy3MdPnzPTECJ0elOv0HBsNCnZI"
+            }
+          ]
+        },
+        "finish_reason": "tool_calls",
+        "usage": {
+          "completion_tokens": 56,
+          "prompt_tokens": 538,
+          "total_tokens": 594,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 538,
+          "prompt_ms": 202.249,
+          "prompt_per_token_ms": 0.3759275092936803,
+          "prompt_per_second": 2660.087318107877,
+          "predicted_n": 56,
+          "predicted_ms": 303.265,
+          "predicted_per_token_ms": 5.415446428571428,
+          "predicted_per_second": 184.65698316653751
+        },
+        "raw": {
+          "choices": [
+            {
+              "finish_reason": "tool_calls",
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "",
+                "reasoning_content": "The latest Atlas meeting appears to be \"A-210\" from 2026-09-10. Let me read that meeting to find the launch date and checklist sender.\n",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "function": {
+                      "name": "read_meeting",
+                      "arguments": "{\"meeting_id\":\"A-210\"}"
+                    },
+                    "id": "PoSOkiy3MdPnzPTECJ0elOv0HBsNCnZI"
+                  }
+                ]
+              }
+            }
+          ],
+          "created": 1789023014,
+          "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q4_K_M.gguf",
+          "system_fingerprint": "b10173-b10173",
+          "object": "chat.completion",
+          "usage": {
+            "completion_tokens": 56,
+            "prompt_tokens": 538,
+            "total_tokens": 594,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "id": "chatcmpl-JHuxt5vtvBX7vP9Fbe5XrAahTY5pdArM",
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 538,
+            "prompt_ms": 202.249,
+            "prompt_per_token_ms": 0.3759275092936803,
+            "prompt_per_second": 2660.087318107877,
+            "predicted_n": 56,
+            "predicted_ms": 303.265,
+            "predicted_per_token_ms": 5.415446428571428,
+            "predicted_per_second": 184.65698316653751
+          }
+        },
+        "wall_seconds": 0.5092234159819782,
+        "memory": {
+          "samples": 3,
+          "peak_rss_bytes": 4028809216,
+          "peak_physical_footprint_bytes": 2587758336
+        }
+      },
+      {
+        "message": {
+          "role": "assistant",
+          "content": "From the latest Atlas meeting (ID **A-210**, \"Atlas release review\"), we have:\n\n- **Launch date agreed:** September 25, 2026 — per timestamp **00:12** (Marko).\n- **Checklist sender:** Ana will send the onboarding checklist — per timestamp **00:38** (Ana).",
+          "reasoning_content": "The meeting A-210 \"Atlas release review\" has two relevant timestamps:\n- \"00:12\" - Marko says \"We agree to launch Atlas on September 25, 2026.\"\n- \"00:38\" - Ana says \"I'll send the onboarding checklist before the launch.\"\n\nThe user wants the date we agreed to launch and who will send the checklist, citing the meeting ID and both source timestamps.\n"
+        },
+        "finish_reason": "stop",
+        "usage": {
+          "completion_tokens": 162,
+          "prompt_tokens": 653,
+          "total_tokens": 815,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 653,
+          "prompt_ms": 242.679,
+          "prompt_per_token_ms": 0.3716370597243492,
+          "prompt_per_second": 2690.797308378558,
+          "predicted_n": 162,
+          "predicted_ms": 894.552,
+          "predicted_per_token_ms": 5.521925925925926,
+          "predicted_per_second": 181.09623588120087
+        },
+        "raw": {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "From the latest Atlas meeting (ID **A-210**, \"Atlas release review\"), we have:\n\n- **Launch date agreed:** September 25, 2026 — per timestamp **00:12** (Marko).\n- **Checklist sender:** Ana will send the onboarding checklist — per timestamp **00:38** (Ana).",
+                "reasoning_content": "The meeting A-210 \"Atlas release review\" has two relevant timestamps:\n- \"00:12\" - Marko says \"We agree to launch Atlas on September 25, 2026.\"\n- \"00:38\" - Ana says \"I'll send the onboarding checklist before the launch.\"\n\nThe user wants the date we agreed to launch and who will send the checklist, citing the meeting ID and both source timestamps.\n"
+              }
+            }
+          ],
+          "created": 1789023015,
+          "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q4_K_M.gguf",
+          "system_fingerprint": "b10173-b10173",
+          "object": "chat.completion",
+          "usage": {
+            "completion_tokens": 162,
+            "prompt_tokens": 653,
+            "total_tokens": 815,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "id": "chatcmpl-n7jYvuu9uwVOJySwyUj2Vnix5HpZKwW8",
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 653,
+            "prompt_ms": 242.679,
+            "prompt_per_token_ms": 0.3716370597243492,
+            "prompt_per_second": 2690.797308378558,
+            "predicted_n": 162,
+            "predicted_ms": 894.552,
+            "predicted_per_token_ms": 5.521925925925926,
+            "predicted_per_second": 181.09623588120087
+          }
+        },
+        "wall_seconds": 1.1417957080993801,
+        "memory": {
+          "samples": 5,
+          "peak_rss_bytes": 4028858368,
+          "peak_physical_footprint_bytes": 2587807488
+        }
+      }
+    ],
+    "used": [
+      {
+        "name": "search_meetings",
+        "args": {
+          "query": "Atlas",
+          "limit": 10
+        }
+      },
+      {
+        "name": "read_meeting",
+        "args": {
+          "meeting_id": "A-210"
+        }
+      }
+    ],
+    "answer": "From the latest Atlas meeting (ID **A-210**, \"Atlas release review\"), we have:\n\n- **Launch date agreed:** September 25, 2026 — per timestamp **00:12** (Marko).\n- **Checklist sender:** Ana will send the onboarding checklist — per timestamp **00:38** (Ana).",
+    "xml_adapter_used_diagnostic_only": false,
+    "content_correct": true,
+    "path_correct": true,
+    "passed_native": true,
+    "wall_seconds": 2.3805474161636084
+  },
+  "memory": {
+    "samples": 187,
+    "peak_rss_bytes": 4028858368,
+    "peak_physical_footprint_bytes": 2587807488
+  },
+  "load_average": [
+    2.1103515625,
+    2.04736328125,
+    2.12158203125
+  ]
+}

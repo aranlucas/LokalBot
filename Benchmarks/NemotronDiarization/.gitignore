@@ -1,0 +1,6 @@
+# Raw outputs that collect.py saves when reproducing a run locally.
+results/*/manifest.json
+results/*/predictions/
+results/*/references/
+results/*/repeats/
+results/*/*.log

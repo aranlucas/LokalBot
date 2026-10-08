@@ -1,0 +1,108 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "",
+    "reasoning_content": "The user wants to find their latest three meetings about \"Atlas\". Let me search for meetings related to \"Atlas\" first.\n",
+    "tool_calls": [
+      {
+        "type": "function",
+        "function": {
+          "name": "search_meetings",
+          "arguments": "{\"query\":\"Atlas\",\"limit\":10}"
+        },
+        "id": "kaPtJkY8aFJnQrNPivI8lLiYX0z2RoMh"
+      }
+    ]
+  },
+  "finish_reason": "tool_calls",
+  "usage": {
+    "completion_tokens": 51,
+    "prompt_tokens": 416,
+    "total_tokens": 467,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 416,
+    "prompt_ms": 146.023,
+    "prompt_per_token_ms": 0.3510168269230769,
+    "prompt_per_second": 2848.8662744910052,
+    "predicted_n": 51,
+    "predicted_ms": 270.168,
+    "predicted_per_token_ms": 5.297411764705882,
+    "predicted_per_second": 188.77143110953185
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "reasoning_content": "The user wants to find their latest three meetings about \"Atlas\". Let me search for meetings related to \"Atlas\" first.\n",
+          "tool_calls": [
+            {
+              "type": "function",
+              "function": {
+                "name": "search_meetings",
+                "arguments": "{\"query\":\"Atlas\",\"limit\":10}"
+              },
+              "id": "kaPtJkY8aFJnQrNPivI8lLiYX0z2RoMh"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1789023009,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 51,
+      "prompt_tokens": 416,
+      "total_tokens": 467,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-YZjWjyads5otFIQR4zIQn9vZJY8sMGBE",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 416,
+      "prompt_ms": 146.023,
+      "prompt_per_token_ms": 0.3510168269230769,
+      "prompt_per_second": 2848.8662744910052,
+      "predicted_n": 51,
+      "predicted_ms": 270.168,
+      "predicted_per_token_ms": 5.297411764705882,
+      "predicted_per_second": 188.77143110953185
+    }
+  },
+  "wall_seconds": 0.4359403330599889,
+  "memory": {
+    "samples": 2,
+    "peak_rss_bytes": 4028809216,
+    "peak_physical_footprint_bytes": 2587758336
+  },
+  "id": "tool_search",
+  "group": "tools",
+  "repeat": 2,
+  "score": {
+    "passed": false,
+    "native_calls": [
+      {
+        "name": "search_meetings",
+        "args": {
+          "query": "Atlas",
+          "limit": 10
+        }
+      }
+    ],
+    "xml_calls_diagnostic": [],
+    "parse_errors": [],
+    "xml_semantically_correct": false
+  }
+}

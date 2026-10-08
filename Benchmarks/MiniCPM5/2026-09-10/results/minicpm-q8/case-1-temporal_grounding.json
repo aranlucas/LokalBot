@@ -1,0 +1,83 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"owner\": \"Ana\",\n  \"commitment_timestamp\": \"06:32\",\n  \"due\": \"next month\"\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 30,
+    "prompt_tokens": 138,
+    "total_tokens": 168,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 138,
+    "prompt_ms": 62.989,
+    "prompt_per_token_ms": 0.45644202898550723,
+    "prompt_per_second": 2190.8587213640476,
+    "predicted_n": 30,
+    "predicted_ms": 214.42,
+    "predicted_per_token_ms": 7.147333333333333,
+    "predicted_per_second": 139.91232161178996
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"owner\": \"Ana\",\n  \"commitment_timestamp\": \"06:32\",\n  \"due\": \"next month\"\n}"
+        }
+      }
+    ],
+    "created": 1789023568,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q8_0.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 30,
+      "prompt_tokens": 138,
+      "total_tokens": 168,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-WmSroMCvMzyWn6SaQvB1DdEtT6wlaepW",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 138,
+      "prompt_ms": 62.989,
+      "prompt_per_token_ms": 0.45644202898550723,
+      "prompt_per_second": 2190.8587213640476,
+      "predicted_n": 30,
+      "predicted_ms": 214.42,
+      "predicted_per_token_ms": 7.147333333333333,
+      "predicted_per_second": 139.91232161178996
+    }
+  },
+  "wall_seconds": 0.27986645803321153,
+  "memory": {
+    "samples": 1,
+    "peak_rss_bytes": 4287479808,
+    "peak_physical_footprint_bytes": 1728466832
+  },
+  "id": "temporal_grounding",
+  "group": "extraction",
+  "repeat": 1,
+  "score": {
+    "passed": false,
+    "json_valid": true,
+    "correct_fields": 2,
+    "total_fields": 3,
+    "wrong": {
+      "due": {
+        "expected": "this afternoon",
+        "actual": "next month"
+      }
+    }
+  }
+}

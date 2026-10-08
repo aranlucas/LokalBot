@@ -1,0 +1,26 @@
+{
+  "fixture_rows": 252,
+  "main_rows": 240,
+  "regression_rows": 12,
+  "complete_direct_runs": 9,
+  "direct_inference_rows": 4536,
+  "live_router_rows": 504,
+  "maximum_reported_input_tokens": {
+    "mps-float32-laya": 108,
+    "mps-float32-laya-multilingual": 94,
+    "mps-float32-laya-typed-decisions": 108,
+    "mlx-float32-laya": 108,
+    "mlx-float16-laya-multilingual": 94,
+    "mlx-float16-laya": 108,
+    "mlx-float16-laya-typed-decisions": 108,
+    "mlx-float32-laya-typed-decisions": 108,
+    "mlx-float32-laya-multilingual": 94
+  },
+  "live_router_reconstruction_mismatches": 0,
+  "fp32_runtime_decision_mismatches": 0,
+  "production_swift_regressions": 0,
+  "report_relative_links_valid": true,
+  "fixture_unchanged": true,
+  "python_compile_passed": true,
+  "source_whitespace_checks_passed": true
+}

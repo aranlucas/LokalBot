@@ -1,0 +1,95 @@
+{
+  "actions": [
+    {
+      "due": "Friday",
+      "context": [
+        "s1",
+        "s4"
+      ],
+      "text": "Send the revised onboarding checklist.",
+      "owner": "unknown",
+      "source": "s4",
+      "basis": "commitment","importance": 5
+    },
+    {
+      "due": "Thursday",
+      "context": [
+        "s1",
+        "s2"
+      ],
+      "text": "Update the installation guide.",
+      "owner": "unknown",
+      "source": "s2",
+      "basis": "commitment",
+      "importance": 5
+    },
+    {
+      "due": "Friday",
+      "context": [
+        "s1",
+        "s3"
+      ],
+      "text": "Run the restore regression tests.",
+      "owner": "unknown",
+      "source": "s3",
+      "basis": "commitment",
+      "importance": 5
+    },
+    {
+      "due": "tomorrow",
+      "context": [
+        "s5",
+        "s6"
+      ],
+      "text": "Review the privacy copy.",
+      "owner": "unknown",
+      "source": "s6",
+      "basis": "commitment",
+      "importance": 5
+    },
+    {
+      "due": "Monday",
+      "context": [
+        "s7"
+      ],
+      "text": "Collect the beta feedback.",
+      "owner": "unknown",
+      "source": "s7",
+      "basis": "commitment",
+      "importance": 4
+    }
+  ],
+  "has_more": false,
+  "notes": [
+    {
+      "section": "Key points",
+      "text": "The Atlas release is scheduled for Friday, but publishing is conditional on the regression tests passing.",
+      "source": "s1"
+    },
+    {
+      "section": "Key points",
+      "text": "The dashboard was updated yesterday and that work is complete.",
+      "source": "s10"
+    },
+    {
+      "section": "Key points",
+      "text": "Someone needs to reconcile the support ticket totals before launch, but no owner has been assigned.",
+      "source": "s12"
+    },
+    {
+      "section": "Key points",
+      "text": "The customer export can wait as no one is assigned to implement it.",
+      "source": "s14"
+    },
+    {
+      "section": "Key points",
+      "text": "Automating screenshots is discussed as an idea but is not an agreed task.",
+      "source": "s11"
+    },
+    {
+      "section": "Key points",
+      "text": "The next planning session is scheduled for Tuesday at ten.",
+      "source": "s15"
+    }
+  ]
+}

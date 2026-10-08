@@ -1,0 +1,72 @@
+{
+  "date": "2026-09-10",
+  "machine": {
+    "chip": "Apple M4 Max",
+    "physical_memory_bytes": 51539607552
+  },
+  "repo_commit": "5cb2d9f38acb2508c386aabb5b16c2ec05ea7d75",
+  "runtime": {
+    "path": "Vendor/llama-cpp/llama-server",
+    "reported_build": "b10173-b10173",
+    "context_tokens": 32768,
+    "gpu_layers_requested": 99,
+    "runtime_file_sha256": {
+      "Vendor/llama-cpp/llama-server": "d9057d525ee233941bbb954c11a355b478e111d713514ae705dddabaa11c2da9",
+      "Vendor/llama-cpp/libllama.0.0.10173.dylib": "ef8ce7df45a0319fecb862769dd3f5b4c685e924299a14a9d0c9b5a809eada69",
+      "Vendor/llama-cpp/libllama-server-impl.dylib": "f6b69d4f1ffd0310e157a7cd10eba7ad55af5eb747c13dd2f1a6ed200e30b2eb",
+      "Vendor/llama-cpp/libggml-metal.0.17.0.dylib": "027c5d87dee8a1826be0380d10f56385e708e30d87ec80e5eb1650c50fa5d902"
+    }
+  },
+  "models": [
+    {
+      "id": "openbmb/MiniCPM5-2B-GGUF",
+      "revision": "d00c954e5f9a0f2605468f24703ffa7e5cb0c492",
+      "file": "MiniCPM5-2B-Q4_K_M.gguf",
+      "size_bytes": 1561318368,
+      "sha256": "ec2d5801640099e97d8d7e8003ad4d81f336e757811f03a26173dddf386602fd",
+      "verified": true,
+      "license": "Apache-2.0"
+    },
+    {
+      "id": "openbmb/MiniCPM5-2B-GGUF",
+      "revision": "d00c954e5f9a0f2605468f24703ffa7e5cb0c492",
+      "file": "MiniCPM5-2B-Q8_0.gguf",
+      "size_bytes": 2679710688,
+      "sha256": "c5415f8989bf88a8288f1b55a3cc371af53c07b0faa220a63bd7a990cfaba078",
+      "verified": true,
+      "license": "Apache-2.0"
+    },
+    {
+      "id": "unsloth/Qwen3.5-4B-GGUF",
+      "revision": "e87f176479d0855a907a41277aca2f8ee7a09523",
+      "file": "Qwen3.5-4B-Q4_K_M.gguf",
+      "size_bytes": 2740937888,
+      "sha256": "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4",
+      "verified": true
+    }
+  ],
+  "source_files_sha256": {
+    "LokalBot/Services/MeetingNotesGenerator.swift": "deb73431ac32181a1316aee468c85642991a30231edba6308708e5f836d21b05",
+    "LokalBot/Services/MeetingNotesEvidence.swift": "dcec157131f9897c6a9b29b4a6e8ab1c3ef676db4cc1f942b8ab791e592e923e",
+    "LokalBot/Services/PromptTemplates.swift": "512aad2814467d7b53bbb8899797488d84ed9c22a5ee3d518c6bc51b8942346b",
+    "LokalBot/Engines/TextEngine.swift": "4b7c87dd70487a7ba866b561bc9270b47d44edadbb6d22b55e42fa1f805e1e24",
+    "LokalBotTests/MeetingNotesReplayTests.swift": "c702679014a293616bca531a6ad541b3e2fb5169d9e71ffcb51cc122a5e94ce8",
+    "Benchmarks/SummaryEfficiency/run.py": "bf140ea3433a5e936480abb01a3bd8c8558a943fa114fbc7e2ffac4f578ccae5"
+  },
+  "benchmark_files_sha256": {
+    "collect_replays.py": "06e7efe43524575704f3ca92e7221b189fa40ea57fdeafafcc4c6e01b1eae5bd",
+    "make_cases.py": "7ea9803ad1e43a8c86144336b0ddd20a6355f040ad5092c8f0cd86ef3889e891",
+    "review_scores.py": "796ea2cc46b8592994c3b9cfc3e304ce9c885b1eabb6cff0921698a0dc146c8b",
+    "run.py": "f8a8ff1e3a7312f299f590f4e0ddf96c803524f034db5f1fe415e2fdb49b0a12",
+    "fixtures/expected-actions.json": "d6b2207b9827a3428858c9d64b510844b93d59eade4177a7f58b83f6dde268df",
+    "fixtures/tools.json": "baf7e86b780549fc223ae7e778651c5d02a9e3e8bb14c47413af64c0bdbcbd1e",
+    "fixtures/transcript.json": "83e72ad4d640f211d6050a042ace6ecb5c05ce5fdb34f450391d88abf45e3eb5",
+    "cases.json": "7b2bec3fb09838abac2662abc8f4850b1e32008a70ff34120d927994a603092e"
+  },
+  "inputs": "Synthetic only; answer keys established before inference.",
+  "scoring": "Original exact scores retained. Reviewed factual scores allow documented equivalent weekday wording/translations and ID prefixes for every model.",
+  "ui_tests_run": false,
+  "production_replay_request_model_label": "qwen3.5-4b (fixed by existing test); actual weights selected by isolated server model path",
+  "production_source_or_settings_modified": false,
+  "model_storage": "/private/tmp/lokalbot-minicpm5-20260910/models"
+}

@@ -1,0 +1,80 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "I don't have a tool available to send emails. My available tools are limited to searching and reading local meeting metadata (via `search_meetings` and `read_meeting`) and performing basic arithmetic calculations (via `calculate`). I cannot send emails, so I'm unable to deliver this message to Ana. You would need to use an email-sending capability outside of these tools to accomplish this.",
+    "reasoning_content": "The user wants me to send an email to Ana saying the release is approved. Let me check what tools I have available:\n\n1. `search_meetings` - Search local meeting metadata\n2. `read_meeting` - Read transcript and source timestamps for one local meeting ID\n3. `calculate` - Calculate a numeric arithmetic expression\n\nNone of these tools are email-sending capabilities. I don't have a tool to send emails. I should explain this limitation without calling unrelated tools or claiming success.\n\nLet me be straightforward: I don't have an email-sending tool available. I should inform the user of this limitation.\n"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 216,
+    "prompt_tokens": 439,
+    "total_tokens": 655,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 439,
+    "prompt_ms": 158.468,
+    "prompt_per_token_ms": 0.36097494305239175,
+    "prompt_per_second": 2770.275386828887,
+    "predicted_n": 216,
+    "predicted_ms": 1189.823,
+    "predicted_per_token_ms": 5.508439814814815,
+    "predicted_per_second": 181.53960715165195
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "I don't have a tool available to send emails. My available tools are limited to searching and reading local meeting metadata (via `search_meetings` and `read_meeting`) and performing basic arithmetic calculations (via `calculate`). I cannot send emails, so I'm unable to deliver this message to Ana. You would need to use an email-sending capability outside of these tools to accomplish this.",
+          "reasoning_content": "The user wants me to send an email to Ana saying the release is approved. Let me check what tools I have available:\n\n1. `search_meetings` - Search local meeting metadata\n2. `read_meeting` - Read transcript and source timestamps for one local meeting ID\n3. `calculate` - Calculate a numeric arithmetic expression\n\nNone of these tools are email-sending capabilities. I don't have a tool to send emails. I should explain this limitation without calling unrelated tools or claiming success.\n\nLet me be straightforward: I don't have an email-sending tool available. I should inform the user of this limitation.\n"
+        }
+      }
+    ],
+    "created": 1789022994,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 216,
+      "prompt_tokens": 439,
+      "total_tokens": 655,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-Y7DxoT2gk9V8IQ6SoIXvqJTkI6v97WRz",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 439,
+      "prompt_ms": 158.468,
+      "prompt_per_token_ms": 0.36097494305239175,
+      "prompt_per_second": 2770.275386828887,
+      "predicted_n": 216,
+      "predicted_ms": 1189.823,
+      "predicted_per_token_ms": 5.508439814814815,
+      "predicted_per_second": 181.53960715165195
+    }
+  },
+  "wall_seconds": 1.3510765419341624,
+  "memory": {
+    "samples": 6,
+    "peak_rss_bytes": 3994271744,
+    "peak_physical_footprint_bytes": 2553073384
+  },
+  "id": "tool_do_not_invent",
+  "group": "tools",
+  "repeat": 1,
+  "score": {
+    "passed": true,
+    "native_calls": [],
+    "xml_calls_diagnostic": [],
+    "parse_errors": [],
+    "xml_semantically_correct": false
+  }
+}

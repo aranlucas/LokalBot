@@ -1,0 +1,108 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "",
+    "reasoning_content": "The user is asking for their latest three meetings about \"Atlas\". I need to use the search_meetings function to find meetings related to \"Atlas\". The function requires two parameters:\n- query: \"Atlas\" (the topic they're interested in)\n- limit: 3 (they want the latest three meetings)\n\nI have all the required parameters, so I can make the function call.\n",
+    "tool_calls": [
+      {
+        "type": "function",
+        "function": {
+          "name": "search_meetings",
+          "arguments": "{\"query\":\"Atlas\",\"limit\":3}"
+        },
+        "id": "BQSQrW6vJq57nUVGpdPvrzhLH7rKgX32"
+      }
+    ]
+  },
+  "finish_reason": "tool_calls",
+  "usage": {
+    "completion_tokens": 124,
+    "prompt_tokens": 480,
+    "total_tokens": 604,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 480,
+    "prompt_ms": 461.723,
+    "prompt_per_token_ms": 0.9619229166666667,
+    "prompt_per_second": 1039.5843395282452,
+    "predicted_n": 124,
+    "predicted_ms": 1269.226,
+    "predicted_per_token_ms": 10.235693548387097,
+    "predicted_per_second": 97.69733680211404
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "reasoning_content": "The user is asking for their latest three meetings about \"Atlas\". I need to use the search_meetings function to find meetings related to \"Atlas\". The function requires two parameters:\n- query: \"Atlas\" (the topic they're interested in)\n- limit: 3 (they want the latest three meetings)\n\nI have all the required parameters, so I can make the function call.\n",
+          "tool_calls": [
+            {
+              "type": "function",
+              "function": {
+                "name": "search_meetings",
+                "arguments": "{\"query\":\"Atlas\",\"limit\":3}"
+              },
+              "id": "BQSQrW6vJq57nUVGpdPvrzhLH7rKgX32"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1789023068,
+    "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 124,
+      "prompt_tokens": 480,
+      "total_tokens": 604,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-4cZtHSh4L0fxum4gYKWG9p9KfNxFPV2H",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 480,
+      "prompt_ms": 461.723,
+      "prompt_per_token_ms": 0.9619229166666667,
+      "prompt_per_second": 1039.5843395282452,
+      "predicted_n": 124,
+      "predicted_ms": 1269.226,
+      "predicted_per_token_ms": 10.235693548387097,
+      "predicted_per_second": 97.69733680211404
+    }
+  },
+  "wall_seconds": 1.8472639999818057,
+  "memory": {
+    "samples": 9,
+    "peak_rss_bytes": 6916472832,
+    "peak_physical_footprint_bytes": 4363507568
+  },
+  "id": "tool_search",
+  "group": "tools",
+  "repeat": 1,
+  "score": {
+    "passed": true,
+    "native_calls": [
+      {
+        "name": "search_meetings",
+        "args": {
+          "query": "Atlas",
+          "limit": 3
+        }
+      }
+    ],
+    "xml_calls_diagnostic": [],
+    "parse_errors": [],
+    "xml_semantically_correct": false
+  }
+}

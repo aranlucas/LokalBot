@@ -1,0 +1,252 @@
+{"id": "ask-01-en", "family": "ask-01", "language": "en", "query": "What did we decide about Redis?", "expected": "ask", "suite": "main"}
+{"id": "ask-01-sr-Latn", "family": "ask-01", "language": "sr-Latn", "query": "Šta smo odlučili o Redis sistemu?", "expected": "ask", "suite": "main"}
+{"id": "ask-01-sr-Cyrl", "family": "ask-01", "language": "sr-Cyrl", "query": "Шта смо одлучили о Redis систему?", "expected": "ask", "suite": "main"}
+{"id": "ask-02-en", "family": "ask-02", "language": "en", "query": "Who owns the failover benchmark", "expected": "ask", "suite": "main"}
+{"id": "ask-02-sr-Latn", "family": "ask-02", "language": "sr-Latn", "query": "Ko je zadužen za test oporavka", "expected": "ask", "suite": "main"}
+{"id": "ask-02-sr-Cyrl", "family": "ask-02", "language": "sr-Cyrl", "query": "Ко је задужен за тест опоравка", "expected": "ask", "suite": "main"}
+{"id": "ask-03-en", "family": "ask-03", "language": "en", "query": "Summarize the design review", "expected": "ask", "suite": "main"}
+{"id": "ask-03-sr-Latn", "family": "ask-03", "language": "sr-Latn", "query": "Sažmi pregled dizajna", "expected": "ask", "suite": "main"}
+{"id": "ask-03-sr-Cyrl", "family": "ask-03", "language": "sr-Cyrl", "query": "Сажми преглед дизајна", "expected": "ask", "suite": "main"}
+{"id": "ask-04-en", "family": "ask-04", "language": "en", "query": "When is the migration due", "expected": "ask", "suite": "main"}
+{"id": "ask-04-sr-Latn", "family": "ask-04", "language": "sr-Latn", "query": "Kada je rok za migraciju", "expected": "ask", "suite": "main"}
+{"id": "ask-04-sr-Cyrl", "family": "ask-04", "language": "sr-Cyrl", "query": "Када је рок за миграцију", "expected": "ask", "suite": "main"}
+{"id": "ask-05-en", "family": "ask-05", "language": "en", "query": "Why did we reject the hosted option", "expected": "ask", "suite": "main"}
+{"id": "ask-05-sr-Latn", "family": "ask-05", "language": "sr-Latn", "query": "Zašto smo odbacili hostovanu opciju", "expected": "ask", "suite": "main"}
+{"id": "ask-05-sr-Cyrl", "family": "ask-05", "language": "sr-Cyrl", "query": "Зашто смо одбацили хостовану опцију", "expected": "ask", "suite": "main"}
+{"id": "ask-06-en", "family": "ask-06", "language": "en", "query": "How does the new fee calculation work", "expected": "ask", "suite": "main"}
+{"id": "ask-06-sr-Latn", "family": "ask-06", "language": "sr-Latn", "query": "Kako radi novi obračun naknade", "expected": "ask", "suite": "main"}
+{"id": "ask-06-sr-Cyrl", "family": "ask-06", "language": "sr-Cyrl", "query": "Како ради нови обрачун накнаде", "expected": "ask", "suite": "main"}
+{"id": "ask-07-en", "family": "ask-07", "language": "en", "query": "Which tasks are still open", "expected": "ask", "suite": "main"}
+{"id": "ask-07-sr-Latn", "family": "ask-07", "language": "sr-Latn", "query": "Koji zadaci su još otvoreni", "expected": "ask", "suite": "main"}
+{"id": "ask-07-sr-Cyrl", "family": "ask-07", "language": "sr-Cyrl", "query": "Који задаци су још отворени", "expected": "ask", "suite": "main"}
+{"id": "ask-08-en", "family": "ask-08", "language": "en", "query": "Did Ana agree to send the report", "expected": "ask", "suite": "main"}
+{"id": "ask-08-sr-Latn", "family": "ask-08", "language": "sr-Latn", "query": "Da li je Ana pristala da pošalje izveštaj", "expected": "ask", "suite": "main"}
+{"id": "ask-08-sr-Cyrl", "family": "ask-08", "language": "sr-Cyrl", "query": "Да ли је Ана пристала да пошаље извештај", "expected": "ask", "suite": "main"}
+{"id": "ask-09-en", "family": "ask-09", "language": "en", "query": "Compare the two database proposals", "expected": "ask", "suite": "main"}
+{"id": "ask-09-sr-Latn", "family": "ask-09", "language": "sr-Latn", "query": "Uporedi dva predloga baze podataka", "expected": "ask", "suite": "main"}
+{"id": "ask-09-sr-Cyrl", "family": "ask-09", "language": "sr-Cyrl", "query": "Упореди два предлога базе података", "expected": "ask", "suite": "main"}
+{"id": "ask-10-en", "family": "ask-10", "language": "en", "query": "List my commitments from yesterday", "expected": "ask", "suite": "main"}
+{"id": "ask-10-sr-Latn", "family": "ask-10", "language": "sr-Latn", "query": "Navedi moje obaveze od juče", "expected": "ask", "suite": "main"}
+{"id": "ask-10-sr-Cyrl", "family": "ask-10", "language": "sr-Cyrl", "query": "Наведи моје обавезе од јуче", "expected": "ask", "suite": "main"}
+{"id": "ask-11-en", "family": "ask-11", "language": "en", "query": "Explain the storage layout change", "expected": "ask", "suite": "main"}
+{"id": "ask-11-sr-Latn", "family": "ask-11", "language": "sr-Latn", "query": "Objasni promenu rasporeda skladištenja", "expected": "ask", "suite": "main"}
+{"id": "ask-11-sr-Cyrl", "family": "ask-11", "language": "sr-Cyrl", "query": "Објасни промену распореда складиштења", "expected": "ask", "suite": "main"}
+{"id": "ask-12-en", "family": "ask-12", "language": "en", "query": "Tell me what changed since Monday", "expected": "ask", "suite": "main"}
+{"id": "ask-12-sr-Latn", "family": "ask-12", "language": "sr-Latn", "query": "Reci mi šta se promenilo od ponedeljka", "expected": "ask", "suite": "main"}
+{"id": "ask-12-sr-Cyrl", "family": "ask-12", "language": "sr-Cyrl", "query": "Реци ми шта се променило од понедељка", "expected": "ask", "suite": "main"}
+{"id": "ask-13-en", "family": "ask-13", "language": "en", "query": "Remind me why we chose PostgreSQL", "expected": "ask", "suite": "main"}
+{"id": "ask-13-sr-Latn", "family": "ask-13", "language": "sr-Latn", "query": "Podseti me zašto smo izabrali PostgreSQL", "expected": "ask", "suite": "main"}
+{"id": "ask-13-sr-Cyrl", "family": "ask-13", "language": "sr-Cyrl", "query": "Подсети ме зашто смо изабрали PostgreSQL", "expected": "ask", "suite": "main"}
+{"id": "ask-14-en", "family": "ask-14", "language": "en", "query": "Draft a follow-up based on the meeting", "expected": "ask", "suite": "main"}
+{"id": "ask-14-sr-Latn", "family": "ask-14", "language": "sr-Latn", "query": "Sastavi poruku na osnovu sastanka", "expected": "ask", "suite": "main"}
+{"id": "ask-14-sr-Cyrl", "family": "ask-14", "language": "sr-Cyrl", "query": "Састави поруку на основу састанка", "expected": "ask", "suite": "main"}
+{"id": "ask-15-en", "family": "ask-15", "language": "en", "query": "What happened after the deployment failed", "expected": "ask", "suite": "main"}
+{"id": "ask-15-sr-Latn", "family": "ask-15", "language": "sr-Latn", "query": "Šta se desilo posle neuspele objave", "expected": "ask", "suite": "main"}
+{"id": "ask-15-sr-Cyrl", "family": "ask-15", "language": "sr-Cyrl", "query": "Шта се десило после неуспеле објаве", "expected": "ask", "suite": "main"}
+{"id": "ask-16-en", "family": "ask-16", "language": "en", "query": "Were the audit findings resolved", "expected": "ask", "suite": "main"}
+{"id": "ask-16-sr-Latn", "family": "ask-16", "language": "sr-Latn", "query": "Da li su nalazi revizije rešeni", "expected": "ask", "suite": "main"}
+{"id": "ask-16-sr-Cyrl", "family": "ask-16", "language": "sr-Cyrl", "query": "Да ли су налази ревизије решени", "expected": "ask", "suite": "main"}
+{"id": "ask-17-en", "family": "ask-17", "language": "en", "query": "Has Marko finished the integration", "expected": "ask", "suite": "main"}
+{"id": "ask-17-sr-Latn", "family": "ask-17", "language": "sr-Latn", "query": "Da li je Marko završio integraciju", "expected": "ask", "suite": "main"}
+{"id": "ask-17-sr-Cyrl", "family": "ask-17", "language": "sr-Cyrl", "query": "Да ли је Марко завршио интеграцију", "expected": "ask", "suite": "main"}
+{"id": "ask-18-en", "family": "ask-18", "language": "en", "query": "Can you recap the discussion about retention", "expected": "ask", "suite": "main"}
+{"id": "ask-18-sr-Latn", "family": "ask-18", "language": "sr-Latn", "query": "Možeš li da prepričaš razgovor o čuvanju podataka", "expected": "ask", "suite": "main"}
+{"id": "ask-18-sr-Cyrl", "family": "ask-18", "language": "sr-Cyrl", "query": "Можеш ли да препричаш разговор о чувању података", "expected": "ask", "suite": "main"}
+{"id": "ask-19-en", "family": "ask-19", "language": "en", "query": "Should we keep the old API according to the call", "expected": "ask", "suite": "main"}
+{"id": "ask-19-sr-Latn", "family": "ask-19", "language": "sr-Latn", "query": "Treba li da zadržimo stari API prema razgovoru", "expected": "ask", "suite": "main"}
+{"id": "ask-19-sr-Cyrl", "family": "ask-19", "language": "sr-Cyrl", "query": "Треба ли да задржимо стари API према разговору", "expected": "ask", "suite": "main"}
+{"id": "ask-20-en", "family": "ask-20", "language": "en", "query": "Where did we leave the pricing discussion", "expected": "ask", "suite": "main"}
+{"id": "ask-20-sr-Latn", "family": "ask-20", "language": "sr-Latn", "query": "Dokle smo stigli sa razgovorom o cenama", "expected": "ask", "suite": "main"}
+{"id": "ask-20-sr-Cyrl", "family": "ask-20", "language": "sr-Cyrl", "query": "Докле смо стигли са разговором о ценама", "expected": "ask", "suite": "main"}
+{"id": "ask-21-en", "family": "ask-21", "language": "en", "query": "I need a summary of today's standup", "expected": "ask", "suite": "main"}
+{"id": "ask-21-sr-Latn", "family": "ask-21", "language": "sr-Latn", "query": "Treba mi sažetak današnjeg sastanka", "expected": "ask", "suite": "main"}
+{"id": "ask-21-sr-Cyrl", "family": "ask-21", "language": "sr-Cyrl", "query": "Треба ми сажетак данашњег састанка", "expected": "ask", "suite": "main"}
+{"id": "ask-22-en", "family": "ask-22", "language": "en", "query": "Give me the reasons for delaying release", "expected": "ask", "suite": "main"}
+{"id": "ask-22-sr-Latn", "family": "ask-22", "language": "sr-Latn", "query": "Daj mi razloge odlaganja izdanja", "expected": "ask", "suite": "main"}
+{"id": "ask-22-sr-Cyrl", "family": "ask-22", "language": "sr-Cyrl", "query": "Дај ми разлоге одлагања издања", "expected": "ask", "suite": "main"}
+{"id": "ask-23-en", "family": "ask-23", "language": "en", "query": "I'd like to know who approved the budget", "expected": "ask", "suite": "main"}
+{"id": "ask-23-sr-Latn", "family": "ask-23", "language": "sr-Latn", "query": "Želim da znam ko je odobrio budžet", "expected": "ask", "suite": "main"}
+{"id": "ask-23-sr-Cyrl", "family": "ask-23", "language": "sr-Cyrl", "query": "Желим да знам ко је одобрио буџет", "expected": "ask", "suite": "main"}
+{"id": "ask-24-en", "family": "ask-24", "language": "en", "query": "Help me understand the authentication decision", "expected": "ask", "suite": "main"}
+{"id": "ask-24-sr-Latn", "family": "ask-24", "language": "sr-Latn", "query": "Pomozi mi da razumem odluku o autentifikaciji", "expected": "ask", "suite": "main"}
+{"id": "ask-24-sr-Cyrl", "family": "ask-24", "language": "sr-Cyrl", "query": "Помози ми да разумем одлуку о аутентификацији", "expected": "ask", "suite": "main"}
+{"id": "ask-25-en", "family": "ask-25", "language": "en", "query": "Put together the outstanding follow-ups", "expected": "ask", "suite": "main"}
+{"id": "ask-25-sr-Latn", "family": "ask-25", "language": "sr-Latn", "query": "Sastavi pregled preostalih obaveza", "expected": "ask", "suite": "main"}
+{"id": "ask-25-sr-Cyrl", "family": "ask-25", "language": "sr-Cyrl", "query": "Састави преглед преосталих обавеза", "expected": "ask", "suite": "main"}
+{"id": "ask-26-en", "family": "ask-26", "language": "en", "query": "Break down the risks mentioned in the review", "expected": "ask", "suite": "main"}
+{"id": "ask-26-sr-Latn", "family": "ask-26", "language": "sr-Latn", "query": "Razloži rizike pomenute u pregledu", "expected": "ask", "suite": "main"}
+{"id": "ask-26-sr-Cyrl", "family": "ask-26", "language": "sr-Cyrl", "query": "Разложи ризике поменуте у прегледу", "expected": "ask", "suite": "main"}
+{"id": "ask-27-en", "family": "ask-27", "language": "en", "query": "Based on our last call, what should I do next", "expected": "ask", "suite": "main"}
+{"id": "ask-27-sr-Latn", "family": "ask-27", "language": "sr-Latn", "query": "Na osnovu poslednjeg poziva šta treba sledeće da uradim", "expected": "ask", "suite": "main"}
+{"id": "ask-27-sr-Cyrl", "family": "ask-27", "language": "sr-Cyrl", "query": "На основу последњег позива шта треба следеће да урадим", "expected": "ask", "suite": "main"}
+{"id": "ask-28-en", "family": "ask-28", "language": "en", "query": "Please summarize the customer feedback", "expected": "ask", "suite": "main"}
+{"id": "ask-28-sr-Latn", "family": "ask-28", "language": "sr-Latn", "query": "Molim te sažmi povratne informacije korisnika", "expected": "ask", "suite": "main"}
+{"id": "ask-28-sr-Cyrl", "family": "ask-28", "language": "sr-Cyrl", "query": "Молим те сажми повратне информације корисника", "expected": "ask", "suite": "main"}
+{"id": "ask-29-en", "family": "ask-29", "language": "en", "query": "Any unresolved questions from the security review?", "expected": "ask", "suite": "main"}
+{"id": "ask-29-sr-Latn", "family": "ask-29", "language": "sr-Latn", "query": "Ima li nerešenih pitanja sa bezbednosnog pregleda?", "expected": "ask", "suite": "main"}
+{"id": "ask-29-sr-Cyrl", "family": "ask-29", "language": "sr-Cyrl", "query": "Има ли нерешених питања са безбедносног прегледа?", "expected": "ask", "suite": "main"}
+{"id": "ask-30-en", "family": "ask-30", "language": "en", "query": "What are the next steps for AlphaVault", "expected": "ask", "suite": "main"}
+{"id": "ask-30-sr-Latn", "family": "ask-30", "language": "sr-Latn", "query": "Koji su sledeći koraci za AlphaVault", "expected": "ask", "suite": "main"}
+{"id": "ask-30-sr-Cyrl", "family": "ask-30", "language": "sr-Cyrl", "query": "Који су следећи кораци за AlphaVault", "expected": "ask", "suite": "main"}
+{"id": "ask-31-en", "family": "ask-31", "language": "en", "query": "Summarize yesterday", "expected": "ask", "suite": "main"}
+{"id": "ask-31-sr-Latn", "family": "ask-31", "language": "sr-Latn", "query": "Sažmi jučerašnji dan", "expected": "ask", "suite": "main"}
+{"id": "ask-31-sr-Cyrl", "family": "ask-31", "language": "sr-Cyrl", "query": "Сажми јучерашњи дан", "expected": "ask", "suite": "main"}
+{"id": "ask-32-en", "family": "ask-32", "language": "en", "query": "Explain this decision", "expected": "ask", "suite": "main"}
+{"id": "ask-32-sr-Latn", "family": "ask-32", "language": "sr-Latn", "query": "Objasni ovu odluku", "expected": "ask", "suite": "main"}
+{"id": "ask-32-sr-Cyrl", "family": "ask-32", "language": "sr-Cyrl", "query": "Објасни ову одлуку", "expected": "ask", "suite": "main"}
+{"id": "ask-33-en", "family": "ask-33", "language": "en", "query": "Who promised to update the documentation?", "expected": "ask", "suite": "main"}
+{"id": "ask-33-sr-Latn", "family": "ask-33", "language": "sr-Latn", "query": "Ko je obećao da ažurira dokumentaciju?", "expected": "ask", "suite": "main"}
+{"id": "ask-33-sr-Cyrl", "family": "ask-33", "language": "sr-Cyrl", "query": "Ко је обећао да ажурира документацију?", "expected": "ask", "suite": "main"}
+{"id": "ask-34-en", "family": "ask-34", "language": "en", "query": "Is there evidence that we accepted the new deadline", "expected": "ask", "suite": "main"}
+{"id": "ask-34-sr-Latn", "family": "ask-34", "language": "sr-Latn", "query": "Postoji li dokaz da smo prihvatili novi rok", "expected": "ask", "suite": "main"}
+{"id": "ask-34-sr-Cyrl", "family": "ask-34", "language": "sr-Cyrl", "query": "Постоји ли доказ да смо прихватили нови рок", "expected": "ask", "suite": "main"}
+{"id": "ask-35-en", "family": "ask-35", "language": "en", "query": "What's blocking the mobile launch", "expected": "ask", "suite": "main"}
+{"id": "ask-35-sr-Latn", "family": "ask-35", "language": "sr-Latn", "query": "Šta koči pokretanje mobilne aplikacije", "expected": "ask", "suite": "main"}
+{"id": "ask-35-sr-Cyrl", "family": "ask-35", "language": "sr-Cyrl", "query": "Шта кочи покретање мобилне апликације", "expected": "ask", "suite": "main"}
+{"id": "ask-36-en", "family": "ask-36", "language": "en", "query": "How many action items did I accept", "expected": "ask", "suite": "main"}
+{"id": "ask-36-sr-Latn", "family": "ask-36", "language": "sr-Latn", "query": "Koliko sam zadataka prihvatio", "expected": "ask", "suite": "main"}
+{"id": "ask-36-sr-Cyrl", "family": "ask-36", "language": "sr-Cyrl", "query": "Колико сам задатака прихватио", "expected": "ask", "suite": "main"}
+{"id": "ask-37-en", "family": "ask-37", "language": "en", "query": "What did we decide about ERC-7540 compliance", "expected": "ask", "suite": "main"}
+{"id": "ask-37-sr-Latn", "family": "ask-37", "language": "sr-Latn", "query": "Šta smo odlučili o usklađenosti sa ERC-7540", "expected": "ask", "suite": "main"}
+{"id": "ask-37-sr-Cyrl", "family": "ask-37", "language": "sr-Cyrl", "query": "Шта смо одлучили о усклађености са ERC-7540", "expected": "ask", "suite": "main"}
+{"id": "ask-38-en", "family": "ask-38", "language": "en", "query": "Why was PR-1234 postponed", "expected": "ask", "suite": "main"}
+{"id": "ask-38-sr-Latn", "family": "ask-38", "language": "sr-Latn", "query": "Zašto je PR-1234 odložen", "expected": "ask", "suite": "main"}
+{"id": "ask-38-sr-Cyrl", "family": "ask-38", "language": "sr-Cyrl", "query": "Зашто је PR-1234 одложен", "expected": "ask", "suite": "main"}
+{"id": "ask-39-en", "family": "ask-39", "language": "en", "query": "Remind me what Jelena said about the API limits", "expected": "ask", "suite": "main"}
+{"id": "ask-39-sr-Latn", "family": "ask-39", "language": "sr-Latn", "query": "Podseti me šta je Jelena rekla o API ograničenjima", "expected": "ask", "suite": "main"}
+{"id": "ask-39-sr-Cyrl", "family": "ask-39", "language": "sr-Cyrl", "query": "Подсети ме шта је Јелена рекла о API ограничењима", "expected": "ask", "suite": "main"}
+{"id": "ask-40-en", "family": "ask-40", "language": "en", "query": "Turn the last meeting into a short status update", "expected": "ask", "suite": "main"}
+{"id": "ask-40-sr-Latn", "family": "ask-40", "language": "sr-Latn", "query": "Pretvori poslednji sastanak u kratak izveštaj", "expected": "ask", "suite": "main"}
+{"id": "ask-40-sr-Cyrl", "family": "ask-40", "language": "sr-Cyrl", "query": "Претвори последњи састанак у кратак извештај", "expected": "ask", "suite": "main"}
+{"id": "search-01-en", "family": "search-01", "language": "en", "query": "Redis", "expected": "search", "suite": "main"}
+{"id": "search-01-sr-Latn", "family": "search-01", "language": "sr-Latn", "query": "Redis", "expected": "search", "suite": "main"}
+{"id": "search-01-sr-Cyrl", "family": "search-01", "language": "sr-Cyrl", "query": "Redis", "expected": "search", "suite": "main"}
+{"id": "search-02-en", "family": "search-02", "language": "en", "query": "redis cluster", "expected": "search", "suite": "main"}
+{"id": "search-02-sr-Latn", "family": "search-02", "language": "sr-Latn", "query": "redis klaster", "expected": "search", "suite": "main"}
+{"id": "search-02-sr-Cyrl", "family": "search-02", "language": "sr-Cyrl", "query": "редис кластер", "expected": "search", "suite": "main"}
+{"id": "search-03-en", "family": "search-03", "language": "en", "query": "failover benchmark", "expected": "search", "suite": "main"}
+{"id": "search-03-sr-Latn", "family": "search-03", "language": "sr-Latn", "query": "test oporavka", "expected": "search", "suite": "main"}
+{"id": "search-03-sr-Cyrl", "family": "search-03", "language": "sr-Cyrl", "query": "тест опоравка", "expected": "search", "suite": "main"}
+{"id": "search-04-en", "family": "search-04", "language": "en", "query": "PR-1234", "expected": "search", "suite": "main"}
+{"id": "search-04-sr-Latn", "family": "search-04", "language": "sr-Latn", "query": "PR-1234", "expected": "search", "suite": "main"}
+{"id": "search-04-sr-Cyrl", "family": "search-04", "language": "sr-Cyrl", "query": "PR-1234", "expected": "search", "suite": "main"}
+{"id": "search-05-en", "family": "search-05", "language": "en", "query": "AlphaVault.sol", "expected": "search", "suite": "main"}
+{"id": "search-05-sr-Latn", "family": "search-05", "language": "sr-Latn", "query": "AlphaVault.sol", "expected": "search", "suite": "main"}
+{"id": "search-05-sr-Cyrl", "family": "search-05", "language": "sr-Cyrl", "query": "AlphaVault.sol", "expected": "search", "suite": "main"}
+{"id": "search-06-en", "family": "search-06", "language": "en", "query": "ERC-7540", "expected": "search", "suite": "main"}
+{"id": "search-06-sr-Latn", "family": "search-06", "language": "sr-Latn", "query": "ERC-7540", "expected": "search", "suite": "main"}
+{"id": "search-06-sr-Cyrl", "family": "search-06", "language": "sr-Cyrl", "query": "ERC-7540", "expected": "search", "suite": "main"}
+{"id": "search-07-en", "family": "search-07", "language": "en", "query": "PostgreSQL migration notes", "expected": "search", "suite": "main"}
+{"id": "search-07-sr-Latn", "family": "search-07", "language": "sr-Latn", "query": "beleške o PostgreSQL migraciji", "expected": "search", "suite": "main"}
+{"id": "search-07-sr-Cyrl", "family": "search-07", "language": "sr-Cyrl", "query": "белешке о PostgreSQL миграцији", "expected": "search", "suite": "main"}
+{"id": "search-08-en", "family": "search-08", "language": "en", "query": "Ana budget review", "expected": "search", "suite": "main"}
+{"id": "search-08-sr-Latn", "family": "search-08", "language": "sr-Latn", "query": "Ana pregled budžeta", "expected": "search", "suite": "main"}
+{"id": "search-08-sr-Cyrl", "family": "search-08", "language": "sr-Cyrl", "query": "Ана преглед буџета", "expected": "search", "suite": "main"}
+{"id": "search-09-en", "family": "search-09", "language": "en", "query": "yesterday standup", "expected": "search", "suite": "main"}
+{"id": "search-09-sr-Latn", "family": "search-09", "language": "sr-Latn", "query": "jučerašnji sastanak", "expected": "search", "suite": "main"}
+{"id": "search-09-sr-Cyrl", "family": "search-09", "language": "sr-Cyrl", "query": "јучерашњи састанак", "expected": "search", "suite": "main"}
+{"id": "search-10-en", "family": "search-10", "language": "en", "query": "retention policy", "expected": "search", "suite": "main"}
+{"id": "search-10-sr-Latn", "family": "search-10", "language": "sr-Latn", "query": "politika čuvanja podataka", "expected": "search", "suite": "main"}
+{"id": "search-10-sr-Cyrl", "family": "search-10", "language": "sr-Cyrl", "query": "политика чувања података", "expected": "search", "suite": "main"}
+{"id": "search-11-en", "family": "search-11", "language": "en", "query": "Q3 roadmap", "expected": "search", "suite": "main"}
+{"id": "search-11-sr-Latn", "family": "search-11", "language": "sr-Latn", "query": "Q3 plan razvoja", "expected": "search", "suite": "main"}
+{"id": "search-11-sr-Cyrl", "family": "search-11", "language": "sr-Cyrl", "query": "Q3 план развоја", "expected": "search", "suite": "main"}
+{"id": "search-12-en", "family": "search-12", "language": "en", "query": "authentication design", "expected": "search", "suite": "main"}
+{"id": "search-12-sr-Latn", "family": "search-12", "language": "sr-Latn", "query": "dizajn autentifikacije", "expected": "search", "suite": "main"}
+{"id": "search-12-sr-Cyrl", "family": "search-12", "language": "sr-Cyrl", "query": "дизајн аутентификације", "expected": "search", "suite": "main"}
+{"id": "search-13-en", "family": "search-13", "language": "en", "query": "customer interview September", "expected": "search", "suite": "main"}
+{"id": "search-13-sr-Latn", "family": "search-13", "language": "sr-Latn", "query": "razgovor sa korisnikom septembar", "expected": "search", "suite": "main"}
+{"id": "search-13-sr-Cyrl", "family": "search-13", "language": "sr-Cyrl", "query": "разговор са корисником септембар", "expected": "search", "suite": "main"}
+{"id": "search-14-en", "family": "search-14", "language": "en", "query": "fee accounting", "expected": "search", "suite": "main"}
+{"id": "search-14-sr-Latn", "family": "search-14", "language": "sr-Latn", "query": "obračun naknada", "expected": "search", "suite": "main"}
+{"id": "search-14-sr-Cyrl", "family": "search-14", "language": "sr-Cyrl", "query": "обрачун накнада", "expected": "search", "suite": "main"}
+{"id": "search-15-en", "family": "search-15", "language": "en", "query": "deployment incident", "expected": "search", "suite": "main"}
+{"id": "search-15-sr-Latn", "family": "search-15", "language": "sr-Latn", "query": "incident pri objavi", "expected": "search", "suite": "main"}
+{"id": "search-15-sr-Cyrl", "family": "search-15", "language": "sr-Cyrl", "query": "инцидент при објави", "expected": "search", "suite": "main"}
+{"id": "search-16-en", "family": "search-16", "language": "en", "query": "screen recording permissions", "expected": "search", "suite": "main"}
+{"id": "search-16-sr-Latn", "family": "search-16", "language": "sr-Latn", "query": "dozvole za snimanje ekrana", "expected": "search", "suite": "main"}
+{"id": "search-16-sr-Cyrl", "family": "search-16", "language": "sr-Cyrl", "query": "дозволе за снимање екрана", "expected": "search", "suite": "main"}
+{"id": "search-17-en", "family": "search-17", "language": "en", "query": "GitHub notification settings", "expected": "search", "suite": "main"}
+{"id": "search-17-sr-Latn", "family": "search-17", "language": "sr-Latn", "query": "GitHub podešavanja obaveštenja", "expected": "search", "suite": "main"}
+{"id": "search-17-sr-Cyrl", "family": "search-17", "language": "sr-Cyrl", "query": "GitHub подешавања обавештења", "expected": "search", "suite": "main"}
+{"id": "search-18-en", "family": "search-18", "language": "en", "query": "meeting with Marko", "expected": "search", "suite": "main"}
+{"id": "search-18-sr-Latn", "family": "search-18", "language": "sr-Latn", "query": "sastanak sa Markom", "expected": "search", "suite": "main"}
+{"id": "search-18-sr-Cyrl", "family": "search-18", "language": "sr-Cyrl", "query": "састанак са Марком", "expected": "search", "suite": "main"}
+{"id": "search-19-en", "family": "search-19", "language": "en", "query": "invoice 2026-091", "expected": "search", "suite": "main"}
+{"id": "search-19-sr-Latn", "family": "search-19", "language": "sr-Latn", "query": "faktura 2026-091", "expected": "search", "suite": "main"}
+{"id": "search-19-sr-Cyrl", "family": "search-19", "language": "sr-Cyrl", "query": "фактура 2026-091", "expected": "search", "suite": "main"}
+{"id": "search-20-en", "family": "search-20", "language": "en", "query": "release checklist", "expected": "search", "suite": "main"}
+{"id": "search-20-sr-Latn", "family": "search-20", "language": "sr-Latn", "query": "spisak provera za izdanje", "expected": "search", "suite": "main"}
+{"id": "search-20-sr-Cyrl", "family": "search-20", "language": "sr-Cyrl", "query": "списак провера за издање", "expected": "search", "suite": "main"}
+{"id": "search-21-en", "family": "search-21", "language": "en", "query": "\"How we ship safely\"", "expected": "search", "suite": "main"}
+{"id": "search-21-sr-Latn", "family": "search-21", "language": "sr-Latn", "query": "\"Kako bezbedno objavljujemo softver\"", "expected": "search", "suite": "main"}
+{"id": "search-21-sr-Cyrl", "family": "search-21", "language": "sr-Cyrl", "query": "\"Како безбедно објављујемо софтвер\"", "expected": "search", "suite": "main"}
+{"id": "search-22-en", "family": "search-22", "language": "en", "query": "\"What good looks like\"", "expected": "search", "suite": "main"}
+{"id": "search-22-sr-Latn", "family": "search-22", "language": "sr-Latn", "query": "\"Kako izgleda dobar rezultat\"", "expected": "search", "suite": "main"}
+{"id": "search-22-sr-Cyrl", "family": "search-22", "language": "sr-Cyrl", "query": "\"Како изгледа добар резултат\"", "expected": "search", "suite": "main"}
+{"id": "search-23-en", "family": "search-23", "language": "en", "query": "\"Can we scale this\"", "expected": "search", "suite": "main"}
+{"id": "search-23-sr-Latn", "family": "search-23", "language": "sr-Latn", "query": "\"Možemo li ovo proširiti\"", "expected": "search", "suite": "main"}
+{"id": "search-23-sr-Cyrl", "family": "search-23", "language": "sr-Cyrl", "query": "\"Можемо ли ово проширити\"", "expected": "search", "suite": "main"}
+{"id": "search-24-en", "family": "search-24", "language": "en", "query": "how-to guide", "expected": "search", "suite": "main"}
+{"id": "search-24-sr-Latn", "family": "search-24", "language": "sr-Latn", "query": "uputstvo za upotrebu", "expected": "search", "suite": "main"}
+{"id": "search-24-sr-Cyrl", "family": "search-24", "language": "sr-Cyrl", "query": "упутство за употребу", "expected": "search", "suite": "main"}
+{"id": "search-25-en", "family": "search-25", "language": "en", "query": "what", "expected": "search", "suite": "main"}
+{"id": "search-25-sr-Latn", "family": "search-25", "language": "sr-Latn", "query": "šta", "expected": "search", "suite": "main"}
+{"id": "search-25-sr-Cyrl", "family": "search-25", "language": "sr-Cyrl", "query": "шта", "expected": "search", "suite": "main"}
+{"id": "search-26-en", "family": "search-26", "language": "en", "query": "why", "expected": "search", "suite": "main"}
+{"id": "search-26-sr-Latn", "family": "search-26", "language": "sr-Latn", "query": "zašto", "expected": "search", "suite": "main"}
+{"id": "search-26-sr-Cyrl", "family": "search-26", "language": "sr-Cyrl", "query": "зашто", "expected": "search", "suite": "main"}
+{"id": "search-27-en", "family": "search-27", "language": "en", "query": "redis?", "expected": "search", "suite": "main"}
+{"id": "search-27-sr-Latn", "family": "search-27", "language": "sr-Latn", "query": "redis?", "expected": "search", "suite": "main"}
+{"id": "search-27-sr-Cyrl", "family": "search-27", "language": "sr-Cyrl", "query": "редис?", "expected": "search", "suite": "main"}
+{"id": "search-28-en", "family": "search-28", "language": "en", "query": "API?", "expected": "search", "suite": "main"}
+{"id": "search-28-sr-Latn", "family": "search-28", "language": "sr-Latn", "query": "API?", "expected": "search", "suite": "main"}
+{"id": "search-28-sr-Cyrl", "family": "search-28", "language": "sr-Cyrl", "query": "API?", "expected": "search", "suite": "main"}
+{"id": "search-29-en", "family": "search-29", "language": "en", "query": "whatever happened", "expected": "search", "suite": "main"}
+{"id": "search-29-sr-Latn", "family": "search-29", "language": "sr-Latn", "query": "šta god se desilo", "expected": "search", "suite": "main"}
+{"id": "search-29-sr-Cyrl", "family": "search-29", "language": "sr-Cyrl", "query": "шта год се десило", "expected": "search", "suite": "main"}
+{"id": "search-30-en", "family": "search-30", "language": "en", "query": "will release notes", "expected": "search", "suite": "main"}
+{"id": "search-30-sr-Latn", "family": "search-30", "language": "sr-Latn", "query": "beleške o izdanju", "expected": "search", "suite": "main"}
+{"id": "search-30-sr-Cyrl", "family": "search-30", "language": "sr-Cyrl", "query": "белешке о издању", "expected": "search", "suite": "main"}
+{"id": "search-31-en", "family": "search-31", "language": "en", "query": "is private mode enabled.txt", "expected": "search", "suite": "main"}
+{"id": "search-31-sr-Latn", "family": "search-31", "language": "sr-Latn", "query": "da li je privatni režim uključen.txt", "expected": "search", "suite": "main"}
+{"id": "search-31-sr-Cyrl", "family": "search-31", "language": "sr-Cyrl", "query": "да ли је приватни режим укључен.txt", "expected": "search", "suite": "main"}
+{"id": "search-32-en", "family": "search-32", "language": "en", "query": "summarize_meeting.py", "expected": "search", "suite": "main"}
+{"id": "search-32-sr-Latn", "family": "search-32", "language": "sr-Latn", "query": "sazmi_sastanak.py", "expected": "search", "suite": "main"}
+{"id": "search-32-sr-Cyrl", "family": "search-32", "language": "sr-Cyrl", "query": "sazmi_sastanak.py", "expected": "search", "suite": "main"}
+{"id": "search-33-en", "family": "search-33", "language": "en", "query": "WHERE user_id IS NULL", "expected": "search", "suite": "main"}
+{"id": "search-33-sr-Latn", "family": "search-33", "language": "sr-Latn", "query": "WHERE user_id IS NULL", "expected": "search", "suite": "main"}
+{"id": "search-33-sr-Cyrl", "family": "search-33", "language": "sr-Cyrl", "query": "WHERE user_id IS NULL", "expected": "search", "suite": "main"}
+{"id": "search-34-en", "family": "search-34", "language": "en", "query": "who owns this repo.md", "expected": "search", "suite": "main"}
+{"id": "search-34-sr-Latn", "family": "search-34", "language": "sr-Latn", "query": "ko je vlasnik ovog projekta.md", "expected": "search", "suite": "main"}
+{"id": "search-34-sr-Cyrl", "family": "search-34", "language": "sr-Cyrl", "query": "ко је власник овог пројекта.md", "expected": "search", "suite": "main"}
+{"id": "search-35-en", "family": "search-35", "language": "en", "query": "canary deployment metrics", "expected": "search", "suite": "main"}
+{"id": "search-35-sr-Latn", "family": "search-35", "language": "sr-Latn", "query": "metrike postepene objave", "expected": "search", "suite": "main"}
+{"id": "search-35-sr-Cyrl", "family": "search-35", "language": "sr-Cyrl", "query": "метрике постепене објаве", "expected": "search", "suite": "main"}
+{"id": "search-36-en", "family": "search-36", "language": "en", "query": "draft follow-up template", "expected": "search", "suite": "main"}
+{"id": "search-36-sr-Latn", "family": "search-36", "language": "sr-Latn", "query": "nacrt šablona poruke", "expected": "search", "suite": "main"}
+{"id": "search-36-sr-Cyrl", "family": "search-36", "language": "sr-Cyrl", "query": "нацрт шаблона поруке", "expected": "search", "suite": "main"}
+{"id": "search-37-en", "family": "search-37", "language": "en", "query": "compare migration.sql", "expected": "search", "suite": "main"}
+{"id": "search-37-sr-Latn", "family": "search-37", "language": "sr-Latn", "query": "uporedi migration.sql", "expected": "search", "suite": "main"}
+{"id": "search-37-sr-Cyrl", "family": "search-37", "language": "sr-Cyrl", "query": "упореди migration.sql", "expected": "search", "suite": "main"}
+{"id": "search-38-en", "family": "search-38", "language": "en", "query": "tell me more.mp3", "expected": "search", "suite": "main"}
+{"id": "search-38-sr-Latn", "family": "search-38", "language": "sr-Latn", "query": "reci mi više.mp3", "expected": "search", "suite": "main"}
+{"id": "search-38-sr-Cyrl", "family": "search-38", "language": "sr-Cyrl", "query": "реци ми више.mp3", "expected": "search", "suite": "main"}
+{"id": "search-39-en", "family": "search-39", "language": "en", "query": "2026-09-22 design review", "expected": "search", "suite": "main"}
+{"id": "search-39-sr-Latn", "family": "search-39", "language": "sr-Latn", "query": "2026-09-22 pregled dizajna", "expected": "search", "suite": "main"}
+{"id": "search-39-sr-Cyrl", "family": "search-39", "language": "sr-Cyrl", "query": "2026-09-22 преглед дизајна", "expected": "search", "suite": "main"}
+{"id": "search-40-en", "family": "search-40", "language": "en", "query": "budget approval screenshot", "expected": "search", "suite": "main"}
+{"id": "search-40-sr-Latn", "family": "search-40", "language": "sr-Latn", "query": "snimak ekrana odobrenja budžeta", "expected": "search", "suite": "main"}
+{"id": "search-40-sr-Cyrl", "family": "search-40", "language": "sr-Cyrl", "query": "снимак екрана одобрења буџета", "expected": "search", "suite": "main"}
+{"id": "regression-ask-0", "family": "regression-ask-0", "language": "en", "query": "What did we decide about Redis?", "expected": "ask", "suite": "regression"}
+{"id": "regression-ask-1", "family": "regression-ask-1", "language": "en", "query": "what did we decide about redis", "expected": "ask", "suite": "regression"}
+{"id": "regression-ask-2", "family": "regression-ask-2", "language": "en", "query": "Who owns the failover benchmark", "expected": "ask", "suite": "regression"}
+{"id": "regression-ask-3", "family": "regression-ask-3", "language": "en", "query": "summarize the design review", "expected": "ask", "suite": "regression"}
+{"id": "regression-ask-4", "family": "regression-ask-4", "language": "en", "query": "redis cluster mode?", "expected": "ask", "suite": "regression"}
+{"id": "regression-search-0", "family": "regression-search-0", "language": "en", "query": "failover", "expected": "search", "suite": "regression"}
+{"id": "regression-search-1", "family": "regression-search-1", "language": "en", "query": "redis cluster", "expected": "search", "suite": "regression"}
+{"id": "regression-search-2", "family": "regression-search-2", "language": "en", "query": "what", "expected": "search", "suite": "regression"}
+{"id": "regression-search-3", "family": "regression-search-3", "language": "en", "query": "redis?", "expected": "search", "suite": "regression"}
+{"id": "regression-search-4", "family": "regression-search-4", "language": "en", "query": "PR-1234", "expected": "search", "suite": "regression"}
+{"id": "regression-search-5", "family": "regression-search-5", "language": "en", "query": "  ", "expected": "search", "suite": "regression"}
+{"id": "regression-search-6", "family": "regression-search-6", "language": "en", "query": "whatever happened", "expected": "search", "suite": "regression"}

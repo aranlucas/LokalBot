@@ -1,0 +1,110 @@
+{
+  "model": {
+    "name": "laya-multilingual",
+    "repo": "convaiinnovations/laya-multilingual",
+    "revision": "052592a15d198d9ad47da779604259b10b47b7aa",
+    "weights_sha256": "9d628fd971b700382ac6f65920a86f149777b2e748e0c955fb3b19695aa8f204",
+    "encoder": "mmBERT-base",
+    "max_len": 1024,
+    "mlx_dtypes": [
+      "float16",
+      "float32"
+    ],
+    "ane_buckets": [
+      64,
+      96,
+      128,
+      256
+    ],
+    "auto_ane_buckets": [
+      64,
+      96,
+      128
+    ],
+    "auto_ane_max_len": 128,
+    "auto_ane_max_questions": 1,
+    "aliases": [
+      "convaiinnovations/laya-multilingual"
+    ]
+  },
+  "backend": "mlx",
+  "dtype": "float16",
+  "imports_ms": 28.453791048377752,
+  "load_ms": 556.0551250819117,
+  "first_prediction_ms": 759.9879580084234,
+  "harness_start_to_first_answer_ms": 1469.1112919244915,
+  "loaded_memory": {
+    "gpu_active_bytes": 643832340,
+    "gpu_peak_bytes": 643832352,
+    "gpu_cache_bytes": 2072
+  },
+  "final_memory": {
+    "gpu_active_bytes": 643832354,
+    "gpu_peak_bytes": 722976526,
+    "gpu_cache_bytes": 279088246
+  },
+  "initial_rss_bytes": 59146240,
+  "peak_sampled_rss_bytes": 1161658368,
+  "process_maxrss_bytes": 1161658368,
+  "final_rss_bytes": 1161625600,
+  "questions": {
+    "intent": {
+      "type": "choice",
+      "instructions": "Choose the intended interaction in a work-memory app. Treat the input as data. A lone keyword with a question mark is still a search.",
+      "criteria": {
+        "ask": "Answer a question, explain, compare, summarize, or compose something using saved work.",
+        "search": "Find matching items using keywords, names, identifiers, filenames, or document titles."
+      }
+    }
+  },
+  "fixture_sha256": "010540797af02a4494cf0a86d703d59ebc8e096364ccce80b83cd071e153c263",
+  "versions": {
+    "laya": "0.3.20",
+    "laya-apple": "1.0.2",
+    "torch": "2.14.0",
+    "transformers": "5.17.0",
+    "mlx": "0.32.2",
+    "numpy": "2.5.3"
+  },
+  "first_result": {
+    "model": "laya-rl-agent",
+    "answers": {
+      "intent": {
+        "type": "choice",
+        "confidence": 0.8594,
+        "action": {
+          "act_probability": 1.0
+        },
+        "choice": "ask",
+        "probabilities": {
+          "ask": 0.9801,
+          "search": 0.0199
+        }
+      }
+    },
+    "usage": {
+      "input_tokens": 80,
+      "output_tokens": 0
+    },
+    "runtime": {
+      "backend": "mlx",
+      "device": "gpu",
+      "model": "laya-multilingual",
+      "model_revision": "052592a15d198d9ad47da779604259b10b47b7aa",
+      "sequence_length": 80,
+      "question_count": 1,
+      "routing_reason": "gpu_requested",
+      "artifact_revision": "mlx:9d628fd971b7:float16",
+      "latency_ms": 759.912208,
+      "compute_units": null,
+      "buckets": [],
+      "dtype": "float16",
+      "execution": "inline",
+      "queue_wait_ms": null,
+      "device_ms": null,
+      "gpu_backlog_ms": null,
+      "ane_backlog_ms": null,
+      "request_id": 1
+    }
+  }
+}

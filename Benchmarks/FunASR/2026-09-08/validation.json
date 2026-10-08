@@ -1,0 +1,20 @@
+{
+  "native_main_test": {
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "native_memory_test": {
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0
+  },
+  "completed_audio_cases_per_arm": 27,
+  "production_sources_unchanged": true,
+  "package_heads_match_isolated_checkout": true,
+  "native_weight_matches_hf_revision": true,
+  "python_syntax_valid": true,
+  "json_valid": true,
+  "score_recomputation_matches": true,
+  "no_local_ui_tests": true
+}

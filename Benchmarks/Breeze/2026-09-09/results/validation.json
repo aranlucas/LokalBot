@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "breeze_full_requests": 8,
+  "breeze_smoke_requests": 2,
+  "kokoro_files": 6,
+  "content_transcripts": 14,
+  "verified_wav_files": 16,
+  "checks": [
+    "Request success and completion",
+    "Nonempty mono 24 kHz PCM16 WAVs",
+    "WAV frame counts agree with result metadata",
+    "Streaming PCM byte totals and ordered timestamps",
+    "No clipped samples reported",
+    "Raw ASR scores recomputed from saved transcripts",
+    "Matched-case aggregate excludes duplicated prompts",
+    "Audio SHA256 manifest written"
+  ],
+  "limits": "Artifact consistency checks only; no human listening, UI tests, or installed-app integration test."
+}

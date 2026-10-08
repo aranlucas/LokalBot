@@ -1,0 +1,83 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"release_notes_owner\": \"Marko\",\n  \"release_notes_due\": \"by Friday\",\n  \"download_totals_owner\": null\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 38,
+    "prompt_tokens": 164,
+    "total_tokens": 202,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 164,
+    "prompt_ms": 74.011,
+    "prompt_per_token_ms": 0.45128658536585364,
+    "prompt_per_second": 2215.8868276337303,
+    "predicted_n": 38,
+    "predicted_ms": 267.33,
+    "predicted_per_token_ms": 7.034999999999999,
+    "predicted_per_second": 142.14641080312722
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"release_notes_owner\": \"Marko\",\n  \"release_notes_due\": \"by Friday\",\n  \"download_totals_owner\": null\n}"
+        }
+      }
+    ],
+    "created": 1789023569,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q8_0.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 38,
+      "prompt_tokens": 164,
+      "total_tokens": 202,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-OcPPQpzzZK5VHYt8fnPl6PWIKooUHOzl",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 164,
+      "prompt_ms": 74.011,
+      "prompt_per_token_ms": 0.45128658536585364,
+      "prompt_per_second": 2215.8868276337303,
+      "predicted_n": 38,
+      "predicted_ms": 267.33,
+      "predicted_per_token_ms": 7.034999999999999,
+      "predicted_per_second": 142.14641080312722
+    }
+  },
+  "wall_seconds": 0.3447719169780612,
+  "memory": {
+    "samples": 2,
+    "peak_rss_bytes": 4319576064,
+    "peak_physical_footprint_bytes": 1760579496
+  },
+  "id": "owner_acceptance",
+  "group": "extraction",
+  "repeat": 2,
+  "score": {
+    "passed": false,
+    "json_valid": true,
+    "correct_fields": 2,
+    "total_fields": 3,
+    "wrong": {
+      "release_notes_due": {
+        "expected": "Friday",
+        "actual": "by Friday"
+      }
+    }
+  }
+}

@@ -1,0 +1,969 @@
+{
+  "minicpm": {
+    "measurements": {
+      "durationSeconds": 462,
+      "words": 152,
+      "segments": 15,
+      "model": "MiniCPM5-2B-Q4_K_M.gguf",
+      "runs": [
+        {
+          "name": "cold",
+          "testExitCode": 65,
+          "metrics": {
+            "accountedOutputTokens": 359,
+            "calls": [
+              {
+                "cachedTokens": 0,
+                "generationSeconds": 2.043549,
+                "inputTokens": 1133,
+                "outcome": "complete",
+                "outputTokens": 342,
+                "prefillSeconds": 0.445359,
+                "stage": "extract-1",
+                "wallSeconds": 2.4973677499219775
+              },
+              {
+                "cachedTokens": 0,
+                "generationSeconds": 0.117885,
+                "inputTokens": 881,
+                "outcome": "complete",
+                "outputTokens": 17,
+                "prefillSeconds": 0.328957,
+                "stage": "repair-1",
+                "wallSeconds": 0.4549016666132957
+              }
+            ],
+            "elapsedSeconds": 3.012040500063449,
+            "outcome": "incomplete",
+            "phases": {
+              "tokenization": 0.023035958292894065,
+              "validation": 0.02021145832259208
+            },
+            "requests": 2,
+            "reservedInputTokens": 5052,
+            "validations": [
+              {
+                "actions": 3,
+                "completeEnvelope": true,
+                "hasMore": false,
+                "notes": 4,
+                "rejections": {
+                  "distant_action_context": 1,
+                  "missing_user_commitment": 1
+                },
+                "stage": "extract-1",
+                "truncated": false
+              },
+              {
+                "actions": 0,
+                "completeEnvelope": true,
+                "hasMore": false,
+                "notes": 0,
+                "rejections": {},
+                "stage": "repair-1",
+                "truncated": false
+              }
+            ],
+            "version": 1
+          },
+          "totalSeconds": 4.0648611249635
+        },
+        {
+          "name": "warm",
+          "testExitCode": 65,
+          "metrics": {
+            "accountedOutputTokens": 408,
+            "calls": [
+              {
+                "cachedTokens": 1132,
+                "generationSeconds": 2.252679,
+                "inputTokens": 1133,
+                "outcome": "complete",
+                "outputTokens": 391,
+                "prefillSeconds": 0.031919,
+                "stage": "extract-1",
+                "wallSeconds": 2.2985111250309274
+              },
+              {
+                "cachedTokens": 264,
+                "generationSeconds": 0.116357,
+                "inputTokens": 777,
+                "outcome": "complete",
+                "outputTokens": 17,
+                "prefillSeconds": 0.191526,
+                "stage": "repair-1",
+                "wallSeconds": 0.3180996250594035
+              }
+            ],
+            "elapsedSeconds": 2.679933749954216,
+            "outcome": "incomplete",
+            "phases": {
+              "tokenization": 0.019017791841179132,
+              "validation": 0.024571166606619954
+            },
+            "requests": 2,
+            "reservedInputTokens": 4948,
+            "validations": [
+              {
+                "actions": 5,
+                "completeEnvelope": true,
+                "hasMore": false,
+                "notes": 4,
+                "rejections": {
+                  "missing_user_commitment": 1
+                },
+                "stage": "extract-1",
+                "truncated": false
+              },
+              {
+                "actions": 0,
+                "completeEnvelope": true,
+                "hasMore": false,
+                "notes": 0,
+                "rejections": {},
+                "stage": "repair-1",
+                "truncated": false
+              }
+            ],
+            "version": 1
+          },
+          "totalSeconds": 2.679933749954216
+        }
+      ],
+      "runtime": "b10173-b10173",
+      "slots": 4,
+      "modelStartupSeconds": 1.0528206249000505
+    },
+    "runs": [
+      {
+        "run": "cold",
+        "pipeline_outcome": "incomplete",
+        "elapsed_seconds": 3.012040500063449,
+        "retained_actions": 3,
+        "committed_tasks_expected": 7,
+        "committed_tasks_found": 3,
+        "committed_tasks_correct_owner_and_citation": 2,
+        "user_commitments_expected": 3,
+        "user_commitments_correct": 1,
+        "unassigned_request_retained_correctly": false,
+        "unmatched_actions": [],
+        "details": [
+          {
+            "expected": {
+              "keywords": [
+                "installation",
+                "guide"
+              ],
+              "owner": "Ana",
+              "user": false,
+              "source_start": 30
+            },
+            "found": true,
+            "correct": true,
+            "candidates": [
+              {
+                "text": "Update installation guide by Thursday.",
+                "owner": "Ana",
+                "owner_correct": true,
+                "primary_commitment_cited": true,
+                "correct": true,
+                "citation_starts": [
+                  30
+                ]
+              }
+            ]
+          },
+          {
+            "expected": {
+              "keywords": [
+                "restore",
+                "tests"
+              ],
+              "owner": "Marko",
+              "user": false,
+              "source_start": 60
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          },
+          {
+            "expected": {
+              "keywords": [
+                "onboarding",
+                "checklist"
+              ],
+              "owner": "Alex",
+              "user": true,
+              "source_start": 90
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          },
+          {
+            "expected": {
+              "keywords": [
+                "privacy",
+                "copy"
+              ],
+              "owner": "Alex",
+              "user": true,
+              "source_start": 145
+            },
+            "found": true,
+            "correct": true,
+            "candidates": [
+              {
+                "text": "Review privacy copy by tomorrow.",
+                "owner": "Alex",
+                "owner_correct": true,
+                "primary_commitment_cited": true,
+                "correct": true,
+                "citation_starts": [
+                  120,
+                  145
+                ]
+              }
+            ]
+          },
+          {
+            "expected": {
+              "keywords": [
+                "beta",
+                "feedback"
+              ],
+              "owner": "Iva",
+              "user": false,
+              "source_start": 180
+            },
+            "found": true,
+            "correct": false,
+            "candidates": [
+              {
+                "text": "Collect beta feedback by Monday.",
+                "owner": null,
+                "owner_correct": false,
+                "primary_commitment_cited": true,
+                "correct": false,
+                "citation_starts": [
+                  180
+                ]
+              }
+            ]
+          },
+          {
+            "expected": {
+              "keywords": [
+                "certificate",
+                "renewal"
+              ],
+              "owner": "Ana",
+              "user": false,
+              "source_start": 238
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          },
+          {
+            "expected": {
+              "keywords": [
+                "support",
+                "ticket"
+              ],
+              "owner": null,
+              "user": false,
+              "source_start": 330
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          },
+          {
+            "expected": {
+              "keywords": [
+                "release",
+                "notes"
+              ],
+              "owner": "Alex",
+              "user": true,
+              "source_start": 365
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          }
+        ]
+      },
+      {
+        "run": "warm",
+        "pipeline_outcome": "incomplete",
+        "elapsed_seconds": 2.679933749954216,
+        "retained_actions": 5,
+        "committed_tasks_expected": 7,
+        "committed_tasks_found": 4,
+        "committed_tasks_correct_owner_and_citation": 3,
+        "user_commitments_expected": 3,
+        "user_commitments_correct": 2,
+        "unassigned_request_retained_correctly": true,
+        "unmatched_actions": [],
+        "details": [
+          {
+            "expected": {
+              "keywords": [
+                "installation",
+                "guide"
+              ],
+              "owner": "Ana",
+              "user": false,
+              "source_start": 30
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          },
+          {
+            "expected": {
+              "keywords": [
+                "restore",
+                "tests"
+              ],
+              "owner": "Marko",
+              "user": false,
+              "source_start": 60
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          },
+          {
+            "expected": {
+              "keywords": [
+                "onboarding",
+                "checklist"
+              ],
+              "owner": "Alex",
+              "user": true,
+              "source_start": 90
+            },
+            "found": true,
+            "correct": true,
+            "candidates": [
+              {
+                "text": "Send revised onboarding checklist by Friday",
+                "owner": "Alex",
+                "owner_correct": true,
+                "primary_commitment_cited": true,
+                "correct": true,
+                "citation_starts": [
+                  90
+                ]
+              }
+            ]
+          },
+          {
+            "expected": {
+              "keywords": [
+                "privacy",
+                "copy"
+              ],
+              "owner": "Alex",
+              "user": true,
+              "source_start": 145
+            },
+            "found": true,
+            "correct": true,
+            "candidates": [
+              {
+                "text": "Review privacy copy by tomorrow",
+                "owner": "Alex",
+                "owner_correct": true,
+                "primary_commitment_cited": true,
+                "correct": true,
+                "citation_starts": [
+                  145
+                ]
+              }
+            ]
+          },
+          {
+            "expected": {
+              "keywords": [
+                "beta",
+                "feedback"
+              ],
+              "owner": "Iva",
+              "user": false,
+              "source_start": 180
+            },
+            "found": true,
+            "correct": true,
+            "candidates": [
+              {
+                "text": "Collect beta feedback by Monday",
+                "owner": "Iva",
+                "owner_correct": true,
+                "primary_commitment_cited": true,
+                "correct": true,
+                "citation_starts": [
+                  180
+                ]
+              }
+            ]
+          },
+          {
+            "expected": {
+              "keywords": [
+                "certificate",
+                "renewal"
+              ],
+              "owner": "Ana",
+              "user": false,
+              "source_start": 238
+            },
+            "found": true,
+            "correct": false,
+            "candidates": [
+              {
+                "text": "Check signing certificate renewal date",
+                "owner": null,
+                "owner_correct": false,
+                "primary_commitment_cited": false,
+                "correct": false,
+                "citation_starts": [
+                  215
+                ]
+              }
+            ]
+          },
+          {
+            "expected": {
+              "keywords": [
+                "support",
+                "ticket"
+              ],
+              "owner": null,
+              "user": false,
+              "source_start": 330
+            },
+            "found": true,
+            "correct": true,
+            "candidates": [
+              {
+                "text": "Reconcile support ticket totals before launch",
+                "owner": null,
+                "owner_correct": true,
+                "primary_commitment_cited": true,
+                "correct": true,
+                "citation_starts": [
+                  330
+                ]
+              }
+            ]
+          },
+          {
+            "expected": {
+              "keywords": [
+                "release",
+                "notes"
+              ],
+              "owner": "Alex",
+              "user": true,
+              "source_start": 365
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          }
+        ]
+      }
+    ]
+  },
+  "qwen": {
+    "measurements": {
+      "durationSeconds": 462,
+      "words": 152,
+      "segments": 15,
+      "model": "Qwen3.5-4B-Q4_K_M.gguf",
+      "runs": [
+        {
+          "name": "cold",
+          "testExitCode": 65,
+          "metrics": {
+            "accountedOutputTokens": 809,
+            "calls": [
+              {
+                "cachedTokens": 0,
+                "generationSeconds": 7.269192,
+                "inputTokens": 1174,
+                "outcome": "complete",
+                "outputTokens": 693,
+                "prefillSeconds": 0.8796609999999999,
+                "stage": "extract-1",
+                "wallSeconds": 8.17023708333727
+              },
+              {
+                "cachedTokens": 0,
+                "generationSeconds": 1.363364,
+                "inputTokens": 787,
+                "outcome": "complete",
+                "outputTokens": 116,
+                "prefillSeconds": 0.6163780000000001,
+                "stage": "repair-1",
+                "wallSeconds": 2.005548833287321
+              }
+            ],
+            "elapsedSeconds": 10.228873750078492,
+            "outcome": "incomplete",
+            "phases": {
+              "tokenization": 0.015922458260320127,
+              "validation": 0.02211299992632121
+            },
+            "requests": 2,
+            "reservedInputTokens": 5001,
+            "validations": [
+              {
+                "actions": 5,
+                "completeEnvelope": true,
+                "hasMore": false,
+                "notes": 6,
+                "rejections": {
+                  "missing_user_commitment": 1
+                },
+                "stage": "extract-1",
+                "truncated": false
+              },
+              {
+                "actions": 1,
+                "completeEnvelope": true,
+                "hasMore": false,
+                "notes": 0,
+                "rejections": {},
+                "stage": "repair-1",
+                "truncated": false
+              }
+            ],
+            "version": 1
+          },
+          "totalSeconds": 11.907562458072789
+        },
+        {
+          "name": "warm",
+          "testExitCode": 0,
+          "metrics": {
+            "accountedOutputTokens": 919,
+            "calls": [
+              {
+                "cachedTokens": 1170,
+                "generationSeconds": 7.481958,
+                "inputTokens": 1174,
+                "outcome": "complete",
+                "outputTokens": 720,
+                "prefillSeconds": 0.042697000000000006,
+                "stage": "extract-1",
+                "wallSeconds": 7.564783500041813
+              },
+              {
+                "cachedTokens": 243,
+                "generationSeconds": 2.213734,
+                "inputTokens": 895,
+                "outcome": "complete",
+                "outputTokens": 199,
+                "prefillSeconds": 0.50534,
+                "stage": "repair-1",
+                "wallSeconds": 2.7456553333904594
+              }
+            ],
+            "elapsedSeconds": 10.37458195828367,
+            "outcome": "complete",
+            "phases": {
+              "tokenization": 0.012539166607894003,
+              "validation": 0.029938666615635157
+            },
+            "requests": 2,
+            "reservedInputTokens": 5109,
+            "validations": [
+              {
+                "actions": 1,
+                "completeEnvelope": true,
+                "hasMore": false,
+                "notes": 12,
+                "rejections": {
+                  "distant_action_context": 2
+                },
+                "stage": "extract-1",
+                "truncated": false
+              },
+              {
+                "actions": 2,
+                "completeEnvelope": true,
+                "hasMore": false,
+                "notes": 0,
+                "rejections": {},
+                "stage": "repair-1",
+                "truncated": false
+              }
+            ],
+            "version": 1
+          },
+          "totalSeconds": 10.37458195828367
+        }
+      ],
+      "runtime": "b10173-b10173",
+      "slots": 4,
+      "modelStartupSeconds": 1.6786887079942971
+    },
+    "runs": [
+      {
+        "run": "cold",
+        "pipeline_outcome": "incomplete",
+        "elapsed_seconds": 10.228873750078492,
+        "retained_actions": 5,
+        "committed_tasks_expected": 7,
+        "committed_tasks_found": 5,
+        "committed_tasks_correct_owner_and_citation": 5,
+        "user_commitments_expected": 3,
+        "user_commitments_correct": 2,
+        "unassigned_request_retained_correctly": false,
+        "unmatched_actions": [],
+        "details": [
+          {
+            "expected": {
+              "keywords": [
+                "installation",
+                "guide"
+              ],
+              "owner": "Ana",
+              "user": false,
+              "source_start": 30
+            },
+            "found": true,
+            "correct": true,
+            "candidates": [
+              {
+                "text": "Update the installation guide.",
+                "owner": "Ana",
+                "owner_correct": true,
+                "primary_commitment_cited": true,
+                "correct": true,
+                "citation_starts": [
+                  0,
+                  30
+                ]
+              }
+            ]
+          },
+          {
+            "expected": {
+              "keywords": [
+                "restore",
+                "tests"
+              ],
+              "owner": "Marko",
+              "user": false,
+              "source_start": 60
+            },
+            "found": true,
+            "correct": true,
+            "candidates": [
+              {
+                "text": "Run the restore regression tests.",
+                "owner": "Marko",
+                "owner_correct": true,
+                "primary_commitment_cited": true,
+                "correct": true,
+                "citation_starts": [
+                  0,
+                  60
+                ]
+              }
+            ]
+          },
+          {
+            "expected": {
+              "keywords": [
+                "onboarding",
+                "checklist"
+              ],
+              "owner": "Alex",
+              "user": true,
+              "source_start": 90
+            },
+            "found": true,
+            "correct": true,
+            "candidates": [
+              {
+                "text": "Send the revised onboarding checklist.",
+                "owner": "Alex",
+                "owner_correct": true,
+                "primary_commitment_cited": true,
+                "correct": true,
+                "citation_starts": [
+                  0,
+                  90
+                ]
+              }
+            ]
+          },
+          {
+            "expected": {
+              "keywords": [
+                "privacy",
+                "copy"
+              ],
+              "owner": "Alex",
+              "user": true,
+              "source_start": 145
+            },
+            "found": true,
+            "correct": true,
+            "candidates": [
+              {
+                "text": "Review the privacy copy.",
+                "owner": "Alex",
+                "owner_correct": true,
+                "primary_commitment_cited": true,
+                "correct": true,
+                "citation_starts": [
+                  120,
+                  145
+                ]
+              }
+            ]
+          },
+          {
+            "expected": {
+              "keywords": [
+                "beta",
+                "feedback"
+              ],
+              "owner": "Iva",
+              "user": false,
+              "source_start": 180
+            },
+            "found": true,
+            "correct": true,
+            "candidates": [
+              {
+                "text": "Collect the beta feedback.",
+                "owner": "Iva",
+                "owner_correct": true,
+                "primary_commitment_cited": true,
+                "correct": true,
+                "citation_starts": [
+                  180
+                ]
+              }
+            ]
+          },
+          {
+            "expected": {
+              "keywords": [
+                "certificate",
+                "renewal"
+              ],
+              "owner": "Ana",
+              "user": false,
+              "source_start": 238
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          },
+          {
+            "expected": {
+              "keywords": [
+                "support",
+                "ticket"
+              ],
+              "owner": null,
+              "user": false,
+              "source_start": 330
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          },
+          {
+            "expected": {
+              "keywords": [
+                "release",
+                "notes"
+              ],
+              "owner": "Alex",
+              "user": true,
+              "source_start": 365
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          }
+        ]
+      },
+      {
+        "run": "warm",
+        "pipeline_outcome": "complete",
+        "elapsed_seconds": 10.37458195828367,
+        "retained_actions": 3,
+        "committed_tasks_expected": 7,
+        "committed_tasks_found": 3,
+        "committed_tasks_correct_owner_and_citation": 3,
+        "user_commitments_expected": 3,
+        "user_commitments_correct": 3,
+        "unassigned_request_retained_correctly": false,
+        "unmatched_actions": [],
+        "details": [
+          {
+            "expected": {
+              "keywords": [
+                "installation",
+                "guide"
+              ],
+              "owner": "Ana",
+              "user": false,
+              "source_start": 30
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          },
+          {
+            "expected": {
+              "keywords": [
+                "restore",
+                "tests"
+              ],
+              "owner": "Marko",
+              "user": false,
+              "source_start": 60
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          },
+          {
+            "expected": {
+              "keywords": [
+                "onboarding",
+                "checklist"
+              ],
+              "owner": "Alex",
+              "user": true,
+              "source_start": 90
+            },
+            "found": true,
+            "correct": true,
+            "candidates": [
+              {
+                "text": "Send the revised onboarding checklist",
+                "owner": "Alex",
+                "owner_correct": true,
+                "primary_commitment_cited": true,
+                "correct": true,
+                "citation_starts": [
+                  90,
+                  120
+                ]
+              }
+            ]
+          },
+          {
+            "expected": {
+              "keywords": [
+                "privacy",
+                "copy"
+              ],
+              "owner": "Alex",
+              "user": true,
+              "source_start": 145
+            },
+            "found": true,
+            "correct": true,
+            "candidates": [
+              {
+                "text": "Review the privacy copy by tomorrow.",
+                "owner": "Alex",
+                "owner_correct": true,
+                "primary_commitment_cited": true,
+                "correct": true,
+                "citation_starts": [
+                  120,
+                  145
+                ]
+              }
+            ]
+          },
+          {
+            "expected": {
+              "keywords": [
+                "beta",
+                "feedback"
+              ],
+              "owner": "Iva",
+              "user": false,
+              "source_start": 180
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          },
+          {
+            "expected": {
+              "keywords": [
+                "certificate",
+                "renewal"
+              ],
+              "owner": "Ana",
+              "user": false,
+              "source_start": 238
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          },
+          {
+            "expected": {
+              "keywords": [
+                "support",
+                "ticket"
+              ],
+              "owner": null,
+              "user": false,
+              "source_start": 330
+            },
+            "found": false,
+            "correct": false,
+            "candidates": []
+          },
+          {
+            "expected": {
+              "keywords": [
+                "release",
+                "notes"
+              ],
+              "owner": "Alex",
+              "user": true,
+              "source_start": 365
+            },
+            "found": true,
+            "correct": true,
+            "candidates": [
+              {
+                "text": "Publish the release notes",
+                "owner": "Alex",
+                "owner_correct": true,
+                "primary_commitment_cited": true,
+                "correct": true,
+                "citation_starts": [
+                  365,
+                  420
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

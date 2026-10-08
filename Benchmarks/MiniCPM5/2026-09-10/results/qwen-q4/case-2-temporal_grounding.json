@@ -1,0 +1,83 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"owner\": \"Ana\",\n  \"commitment_timestamp\": \"06:32\",\n  \"due\": \"next month\"\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 35,
+    "prompt_tokens": 144,
+    "total_tokens": 179,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 144,
+    "prompt_ms": 181.235,
+    "prompt_per_token_ms": 1.258576388888889,
+    "prompt_per_second": 794.548514359809,
+    "predicted_n": 35,
+    "predicted_ms": 351.282,
+    "predicted_per_token_ms": 10.03662857142857,
+    "predicted_per_second": 99.6350510416133
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"owner\": \"Ana\",\n  \"commitment_timestamp\": \"06:32\",\n  \"due\": \"next month\"\n}"
+        }
+      }
+    ],
+    "created": 1789023082,
+    "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 35,
+      "prompt_tokens": 144,
+      "total_tokens": 179,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-H9f0pWnytkfSmIpMqr34iqPCqWHAUMR2",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 144,
+      "prompt_ms": 181.235,
+      "prompt_per_token_ms": 1.258576388888889,
+      "prompt_per_second": 794.548514359809,
+      "predicted_n": 35,
+      "predicted_ms": 351.282,
+      "predicted_per_token_ms": 10.03662857142857,
+      "predicted_per_second": 99.6350510416133
+    }
+  },
+  "wall_seconds": 0.5429386249743402,
+  "memory": {
+    "samples": 3,
+    "peak_rss_bytes": 6990135296,
+    "peak_physical_footprint_bytes": 4437039032
+  },
+  "id": "temporal_grounding",
+  "group": "extraction",
+  "repeat": 2,
+  "score": {
+    "passed": false,
+    "json_valid": true,
+    "correct_fields": 2,
+    "total_fields": 3,
+    "wrong": {
+      "due": {
+        "expected": "this afternoon",
+        "actual": "next month"
+      }
+    }
+  }
+}

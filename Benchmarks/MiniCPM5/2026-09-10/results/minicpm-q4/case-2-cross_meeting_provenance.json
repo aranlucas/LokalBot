@@ -1,0 +1,83 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"owner\": \"Ana\",\n  \"due\": \"Friday\",\n  \"meeting_id\": \"Meeting A-104\"\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 28,
+    "prompt_tokens": 149,
+    "total_tokens": 177,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 149,
+    "prompt_ms": 60.387,
+    "prompt_per_token_ms": 0.4052818791946309,
+    "prompt_per_second": 2467.418484110818,
+    "predicted_n": 28,
+    "predicted_ms": 149.266,
+    "predicted_per_token_ms": 5.330928571428571,
+    "predicted_per_second": 187.584580547479
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"owner\": \"Ana\",\n  \"due\": \"Friday\",\n  \"meeting_id\": \"Meeting A-104\"\n}"
+        }
+      }
+    ],
+    "created": 1789022998,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 28,
+      "prompt_tokens": 149,
+      "total_tokens": 177,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-DZ1NXA9FvESmh3jBvr8zVSkhuZ88jiyj",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 149,
+      "prompt_ms": 60.387,
+      "prompt_per_token_ms": 0.4052818791946309,
+      "prompt_per_second": 2467.418484110818,
+      "predicted_n": 28,
+      "predicted_ms": 149.266,
+      "predicted_per_token_ms": 5.330928571428571,
+      "predicted_per_second": 187.584580547479
+    }
+  },
+  "wall_seconds": 0.2123357499949634,
+  "memory": {
+    "samples": 1,
+    "peak_rss_bytes": 4028776448,
+    "peak_physical_footprint_bytes": 2587594496
+  },
+  "id": "cross_meeting_provenance",
+  "group": "extraction",
+  "repeat": 2,
+  "score": {
+    "passed": false,
+    "json_valid": true,
+    "correct_fields": 2,
+    "total_fields": 3,
+    "wrong": {
+      "meeting_id": {
+        "expected": "A-104",
+        "actual": "Meeting A-104"
+      }
+    }
+  }
+}

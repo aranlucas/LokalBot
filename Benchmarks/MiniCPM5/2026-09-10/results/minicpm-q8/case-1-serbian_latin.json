@@ -1,0 +1,87 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"installation_owner\": \"Marko\",\n  \"installation_due\": \"petka\",\n  \"report_owner\": \"Ana\",\n  \"report_due\": \"ponedjeljak\",\n  \"icons_committed\": false\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 52,
+    "prompt_tokens": 215,
+    "total_tokens": 267,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 215,
+    "prompt_ms": 78.206,
+    "prompt_per_token_ms": 0.36374883720930234,
+    "prompt_per_second": 2749.1496816101067,
+    "predicted_n": 52,
+    "predicted_ms": 373.31,
+    "predicted_per_token_ms": 7.179038461538462,
+    "predicted_per_second": 139.29442018697597
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"installation_owner\": \"Marko\",\n  \"installation_due\": \"petka\",\n  \"report_owner\": \"Ana\",\n  \"report_due\": \"ponedjeljak\",\n  \"icons_committed\": false\n}"
+        }
+      }
+    ],
+    "created": 1789023567,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q8_0.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 52,
+      "prompt_tokens": 215,
+      "total_tokens": 267,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-5yIMUQlFHsbLn0rnaTBoZyqWrAVMeNYr",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 215,
+      "prompt_ms": 78.206,
+      "prompt_per_token_ms": 0.36374883720930234,
+      "prompt_per_second": 2749.1496816101067,
+      "predicted_n": 52,
+      "predicted_ms": 373.31,
+      "predicted_per_token_ms": 7.179038461538462,
+      "predicted_per_second": 139.29442018697597
+    }
+  },
+  "wall_seconds": 0.45416804088745266,
+  "memory": {
+    "samples": 2,
+    "peak_rss_bytes": 4257808384,
+    "peak_physical_footprint_bytes": 1698598776
+  },
+  "id": "serbian_latin",
+  "group": "extraction",
+  "repeat": 1,
+  "score": {
+    "passed": false,
+    "json_valid": true,
+    "correct_fields": 3,
+    "total_fields": 5,
+    "wrong": {
+      "installation_due": {
+        "expected": "do petka",
+        "actual": "petka"
+      },
+      "report_due": {
+        "expected": "u ponedjeljak",
+        "actual": "ponedjeljak"
+      }
+    }
+  }
+}

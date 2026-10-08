@@ -1,0 +1,68 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "4"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 2,
+    "prompt_tokens": 25,
+    "total_tokens": 27,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 25,
+    "prompt_ms": 82.335,
+    "prompt_per_token_ms": 3.2933999999999997,
+    "prompt_per_second": 303.6375781866764,
+    "predicted_n": 2,
+    "predicted_ms": 12.299,
+    "predicted_per_token_ms": 6.1495,
+    "predicted_per_second": 162.61484673550697
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "4"
+        }
+      }
+    ],
+    "created": 1789023042,
+    "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 2,
+      "prompt_tokens": 25,
+      "total_tokens": 27,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-W4j6ESQVWny1FBgOO11J5Sz4DX9DuxQk",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 25,
+      "prompt_ms": 82.335,
+      "prompt_per_token_ms": 3.2933999999999997,
+      "prompt_per_second": 303.6375781866764,
+      "predicted_n": 2,
+      "predicted_ms": 12.299,
+      "predicted_per_token_ms": 6.1495,
+      "predicted_per_second": 162.61484673550697
+    }
+  },
+  "wall_seconds": 0.10448170907329768,
+  "memory": {
+    "samples": 1,
+    "peak_rss_bytes": 3970777088,
+    "peak_physical_footprint_bytes": 1417940664
+  }
+}

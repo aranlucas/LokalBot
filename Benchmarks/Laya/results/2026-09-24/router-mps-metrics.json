@@ -1,0 +1,11 @@
+{
+  "preload_ms": 3391.016541980207,
+  "process_maxrss_bytes": 2970288128,
+  "gpu_active_bytes": 2978348544,
+  "gpu_driver_bytes": 3030073344,
+  "max_loaded": 2,
+  "preload_models": [
+    "english",
+    "multilingual"
+  ]
+}
