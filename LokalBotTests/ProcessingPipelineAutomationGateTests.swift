@@ -168,7 +168,11 @@ final class ProcessingPipelineAutomationGateTests: XCTestCase {
         let meeting = makeMeeting()
 
         pipeline.enqueue(meeting, transcribe: true, summarize: true, origin: .automatic)
-        await waitUntil { pipeline.stages[meeting.id] == .waitingForModels }
+        // process() parks the job before the drain task resumes and clears
+        // its active-work state. Await that cleanup before asserting it.
+        await waitUntil {
+            pipeline.stages[meeting.id] == .waitingForModels && !pipeline.hasActiveWork
+        }
 
         XCTAssertEqual(pipeline.stages[meeting.id], .waitingForModels)
         XCTAssertTrue(pipeline.hasJobsWaitingForModels)
