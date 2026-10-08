@@ -21,7 +21,7 @@ SMOKE = [
     'MainWindowUITests/testMeetingWaveformExposesSliderAndSupportsKeyboardSeeking',
     'AgentModeUITests',
     'RedesignUITests/testAgentApprovalDescribesEffectAndDenialAndStopReachTheController',
-    'RedesignUITests/testFourHundredActionsStaySearchableAndCompletionCanBeUndone',
+    'RedesignUITests/testActionSearchPreservesSelectionAndCompletionCanBeUndone',
     'MainWindowUITests/testMultiMeetingThreadCompletionRequiresConfirmation',
     'MainWindowUITests/testActionThreadSourceCanBeSeparatedAndRestored',
 ]
