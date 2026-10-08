@@ -209,6 +209,7 @@
 "Control retention, exclusions, encryption, and remote processing." = "管理保留期限、排除规则、加密和远程处理。";
 "Conversation history" = "对话历史";
 "Conversations" = "对话";
+"Copied to the clipboard" = "已复制到剪贴板";
 "Copy" = "复制";
 "Copy Digest" = "复制摘要";
 "Copy measurements" = "复制测量结果";
@@ -572,6 +573,7 @@
 "No supporting passage was stored." = "未保存支持此内容的片段。";
 "No transcript speakers are available yet." = "转写中暂时没有可用的说话人。";
 "None yet" = "暂无";
+"Not connected" = "未连接";
 "Not Yet" = "暂不";
 "Not ready" = "未就绪";
 "Not recording" = "未在录制";
@@ -647,6 +649,7 @@
 "Plan in Agent…" = "在智能体中规划…";
 "Play" = "播放";
 "Play / pause (Space)" = "播放 / 暂停（空格）";
+"Play a sound when the microphone is ready" = "麦克风就绪时播放提示音";
 "Play Speech" = "播放语音";
 "Play Voice" = "播放声音";
 "Play or select a transcript line to see what was on screen." = "播放或选择一行转写，查看当时的屏幕内容。";
@@ -721,6 +724,7 @@
 "Relaunch" = "重新启动";
 "Relaunch after granting Input Monitoring if the shortcut is still inactive." = "授予输入监控权限后，若快捷键仍无效，请重新启动。";
 "Release %@ to compose" = "松开 %@ 开始撰写";
+"Release or tap %@ to compose" = "松开或轻点 %@ 开始撰写";
 "Reload the selected day's local activity" = "重新加载所选日期的本地活动";
 "Remember" = "记忆";
 "Remember app and window activity" = "记住应用和窗口活动";
@@ -842,6 +846,8 @@
 "Searching local sources…" = "正在搜索本地来源…";
 "Searching retained text…" = "正在搜索保留的文字…";
 "Searching your local memory…" = "正在搜索本地记忆…";
+"Secure Input is on in %@, so macOS hides the dictation shortcut. Turn it off there (for example Terminal → Secure Keyboard Entry) or switch apps." = "%@ 开启了安全输入，macOS 因此会隐藏听写快捷键。请在该应用中关闭它（例如“终端”→“安全键盘输入”），或切换到其他应用。";
+"Secure Input is on in another app, so macOS hides the dictation shortcut. Turn it off there (for example Terminal → Secure Keyboard Entry) or switch apps." = "另一个应用开启了安全输入，macOS 因此会隐藏听写快捷键。请在该应用中关闭它（例如“终端”→“安全键盘输入”），或切换到其他应用。";
 "Select a meeting to review its outcomes and evidence." = "选择一个会议，查看其成果和证据。";
 "Select a work session, meeting, or captured moment to review its details." = "选择工作时段、会议或采集时刻以查看详情。";
 "Select any part and press ⌘C to copy" = "选择任意内容并按 ⌘C 复制";
@@ -862,6 +868,7 @@
 "Setup progress" = "设置进度";
 "Shortcut" = "快捷键";
 "Shortcut and output" = "快捷键与输出";
+"Shortcut blocked by Secure Input" = "快捷键被安全输入阻止";
 "Shortcut output" = "快捷键输出";
 "Shortcut · %@" = "快捷键 · %@";
 "Show Active" = "显示活跃任务";
@@ -903,6 +910,7 @@
 "Start live transcript preview to read along. Recording continues independently." = "开启实时转写预览以跟随阅读。录制独立进行。";
 "Start with your work memory or a file. The agent starts when you send." = "从工作记忆或文件开始。发送后智能体才会运行。";
 "Starting dictation" = "正在启动听写";
+"Starting the microphone" = "正在启动麦克风";
 "Startup, the main window, shortcuts, and updates." = "启动、主窗口、快捷键和更新。";
 "Status" = "状态";
 "Steer the current task at its next opportunity" = "在下一个可用时机调整当前任务";
@@ -930,7 +938,9 @@
 "Symlinks the bundled CLI at ~/.local/bin/lokalbot-cli and the skill into ~/.agents/skills and ~/.claude/skills. Read-only by design." = "将内置命令行工具链接至 ~/.local/bin/lokalbot-cli，并将技能链接至 ~/.agents/skills 和 ~/.claude/skills。工具仅支持只读操作。";
 "System" = "系统";
 "System audio input level" = "系统音频输入电平";
+"System default" = "系统默认";
 "Taken back" = "已撤回";
+"Tap or hold" = "轻点或按住";
 "Task access details" = "任务访问权限详情";
 "Task name" = "任务名称";
 "Task needs attention" = "任务需要处理";
@@ -951,6 +961,7 @@
 "The opened source remains visible outside these filters." = "已打开的来源不受这些筛选条件影响，仍会显示。";
 "The original action, due phrase and citations stay available." = "原始行动项、截止时间表述和引用仍会保留。";
 "The sources below are read only when you start with a writing request, such as “reply…”, “write…” or “draft…”. Other dictation is only cleaned up." = "只有以写作请求开头时（如“回复……”“写……”或“起草……”）才会读取以下来源。其他听写只会整理文字。";
+"The text may not have been inserted" = "文字可能没有插入";
 "Theme" = "主题";
 "These are captured window titles. Expand a title to inspect the activity behind it." = "这些是采集的窗口标题。展开标题可查看背后的活动。";
 "These choices are applied on the final Review step." = "这些选择将在最后的确认步骤生效。";
@@ -1067,6 +1078,7 @@
 "Window" = "窗口";
 "Window titles" = "窗口标题";
 "With" = "与";
+"With AirPods, choose the MacBook microphone to keep the headset's audio quality while you dictate." = "使用 AirPods 时，选择 MacBook 麦克风可在听写时保持耳机的音质。";
 "Work Sessions" = "工作时段";
 "Work sessions" = "工作时段";
 "Workspace content" = "工作区内容";

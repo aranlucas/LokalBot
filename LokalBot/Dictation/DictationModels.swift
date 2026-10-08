@@ -15,6 +15,9 @@ enum DictationIntent: String, Codable, CaseIterable, Identifiable {
 enum DictationTriggerMode: String, Codable, CaseIterable, Identifiable {
     case pushToTalk = "Push to talk"
     case toggle = "Toggle"
+    /// A quick tap starts and a second tap finishes; holding past the tap
+    /// threshold works like push to talk.
+    case tapOrHold = "Tap or hold"
 
     var id: String { rawValue }
 
@@ -22,6 +25,7 @@ enum DictationTriggerMode: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .pushToTalk: "Push to talk"
         case .toggle: "Toggle"
+        case .tapOrHold: "Tap or hold"
         }
     }
 }

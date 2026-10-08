@@ -5,6 +5,9 @@ struct DictationView: View {
     @ObservedObject var dictation: DictationCoordinator
     var embedded = false
     @StateObject private var permissions = PermissionManager.shared
+    /// Nil when Secure Input is off; otherwise the app holding it, if known.
+    @State private var secureInputHolder: String??
+    private let secureInputPoll = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
     private var operation: AppSettings { dictation.presentedConfiguration }
 
@@ -22,6 +25,8 @@ struct DictationView: View {
             PermissionGuidanceController.shared.dismiss()
         }
         .onChange(of: permissions.granted) { _, _ in app.dictation.applySettings() }
+        .onAppear { secureInputHolder = DictationSecureInput.holder() }
+        .onReceive(secureInputPoll) { _ in secureInputHolder = DictationSecureInput.holder() }
     }
 
     @ViewBuilder private var content: some View {
@@ -64,6 +69,16 @@ struct DictationView: View {
             // The Dictation command lands on this row; highlight it alone,
             // never every row of the sections below.
             .settingTarget("settings.dictationPreview", selected: embedded ? app.focusedSettingID : nil)
+            if app.settings.dictationEnabled, let holder = secureInputHolder {
+                Label {
+                    Text(verbatim: DictationSecureInput.message(appName: holder) { app.settings.appLanguage.localized($0) })
+                        .fixedSize(horizontal: false, vertical: true)
+                } icon: {
+                    Image(systemName: "lock.fill").foregroundStyle(.orange)
+                }
+                .font(AppFont.scaled(.callout))
+                .accessibilityIdentifier("dictation.secureInputWarning")
+            }
             Picker(selection: Binding(get: { operation.dictationIntent }, set: { app.settings.dictationIntent = $0 })) {
                 ForEach(DictationIntent.allCases) { Text($0.rawValue).tag($0) }
             } label: {
@@ -214,6 +229,8 @@ struct DictationView: View {
             "Ready — hold \(shortcut.displayLabel) to dictate."
         case .toggle:
             "Ready — press \(shortcut.displayLabel) to start and again to finish."
+        case .tapOrHold:
+            "Ready — tap \(shortcut.displayLabel) to start and stop, or hold it while you talk."
         }
     }
 

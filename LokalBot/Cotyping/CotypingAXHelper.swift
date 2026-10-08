@@ -186,6 +186,29 @@ enum CotypingAXHelper {
             selection: selection)
     }
 
+    /// The bounded text before the caret in the field a dictation was pasted
+    /// into, to confirm the text arrived. Nil when another field has focus or
+    /// the field cannot be read; the caller then makes no claim either way.
+    /// The value is compared and dropped, never stored.
+    static func dictationTextBeforeCaret(processID: pid_t, focusIdentityKey: String?) -> String? {
+        guard isTrusted, processID > 0, processID != ProcessInfo.processInfo.processIdentifier else { return nil }
+        let deadline = DispatchTime.now().uptimeNanoseconds &+ 250 * 1_000_000
+        func withinDeadline() -> Bool { DispatchTime.now().uptimeNanoseconds <= deadline }
+        guard let frontmost = NSWorkspace.shared.frontmostApplication,
+              frontmost.processIdentifier == processID,
+              let element = focusedElementForAcceptance(processID: processID), withinDeadline(),
+              self.processID(of: element) == processID else { return nil }
+        if let focusIdentityKey, !focusIdentityKey.isEmpty {
+            let role = stringAttribute(element, kAXRoleAttribute as String) ?? ""
+            let subrole = stringAttribute(element, kAXSubroleAttribute as String)
+            guard withinDeadline(), self.focusIdentityKey(
+                for: element, processID: processID, bundleID: frontmost.bundleIdentifier,
+                role: role, subrole: subrole) == focusIdentityKey else { return nil }
+        }
+        guard withinDeadline() else { return nil }
+        return boundedAcceptanceContent(on: element, withinDeadline: withinDeadline)?.precedingText
+    }
+
     /// Captures only the focus identity, marked-text state, selection, and bounded
     /// caret-adjacent text needed to validate one accept key. This is synchronous —
     /// the event tap must decide whether to swallow the original key — but its

@@ -209,6 +209,7 @@
 "Control retention, exclusions, encryption, and remote processing." = "Control retention, exclusions, encryption, and remote processing.";
 "Conversation history" = "Conversation history";
 "Conversations" = "Conversations";
+"Copied to the clipboard" = "Copied to the clipboard";
 "Copy" = "Copy";
 "Copy Digest" = "Copy Digest";
 "Copy measurements" = "Copy measurements";
@@ -572,6 +573,7 @@
 "No supporting passage was stored." = "No supporting passage was stored.";
 "No transcript speakers are available yet." = "No transcript speakers are available yet.";
 "None yet" = "None yet";
+"Not connected" = "Not connected";
 "Not Yet" = "Not Yet";
 "Not ready" = "Not ready";
 "Not recording" = "Not recording";
@@ -647,6 +649,7 @@
 "Plan in Agent…" = "Plan in Agent…";
 "Play" = "Play";
 "Play / pause (Space)" = "Play / pause (Space)";
+"Play a sound when the microphone is ready" = "Play a sound when the microphone is ready";
 "Play Speech" = "Play Speech";
 "Play Voice" = "Play Voice";
 "Play or select a transcript line to see what was on screen." = "Play or select a transcript line to see what was on screen.";
@@ -721,6 +724,7 @@
 "Relaunch" = "Relaunch";
 "Relaunch after granting Input Monitoring if the shortcut is still inactive." = "Relaunch after granting Input Monitoring if the shortcut is still inactive.";
 "Release %@ to compose" = "Release %@ to compose";
+"Release or tap %@ to compose" = "Release or tap %@ to compose";
 "Reload the selected day's local activity" = "Reload the selected day's local activity";
 "Remember" = "Remember";
 "Remember app and window activity" = "Remember app and window activity";
@@ -842,6 +846,8 @@
 "Searching local sources…" = "Searching local sources…";
 "Searching retained text…" = "Searching retained text…";
 "Searching your local memory…" = "Searching your local memory…";
+"Secure Input is on in %@, so macOS hides the dictation shortcut. Turn it off there (for example Terminal → Secure Keyboard Entry) or switch apps." = "Secure Input is on in %@, so macOS hides the dictation shortcut. Turn it off there (for example Terminal → Secure Keyboard Entry) or switch apps.";
+"Secure Input is on in another app, so macOS hides the dictation shortcut. Turn it off there (for example Terminal → Secure Keyboard Entry) or switch apps." = "Secure Input is on in another app, so macOS hides the dictation shortcut. Turn it off there (for example Terminal → Secure Keyboard Entry) or switch apps.";
 "Select a meeting to review its outcomes and evidence." = "Select a meeting to review its outcomes and evidence.";
 "Select a work session, meeting, or captured moment to review its details." = "Select a work session, meeting, or captured moment to review its details.";
 "Select any part and press ⌘C to copy" = "Select any part and press ⌘C to copy";
@@ -862,6 +868,7 @@
 "Setup progress" = "Setup progress";
 "Shortcut" = "Shortcut";
 "Shortcut and output" = "Shortcut and output";
+"Shortcut blocked by Secure Input" = "Shortcut blocked by Secure Input";
 "Shortcut output" = "Shortcut output";
 "Shortcut · %@" = "Shortcut · %@";
 "Show Active" = "Show Active";
@@ -903,6 +910,7 @@
 "Start live transcript preview to read along. Recording continues independently." = "Start live transcript preview to read along. Recording continues independently.";
 "Start with your work memory or a file. The agent starts when you send." = "Start with your work memory or a file. The agent starts when you send.";
 "Starting dictation" = "Starting dictation";
+"Starting the microphone" = "Starting the microphone";
 "Startup, the main window, shortcuts, and updates." = "Startup, the main window, shortcuts, and updates.";
 "Status" = "Status";
 "Steer the current task at its next opportunity" = "Steer the current task at its next opportunity";
@@ -930,7 +938,9 @@
 "Symlinks the bundled CLI at ~/.local/bin/lokalbot-cli and the skill into ~/.agents/skills and ~/.claude/skills. Read-only by design." = "Symlinks the bundled CLI at ~/.local/bin/lokalbot-cli and the skill into ~/.agents/skills and ~/.claude/skills. Read-only by design.";
 "System" = "System";
 "System audio input level" = "System audio input level";
+"System default" = "System default";
 "Taken back" = "Taken back";
+"Tap or hold" = "Tap or hold";
 "Task access details" = "Task access details";
 "Task name" = "Task name";
 "Task needs attention" = "Task needs attention";
@@ -951,6 +961,7 @@
 "The opened source remains visible outside these filters." = "The opened source remains visible outside these filters.";
 "The original action, due phrase and citations stay available." = "The original action, due phrase and citations stay available.";
 "The sources below are read only when you start with a writing request, such as “reply…”, “write…” or “draft…”. Other dictation is only cleaned up." = "The sources below are read only when you start with a writing request, such as “reply…”, “write…” or “draft…”. Other dictation is only cleaned up.";
+"The text may not have been inserted" = "The text may not have been inserted";
 "Theme" = "Theme";
 "These are captured window titles. Expand a title to inspect the activity behind it." = "These are captured window titles. Expand a title to inspect the activity behind it.";
 "These choices are applied on the final Review step." = "These choices are applied on the final Review step.";
@@ -1067,6 +1078,7 @@
 "Window" = "Window";
 "Window titles" = "Window titles";
 "With" = "With";
+"With AirPods, choose the MacBook microphone to keep the headset's audio quality while you dictate." = "With AirPods, choose the MacBook microphone to keep the headset's audio quality while you dictate.";
 "Work Sessions" = "Work Sessions";
 "Work sessions" = "Work sessions";
 "Workspace content" = "Workspace content";

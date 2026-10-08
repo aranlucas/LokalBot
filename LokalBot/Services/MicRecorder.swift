@@ -235,8 +235,8 @@ final class MicRecorder {
     /// Dictation records through a capture session, which keeps a Bluetooth
     /// headset's microphone open while it switches to headset mode. Meetings
     /// keep the engine input (and its speaker-clock anchoring) above.
-    static var dictationInputFactory: () throws -> MicrophoneInput = {
-        try CaptureSessionMicrophoneInput()
+    static var dictationInputFactory: (_ preferredMicrophoneID: String) throws -> MicrophoneInput = { id in
+        try CaptureSessionMicrophoneInput(device: DictationMicrophone.device(preferredID: id))
     }
     private let makeInput: () throws -> MicrophoneInput
     /// Nil keeps retrying for as long as the device keeps changing.
@@ -294,6 +294,13 @@ final class MicRecorder {
     /// from an old input graph from mutating or writing into its replacement.
     private var activeCaptureGraphID: UUID?
     private let dropCounter = MicRealtimeDropCounter()
+    /// Loudness of recent buffers, for the dictation HUD.
+    let levelMeter = AudioLevelMeter()
+    /// Called once per `start`, on the main queue, when the first captured
+    /// audio is written. A Bluetooth microphone can take a second to deliver.
+    var onFirstAudio: (() -> Void)?
+    /// Accessed only on `ioQueue`.
+    private var hasDeliveredFirstAudio = false
 
     enum RecorderError: LocalizedError {
         case inputUnavailable
@@ -1021,6 +1028,8 @@ final class MicRecorder {
         recoveryState = .healthy
         healthLock.unlock()
         dropCounter.reset()
+        levelMeter.reset()
+        ioQueue.async { self.hasDeliveredFirstAudio = false }
     }
 
     private func updateRecoveryState(_ state: RecoveryState) {
@@ -1085,6 +1094,11 @@ final class MicRecorder {
         healthLock.unlock()
         speakerAudioClock?.record(hostTime: hostTime, valid: hostValid, startFrame: startFrame,
             frames: Int64(buffer.frameLength), sampleRate: buffer.format.sampleRate)
+        levelMeter.record(AudioLevelMeter.normalized(rms: AudioLevelMeter.rms(of: buffer)))
+        if !hasDeliveredFirstAudio {
+            hasDeliveredFirstAudio = true
+            if let onFirstAudio { DispatchQueue.main.async(execute: onFirstAudio) }
+        }
     }
 }
 

@@ -12,6 +12,13 @@ final class DictationInputMonitor {
     var onToggle: (() -> Void)?
     /// A push-to-talk chord turned out to be another shortcut (⌃⌥ then T).
     var onCancel: (() -> Void)?
+    /// Esc while a dictation is starting or recording.
+    var onEscape: (() -> Void)?
+    /// Whether a dictation is starting or recording. Esc is consumed only
+    /// then, and Tap or hold uses it to tell a finishing tap from a start.
+    var isDictationActive: () -> Bool = { false }
+    /// Tap or hold: a press shorter than this keeps recording after release.
+    var tapHoldThreshold: TimeInterval = 0.3
     var triggerModeProvider: () -> DictationTriggerMode = { .pushToTalk }
     var shortcutProvider: () -> DictationShortcut = { .handyDefault }
     /// How long a modifier-only push-to-talk chord is held before dictation
@@ -29,12 +36,19 @@ final class DictationInputMonitor {
     private var shortcutIsDown = false
     private var activeTriggerMode: DictationTriggerMode?
     private var activeShortcut: DictationShortcut?
+    /// Tap or hold: when the current press began, or nil when that press
+    /// finished a running dictation and its release must do nothing.
+    private var tapHoldPressedAt: Date?
 
     /// Modifier-only chord state.
     private var chordModifiers: CGEventFlags?
     private var chordMode: DictationTriggerMode?
     private var chordInterrupted = false
     private var chordStarted = false
+    private var chordPressedAt: Date?
+    /// Tap or hold: the chord was pressed while dictating, so a clean
+    /// release finishes instead of starting.
+    private var chordFinishesOnRelease = false
     private var pendingChordStart: DispatchWorkItem?
 
     @discardableResult
@@ -65,7 +79,7 @@ final class DictationInputMonitor {
     func stop(releasingHeldShortcut: Bool = false) {
         let shouldStop = releasingHeldShortcut
             && shortcutIsDown
-            && activeTriggerMode == .pushToTalk
+            && (activeTriggerMode == .pushToTalk || (activeTriggerMode == .tapOrHold && tapHoldPressedAt != nil))
         if let source {
             CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes)
         }
@@ -89,7 +103,8 @@ final class DictationInputMonitor {
             // A disabled event tap can swallow the physical key-up. Treat the
             // disable notification as a fail-safe release before re-enabling,
             // otherwise push-to-talk may record indefinitely.
-            let shouldStop = shortcutIsDown && activeTriggerMode == .pushToTalk
+            let shouldStop = shortcutIsDown && (activeTriggerMode == .pushToTalk
+                || (activeTriggerMode == .tapOrHold && tapHoldPressedAt != nil))
             shortcutIsDown = false
             activeTriggerMode = nil
             activeShortcut = nil
@@ -99,6 +114,10 @@ final class DictationInputMonitor {
             return false
         }
         guard !isSuspended else { return false }
+        if type == .keyDown, Self.isPlainEscape(event), isDictationActive() {
+            if event.getIntegerValueField(.keyboardEventAutorepeat) == 0 { onEscape?() }
+            return true
+        }
         if type == .flagsChanged {
             handleModifiers(event.flags.dictationRelevantModifiers)
             return false
@@ -151,8 +170,37 @@ final class DictationInputMonitor {
                 activeTriggerMode = nil
                 activeShortcut = nil
             }
+        case .tapOrHold:
+            if type == .keyDown {
+                let isRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
+                if !shortcutIsDown && !isRepeat {
+                    shortcutIsDown = true
+                    activeTriggerMode = .tapOrHold
+                    activeShortcut = shortcut
+                    if isDictationActive() {
+                        tapHoldPressedAt = nil
+                        onStop?()
+                    } else {
+                        tapHoldPressedAt = Date()
+                        onStart?()
+                    }
+                }
+            } else if shortcutIsDown {
+                shortcutIsDown = false
+                activeTriggerMode = nil
+                activeShortcut = nil
+                if let pressedAt = tapHoldPressedAt, Date().timeIntervalSince(pressedAt) >= tapHoldThreshold {
+                    onStop?()
+                }
+                tapHoldPressedAt = nil
+            }
         }
         return true
+    }
+
+    static func isPlainEscape(_ event: CGEvent) -> Bool {
+        CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode)) == DictationShortcutKeyNames.escape
+            && event.flags.dictationRelevantModifiers.isEmpty
     }
 
     // MARK: - Modifier-only chords
@@ -176,9 +224,15 @@ final class DictationInputMonitor {
         chordModifiers = modifiers
         chordInterrupted = false
         chordStarted = false
+        chordFinishesOnRelease = false
+        chordPressedAt = Date()
         let mode = triggerModeProvider()
         chordMode = mode
-        guard mode == .pushToTalk else { return }
+        if mode == .tapOrHold, isDictationActive() {
+            chordFinishesOnRelease = true
+            return
+        }
+        guard mode == .pushToTalk || mode == .tapOrHold else { return }
         let start = DispatchWorkItem { [weak self] in
             guard let self, self.chordModifiers != nil, !self.chordInterrupted, !self.isSuspended else { return }
             self.pendingChordStart = nil
@@ -194,7 +248,7 @@ final class DictationInputMonitor {
         chordInterrupted = true
         pendingChordStart?.cancel()
         pendingChordStart = nil
-        if chordStarted, chordMode == .pushToTalk {
+        if chordStarted, chordMode == .pushToTalk || chordMode == .tapOrHold {
             chordStarted = false
             onCancel?()
         }
@@ -204,25 +258,39 @@ final class DictationInputMonitor {
         let mode = chordMode
         let started = chordStarted
         let clean = !chordInterrupted
+        let finishes = chordFinishesOnRelease
+        let held = chordPressedAt.map { Date().timeIntervalSince($0) } ?? 0
         resetChord(stoppingPushToTalk: false)
         switch mode {
         case .pushToTalk:
             if started { onStop?() }
         case .toggle:
             if clean { onToggle?() }
+        case .tapOrHold:
+            if finishes {
+                if clean { onStop?() }
+            } else if started {
+                // A hold finishes on release; a tap keeps recording.
+                if held >= tapHoldThreshold { onStop?() }
+            } else if clean {
+                // Released before the hold delay: a tap, so start now.
+                onStart?()
+            }
         case nil:
             break
         }
     }
 
     private func resetChord(stoppingPushToTalk: Bool) {
-        let shouldStop = stoppingPushToTalk && chordStarted && chordMode == .pushToTalk
+        let shouldStop = stoppingPushToTalk && chordStarted && (chordMode == .pushToTalk || chordMode == .tapOrHold)
         pendingChordStart?.cancel()
         pendingChordStart = nil
         chordModifiers = nil
         chordMode = nil
         chordInterrupted = false
         chordStarted = false
+        chordFinishesOnRelease = false
+        chordPressedAt = nil
         if shouldStop { onStop?() }
     }
 }
