@@ -13,6 +13,7 @@ enum DictationContextReplay {
         /// The focused-window (OCR) option. Optional so older fixtures decode.
         var useScreenContext: Bool?
         var windowTextPolicy: DictationWindowTextPolicy?
+        var routing: DictationRequestRouting?
     }
 
     struct Case: Decodable {
@@ -40,6 +41,8 @@ enum DictationContextReplay {
         var textReadIDs: [String]
         var modelCalls: Int
         var screenReads: Int
+        /// Whether the routing rule treated the speech as a writing request.
+        var routedAsRequest: Bool?
         var latencyMs: Double
         var error: String?
     }
@@ -86,9 +89,9 @@ enum DictationContextReplay {
         var screenReads = 0
         let engine = RecordingEngine(baseURL: endpoint)
         let start = ContinuousClock.now
-        var output = "", failure: String?
+        var output = "", failure: String?, routed: Bool?
         do {
-            output = try await DictationTextPreparation.prepare(speech: item.speech, settings: settings,
+            let prepared = try await DictationTextPreparation.prepare(speech: item.speech, settings: settings,
                 screenContext: {
                     screenReads += 1
                     guard useScreen, let screen = item.screen else { return nil }
@@ -105,12 +108,16 @@ enum DictationContextReplay {
                 }, validateVisibleContext: { expected in source?.capture(enabled: fixture.useVisibleContext) == expected },
                 validateScreenContext: { _ in true },
                 windowTextPolicy: fixture.windowTextPolicy ?? .production,
-                makeEngine: { _ in engine }).text
+                routing: fixture.routing ?? .production,
+                makeEngine: { _ in engine })
+            output = prepared.text
+            routed = prepared.contextUse?.wasWritingRequest
         } catch { failure = String(describing: error) }
         let duration = start.duration(to: .now).components
         return .init(id: item.id, text: output, prompt: engine.prompt, system: engine.system,
                      memoryIDs: selection.items.map(\.id), visibleIDs: visible?.excerpts.map(\.id) ?? [],
                      textReadIDs: source?.textReadIDs ?? [], modelCalls: engine.calls, screenReads: screenReads,
+                     routedAsRequest: routed,
                      latencyMs: Double(duration.seconds) * 1000 + Double(duration.attoseconds) / 1e15, error: failure)
     }
 

@@ -106,6 +106,42 @@ final class DictationGroundingTests: XCTestCase {
         }
     }
 
+    func testRelayRoutingAcceptsRequestsAimedAtSomeoneElseOnly() {
+        for speech in ["Tell him the start time from the message above.", "Let her know which city it is.",
+                       "Ask them to confirm the room number.", "Hey, reply with the deadline.",
+                       "Okay so draft a short answer.", "Email Marko the name of the reviewer.",
+                       "Reci mu u koliko sati počinje.", "Javi joj broj sobe.", "Dobro, odgovori mu."] {
+            XCTAssertTrue(DictationGrounding.requestsContext(speech, routing: .relays), speech)
+        }
+        for speech in ["Tell me if 14:00 works for you.", "Can you tell me when the boxes arrive?",
+                       "Let me know by Friday.", "Ask me anything.", "Text me when you land.",
+                       "Hey Ana, the review moved to Thursday.", "Okay, I will not send them.",
+                       "Reci mi kad stigneš.", "Javi mi sutra.", "Email works again.", "Thanks for the files."] {
+            XCTAssertFalse(DictationGrounding.requestsContext(speech, routing: .relays), speech)
+        }
+    }
+
+    func testReferencedRelayRoutingNeedsAPointerToContext() {
+        XCTAssertTrue(DictationGrounding.requestsContext(
+            "Tell him the start time from the message above.", routing: .referencedRelays))
+        XCTAssertTrue(DictationGrounding.requestsContext(
+            "Pitaj ga da potvrdi datum iz poruke iznad.", routing: .referencedRelays))
+        XCTAssertFalse(DictationGrounding.requestsContext(
+            "Tell him I am running 10 minutes late.", routing: .referencedRelays),
+            "a self-contained relay is text to insert")
+        XCTAssertTrue(DictationGrounding.requestsContext(
+            "Hey, reply with the deadline.", routing: .referencedRelays), "commands need no pointer")
+    }
+
+    func testProductionRoutingIsTheOriginalCommandList() {
+        for speech in ["Tell him the time from above.", "Hey, reply with the deadline.", "Please reply.",
+                       "Molim te napiši odgovor.", "Thank you for your help."] {
+            XCTAssertEqual(DictationGrounding.requestsContext(speech),
+                           DictationGrounding.requestsContext(speech, routing: .commands), speech)
+        }
+        XCTAssertFalse(DictationGrounding.requestsContext("Tell him the time from above."))
+    }
+
     func testRevokedGrantDuringModelPreparationPreventsGeneration() async throws {
         let settings = configuration(), snapshot = try visible(), engine = GroundingTestEngine()
         var current = settings

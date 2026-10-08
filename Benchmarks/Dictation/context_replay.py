@@ -50,7 +50,7 @@ def contains(text, phrase):
     return bool(expected) and any(actual[i:i + len(expected)] == expected for i in range(len(actual)))
 
 
-def replay_input(corpus, cases, variant):
+def replay_input(corpus, cases, variant, routing=None):
     visible, meetings, screens, window = flags(variant)
     allowed = {'id', 'speech', 'visible', 'transcribe', 'screen'}
     data = {'cases': [{k: v for k, v in case.items() if k in allowed} for case in cases],
@@ -58,6 +58,8 @@ def replay_input(corpus, cases, variant):
             'useVisibleContext': visible, 'useMeetingMemory': meetings, 'useScreenMemory': screens}
     if window:
         data.update(useScreenContext=True, windowTextPolicy=WINDOW_POLICIES[window])
+    if routing:
+        data['routing'] = routing
     return data
 
 
@@ -92,6 +94,9 @@ def score(cases, runs, variants=None):
                          'forbiddenReads': sorted(set(output['textReadIDs']) - set(allowed_reads)),
                          'modelCallsCorrect': output['modelCalls'] == (0 if transcribe else 1),
                          'screenReadsCorrect': output.get('screenReads', 0) == (1 if window and eligible else 0),
+                         'routedAsRequest': output.get('routedAsRequest'),
+                         'routingCorrect': transcribe or output.get('routedAsRequest') is None
+                         or output.get('routedAsRequest') == case['contextEligible'],
                          'error': output.get('error'), 'latencyMs': output['latencyMs']})
     controls = []
     for i, case in enumerate(cases):
@@ -109,6 +114,7 @@ def score(cases, runs, variants=None):
                             'forbiddenReads': sum(bool(r['forbiddenReads']) for r in own),
                             'modelCallFailures': sum(not r['modelCallsCorrect'] for r in own),
                             'screenReadFailures': sum(not r['screenReadsCorrect'] for r in own),
+                            'routingFailures': sum(not r['routingCorrect'] for r in own),
                             'medianMs': statistics.median(r['latencyMs'] for r in own if r['kind'] != 'transcribe'),
                             'byKind': {kind: {'correct': sum(r['correct'] for r in own if r['kind'] == kind),
                                              'cases': sum(r['kind'] == kind for r in own)}
@@ -126,6 +132,8 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--variant-set', choices=sorted(VARIANT_SETS), default='context',
                         help='context: the five grant conditions; full: also the focused-window option')
+    parser.add_argument('--routing', choices=['commands', 'relays', 'referencedRelays'],
+                        help='writing-request rule to evaluate (default: the build\'s production rule)')
     args = parser.parse_args()
     variants = VARIANT_SETS[args.variant_set]
     args.output.mkdir(parents=True, exist_ok=False)
@@ -142,7 +150,7 @@ def main():
     manifest = {'appSHA256': digest(args.app), 'serverSHA256': digest(args.server), 'modelSHA256': digest(args.model),
                 'modelFile': args.model.name, 'corpusSHA256': digest(args.corpus), 'scriptSHA256': digest(__file__),
                 'split': args.split, 'caseIDs': [c['id'] for c in cases], 'serverArguments': command,
-                'variants': variants, 'windowPolicies': WINDOW_POLICIES,
+                'variants': variants, 'windowPolicies': WINDOW_POLICIES, 'routing': args.routing or 'production',
                 'settings': 'Production Compose: temperature 0.2, max 4096 output tokens, reasoning disabled; fixed server seed',
                 'scope': 'Synthetic recognized speech, AX trees and saved facts. No microphone, live screen or user library.'}
     (args.output / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
@@ -166,7 +174,7 @@ def main():
                 time.sleep(0.2)
             for variant in variants:
                 fixture = args.output / f'{variant}-input.json'
-                fixture.write_text(json.dumps(replay_input(corpus, cases, variant), ensure_ascii=False) + '\n')
+                fixture.write_text(json.dumps(replay_input(corpus, cases, variant, args.routing), ensure_ascii=False) + '\n')
                 with tempfile.TemporaryDirectory(prefix='lokalbot-dictation-eval-') as temporary:
                     root = Path(temporary)
                     (root / 'home').mkdir()

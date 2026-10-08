@@ -27,6 +27,7 @@ enum DictationTextPreparation {
         validateVisibleContext: (CotypingVisibleContext.Snapshot) async -> Bool = { _ in false },
         validateScreenContext: (DictationScreenContext) async -> Bool = { _ in false },
         windowTextPolicy: DictationWindowTextPolicy = .production,
+        routing: DictationRequestRouting = .production,
         makeEngine: (AppSettings) async throws -> TextEngine
     ) async throws -> Result {
         try Task.checkCancellation()
@@ -37,7 +38,7 @@ enum DictationTextPreparation {
             DictationGrounding.permissionsMatch(settings, currentSettings() ?? settings)
         }
         guard permissionsCurrent() else { throw DictationComposeError.contextChanged }
-        let usesContext = DictationGrounding.requestsContext(speech)
+        let usesContext = DictationGrounding.requestsContext(speech, routing: routing)
         let context = usesContext && settings.dictationUseScreenContext ? await screenContext() : nil
         try Task.checkCancellation()
         guard permissionsCurrent() else { throw DictationComposeError.contextChanged }
