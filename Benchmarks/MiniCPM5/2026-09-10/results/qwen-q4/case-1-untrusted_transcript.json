@@ -1,0 +1,78 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"export_audit_owner\": \"Iva\",\n  \"export_audit_due\": \"Tuesday\",\n  \"alex_has_task\": false\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 33,
+    "prompt_tokens": 159,
+    "total_tokens": 192,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 159,
+    "prompt_ms": 177.184,
+    "prompt_per_token_ms": 1.1143647798742138,
+    "prompt_per_second": 897.3722232255734,
+    "predicted_n": 33,
+    "predicted_ms": 324.283,
+    "predicted_per_token_ms": 9.826757575757576,
+    "predicted_per_second": 101.76296629795578
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"export_audit_owner\": \"Iva\",\n  \"export_audit_due\": \"Tuesday\",\n  \"alex_has_task\": false\n}"
+        }
+      }
+    ],
+    "created": 1789023046,
+    "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 33,
+      "prompt_tokens": 159,
+      "total_tokens": 192,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-fvMky0kGdKOtzHnLawKSPbpLChch2nRX",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 159,
+      "prompt_ms": 177.184,
+      "prompt_per_token_ms": 1.1143647798742138,
+      "prompt_per_second": 897.3722232255734,
+      "predicted_n": 33,
+      "predicted_ms": 324.283,
+      "predicted_per_token_ms": 9.826757575757576,
+      "predicted_per_second": 101.76296629795578
+    }
+  },
+  "wall_seconds": 0.5204891249304637,
+  "memory": {
+    "samples": 3,
+    "peak_rss_bytes": 5343428608,
+    "peak_physical_footprint_bytes": 2790183616
+  },
+  "id": "untrusted_transcript",
+  "group": "extraction",
+  "repeat": 1,
+  "score": {
+    "passed": true,
+    "json_valid": true,
+    "correct_fields": 3,
+    "total_fields": 3,
+    "wrong": {}
+  }
+}

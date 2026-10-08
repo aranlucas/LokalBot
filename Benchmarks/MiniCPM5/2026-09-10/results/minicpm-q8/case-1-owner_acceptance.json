@@ -1,0 +1,83 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"release_notes_owner\": \"Marko\",\n  \"release_notes_due\": \"by Friday\",\n  \"download_totals_owner\": null\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 38,
+    "prompt_tokens": 164,
+    "total_tokens": 202,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 164,
+    "prompt_ms": 76.143,
+    "prompt_per_token_ms": 0.46428658536585365,
+    "prompt_per_second": 2153.84211286658,
+    "predicted_n": 38,
+    "predicted_ms": 271.814,
+    "predicted_per_token_ms": 7.1530000000000005,
+    "predicted_per_second": 139.8014818957081
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"release_notes_owner\": \"Marko\",\n  \"release_notes_due\": \"by Friday\",\n  \"download_totals_owner\": null\n}"
+        }
+      }
+    ],
+    "created": 1789023565,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q8_0.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 38,
+      "prompt_tokens": 164,
+      "total_tokens": 202,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-b3HQwX0rScYOr5OXz4z5FzwYp0xswqM0",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 164,
+      "prompt_ms": 76.143,
+      "prompt_per_token_ms": 0.46428658536585365,
+      "prompt_per_second": 2153.84211286658,
+      "predicted_n": 38,
+      "predicted_ms": 271.814,
+      "predicted_per_token_ms": 7.1530000000000005,
+      "predicted_per_second": 139.8014818957081
+    }
+  },
+  "wall_seconds": 0.35026487498544157,
+  "memory": {
+    "samples": 1,
+    "peak_rss_bytes": 4216258560,
+    "peak_physical_footprint_bytes": 1657032472
+  },
+  "id": "owner_acceptance",
+  "group": "extraction",
+  "repeat": 1,
+  "score": {
+    "passed": false,
+    "json_valid": true,
+    "correct_fields": 2,
+    "total_fields": 3,
+    "wrong": {
+      "release_notes_due": {
+        "expected": "Friday",
+        "actual": "by Friday"
+      }
+    }
+  }
+}

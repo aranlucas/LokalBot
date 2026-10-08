@@ -1,0 +1,78 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"launch_date\": null,\n  \"search_owner\": null,\n  \"approved_budget\": null\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 27,
+    "prompt_tokens": 104,
+    "total_tokens": 131,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 104,
+    "prompt_ms": 144.773,
+    "prompt_per_token_ms": 1.392048076923077,
+    "prompt_per_second": 718.3659936590386,
+    "predicted_n": 27,
+    "predicted_ms": 266.557,
+    "predicted_per_token_ms": 9.872481481481483,
+    "predicted_per_second": 101.29165619360961
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"launch_date\": null,\n  \"search_owner\": null,\n  \"approved_budget\": null\n}"
+        }
+      }
+    ],
+    "created": 1789023045,
+    "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 27,
+      "prompt_tokens": 104,
+      "total_tokens": 131,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-Nw2Q4Y8bG6n26H54D0I3wQIYU1FDOHNW",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 104,
+      "prompt_ms": 144.773,
+      "prompt_per_token_ms": 1.392048076923077,
+      "prompt_per_second": 718.3659936590386,
+      "predicted_n": 27,
+      "predicted_ms": 266.557,
+      "predicted_per_token_ms": 9.872481481481483,
+      "predicted_per_second": 101.29165619360961
+    }
+  },
+  "wall_seconds": 0.434893666068092,
+  "memory": {
+    "samples": 2,
+    "peak_rss_bytes": 4849254400,
+    "peak_physical_footprint_bytes": 2295763288
+  },
+  "id": "absent_information",
+  "group": "extraction",
+  "repeat": 1,
+  "score": {
+    "passed": true,
+    "json_valid": true,
+    "correct_fields": 3,
+    "total_fields": 3,
+    "wrong": {}
+  }
+}

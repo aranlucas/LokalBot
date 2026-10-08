@@ -1,0 +1,78 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"migration_guide_owner\": \"Iva\",\n  \"alex_has_new_task\": false,\n  \"screenshots_committed\": false\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 37,
+    "prompt_tokens": 140,
+    "total_tokens": 177,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 140,
+    "prompt_ms": 57.612,
+    "prompt_per_token_ms": 0.4115142857142857,
+    "prompt_per_second": 2430.0492952857044,
+    "predicted_n": 37,
+    "predicted_ms": 265.748,
+    "predicted_per_token_ms": 7.182378378378378,
+    "predicted_per_second": 139.22964613092103
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"migration_guide_owner\": \"Iva\",\n  \"alex_has_new_task\": false,\n  \"screenshots_committed\": false\n}"
+        }
+      }
+    ],
+    "created": 1789023570,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q8_0.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 37,
+      "prompt_tokens": 140,
+      "total_tokens": 177,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-vQervS350GpKOr8gm4YrfP3WG9uZFiGr",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 140,
+      "prompt_ms": 57.612,
+      "prompt_per_token_ms": 0.4115142857142857,
+      "prompt_per_second": 2430.0492952857044,
+      "predicted_n": 37,
+      "predicted_ms": 265.748,
+      "predicted_per_token_ms": 7.182378378378378,
+      "predicted_per_second": 139.22964613092103
+    }
+  },
+  "wall_seconds": 0.32567674992606044,
+  "memory": {
+    "samples": 1,
+    "peak_rss_bytes": 4319592448,
+    "peak_physical_footprint_bytes": 1760595880
+  },
+  "id": "owner_negation",
+  "group": "extraction",
+  "repeat": 2,
+  "score": {
+    "passed": true,
+    "json_valid": true,
+    "correct_fields": 3,
+    "total_fields": 3,
+    "wrong": {}
+  }
+}

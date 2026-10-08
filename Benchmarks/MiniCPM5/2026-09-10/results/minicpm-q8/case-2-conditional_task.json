@@ -1,0 +1,78 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\"owner\": \"Alex\", \"task_is_completed\": false, \"publish_now\": false, \"condition\": \"tests pass\"}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 29,
+    "prompt_tokens": 123,
+    "total_tokens": 152,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 123,
+    "prompt_ms": 56.981,
+    "prompt_per_token_ms": 0.463260162601626,
+    "prompt_per_second": 2158.6142749337496,
+    "predicted_n": 29,
+    "predicted_ms": 203.571,
+    "predicted_per_token_ms": 7.019689655172414,
+    "predicted_per_second": 142.45644025917247
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\"owner\": \"Alex\", \"task_is_completed\": false, \"publish_now\": false, \"condition\": \"tests pass\"}"
+        }
+      }
+    ],
+    "created": 1789023572,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q8_0.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 29,
+      "prompt_tokens": 123,
+      "total_tokens": 152,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-BwrrbSTcp2jxukEdJnXunNwqoxSaLBty",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 123,
+      "prompt_ms": 56.981,
+      "prompt_per_token_ms": 0.463260162601626,
+      "prompt_per_second": 2158.6142749337496,
+      "predicted_n": 29,
+      "predicted_ms": 203.571,
+      "predicted_per_token_ms": 7.019689655172414,
+      "predicted_per_second": 142.45644025917247
+    }
+  },
+  "wall_seconds": 0.26296179089695215,
+  "memory": {
+    "samples": 1,
+    "peak_rss_bytes": 4319608832,
+    "peak_physical_footprint_bytes": 1760612264
+  },
+  "id": "conditional_task",
+  "group": "extraction",
+  "repeat": 2,
+  "score": {
+    "passed": true,
+    "json_valid": true,
+    "correct_fields": 4,
+    "total_fields": 4,
+    "wrong": {}
+  }
+}

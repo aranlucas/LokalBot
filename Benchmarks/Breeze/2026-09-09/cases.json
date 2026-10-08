@@ -1,0 +1,35 @@
+{
+  "reference": "Today we will review the decisions from our meeting, the work that is still in progress, and the next steps. Take a moment to check the details before we continue.",
+  "cases": [
+    {
+      "id": "short",
+      "text": "Your meeting summary is ready. You have three action items and one decision to review.",
+      "instruction": "Speak clearly and naturally in a calm, helpful voice."
+    },
+    {
+      "id": "digest",
+      "text": "Here is your daily summary. The team approved the new onboarding flow. Maya will finish the first draft by Friday, while Daniel will check the export feature. The launch date is still undecided. Your next meeting starts at two thirty. Before then, review the customer feedback and send your comments to the design team.",
+      "instruction": "Read this work summary clearly and naturally, with calm pacing and brief pauses between sentences."
+    },
+    {
+      "id": "names_numbers",
+      "text": "LokalBot version 0.8.0 is ready for review. The meeting starts at 14:30 on September 9, 2026. Revenue increased by 12.5 percent to 2,450 euros. Please check the API, the PDF export, and the GitHub pull request before Friday.",
+      "instruction": "Read this update accurately and clearly, preserving every name, number, and abbreviation."
+    },
+    {
+      "id": "neutral",
+      "text": "I thought the door was locked. Then I heard a quiet click, and the handle began to turn. Someone was standing on the other side. For a moment, neither of us moved.",
+      "instruction": "Read this passage in a neutral, even tone with natural pauses."
+    },
+    {
+      "id": "directed",
+      "text": "I thought the door was locked. Then I heard a quiet click, and the handle began to turn. Someone was standing on the other side. For a moment, neither of us moved.",
+      "instruction": "Read slowly with restrained suspense. Keep the same speaker identity. Lower your voice slightly and pause briefly before the final sentence."
+    },
+    {
+      "id": "long",
+      "text": "This morning, the team met to review the first week of the project. The goal was simple: understand what worked, identify what still needed attention, and agree on a realistic plan for the next few days. Everyone had read the notes in advance, so the discussion began with the questions that mattered most. First, the group reviewed the new onboarding flow. Several people found the opening screen clear, but the next step still needed a better explanation. Maya offered to revise the instructions and bring a new draft to the next meeting. Daniel agreed to check the export feature using a small sample document. No one committed to a launch date. The group wanted to see the results of those two tasks before making that decision. After a short break, the conversation moved to customer feedback. One customer asked for a simpler way to find earlier decisions. Another wanted action items to include the person responsible and the original deadline. The team agreed that both requests were useful, although they had different priorities. Improving the search experience could help immediately. Changing how deadlines were stored would require more careful planning. By the end of the meeting, there were three clear next steps. Maya would update the onboarding draft. Daniel would test document exports. The project lead would gather a few examples of missing or confusing deadlines. They would review the results together on Friday. Until then, the existing release would remain available, and the team would focus on making the next version easier to understand.",
+      "instruction": "Read this work summary clearly and naturally, with calm pacing and brief pauses between sentences."
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"task\": \"Send revised onboarding checklist\",\n  \"owner\": \"Alex\",\n  \"due\": \"Friday\",\n  \"acceptance_timestamp\": \"yesterday\",\n  \"request_timestamp\": \"03:10\"\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 56,
+    "prompt_tokens": 149,
+    "total_tokens": 205,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 149,
+    "prompt_ms": 176.335,
+    "prompt_per_token_ms": 1.1834563758389263,
+    "prompt_per_second": 844.9825616014972,
+    "predicted_n": 56,
+    "predicted_ms": 561.818,
+    "predicted_per_token_ms": 10.032464285714285,
+    "predicted_per_second": 99.67640766226785
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"task\": \"Send revised onboarding checklist\",\n  \"owner\": \"Alex\",\n  \"due\": \"Friday\",\n  \"acceptance_timestamp\": \"yesterday\",\n  \"request_timestamp\": \"03:10\"\n}"
+        }
+      }
+    ],
+    "created": 1789023044,
+    "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 56,
+      "prompt_tokens": 149,
+      "total_tokens": 205,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-RhdSiUkTIkO0PdU9Q6d2QxjIaHeEKTpA",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 149,
+      "prompt_ms": 176.335,
+      "prompt_per_token_ms": 1.1834563758389263,
+      "prompt_per_second": 844.9825616014972,
+      "predicted_n": 56,
+      "predicted_ms": 561.818,
+      "predicted_per_token_ms": 10.032464285714285,
+      "predicted_per_second": 99.67640766226785
+    }
+  },
+  "wall_seconds": 0.7561626660171896,
+  "memory": {
+    "samples": 4,
+    "peak_rss_bytes": 4518215680,
+    "peak_physical_footprint_bytes": 1964609640
+  },
+  "id": "accepted_context",
+  "group": "extraction",
+  "repeat": 1,
+  "score": {
+    "passed": false,
+    "json_valid": true,
+    "correct_fields": 4,
+    "total_fields": 5,
+    "wrong": {
+      "acceptance_timestamp": {
+        "expected": "03:20",
+        "actual": "yesterday"
+      }
+    }
+  }
+}

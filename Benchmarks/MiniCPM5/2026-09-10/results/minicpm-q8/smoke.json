@@ -1,0 +1,68 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "4"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 2,
+    "prompt_tokens": 26,
+    "total_tokens": 28,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 26,
+    "prompt_ms": 25.254,
+    "prompt_per_token_ms": 0.9713076923076923,
+    "prompt_per_second": 1029.5398748713076,
+    "predicted_n": 2,
+    "predicted_ms": 8.111,
+    "predicted_per_token_ms": 4.0555,
+    "predicted_per_second": 246.57872025644184
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "4"
+        }
+      }
+    ],
+    "created": 1789023565,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q8_0.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 2,
+      "prompt_tokens": 26,
+      "total_tokens": 28,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-OW1le8sgI69EUePubVtKl9IOjc2rsMMO",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 26,
+      "prompt_ms": 25.254,
+      "prompt_per_token_ms": 0.9713076923076923,
+      "prompt_per_second": 1029.5398748713076,
+      "predicted_n": 2,
+      "predicted_ms": 8.111,
+      "predicted_per_token_ms": 4.0555,
+      "predicted_per_second": 246.57872025644184
+    }
+  },
+  "wall_seconds": 0.034341500024311244,
+  "memory": {
+    "samples": 0,
+    "peak_rss_bytes": null,
+    "peak_physical_footprint_bytes": null
+  }
+}

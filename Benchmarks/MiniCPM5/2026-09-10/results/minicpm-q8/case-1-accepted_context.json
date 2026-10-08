@@ -1,0 +1,83 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"task\": \"Send revised onboarding checklist\",\n  \"owner\": \"Alex\",\n  \"due\": \"Friday\",\n  \"acceptance_timestamp\": \"03:40\",\n  \"request_timestamp\": \"03:10\"\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 51,
+    "prompt_tokens": 145,
+    "total_tokens": 196,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 145,
+    "prompt_ms": 57.117,
+    "prompt_per_token_ms": 0.3939103448275862,
+    "prompt_per_second": 2538.648738554196,
+    "predicted_n": 51,
+    "predicted_ms": 376.807,
+    "predicted_per_token_ms": 7.388372549019608,
+    "predicted_per_second": 135.34780404822627
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"task\": \"Send revised onboarding checklist\",\n  \"owner\": \"Alex\",\n  \"due\": \"Friday\",\n  \"acceptance_timestamp\": \"03:40\",\n  \"request_timestamp\": \"03:10\"\n}"
+        }
+      }
+    ],
+    "created": 1789023566,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q8_0.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 51,
+      "prompt_tokens": 145,
+      "total_tokens": 196,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-kO0JR38yMDKv2Q7afYpfZrCjosJXAmyH",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 145,
+      "prompt_ms": 57.117,
+      "prompt_per_token_ms": 0.3939103448275862,
+      "prompt_per_second": 2538.648738554196,
+      "predicted_n": 51,
+      "predicted_ms": 376.807,
+      "predicted_per_token_ms": 7.388372549019608,
+      "predicted_per_second": 135.34780404822627
+    }
+  },
+  "wall_seconds": 0.4363780840067193,
+  "memory": {
+    "samples": 2,
+    "peak_rss_bytes": 4232986624,
+    "peak_physical_footprint_bytes": 1673809760
+  },
+  "id": "accepted_context",
+  "group": "extraction",
+  "repeat": 1,
+  "score": {
+    "passed": false,
+    "json_valid": true,
+    "correct_fields": 4,
+    "total_fields": 5,
+    "wrong": {
+      "acceptance_timestamp": {
+        "expected": "03:20",
+        "actual": "03:40"
+      }
+    }
+  }
+}

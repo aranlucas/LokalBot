@@ -1,0 +1,80 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "Hello! I'm here to help you with any questions you might have.",
+    "reasoning_content": "The user is asking me to say hello in one sentence. They mention I have all the information I need, which suggests they want me to use the available tools to answer their question. However, this is a simple greeting request that doesn't require any tool usage - I can respond directly without needing to search meetings or calculate anything.\n\nLet me provide a simple hello in one sentence as requested.\n"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 98,
+    "prompt_tokens": 486,
+    "total_tokens": 584,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 486,
+    "prompt_ms": 405.735,
+    "prompt_per_token_ms": 0.8348456790123457,
+    "prompt_per_second": 1197.8261673259638,
+    "predicted_n": 98,
+    "predicted_ms": 1000.043,
+    "predicted_per_token_ms": 10.204520408163265,
+    "predicted_per_second": 97.9957861811942
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "Hello! I'm here to help you with any questions you might have.",
+          "reasoning_content": "The user is asking me to say hello in one sentence. They mention I have all the information I need, which suggests they want me to use the available tools to answer their question. However, this is a simple greeting request that doesn't require any tool usage - I can respond directly without needing to search meetings or calculate anything.\n\nLet me provide a simple hello in one sentence as requested.\n"
+        }
+      }
+    ],
+    "created": 1789023108,
+    "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 98,
+      "prompt_tokens": 486,
+      "total_tokens": 584,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-uukft5puooH8UAaDsohIu9xAPZGluGsp",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 486,
+      "prompt_ms": 405.735,
+      "prompt_per_token_ms": 0.8348456790123457,
+      "prompt_per_second": 1197.8261673259638,
+      "predicted_n": 98,
+      "predicted_ms": 1000.043,
+      "predicted_per_token_ms": 10.204520408163265,
+      "predicted_per_second": 97.9957861811942
+    }
+  },
+  "wall_seconds": 1.4145037080161273,
+  "memory": {
+    "samples": 7,
+    "peak_rss_bytes": 7037829120,
+    "peak_physical_footprint_bytes": 4484847544
+  },
+  "id": "tool_no_call",
+  "group": "tools",
+  "repeat": 2,
+  "score": {
+    "passed": true,
+    "native_calls": [],
+    "xml_calls_diagnostic": [],
+    "parse_errors": [],
+    "xml_semantically_correct": false
+  }
+}

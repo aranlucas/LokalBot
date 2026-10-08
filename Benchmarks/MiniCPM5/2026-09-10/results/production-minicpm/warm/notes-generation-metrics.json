@@ -1,0 +1,58 @@
+{
+  "accountedOutputTokens" : 408,
+  "calls" : [
+    {
+      "cachedTokens" : 1132,
+      "generationSeconds" : 2.252679,
+      "inputTokens" : 1133,
+      "outcome" : "complete",
+      "outputTokens" : 391,
+      "prefillSeconds" : 0.031919,
+      "stage" : "extract-1",
+      "wallSeconds" : 2.2985111250309274
+    },
+    {
+      "cachedTokens" : 264,
+      "generationSeconds" : 0.116357,
+      "inputTokens" : 777,
+      "outcome" : "complete",
+      "outputTokens" : 17,
+      "prefillSeconds" : 0.191526,
+      "stage" : "repair-1",
+      "wallSeconds" : 0.3180996250594035
+    }
+  ],
+  "elapsedSeconds" : 2.679933749954216,
+  "outcome" : "incomplete",
+  "phases" : {
+    "tokenization" : 0.019017791841179132,
+    "validation" : 0.024571166606619954
+  },
+  "requests" : 2,
+  "reservedInputTokens" : 4948,
+  "validations" : [
+    {
+      "actions" : 5,
+      "completeEnvelope" : true,
+      "hasMore" : false,
+      "notes" : 4,
+      "rejections" : {
+        "missing_user_commitment" : 1
+      },
+      "stage" : "extract-1",
+      "truncated" : false
+    },
+    {
+      "actions" : 0,
+      "completeEnvelope" : true,
+      "hasMore" : false,
+      "notes" : 0,
+      "rejections" : {
+
+      },
+      "stage" : "repair-1",
+      "truncated" : false
+    }
+  ],
+  "version" : 1
+}

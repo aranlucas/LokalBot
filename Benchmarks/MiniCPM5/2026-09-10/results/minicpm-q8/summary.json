@@ -1,0 +1,32 @@
+{
+  "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q8_0.gguf",
+  "repeats": 2,
+  "temperature": 0,
+  "tool_thinking": false,
+  "extraction_thinking": false,
+  "startup_seconds": 0.42942566704005003,
+  "groups": {
+    "extraction": {
+      "passed": 10,
+      "total": 24,
+      "median_seconds": 0.3380229374743067,
+      "total_seconds": 8.346423582872376,
+      "correct_fields": 68,
+      "total_fields": 86,
+      "json_valid": 24,
+      "errors": 0,
+      "truncated": 0
+    }
+  },
+  "multi_step": null,
+  "memory": {
+    "samples": 43,
+    "peak_rss_bytes": 4319608832,
+    "peak_physical_footprint_bytes": 1760612264
+  },
+  "load_average": [
+    1.693359375,
+    1.78955078125,
+    1.92822265625
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "",
+    "reasoning_content": "The user wants me to read two meeting transcripts with IDs A-104 and H-209. They've already provided the meeting IDs, so I don't need to search for meetings first. I should use the read_meeting function for both meetings.\n\nI'll need to make two separate function calls to read both meetings.\n",
+    "tool_calls": [
+      {
+        "type": "function",
+        "function": {
+          "name": "read_meeting",
+          "arguments": "{\"meeting_id\":\"A-104\"}"
+        },
+        "id": "wjotrsSdtdOSEjJcZ4lsMlzAYWJULM2s"
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "read_meeting",
+          "arguments": "{\"meeting_id\":\"H-209\"}"
+        },
+        "id": "fuKqqAZq128kKjTrpIE7g8EY20AMLI6N"
+      }
+    ]
+  },
+  "finish_reason": "tool_calls",
+  "usage": {
+    "completion_tokens": 136,
+    "prompt_tokens": 501,
+    "total_tokens": 637,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 501,
+    "prompt_ms": 418.967,
+    "prompt_per_token_ms": 0.8362614770459081,
+    "prompt_per_second": 1195.7982370926588,
+    "predicted_n": 136,
+    "predicted_ms": 1402.06,
+    "predicted_per_token_ms": 10.309264705882352,
+    "predicted_per_second": 97.00012838252286
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "reasoning_content": "The user wants me to read two meeting transcripts with IDs A-104 and H-209. They've already provided the meeting IDs, so I don't need to search for meetings first. I should use the read_meeting function for both meetings.\n\nI'll need to make two separate function calls to read both meetings.\n",
+          "tool_calls": [
+            {
+              "type": "function",
+              "function": {
+                "name": "read_meeting",
+                "arguments": "{\"meeting_id\":\"A-104\"}"
+              },
+              "id": "wjotrsSdtdOSEjJcZ4lsMlzAYWJULM2s"
+            },
+            {
+              "type": "function",
+              "function": {
+                "name": "read_meeting",
+                "arguments": "{\"meeting_id\":\"H-209\"}"
+              },
+              "id": "fuKqqAZq128kKjTrpIE7g8EY20AMLI6N"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1789023113,
+    "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 136,
+      "prompt_tokens": 501,
+      "total_tokens": 637,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-UD7ktJoOCAUXNRbu0yFDh5zrQvRDO08j",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 501,
+      "prompt_ms": 418.967,
+      "prompt_per_token_ms": 0.8362614770459081,
+      "prompt_per_second": 1195.7982370926588,
+      "predicted_n": 136,
+      "predicted_ms": 1402.06,
+      "predicted_per_token_ms": 10.309264705882352,
+      "predicted_per_second": 97.00012838252286
+    }
+  },
+  "wall_seconds": 1.8298801248893142,
+  "memory": {
+    "samples": 9,
+    "peak_rss_bytes": 7037829120,
+    "peak_physical_footprint_bytes": 4484847544
+  },
+  "id": "tool_parallel_read",
+  "group": "tools",
+  "repeat": 2,
+  "score": {
+    "passed": true,
+    "native_calls": [
+      {
+        "name": "read_meeting",
+        "args": {
+          "meeting_id": "A-104"
+        }
+      },
+      {
+        "name": "read_meeting",
+        "args": {
+          "meeting_id": "H-209"
+        }
+      }
+    ],
+    "xml_calls_diagnostic": [],
+    "parse_errors": [],
+    "xml_semantically_correct": false
+  }
+}

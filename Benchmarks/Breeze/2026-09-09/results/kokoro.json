@@ -1,0 +1,110 @@
+{
+  "engine": "Kokoro 82M",
+  "voice": "af_heart",
+  "threads": 2,
+  "timing_scope": "new process through complete output WAV, matching current app engine",
+  "rows": [
+    {
+      "id": "reference",
+      "elapsed_s": 3.414938500034623,
+      "returncode": 0,
+      "memory": {
+        "resident_size": 789397504,
+        "phys_footprint": 771589344,
+        "lifetime_max_phys_footprint": 771589344
+      },
+      "sample_rate": 24000,
+      "samples": 198489,
+      "duration_s": 8.270375,
+      "peak_amplitude": 0.43212890625,
+      "rms": 0.06341059687877247,
+      "clipped_fraction": 0.0,
+      "rtf": 0.4129121714595315
+    },
+    {
+      "id": "short",
+      "elapsed_s": 2.071257165982388,
+      "returncode": 0,
+      "memory": {
+        "resident_size": 733085696,
+        "phys_footprint": 715244720,
+        "lifetime_max_phys_footprint": 715244720
+      },
+      "sample_rate": 24000,
+      "samples": 111144,
+      "duration_s": 4.631,
+      "peak_amplitude": 0.517974853515625,
+      "rms": 0.06268049516112867,
+      "clipped_fraction": 0.0,
+      "rtf": 0.44725915914109
+    },
+    {
+      "id": "digest",
+      "elapsed_s": 5.727865584078245,
+      "returncode": 0,
+      "memory": {
+        "resident_size": 785448960,
+        "phys_footprint": 767657208,
+        "lifetime_max_phys_footprint": 767657208
+      },
+      "sample_rate": 24000,
+      "samples": 385422,
+      "duration_s": 16.05925,
+      "peak_amplitude": 0.47186279296875,
+      "rms": 0.06337409968753764,
+      "clipped_fraction": 0.0,
+      "rtf": 0.3566708024396062
+    },
+    {
+      "id": "names_numbers",
+      "elapsed_s": 6.272356832982041,
+      "returncode": 0,
+      "memory": {
+        "resident_size": 815824896,
+        "phys_footprint": 798033144,
+        "lifetime_max_phys_footprint": 798033144
+      },
+      "sample_rate": 24000,
+      "samples": 442041,
+      "duration_s": 18.418375,
+      "peak_amplitude": 0.42730712890625,
+      "rms": 0.06348152947590649,
+      "clipped_fraction": 0.0,
+      "rtf": 0.3405488721443689
+    },
+    {
+      "id": "neutral",
+      "elapsed_s": 3.35709283396136,
+      "returncode": 0,
+      "memory": {
+        "resident_size": 736231424,
+        "phys_footprint": 718406832,
+        "lifetime_max_phys_footprint": 718406832
+      },
+      "sample_rate": 24000,
+      "samples": 196070,
+      "duration_s": 8.169583333333334,
+      "peak_amplitude": 0.39373779296875,
+      "rms": 0.06393032602113158,
+      "clipped_fraction": 0.0,
+      "rtf": 0.410925832687676
+    },
+    {
+      "id": "long",
+      "elapsed_s": 26.956255416967906,
+      "returncode": 0,
+      "memory": {
+        "resident_size": 884129792,
+        "phys_footprint": 866387264,
+        "lifetime_max_phys_footprint": 870466904
+      },
+      "sample_rate": 24000,
+      "samples": 1943883,
+      "duration_s": 80.995125,
+      "peak_amplitude": 0.5977783203125,
+      "rms": 0.06276262787466656,
+      "clipped_fraction": 0.0,
+      "rtf": 0.3328133071832151
+    }
+  ]
+}

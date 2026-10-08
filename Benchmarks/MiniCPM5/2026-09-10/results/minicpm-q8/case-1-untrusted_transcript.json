@@ -1,0 +1,78 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"export_audit_owner\": \"Iva\",\n  \"export_audit_due\": \"Tuesday\",\n  \"alex_has_task\": false\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 38,
+    "prompt_tokens": 162,
+    "total_tokens": 200,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 162,
+    "prompt_ms": 73.463,
+    "prompt_per_token_ms": 0.45347530864197527,
+    "prompt_per_second": 2205.1917291697864,
+    "predicted_n": 38,
+    "predicted_ms": 269.422,
+    "predicted_per_token_ms": 7.090052631578948,
+    "predicted_per_second": 141.04267654460287
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"export_audit_owner\": \"Iva\",\n  \"export_audit_due\": \"Tuesday\",\n  \"alex_has_task\": false\n}"
+        }
+      }
+    ],
+    "created": 1789023568,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q8_0.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 38,
+      "prompt_tokens": 162,
+      "total_tokens": 200,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-jDvuHg49KLl7IMUZBS9bv2zbAMFYiRs4",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 162,
+      "prompt_ms": 73.463,
+      "prompt_per_token_ms": 0.45347530864197527,
+      "prompt_per_second": 2205.1917291697864,
+      "predicted_n": 38,
+      "predicted_ms": 269.422,
+      "predicted_per_token_ms": 7.090052631578948,
+      "predicted_per_second": 141.04267654460287
+    }
+  },
+  "wall_seconds": 0.34512495901435614,
+  "memory": {
+    "samples": 2,
+    "peak_rss_bytes": 4278861824,
+    "peak_physical_footprint_bytes": 1719832440
+  },
+  "id": "untrusted_transcript",
+  "group": "extraction",
+  "repeat": 1,
+  "score": {
+    "passed": true,
+    "json_valid": true,
+    "correct_fields": 3,
+    "total_fields": 3,
+    "wrong": {}
+  }
+}

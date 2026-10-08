@@ -1,0 +1,6566 @@
+{
+  "ask-01-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-01-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 6% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0606,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-01-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 81% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "latin": 0.18518518518518517,
+          "cyrillic": 0.8148148148148148
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.8148
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-02-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-02-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 3% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0333,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-02-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-03-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-03-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 5% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0476,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-03-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-04-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-04-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-04-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-05-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-05-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 3% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0286,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-05-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-06-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-06-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 3% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0333,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-06-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-07-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-07-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 4% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.037,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-07-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-08-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-08-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 5% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0488,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-08-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-09-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-09-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-09-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-10-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-10-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 4% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.037,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-10-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-11-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-11-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 3% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0263,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-11-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-12-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-12-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 3% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0263,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-12-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-13-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-13-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 2% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.025,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-13-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 71% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "latin": 0.2857142857142857,
+          "cyrillic": 0.7142857142857143
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.7143
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-14-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-14-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-14-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-15-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-15-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 3% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0286,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-15-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-16-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-16-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 3% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0323,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-16-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-17-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-17-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 3% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0294,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-17-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-18-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-18-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 10% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.102,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-18-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-19-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-19-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 2% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0217,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-19-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 92% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "latin": 0.07692307692307693,
+          "cyrillic": 0.9230769230769231
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.9231
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-20-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-20-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-20-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-21-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-21-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 6% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0571,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-21-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-22-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-22-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-22-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-23-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-23-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 6% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0588,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-23-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-24-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-24-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-24-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-25-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-25-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-25-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-26-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-26-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 3% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0294,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-26-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-27-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-27-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script but language looks like 'pt', not English",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "pt",
+        "is_english": false,
+        "language_undecided": false,
+        "diacritic_rate": 0.0364,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-27-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-28-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-28-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 2% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0222,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-28-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-29-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-29-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 2% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.02,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-29-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-30-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-30-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 3% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0278,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-30-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 68% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "latin": 0.3225806451612903,
+          "cyrillic": 0.6774193548387096
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.6774
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-31-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-31-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 15% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.15,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-31-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-32-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-32-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-32-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-33-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-33-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 5% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0526,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-33-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-34-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-34-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-34-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-35-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-35-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 5% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0526,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-35-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-36-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-36-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-36-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-37-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-37-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 7% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0698,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-37-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 91% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "latin": 0.09375,
+          "cyrillic": 0.90625
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.9062
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-38-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-38-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 8% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0833,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-38-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 88% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "latin": 0.125,
+          "cyrillic": 0.875
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.875
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-39-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-39-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 4% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.04,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-39-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 93% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "latin": 0.07317073170731707,
+          "cyrillic": 0.926829268292683
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.9268
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-40-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-40-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 2% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0222,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "ask-40-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-01-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-01-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-01-sr-Cyrl": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-02-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-02-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-02-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-03-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-03-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-03-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-04-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-04-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-04-sr-Cyrl": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-05-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-05-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-05-sr-Cyrl": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-06-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-06-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-06-sr-Cyrl": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-07-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-07-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 3% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0333,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-07-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 63% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "latin": 0.37037037037037035,
+          "cyrillic": 0.6296296296296297
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.6296
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-08-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-08-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 5% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0526,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-08-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-09-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-09-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 11% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.1053,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-09-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-10-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-10-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 4% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.04,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-10-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-11-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-11-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-11-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 92% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "latin": 0.08333333333333333,
+          "cyrillic": 0.9166666666666666
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.9167
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-12-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-12-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-12-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-13-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-13-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-13-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-14-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-14-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 7% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0667,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-14-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-15-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-15-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-15-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-16-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-16-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-16-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-17-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-17-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 7% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0667,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-17-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 77% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "latin": 0.23076923076923078,
+          "cyrillic": 0.7692307692307693
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.7692
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-18-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-18-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-18-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-19-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-19-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-19-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-20-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-20-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-20-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-21-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-21-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-21-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-22-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-22-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-22-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-23-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-23-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 8% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.08,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-23-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-24-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-24-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-24-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-25-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-25-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 33% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.3333,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-25-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-26-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-26-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 20% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.2,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-26-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-27-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-27-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-27-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-28-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-28-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-28-sr-Cyrl": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-29-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-29-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 6% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0588,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-29-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-30-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-30-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 6% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0588,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-30-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-31-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-31-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 6% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0556,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-31-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 90% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "latin": 0.10344827586206896,
+          "cyrillic": 0.896551724137931
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.8966
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-32-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-32-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-32-sr-Cyrl": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-33-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-33-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-33-sr-Cyrl": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-34-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-34-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-34-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 92% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "latin": 0.08,
+          "cyrillic": 0.92
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.92
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-35-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-35-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-35-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-36-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-36-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 5% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.05,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-36-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-37-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-37-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-37-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 37% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "latin": 0.631578947368421,
+          "cyrillic": 0.3684210526315789
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.3684
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-38-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-38-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 6% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0625,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-38-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 83% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "latin": 0.16666666666666666,
+          "cyrillic": 0.8333333333333334
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.8333
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-39-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-39-sr-Latn": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-39-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-40-en": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-40-sr-Latn": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "Latin script, language not identified but 3% non-English letters; not safe for the English checkpoint",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0323,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Latn'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "search-40-sr-Cyrl": {
+    "default": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "non-Latin script (cyrillic, 100% of letters); the English checkpoint cannot read it",
+      "detection": {
+        "script": "cyrillic",
+        "script_profile": {
+          "cyrillic": 1.0
+        },
+        "language": null,
+        "is_english": false,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 1.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "multilingual",
+      "repo": "convaiinnovations/laya/multilingual",
+      "reason": "explicit lang='sr-Cyrl'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "regression-ask-0": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "regression-ask-1": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "regression-ask-2": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "regression-ask-3": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "English Latin text",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": "en",
+        "is_english": true,
+        "language_undecided": false,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "regression-ask-4": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "regression-search-0": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "regression-search-1": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "regression-search-2": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "regression-search-3": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "regression-search-4": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "regression-search-5": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "no letters detected in state; using default (english)",
+      "detection": {
+        "script": "unknown",
+        "script_profile": {},
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  },
+  "regression-search-6": {
+    "default": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+      "detection": {
+        "script": "latin",
+        "script_profile": {
+          "latin": 1.0
+        },
+        "language": null,
+        "is_english": true,
+        "language_undecided": true,
+        "diacritic_rate": 0.0,
+        "non_latin_fraction": 0.0
+      },
+      "workflow": null
+    },
+    "language_hint": {
+      "model": "english",
+      "repo": "convaiinnovations/laya",
+      "reason": "explicit lang='en'",
+      "detection": null,
+      "workflow": null
+    }
+  }
+}

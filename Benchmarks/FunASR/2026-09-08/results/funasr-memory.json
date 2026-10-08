@@ -1,0 +1,569 @@
+[
+  {
+    "pid": 80689,
+    "time": 1788859632.482719,
+    "resident_size": 150192128,
+    "phys_footprint": 99746680,
+    "lifetime_max_phys_footprint": 99746680
+  },
+  {
+    "pid": 80689,
+    "time": 1788859632.773558,
+    "resident_size": 200654848,
+    "phys_footprint": 149799824,
+    "lifetime_max_phys_footprint": 149799824
+  },
+  {
+    "pid": 80689,
+    "time": 1788859633.06338,
+    "resident_size": 236208128,
+    "phys_footprint": 180356032,
+    "lifetime_max_phys_footprint": 180831168
+  },
+  {
+    "pid": 80689,
+    "time": 1788859633.35566,
+    "resident_size": 273858560,
+    "phys_footprint": 209470424,
+    "lifetime_max_phys_footprint": 210207728
+  },
+  {
+    "pid": 80689,
+    "time": 1788859633.647419,
+    "resident_size": 317325312,
+    "phys_footprint": 244794400,
+    "lifetime_max_phys_footprint": 246957088
+  },
+  {
+    "pid": 80689,
+    "time": 1788859633.940371,
+    "resident_size": 351174656,
+    "phys_footprint": 273597496,
+    "lifetime_max_phys_footprint": 273613880
+  },
+  {
+    "pid": 80689,
+    "time": 1788859634.2327769,
+    "resident_size": 397295616,
+    "phys_footprint": 319259728,
+    "lifetime_max_phys_footprint": 319259728
+  },
+  {
+    "pid": 80689,
+    "time": 1788859634.522773,
+    "resident_size": 426360832,
+    "phys_footprint": 342279248,
+    "lifetime_max_phys_footprint": 342279248
+  },
+  {
+    "pid": 80689,
+    "time": 1788859634.814899,
+    "resident_size": 441614336,
+    "phys_footprint": 356336720,
+    "lifetime_max_phys_footprint": 357975120
+  },
+  {
+    "pid": 80689,
+    "time": 1788859635.109109,
+    "resident_size": 443875328,
+    "phys_footprint": 358597712,
+    "lifetime_max_phys_footprint": 358597712
+  },
+  {
+    "pid": 80689,
+    "time": 1788859635.403737,
+    "resident_size": 467976192,
+    "phys_footprint": 379700328,
+    "lifetime_max_phys_footprint": 379700328
+  },
+  {
+    "pid": 80689,
+    "time": 1788859635.696521,
+    "resident_size": 507265024,
+    "phys_footprint": 401343712,
+    "lifetime_max_phys_footprint": 401343712
+  },
+  {
+    "pid": 80689,
+    "time": 1788859635.986627,
+    "resident_size": 631783424,
+    "phys_footprint": 521618944,
+    "lifetime_max_phys_footprint": 521618944
+  },
+  {
+    "pid": 80689,
+    "time": 1788859636.280381,
+    "resident_size": 771276800,
+    "phys_footprint": 660751968,
+    "lifetime_max_phys_footprint": 660751968
+  },
+  {
+    "pid": 80689,
+    "time": 1788859636.572813,
+    "resident_size": 799342592,
+    "phys_footprint": 688834168,
+    "lifetime_max_phys_footprint": 688834168
+  },
+  {
+    "pid": 80689,
+    "time": 1788859636.867784,
+    "resident_size": 809910272,
+    "phys_footprint": 4327999168,
+    "lifetime_max_phys_footprint": 4327999168
+  },
+  {
+    "pid": 80689,
+    "time": 1788859637.158964,
+    "resident_size": 811941888,
+    "phys_footprint": 4330227680,
+    "lifetime_max_phys_footprint": 4330227680
+  },
+  {
+    "pid": 80689,
+    "time": 1788859637.45381,
+    "resident_size": 813334528,
+    "phys_footprint": 4331735176,
+    "lifetime_max_phys_footprint": 4331735176
+  },
+  {
+    "pid": 80689,
+    "time": 1788859637.7436101,
+    "resident_size": 813350912,
+    "phys_footprint": 4331767968,
+    "lifetime_max_phys_footprint": 4331767968
+  },
+  {
+    "pid": 80689,
+    "time": 1788859638.040583,
+    "resident_size": 813809664,
+    "phys_footprint": 4332423616,
+    "lifetime_max_phys_footprint": 4332423616
+  },
+  {
+    "pid": 80689,
+    "time": 1788859638.33899,
+    "resident_size": 814579712,
+    "phys_footprint": 4333472600,
+    "lifetime_max_phys_footprint": 4333472600
+  },
+  {
+    "pid": 80689,
+    "time": 1788859638.630881,
+    "resident_size": 815366144,
+    "phys_footprint": 4334554376,
+    "lifetime_max_phys_footprint": 4334554376
+  },
+  {
+    "pid": 80689,
+    "time": 1788859638.9387698,
+    "resident_size": 815808512,
+    "phys_footprint": 5408919056,
+    "lifetime_max_phys_footprint": 5408919056
+  },
+  {
+    "pid": 80689,
+    "time": 1788859639.280561,
+    "resident_size": 810450944,
+    "phys_footprint": 5402281688,
+    "lifetime_max_phys_footprint": 5409705776
+  },
+  {
+    "pid": 80689,
+    "time": 1788859639.574945,
+    "resident_size": 820510720,
+    "phys_footprint": 6485952192,
+    "lifetime_max_phys_footprint": 6485952192
+  },
+  {
+    "pid": 80689,
+    "time": 1788859639.868741,
+    "resident_size": 936378368,
+    "phys_footprint": 6535153440,
+    "lifetime_max_phys_footprint": 6626707304
+  },
+  {
+    "pid": 80689,
+    "time": 1788859640.163641,
+    "resident_size": 938622976,
+    "phys_footprint": 6537578536,
+    "lifetime_max_phys_footprint": 6626707304
+  },
+  {
+    "pid": 80689,
+    "time": 1788859640.458262,
+    "resident_size": 940326912,
+    "phys_footprint": 6539430144,
+    "lifetime_max_phys_footprint": 6626707304
+  },
+  {
+    "pid": 80689,
+    "time": 1788859640.7553742,
+    "resident_size": 939507712,
+    "phys_footprint": 6541232672,
+    "lifetime_max_phys_footprint": 6626707304
+  },
+  {
+    "pid": 80689,
+    "time": 1788859641.056153,
+    "resident_size": 387317760,
+    "phys_footprint": 8059161288,
+    "lifetime_max_phys_footprint": 8059161288
+  },
+  {
+    "pid": 80689,
+    "time": 1788859641.349296,
+    "resident_size": 426082304,
+    "phys_footprint": 8101939024,
+    "lifetime_max_phys_footprint": 8101939024
+  },
+  {
+    "pid": 80689,
+    "time": 1788859641.6467469,
+    "resident_size": 707477504,
+    "phys_footprint": 8063682408,
+    "lifetime_max_phys_footprint": 8116242280
+  },
+  {
+    "pid": 80689,
+    "time": 1788859641.945222,
+    "resident_size": 790069248,
+    "phys_footprint": 8144471984,
+    "lifetime_max_phys_footprint": 8144471984
+  },
+  {
+    "pid": 80689,
+    "time": 1788859642.242979,
+    "resident_size": 937394176,
+    "phys_footprint": 8305838168,
+    "lifetime_max_phys_footprint": 8305838168
+  },
+  {
+    "pid": 80689,
+    "time": 1788859642.541404,
+    "resident_size": 937394176,
+    "phys_footprint": 8305838168,
+    "lifetime_max_phys_footprint": 8305838168
+  },
+  {
+    "pid": 80689,
+    "time": 1788859642.838204,
+    "resident_size": 937459712,
+    "phys_footprint": 8306018392,
+    "lifetime_max_phys_footprint": 8306116696
+  },
+  {
+    "pid": 80689,
+    "time": 1788859643.136157,
+    "resident_size": 937459712,
+    "phys_footprint": 8306018392,
+    "lifetime_max_phys_footprint": 8306116696
+  },
+  {
+    "pid": 80689,
+    "time": 1788859643.431489,
+    "resident_size": 945651712,
+    "phys_footprint": 8313784408,
+    "lifetime_max_phys_footprint": 8313784408
+  },
+  {
+    "pid": 80689,
+    "time": 1788859643.726135,
+    "resident_size": 945651712,
+    "phys_footprint": 8313784408,
+    "lifetime_max_phys_footprint": 8313784408
+  },
+  {
+    "pid": 80689,
+    "time": 1788859644.0214589,
+    "resident_size": 966426624,
+    "phys_footprint": 8338245768,
+    "lifetime_max_phys_footprint": 8338245768
+  },
+  {
+    "pid": 80689,
+    "time": 1788859644.312564,
+    "resident_size": 1039548416,
+    "phys_footprint": 8416037024,
+    "lifetime_max_phys_footprint": 8416037024
+  },
+  {
+    "pid": 80689,
+    "time": 1788859644.608286,
+    "resident_size": 1073709056,
+    "phys_footprint": 8489535672,
+    "lifetime_max_phys_footprint": 8489535672
+  },
+  {
+    "pid": 80689,
+    "time": 1788859644.903456,
+    "resident_size": 1099284480,
+    "phys_footprint": 8524499152,
+    "lifetime_max_phys_footprint": 8524499152
+  },
+  {
+    "pid": 80689,
+    "time": 1788859645.198265,
+    "resident_size": 1129857024,
+    "phys_footprint": 8555825360,
+    "lifetime_max_phys_footprint": 8555825360
+  },
+  {
+    "pid": 80689,
+    "time": 1788859645.490152,
+    "resident_size": 1168293888,
+    "phys_footprint": 8602372352,
+    "lifetime_max_phys_footprint": 8602372352
+  },
+  {
+    "pid": 80689,
+    "time": 1788859645.780431,
+    "resident_size": 1189969920,
+    "phys_footprint": 8623933696,
+    "lifetime_max_phys_footprint": 8623933696
+  },
+  {
+    "pid": 80689,
+    "time": 1788859646.07598,
+    "resident_size": 1211449344,
+    "phys_footprint": 8646494488,
+    "lifetime_max_phys_footprint": 8646494488
+  },
+  {
+    "pid": 80689,
+    "time": 1788859646.3712409,
+    "resident_size": 1237057536,
+    "phys_footprint": 8673528088,
+    "lifetime_max_phys_footprint": 8673528088
+  },
+  {
+    "pid": 80689,
+    "time": 1788859646.667858,
+    "resident_size": 1255292928,
+    "phys_footprint": 8690977048,
+    "lifetime_max_phys_footprint": 8690977048
+  },
+  {
+    "pid": 80689,
+    "time": 1788859646.959093,
+    "resident_size": 1273135104,
+    "phys_footprint": 8710457672,
+    "lifetime_max_phys_footprint": 8710457672
+  },
+  {
+    "pid": 80689,
+    "time": 1788859647.252817,
+    "resident_size": 1287684096,
+    "phys_footprint": 8725072200,
+    "lifetime_max_phys_footprint": 8725072200
+  },
+  {
+    "pid": 80689,
+    "time": 1788859647.548108,
+    "resident_size": 1334476800,
+    "phys_footprint": 8772028816,
+    "lifetime_max_phys_footprint": 8772028816
+  },
+  {
+    "pid": 80689,
+    "time": 1788859647.843463,
+    "resident_size": 1361887232,
+    "phys_footprint": 8800684528,
+    "lifetime_max_phys_footprint": 8800684528
+  },
+  {
+    "pid": 80689,
+    "time": 1788859648.136797,
+    "resident_size": 1405452288,
+    "phys_footprint": 8814463616,
+    "lifetime_max_phys_footprint": 8814463616
+  },
+  {
+    "pid": 80689,
+    "time": 1788859648.433877,
+    "resident_size": 1485815808,
+    "phys_footprint": 8885013216,
+    "lifetime_max_phys_footprint": 8885013216
+  },
+  {
+    "pid": 80689,
+    "time": 1788859648.730689,
+    "resident_size": 1527316480,
+    "phys_footprint": 8925956856,
+    "lifetime_max_phys_footprint": 8925956856
+  },
+  {
+    "pid": 80689,
+    "time": 1788859649.026796,
+    "resident_size": 1527382016,
+    "phys_footprint": 8926022392,
+    "lifetime_max_phys_footprint": 8926022392
+  },
+  {
+    "pid": 80689,
+    "time": 1788859649.319747,
+    "resident_size": 1599520768,
+    "phys_footprint": 8996129600,
+    "lifetime_max_phys_footprint": 8996129600
+  },
+  {
+    "pid": 80689,
+    "time": 1788859649.6156569,
+    "resident_size": 1634877440,
+    "phys_footprint": 9031961432,
+    "lifetime_max_phys_footprint": 9031961432
+  },
+  {
+    "pid": 80689,
+    "time": 1788859649.9109828,
+    "resident_size": 1660567552,
+    "phys_footprint": 9099676528,
+    "lifetime_max_phys_footprint": 9099676528
+  },
+  {
+    "pid": 80689,
+    "time": 1788859650.203819,
+    "resident_size": 1664598016,
+    "phys_footprint": 9097415560,
+    "lifetime_max_phys_footprint": 9103707016
+  },
+  {
+    "pid": 80689,
+    "time": 1788859650.4995708,
+    "resident_size": 1690976256,
+    "phys_footprint": 9127840648,
+    "lifetime_max_phys_footprint": 9127840648
+  },
+  {
+    "pid": 80689,
+    "time": 1788859650.795115,
+    "resident_size": 1691893760,
+    "phys_footprint": 9145535368,
+    "lifetime_max_phys_footprint": 9145535368
+  },
+  {
+    "pid": 80689,
+    "time": 1788859651.08736,
+    "resident_size": 1714061312,
+    "phys_footprint": 9173928840,
+    "lifetime_max_phys_footprint": 9207319432
+  },
+  {
+    "pid": 80689,
+    "time": 1788859651.3822951,
+    "resident_size": 1742585856,
+    "phys_footprint": 9198406584,
+    "lifetime_max_phys_footprint": 9207319432
+  },
+  {
+    "pid": 80689,
+    "time": 1788859651.677218,
+    "resident_size": 1756626944,
+    "phys_footprint": 9214675896,
+    "lifetime_max_phys_footprint": 9214675896
+  },
+  {
+    "pid": 80689,
+    "time": 1788859651.970091,
+    "resident_size": 1773453312,
+    "phys_footprint": 9229519824,
+    "lifetime_max_phys_footprint": 9229519824
+  },
+  {
+    "pid": 80689,
+    "time": 1788859652.263711,
+    "resident_size": 1800716288,
+    "phys_footprint": 9259224016,
+    "lifetime_max_phys_footprint": 9259224016
+  },
+  {
+    "pid": 80689,
+    "time": 1788859652.559037,
+    "resident_size": 1803321344,
+    "phys_footprint": 9272544208,
+    "lifetime_max_phys_footprint": 9272544208
+  },
+  {
+    "pid": 80689,
+    "time": 1788859652.8503308,
+    "resident_size": 1820475392,
+    "phys_footprint": 9289845760,
+    "lifetime_max_phys_footprint": 9295252480
+  },
+  {
+    "pid": 80689,
+    "time": 1788859653.144057,
+    "resident_size": 1857978368,
+    "phys_footprint": 9331788920,
+    "lifetime_max_phys_footprint": 9335229560
+  },
+  {
+    "pid": 80689,
+    "time": 1788859653.438015,
+    "resident_size": 1897070592,
+    "phys_footprint": 9348091120,
+    "lifetime_max_phys_footprint": 9372634328
+  },
+  {
+    "pid": 80689,
+    "time": 1788859653.731891,
+    "resident_size": 1973600256,
+    "phys_footprint": 9426046264,
+    "lifetime_max_phys_footprint": 9426046264
+  },
+  {
+    "pid": 80689,
+    "time": 1788859654.0340621,
+    "resident_size": 2006286336,
+    "phys_footprint": 9465171304,
+    "lifetime_max_phys_footprint": 9465171304
+  },
+  {
+    "pid": 80689,
+    "time": 1788859654.32937,
+    "resident_size": 2069872640,
+    "phys_footprint": 9527233944,
+    "lifetime_max_phys_footprint": 9527233944
+  },
+  {
+    "pid": 80689,
+    "time": 1788859654.624597,
+    "resident_size": 2115551232,
+    "phys_footprint": 9566916040,
+    "lifetime_max_phys_footprint": 9566916040
+  },
+  {
+    "pid": 80689,
+    "time": 1788859654.920157,
+    "resident_size": 2142208000,
+    "phys_footprint": 9634729416,
+    "lifetime_max_phys_footprint": 9634729416
+  },
+  {
+    "pid": 80689,
+    "time": 1788859655.2139032,
+    "resident_size": 2158084096,
+    "phys_footprint": 9650654664,
+    "lifetime_max_phys_footprint": 9650654664
+  },
+  {
+    "pid": 80689,
+    "time": 1788859655.509422,
+    "resident_size": 2174091264,
+    "phys_footprint": 9666776544,
+    "lifetime_max_phys_footprint": 9666776544
+  },
+  {
+    "pid": 80689,
+    "time": 1788859655.805841,
+    "resident_size": 2190032896,
+    "phys_footprint": 9682832888,
+    "lifetime_max_phys_footprint": 9682832888
+  },
+  {
+    "pid": 80689,
+    "time": 1788859656.098814,
+    "resident_size": 2204745728,
+    "phys_footprint": 9666170360,
+    "lifetime_max_phys_footprint": 9695497720
+  }
+]

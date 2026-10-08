@@ -1,0 +1,18 @@
+{
+  "breeze_short_cold.wav": "b4d6bfc89dd55f095c373a3d82b037cb7043c1696e1d1d3a33caa546dd1d87be",
+  "breeze_short_warm.wav": "b4d6bfc89dd55f095c373a3d82b037cb7043c1696e1d1d3a33caa546dd1d87be",
+  "breeze_short_warm_seed43.wav": "f196e479b511e02fd4a0945203a0d615e4d1e4ed2ead0eeca3be6981fa67a8b0",
+  "breeze_digest_warm.wav": "af7580f4f0b17675426aab979a6f381ec81d8e2bd898e42b4cc0133964a52f20",
+  "breeze_names_numbers_warm.wav": "5831b37369894b4c4510fe253da9c696aca309b4bcd6f480a3d97edd6cbec0c6",
+  "breeze_neutral_warm.wav": "d2a394f2313f9a0fe14f6d87df2cfceadca3d09fc26ca6e68551138ee682cf4a",
+  "breeze_directed_warm.wav": "c0bbe2da39c144ab390eb6de4aa36b32f3d1f1e3643fa90c3ed61e2d592dc622",
+  "breeze_long_warm.wav": "a87ebb68fa69eeb3986238be88488575f8cf9e41604a58d38740f49d9da0e3a6",
+  "breeze_smoke_short_cold.wav": "b4d6bfc89dd55f095c373a3d82b037cb7043c1696e1d1d3a33caa546dd1d87be",
+  "breeze_smoke_short_warm.wav": "b4d6bfc89dd55f095c373a3d82b037cb7043c1696e1d1d3a33caa546dd1d87be",
+  "kokoro_reference.wav": "16e5fe72bb6c9ba5091648c64b87a3a38ce55c4ef42d8518e76bc06b6eabd2d9",
+  "kokoro_short.wav": "6585208d6975b5024402421bba461ff6a53d67b117f21eb7543e619882188cfc",
+  "kokoro_digest.wav": "07e1095bffc9b8746f507d278814a38a6324660da4905926577752b667a5eb52",
+  "kokoro_names_numbers.wav": "4dd119365514e7049c3a8aee2f1de7325606c0dbacf091e7defcd8f8ca1e83ac",
+  "kokoro_neutral.wav": "5d3c56a960ba334b7298b774f80d3350655d049ecd71688685f27f540e606315",
+  "kokoro_long.wav": "7d78fd8427946a2db3a08d95a75ff78dbf3fcef3d07ce1ece064a82dc2b8678c"
+}

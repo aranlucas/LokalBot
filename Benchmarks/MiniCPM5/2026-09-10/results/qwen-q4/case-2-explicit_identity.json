@@ -1,0 +1,83 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"onboarding_belongs_to_user\": false,\n  \"privacy_belongs_to_user\": false,\n  \"support_belongs_to_user\": false,\n  \"onboarding_owner_id\": \"p2\",\n  \"privacy_owner_id\": \"p1\"\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 61,
+    "prompt_tokens": 183,
+    "total_tokens": 244,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 183,
+    "prompt_ms": 208.062,
+    "prompt_per_token_ms": 1.1369508196721312,
+    "prompt_per_second": 879.5455200853592,
+    "predicted_n": 61,
+    "predicted_ms": 651.088,
+    "predicted_per_token_ms": 10.673573770491803,
+    "predicted_per_second": 93.68933231759762
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"onboarding_belongs_to_user\": false,\n  \"privacy_belongs_to_user\": false,\n  \"support_belongs_to_user\": false,\n  \"onboarding_owner_id\": \"p2\",\n  \"privacy_owner_id\": \"p1\"\n}"
+        }
+      }
+    ],
+    "created": 1789023083,
+    "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 61,
+      "prompt_tokens": 183,
+      "total_tokens": 244,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-LLKRjwBpPmYPlLpVhWQuwsRuNwY3ennt",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 183,
+      "prompt_ms": 208.062,
+      "prompt_per_token_ms": 1.1369508196721312,
+      "prompt_per_second": 879.5455200853592,
+      "predicted_n": 61,
+      "predicted_ms": 651.088,
+      "predicted_per_token_ms": 10.673573770491803,
+      "predicted_per_second": 93.68933231759762
+    }
+  },
+  "wall_seconds": 0.8695547919487581,
+  "memory": {
+    "samples": 4,
+    "peak_rss_bytes": 6990135296,
+    "peak_physical_footprint_bytes": 4437039032
+  },
+  "id": "explicit_identity",
+  "group": "extraction",
+  "repeat": 2,
+  "score": {
+    "passed": false,
+    "json_valid": true,
+    "correct_fields": 4,
+    "total_fields": 5,
+    "wrong": {
+      "privacy_belongs_to_user": {
+        "expected": true,
+        "actual": false
+      }
+    }
+  }
+}

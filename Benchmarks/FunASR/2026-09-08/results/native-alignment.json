@@ -1,0 +1,3898 @@
+{
+  "load_seconds": 1.467193207994569,
+  "rows": [
+    {
+      "id": "EN2002a-120-210",
+      "seconds": 2.6288622089778073,
+      "words": [
+        {
+          "text": "button",
+          "start": 0.0,
+          "end": 0.32
+        },
+        {
+          "text": "so",
+          "start": 0.4,
+          "end": 0.56
+        },
+        {
+          "text": "that",
+          "start": 0.56,
+          "end": 0.72
+        },
+        {
+          "text": "you",
+          "start": 0.72,
+          "end": 0.96
+        },
+        {
+          "text": "actually",
+          "start": 1.68,
+          "end": 2.0
+        },
+        {
+          "text": "in",
+          "start": 2.0,
+          "end": 2.16
+        },
+        {
+          "text": "the",
+          "start": 2.16,
+          "end": 2.24
+        },
+        {
+          "text": "transcription",
+          "start": 2.24,
+          "end": 2.8
+        },
+        {
+          "text": "box",
+          "start": 2.88,
+          "end": 3.12
+        },
+        {
+          "text": "but",
+          "start": 3.12,
+          "end": 3.28
+        },
+        {
+          "text": "so",
+          "start": 3.28,
+          "end": 3.44
+        },
+        {
+          "text": "that",
+          "start": 3.52,
+          "end": 3.68
+        },
+        {
+          "text": "you",
+          "start": 3.68,
+          "end": 3.76
+        },
+        {
+          "text": "click",
+          "start": 3.84,
+          "end": 4.0
+        },
+        {
+          "text": "on",
+          "start": 4.0,
+          "end": 4.16
+        },
+        {
+          "text": "a",
+          "start": 4.16,
+          "end": 4.16
+        },
+        {
+          "text": "button",
+          "start": 4.16,
+          "end": 4.48
+        },
+        {
+          "text": "and",
+          "start": 4.56,
+          "end": 4.64
+        },
+        {
+          "text": "then",
+          "start": 4.64,
+          "end": 4.88
+        },
+        {
+          "text": "it",
+          "start": 4.88,
+          "end": 4.96
+        },
+        {
+          "text": "opens",
+          "start": 5.04,
+          "end": 5.28
+        },
+        {
+          "text": "whatever",
+          "start": 5.52,
+          "end": 5.76
+        },
+        {
+          "text": "that",
+          "start": 5.76,
+          "end": 5.92
+        },
+        {
+          "text": "speaker",
+          "start": 5.92,
+          "end": 6.32
+        },
+        {
+          "text": "characterisation",
+          "start": 6.32,
+          "end": 7.12
+        },
+        {
+          "text": "is",
+          "start": 7.12,
+          "end": 7.28
+        },
+        {
+          "text": "The",
+          "start": 8.412,
+          "end": 8.492
+        },
+        {
+          "text": "problem",
+          "start": 8.492,
+          "end": 8.732000000000001
+        },
+        {
+          "text": "is",
+          "start": 8.732000000000001,
+          "end": 9.132000000000001
+        },
+        {
+          "text": "the",
+          "start": 9.692,
+          "end": 9.932
+        },
+        {
+          "text": "the",
+          "start": 10.492,
+          "end": 10.572000000000001
+        },
+        {
+          "text": "left",
+          "start": 10.572000000000001,
+          "end": 10.892
+        },
+        {
+          "text": "click",
+          "start": 10.892,
+          "end": 11.292000000000002
+        },
+        {
+          "text": "is",
+          "start": 11.292000000000002,
+          "end": 11.452
+        },
+        {
+          "text": "already",
+          "start": 11.452,
+          "end": 11.772
+        },
+        {
+          "text": "used",
+          "start": 11.772,
+          "end": 12.252
+        },
+        {
+          "text": "because",
+          "start": 12.252,
+          "end": 12.732
+        },
+        {
+          "text": "it",
+          "start": 12.972000000000001,
+          "end": 13.052
+        },
+        {
+          "text": "highlights",
+          "start": 13.132000000000001,
+          "end": 13.852
+        },
+        {
+          "text": "that",
+          "start": 14.012,
+          "end": 14.172
+        },
+        {
+          "text": "That",
+          "start": 16.7,
+          "end": 16.86
+        },
+        {
+          "text": "part",
+          "start": 16.86,
+          "end": 17.18
+        },
+        {
+          "text": "of",
+          "start": 17.18,
+          "end": 17.18
+        },
+        {
+          "text": "speech",
+          "start": 17.18,
+          "end": 17.5
+        },
+        {
+          "text": "or",
+          "start": 17.5,
+          "end": 17.5
+        },
+        {
+          "text": "whatever",
+          "start": 17.5,
+          "end": 17.9
+        },
+        {
+          "text": "that",
+          "start": 17.9,
+          "end": 18.06
+        },
+        {
+          "text": "what",
+          "start": 18.46,
+          "end": 18.619999999999997
+        },
+        {
+          "text": "he's",
+          "start": 18.619999999999997,
+          "end": 18.78
+        },
+        {
+          "text": "been",
+          "start": 18.78,
+          "end": 18.939999999999998
+        },
+        {
+          "text": "saying",
+          "start": 19.02,
+          "end": 19.34
+        },
+        {
+          "text": "The",
+          "start": 19.34,
+          "end": 19.419999999999998
+        },
+        {
+          "text": "left",
+          "start": 19.419999999999998,
+          "end": 19.74
+        },
+        {
+          "text": "click",
+          "start": 19.74,
+          "end": 19.9
+        },
+        {
+          "text": "or",
+          "start": 19.98,
+          "end": 20.14
+        },
+        {
+          "text": "the",
+          "start": 20.14,
+          "end": 20.22
+        },
+        {
+          "text": "right",
+          "start": 20.22,
+          "end": 20.38
+        },
+        {
+          "text": "click",
+          "start": 20.38,
+          "end": 20.619999999999997
+        },
+        {
+          "text": "The",
+          "start": 20.619999999999997,
+          "end": 20.78
+        },
+        {
+          "text": "left",
+          "start": 20.78,
+          "end": 21.18
+        },
+        {
+          "text": "click",
+          "start": 21.18,
+          "end": 21.34
+        },
+        {
+          "text": "highlights",
+          "start": 21.34,
+          "end": 21.82
+        },
+        {
+          "text": "it",
+          "start": 21.9,
+          "end": 21.98
+        },
+        {
+          "text": "Right",
+          "start": 22.14,
+          "end": 22.38
+        },
+        {
+          "text": "So",
+          "start": 22.7,
+          "end": 22.78
+        },
+        {
+          "text": "that",
+          "start": 22.78,
+          "end": 23.02
+        },
+        {
+          "text": "you",
+          "start": 23.34,
+          "end": 23.419999999999998
+        },
+        {
+          "text": "can",
+          "start": 23.419999999999998,
+          "end": 23.66
+        },
+        {
+          "text": "I",
+          "start": 25.148,
+          "end": 25.227999999999998
+        },
+        {
+          "text": "don't",
+          "start": 25.227999999999998,
+          "end": 25.308
+        },
+        {
+          "text": "know",
+          "start": 25.308,
+          "end": 25.468
+        },
+        {
+          "text": "what",
+          "start": 25.468,
+          "end": 25.548
+        },
+        {
+          "text": "happens",
+          "start": 25.548,
+          "end": 25.788
+        },
+        {
+          "text": "when",
+          "start": 25.788,
+          "end": 25.948
+        },
+        {
+          "text": "you",
+          "start": 25.948,
+          "end": 26.028
+        },
+        {
+          "text": "double",
+          "start": 26.028,
+          "end": 26.348
+        },
+        {
+          "text": "click",
+          "start": 26.428,
+          "end": 26.508
+        },
+        {
+          "text": "actually",
+          "start": 26.508,
+          "end": 26.988
+        },
+        {
+          "text": "but",
+          "start": 27.548,
+          "end": 27.708
+        },
+        {
+          "text": "that'd",
+          "start": 27.708,
+          "end": 27.788
+        },
+        {
+          "text": "be",
+          "start": 27.788,
+          "end": 27.948
+        },
+        {
+          "text": "a",
+          "start": 27.948,
+          "end": 27.948
+        },
+        {
+          "text": "bit",
+          "start": 27.948,
+          "end": 28.188
+        },
+        {
+          "text": "annoying",
+          "start": 28.268,
+          "end": 28.588
+        },
+        {
+          "text": "if",
+          "start": 28.588,
+          "end": 28.747999999999998
+        },
+        {
+          "text": "you",
+          "start": 28.747999999999998,
+          "end": 28.828
+        },
+        {
+          "text": "have",
+          "start": 28.828,
+          "end": 28.988
+        },
+        {
+          "text": "left",
+          "start": 28.988,
+          "end": 29.308
+        },
+        {
+          "text": "click",
+          "start": 29.308,
+          "end": 29.468
+        },
+        {
+          "text": "for",
+          "start": 29.548,
+          "end": 29.628
+        },
+        {
+          "text": "one",
+          "start": 29.628,
+          "end": 29.868
+        },
+        {
+          "text": "thing",
+          "start": 29.868,
+          "end": 30.108
+        },
+        {
+          "text": "and",
+          "start": 30.108,
+          "end": 30.268
+        },
+        {
+          "text": "double",
+          "start": 30.428,
+          "end": 30.668
+        },
+        {
+          "text": "click",
+          "start": 30.747999999999998,
+          "end": 30.908
+        },
+        {
+          "text": "for",
+          "start": 31.067999999999998,
+          "end": 31.148
+        },
+        {
+          "text": "something",
+          "start": 31.148,
+          "end": 31.387999999999998
+        },
+        {
+          "text": "else",
+          "start": 32.988,
+          "end": 32.988
+        },
+        {
+          "text": "I",
+          "start": 34.028,
+          "end": 34.108
+        },
+        {
+          "text": "think",
+          "start": 34.108,
+          "end": 34.428
+        },
+        {
+          "text": "so",
+          "start": 34.588,
+          "end": 34.748
+        },
+        {
+          "text": "Yeah",
+          "start": 34.748,
+          "end": 34.988
+        },
+        {
+          "text": "when",
+          "start": 34.988,
+          "end": 35.148
+        },
+        {
+          "text": "you",
+          "start": 35.148,
+          "end": 35.308
+        },
+        {
+          "text": "left",
+          "start": 35.308,
+          "end": 35.548
+        },
+        {
+          "text": "click",
+          "start": 35.548,
+          "end": 35.708
+        },
+        {
+          "text": "it",
+          "start": 35.708,
+          "end": 35.788000000000004
+        },
+        {
+          "text": "you",
+          "start": 35.788000000000004,
+          "end": 35.868
+        },
+        {
+          "text": "can",
+          "start": 35.868,
+          "end": 36.028
+        },
+        {
+          "text": "for",
+          "start": 36.028,
+          "end": 36.188
+        },
+        {
+          "text": "example",
+          "start": 36.188,
+          "end": 36.588
+        },
+        {
+          "text": "set",
+          "start": 36.588,
+          "end": 36.908
+        },
+        {
+          "text": "set",
+          "start": 37.068,
+          "end": 37.308
+        },
+        {
+          "text": "the",
+          "start": 37.308,
+          "end": 37.388
+        },
+        {
+          "text": "marker",
+          "start": 37.388,
+          "end": 37.708
+        },
+        {
+          "text": "there",
+          "start": 37.708,
+          "end": 37.948
+        },
+        {
+          "text": "so",
+          "start": 37.948,
+          "end": 38.108000000000004
+        },
+        {
+          "text": "that",
+          "start": 38.108000000000004,
+          "end": 38.268
+        },
+        {
+          "text": "the",
+          "start": 38.268,
+          "end": 38.588
+        },
+        {
+          "text": "the",
+          "start": 38.988,
+          "end": 39.308
+        },
+        {
+          "text": "audio",
+          "start": 39.388,
+          "end": 39.708
+        },
+        {
+          "text": "goes",
+          "start": 39.708,
+          "end": 39.868
+        },
+        {
+          "text": "from",
+          "start": 39.868,
+          "end": 40.108000000000004
+        },
+        {
+          "text": "there",
+          "start": 40.108000000000004,
+          "end": 40.188
+        },
+        {
+          "text": "I",
+          "start": 40.188,
+          "end": 40.348
+        },
+        {
+          "text": "think",
+          "start": 40.348,
+          "end": 40.668
+        },
+        {
+          "text": "So",
+          "start": 43.036,
+          "end": 43.196
+        },
+        {
+          "text": "we",
+          "start": 43.196,
+          "end": 43.276
+        },
+        {
+          "text": "can't",
+          "start": 43.276,
+          "end": 43.596000000000004
+        },
+        {
+          "text": "put",
+          "start": 43.596000000000004,
+          "end": 43.756
+        },
+        {
+          "text": "it",
+          "start": 43.756,
+          "end": 43.836
+        },
+        {
+          "text": "on",
+          "start": 43.836,
+          "end": 43.916000000000004
+        },
+        {
+          "text": "left",
+          "start": 43.916000000000004,
+          "end": 44.156
+        },
+        {
+          "text": "click",
+          "start": 44.156,
+          "end": 44.316
+        },
+        {
+          "text": "We",
+          "start": 44.316,
+          "end": 44.476
+        },
+        {
+          "text": "could",
+          "start": 44.476,
+          "end": 44.716
+        },
+        {
+          "text": "put",
+          "start": 44.716,
+          "end": 44.876
+        },
+        {
+          "text": "it",
+          "start": 44.876,
+          "end": 44.956
+        },
+        {
+          "text": "on",
+          "start": 44.956,
+          "end": 45.116
+        },
+        {
+          "text": "right",
+          "start": 45.356,
+          "end": 45.516
+        },
+        {
+          "text": "click",
+          "start": 45.596000000000004,
+          "end": 45.996
+        },
+        {
+          "text": "We",
+          "start": 46.396,
+          "end": 46.476
+        },
+        {
+          "text": "could",
+          "start": 46.476,
+          "end": 46.716
+        },
+        {
+          "text": "for",
+          "start": 46.716,
+          "end": 46.876000000000005
+        },
+        {
+          "text": "example",
+          "start": 46.876000000000005,
+          "end": 47.276
+        },
+        {
+          "text": "have",
+          "start": 47.276,
+          "end": 47.436
+        },
+        {
+          "text": "a",
+          "start": 47.436,
+          "end": 47.516
+        },
+        {
+          "text": "little",
+          "start": 47.516,
+          "end": 47.676
+        },
+        {
+          "text": "menu",
+          "start": 47.676,
+          "end": 47.996
+        },
+        {
+          "text": "that",
+          "start": 48.076,
+          "end": 48.236000000000004
+        },
+        {
+          "text": "pops",
+          "start": 48.236000000000004,
+          "end": 48.476
+        },
+        {
+          "text": "up",
+          "start": 48.476,
+          "end": 48.796
+        },
+        {
+          "text": "Yeah",
+          "start": 49.467999999999996,
+          "end": 49.708
+        },
+        {
+          "text": "it",
+          "start": 49.708,
+          "end": 49.708
+        },
+        {
+          "text": "might",
+          "start": 49.708,
+          "end": 49.948
+        },
+        {
+          "text": "be",
+          "start": 49.948,
+          "end": 49.948
+        },
+        {
+          "text": "quite",
+          "start": 49.948,
+          "end": 50.188
+        },
+        {
+          "text": "good",
+          "start": 50.188,
+          "end": 50.348
+        },
+        {
+          "text": "I",
+          "start": 50.348,
+          "end": 50.428
+        },
+        {
+          "text": "suppose",
+          "start": 50.428,
+          "end": 50.748
+        },
+        {
+          "text": "So",
+          "start": 50.748,
+          "end": 50.828
+        },
+        {
+          "text": "rightclick",
+          "start": 50.988,
+          "end": 51.388
+        },
+        {
+          "text": "on",
+          "start": 51.388,
+          "end": 51.548
+        },
+        {
+          "text": "it",
+          "start": 51.548,
+          "end": 51.628
+        },
+        {
+          "text": "menu",
+          "start": 51.628,
+          "end": 52.188
+        },
+        {
+          "text": "you",
+          "start": 52.348,
+          "end": 52.348
+        },
+        {
+          "text": "know",
+          "start": 52.428,
+          "end": 52.508
+        },
+        {
+          "text": "and",
+          "start": 52.748,
+          "end": 52.828
+        },
+        {
+          "text": "you",
+          "start": 52.828,
+          "end": 52.988
+        },
+        {
+          "text": "can",
+          "start": 52.988,
+          "end": 53.147999999999996
+        },
+        {
+          "text": "click",
+          "start": 54.108,
+          "end": 54.348
+        },
+        {
+          "text": "on",
+          "start": 54.348,
+          "end": 54.588
+        },
+        {
+          "text": "speaker",
+          "start": 54.588,
+          "end": 54.908
+        },
+        {
+          "text": "characterization",
+          "start": 54.908,
+          "end": 55.628
+        },
+        {
+          "text": "It",
+          "start": 55.628,
+          "end": 55.708
+        },
+        {
+          "text": "pops",
+          "start": 55.868,
+          "end": 56.188
+        },
+        {
+          "text": "the",
+          "start": 56.188,
+          "end": 56.348
+        },
+        {
+          "text": "window",
+          "start": 56.348,
+          "end": 56.588
+        },
+        {
+          "text": "What",
+          "start": 56.908,
+          "end": 57.147999999999996
+        },
+        {
+          "text": "else",
+          "start": 57.147999999999996,
+          "end": 57.308
+        },
+        {
+          "text": "do",
+          "start": 57.308,
+          "end": 57.388
+        },
+        {
+          "text": "we",
+          "start": 57.388,
+          "end": 57.468
+        },
+        {
+          "text": "have",
+          "start": 57.548,
+          "end": 57.628
+        },
+        {
+          "text": "in",
+          "start": 57.628,
+          "end": 57.788
+        },
+        {
+          "text": "there",
+          "start": 57.788,
+          "end": 57.948
+        },
+        {
+          "text": "What",
+          "start": 59.452,
+          "end": 59.532000000000004
+        },
+        {
+          "text": "That's",
+          "start": 60.38,
+          "end": 60.54
+        },
+        {
+          "text": "a",
+          "start": 60.54,
+          "end": 60.620000000000005
+        },
+        {
+          "text": "good",
+          "start": 60.620000000000005,
+          "end": 60.7
+        },
+        {
+          "text": "point",
+          "start": 60.7,
+          "end": 61.02
+        },
+        {
+          "text": "I",
+          "start": 61.42,
+          "end": 61.900000000000006
+        },
+        {
+          "text": "don't",
+          "start": 62.38,
+          "end": 62.54
+        },
+        {
+          "text": "know",
+          "start": 62.78,
+          "end": 62.78
+        },
+        {
+          "text": "Otherwise",
+          "start": 63.34,
+          "end": 63.660000000000004
+        },
+        {
+          "text": "we",
+          "start": 63.660000000000004,
+          "end": 63.74
+        },
+        {
+          "text": "just",
+          "start": 63.74,
+          "end": 63.900000000000006
+        },
+        {
+          "text": "have",
+          "start": 63.900000000000006,
+          "end": 63.980000000000004
+        },
+        {
+          "text": "a",
+          "start": 63.980000000000004,
+          "end": 64.06
+        },
+        {
+          "text": "right",
+          "start": 64.06,
+          "end": 64.22
+        },
+        {
+          "text": "click",
+          "start": 64.22,
+          "end": 64.38
+        },
+        {
+          "text": "or",
+          "start": 64.46000000000001,
+          "end": 64.54
+        },
+        {
+          "text": "do",
+          "start": 64.54,
+          "end": 64.62
+        },
+        {
+          "text": "Yeah",
+          "start": 64.62,
+          "end": 65.9
+        },
+        {
+          "text": "yeah",
+          "start": 65.9,
+          "end": 65.9
+        },
+        {
+          "text": "but",
+          "start": 65.9,
+          "end": 65.98
+        },
+        {
+          "text": "um",
+          "start": 66.22,
+          "end": 66.62
+        },
+        {
+          "text": "I",
+          "start": 67.02,
+          "end": 67.10000000000001
+        },
+        {
+          "text": "don't",
+          "start": 67.10000000000001,
+          "end": 67.26
+        },
+        {
+          "text": "know",
+          "start": 67.26,
+          "end": 67.42
+        },
+        {
+          "text": "about",
+          "start": 67.42,
+          "end": 67.58
+        },
+        {
+          "text": "you",
+          "start": 67.58,
+          "end": 67.82000000000001
+        },
+        {
+          "text": "but",
+          "start": 67.82000000000001,
+          "end": 68.06
+        },
+        {
+          "text": "usually",
+          "start": 68.06,
+          "end": 68.54
+        },
+        {
+          "text": "in",
+          "start": 68.54,
+          "end": 68.62
+        },
+        {
+          "text": "Windows",
+          "start": 68.62,
+          "end": 69.02000000000001
+        },
+        {
+          "text": "right",
+          "start": 69.02000000000001,
+          "end": 69.26
+        },
+        {
+          "text": "click",
+          "start": 69.26,
+          "end": 69.58
+        },
+        {
+          "text": "doesn't",
+          "start": 70.06,
+          "end": 70.3
+        },
+        {
+          "text": "do",
+          "start": 70.46000000000001,
+          "end": 70.62
+        },
+        {
+          "text": "anything",
+          "start": 70.62,
+          "end": 71.02000000000001
+        },
+        {
+          "text": "Doesn't",
+          "start": 71.02000000000001,
+          "end": 71.1
+        },
+        {
+          "text": "it",
+          "start": 71.42,
+          "end": 71.58
+        },
+        {
+          "text": "opens",
+          "start": 71.58,
+          "end": 71.98
+        },
+        {
+          "text": "a",
+          "start": 71.98,
+          "end": 71.98
+        },
+        {
+          "text": "menu",
+          "start": 71.98,
+          "end": 72.86
+        },
+        {
+          "text": "A",
+          "start": 72.86,
+          "end": 73.02000000000001
+        },
+        {
+          "text": "menu",
+          "start": 73.02000000000001,
+          "end": 73.02000000000001
+        },
+        {
+          "text": "yeah",
+          "start": 73.02000000000001,
+          "end": 73.02000000000001
+        },
+        {
+          "text": "yeah",
+          "start": 73.26,
+          "end": 73.42
+        },
+        {
+          "text": "That's",
+          "start": 73.42,
+          "end": 73.5
+        },
+        {
+          "text": "what",
+          "start": 73.5,
+          "end": 73.66
+        },
+        {
+          "text": "I",
+          "start": 73.66,
+          "end": 73.66
+        },
+        {
+          "text": "do",
+          "start": 73.66,
+          "end": 73.66
+        },
+        {
+          "text": "Yeah",
+          "start": 74.284,
+          "end": 74.444
+        },
+        {
+          "text": "I",
+          "start": 74.444,
+          "end": 74.524
+        },
+        {
+          "text": "said",
+          "start": 74.524,
+          "end": 74.684
+        },
+        {
+          "text": "it",
+          "start": 74.684,
+          "end": 74.844
+        },
+        {
+          "text": "would",
+          "start": 74.844,
+          "end": 74.844
+        },
+        {
+          "text": "maybe",
+          "start": 74.844,
+          "end": 75.164
+        },
+        {
+          "text": "be",
+          "start": 75.164,
+          "end": 75.164
+        },
+        {
+          "text": "a",
+          "start": 75.164,
+          "end": 75.244
+        },
+        {
+          "text": "bit",
+          "start": 75.244,
+          "end": 75.404
+        },
+        {
+          "text": "weird",
+          "start": 75.404,
+          "end": 75.724
+        },
+        {
+          "text": "for",
+          "start": 75.884,
+          "end": 76.044
+        },
+        {
+          "text": "it",
+          "start": 76.044,
+          "end": 76.124
+        },
+        {
+          "text": "to",
+          "start": 76.124,
+          "end": 76.204
+        },
+        {
+          "text": "just",
+          "start": 76.284,
+          "end": 76.444
+        },
+        {
+          "text": "start",
+          "start": 76.524,
+          "end": 76.844
+        },
+        {
+          "text": "bringing",
+          "start": 76.844,
+          "end": 77.084
+        },
+        {
+          "text": "up",
+          "start": 77.084,
+          "end": 77.244
+        },
+        {
+          "text": "stuff",
+          "start": 77.244,
+          "end": 77.484
+        },
+        {
+          "text": "isn't",
+          "start": 77.56400000000001,
+          "end": 77.644
+        },
+        {
+          "text": "it",
+          "start": 77.644,
+          "end": 77.804
+        },
+        {
+          "text": "Yeah",
+          "start": 78.044,
+          "end": 78.044
+        },
+        {
+          "text": "to",
+          "start": 78.124,
+          "end": 78.20400000000001
+        },
+        {
+          "text": "just",
+          "start": 78.524,
+          "end": 78.684
+        },
+        {
+          "text": "have",
+          "start": 78.764,
+          "end": 78.844
+        },
+        {
+          "text": "sort",
+          "start": 78.844,
+          "end": 79.084
+        },
+        {
+          "text": "of",
+          "start": 79.084,
+          "end": 79.164
+        },
+        {
+          "text": "the",
+          "start": 79.244,
+          "end": 79.324
+        },
+        {
+          "text": "same",
+          "start": 79.484,
+          "end": 79.724
+        },
+        {
+          "text": "sort",
+          "start": 79.724,
+          "end": 79.964
+        },
+        {
+          "text": "of",
+          "start": 79.964,
+          "end": 80.044
+        },
+        {
+          "text": "idiom",
+          "start": 80.524,
+          "end": 80.764
+        },
+        {
+          "text": "throughout",
+          "start": 80.764,
+          "end": 81.084
+        },
+        {
+          "text": "kind",
+          "start": 81.564,
+          "end": 81.724
+        },
+        {
+          "text": "of",
+          "start": 81.724,
+          "end": 81.724
+        },
+        {
+          "text": "Yeah",
+          "start": 82.124,
+          "end": 82.444
+        },
+        {
+          "text": "yeah",
+          "start": 83.244,
+          "end": 83.484
+        },
+        {
+          "text": "Um",
+          "start": 84.684,
+          "end": 84.924
+        },
+        {
+          "text": "or",
+          "start": 84.924,
+          "end": 85.084
+        },
+        {
+          "text": "just",
+          "start": 85.084,
+          "end": 85.404
+        },
+        {
+          "text": "you",
+          "start": 85.404,
+          "end": 85.484
+        },
+        {
+          "text": "know",
+          "start": 85.484,
+          "end": 85.644
+        },
+        {
+          "text": "or",
+          "start": 85.724,
+          "end": 85.804
+        },
+        {
+          "text": "just",
+          "start": 85.804,
+          "end": 86.044
+        },
+        {
+          "text": "the",
+          "start": 86.044,
+          "end": 86.044
+        },
+        {
+          "text": "button",
+          "start": 86.044,
+          "end": 86.524
+        },
+        {
+          "text": "I",
+          "start": 87.788,
+          "end": 87.868
+        },
+        {
+          "text": "guess",
+          "start": 87.868,
+          "end": 88.108
+        },
+        {
+          "text": "a",
+          "start": 88.108,
+          "end": 88.108
+        },
+        {
+          "text": "button",
+          "start": 88.108,
+          "end": 88.748
+        },
+        {
+          "text": "button",
+          "start": 88.748,
+          "end": 89.30799999999999
+        },
+        {
+          "text": "makes",
+          "start": 89.30799999999999,
+          "end": 89.788
+        },
+        {
+          "text": "a",
+          "start": 89.788,
+          "end": 89.788
+        },
+        {
+          "text": "bit",
+          "start": 89.788,
+          "end": 89.948
+        }
+      ]
+    },
+    {
+      "id": "EN2002a-600-690",
+      "seconds": 2.0696257919771597,
+      "words": [
+        {
+          "text": "Yeah",
+          "start": 1.564,
+          "end": 1.804
+        },
+        {
+          "text": "the",
+          "start": 2.204,
+          "end": 2.2840000000000003
+        },
+        {
+          "text": "footprint",
+          "start": 2.2840000000000003,
+          "end": 2.684
+        },
+        {
+          "text": "will",
+          "start": 2.684,
+          "end": 2.844
+        },
+        {
+          "text": "be",
+          "start": 2.844,
+          "end": 2.924
+        },
+        {
+          "text": "big",
+          "start": 3.004,
+          "end": 3.164
+        },
+        {
+          "text": "Um",
+          "start": 6.812,
+          "end": 7.372
+        },
+        {
+          "text": "Yeah",
+          "start": 10.14,
+          "end": 10.22
+        },
+        {
+          "text": "what",
+          "start": 10.3,
+          "end": 10.700000000000001
+        },
+        {
+          "text": "do",
+          "start": 10.700000000000001,
+          "end": 10.780000000000001
+        },
+        {
+          "text": "people",
+          "start": 10.780000000000001,
+          "end": 11.100000000000001
+        },
+        {
+          "text": "think",
+          "start": 11.100000000000001,
+          "end": 11.260000000000002
+        },
+        {
+          "text": "in",
+          "start": 11.260000000000002,
+          "end": 11.34
+        },
+        {
+          "text": "general",
+          "start": 11.34,
+          "end": 11.66
+        },
+        {
+          "text": "about",
+          "start": 11.66,
+          "end": 11.9
+        },
+        {
+          "text": "the",
+          "start": 11.9,
+          "end": 11.98
+        },
+        {
+          "text": "Windows",
+          "start": 11.98,
+          "end": 12.3
+        },
+        {
+          "text": "cluttering",
+          "start": 12.3,
+          "end": 12.780000000000001
+        },
+        {
+          "text": "that",
+          "start": 12.780000000000001,
+          "end": 12.940000000000001
+        },
+        {
+          "text": "you",
+          "start": 12.940000000000001,
+          "end": 13.02
+        },
+        {
+          "text": "mentioned",
+          "start": 13.100000000000001,
+          "end": 13.66
+        },
+        {
+          "text": "Do",
+          "start": 14.14,
+          "end": 14.22
+        },
+        {
+          "text": "you",
+          "start": 14.22,
+          "end": 14.22
+        },
+        {
+          "text": "think",
+          "start": 14.22,
+          "end": 14.540000000000001
+        },
+        {
+          "text": "I",
+          "start": 15.5,
+          "end": 15.58
+        },
+        {
+          "text": "think",
+          "start": 15.58,
+          "end": 15.74
+        },
+        {
+          "text": "we",
+          "start": 15.74,
+          "end": 15.82
+        },
+        {
+          "text": "probably",
+          "start": 15.82,
+          "end": 16.14
+        },
+        {
+          "text": "need",
+          "start": 16.14,
+          "end": 16.46
+        },
+        {
+          "text": "that",
+          "start": 16.46,
+          "end": 16.62
+        },
+        {
+          "text": "though",
+          "start": 16.62,
+          "end": 16.78
+        },
+        {
+          "text": "to",
+          "start": 16.78,
+          "end": 16.78
+        },
+        {
+          "text": "have",
+          "start": 16.94,
+          "end": 17.02
+        },
+        {
+          "text": "the",
+          "start": 17.18,
+          "end": 17.259999999999998
+        },
+        {
+          "text": "the",
+          "start": 17.259999999999998,
+          "end": 17.259999999999998
+        },
+        {
+          "text": "full",
+          "start": 17.5,
+          "end": 17.58
+        },
+        {
+          "text": "flexibility",
+          "start": 17.66,
+          "end": 18.3
+        },
+        {
+          "text": "We",
+          "start": 18.38,
+          "end": 18.46
+        },
+        {
+          "text": "need",
+          "start": 18.46,
+          "end": 18.7
+        },
+        {
+          "text": "to",
+          "start": 18.78,
+          "end": 18.78
+        },
+        {
+          "text": "have",
+          "start": 18.78,
+          "end": 19.02
+        },
+        {
+          "text": "that",
+          "start": 19.1,
+          "end": 19.18
+        },
+        {
+          "text": "That's",
+          "start": 19.18,
+          "end": 19.34
+        },
+        {
+          "text": "what",
+          "start": 19.34,
+          "end": 19.5
+        },
+        {
+          "text": "I",
+          "start": 19.5,
+          "end": 19.66
+        },
+        {
+          "text": "feel",
+          "start": 19.66,
+          "end": 19.82
+        },
+        {
+          "text": "I",
+          "start": 20.3,
+          "end": 20.38
+        },
+        {
+          "text": "mean",
+          "start": 20.38,
+          "end": 20.54
+        },
+        {
+          "text": "I'm",
+          "start": 20.54,
+          "end": 20.78
+        },
+        {
+          "text": "I'm",
+          "start": 20.78,
+          "end": 21.02
+        },
+        {
+          "text": "very",
+          "start": 21.02,
+          "end": 21.18
+        },
+        {
+          "text": "much",
+          "start": 21.18,
+          "end": 21.66
+        },
+        {
+          "text": "I",
+          "start": 21.98,
+          "end": 22.22
+        },
+        {
+          "text": "I",
+          "start": 22.22,
+          "end": 22.38
+        },
+        {
+          "text": "want",
+          "start": 22.38,
+          "end": 22.54
+        },
+        {
+          "text": "to",
+          "start": 22.62,
+          "end": 22.62
+        },
+        {
+          "text": "have",
+          "start": 22.62,
+          "end": 22.78
+        },
+        {
+          "text": "everything",
+          "start": 22.78,
+          "end": 23.42
+        },
+        {
+          "text": "Customizable",
+          "start": 24.043999999999997,
+          "end": 24.843999999999998
+        },
+        {
+          "text": "Although",
+          "start": 25.724,
+          "end": 26.523999999999997
+        },
+        {
+          "text": "the",
+          "start": 26.683999999999997,
+          "end": 26.764
+        },
+        {
+          "text": "thing",
+          "start": 26.764,
+          "end": 27.003999999999998
+        },
+        {
+          "text": "is",
+          "start": 27.003999999999998,
+          "end": 27.084
+        },
+        {
+          "text": "typically",
+          "start": 27.084,
+          "end": 27.483999999999998
+        },
+        {
+          "text": "though",
+          "start": 27.483999999999998,
+          "end": 27.644
+        },
+        {
+          "text": "is",
+          "start": 27.644,
+          "end": 27.723999999999997
+        },
+        {
+          "text": "someone",
+          "start": 27.723999999999997,
+          "end": 27.964
+        },
+        {
+          "text": "going",
+          "start": 27.964,
+          "end": 28.043999999999997
+        },
+        {
+          "text": "to",
+          "start": 28.043999999999997,
+          "end": 28.124
+        },
+        {
+          "text": "have",
+          "start": 28.124,
+          "end": 28.284
+        },
+        {
+          "text": "five",
+          "start": 28.284,
+          "end": 28.523999999999997
+        },
+        {
+          "text": "windows",
+          "start": 28.523999999999997,
+          "end": 28.843999999999998
+        },
+        {
+          "text": "open",
+          "start": 28.843999999999998,
+          "end": 29.084
+        },
+        {
+          "text": "at",
+          "start": 29.084,
+          "end": 29.084
+        },
+        {
+          "text": "the",
+          "start": 29.084,
+          "end": 29.163999999999998
+        },
+        {
+          "text": "same",
+          "start": 29.163999999999998,
+          "end": 29.404
+        },
+        {
+          "text": "time",
+          "start": 29.483999999999998,
+          "end": 29.723999999999997
+        },
+        {
+          "text": "Probably",
+          "start": 29.804,
+          "end": 30.043999999999997
+        },
+        {
+          "text": "not",
+          "start": 30.043999999999997,
+          "end": 30.284
+        },
+        {
+          "text": "Probably",
+          "start": 30.843999999999998,
+          "end": 31.163999999999998
+        },
+        {
+          "text": "not",
+          "start": 31.163999999999998,
+          "end": 31.404
+        },
+        {
+          "text": "No",
+          "start": 31.404,
+          "end": 31.723999999999997
+        },
+        {
+          "text": "two",
+          "start": 31.804,
+          "end": 31.964
+        },
+        {
+          "text": "or",
+          "start": 31.964,
+          "end": 31.964
+        },
+        {
+          "text": "three",
+          "start": 32.044,
+          "end": 32.284
+        },
+        {
+          "text": "of",
+          "start": 32.284,
+          "end": 32.364
+        },
+        {
+          "text": "whatever",
+          "start": 32.364,
+          "end": 32.763999999999996
+        },
+        {
+          "text": "Two",
+          "start": 32.763999999999996,
+          "end": 32.924
+        },
+        {
+          "text": "or",
+          "start": 32.924,
+          "end": 32.924
+        },
+        {
+          "text": "three",
+          "start": 32.924,
+          "end": 33.164
+        },
+        {
+          "text": "maybe",
+          "start": 33.164,
+          "end": 33.244
+        },
+        {
+          "text": "but",
+          "start": 33.244,
+          "end": 33.403999999999996
+        },
+        {
+          "text": "like",
+          "start": 33.403999999999996,
+          "end": 33.884
+        },
+        {
+          "text": "dialogue",
+          "start": 33.884,
+          "end": 34.284
+        },
+        {
+          "text": "acts",
+          "start": 34.364,
+          "end": 34.524
+        },
+        {
+          "text": "Yeah",
+          "start": 34.524,
+          "end": 34.844
+        },
+        {
+          "text": "Whatever",
+          "start": 34.924,
+          "end": 35.244
+        },
+        {
+          "text": "But",
+          "start": 35.483999999999995,
+          "end": 35.644
+        },
+        {
+          "text": "yeah",
+          "start": 35.804,
+          "end": 35.964
+        },
+        {
+          "text": "it",
+          "start": 35.964,
+          "end": 36.123999999999995
+        },
+        {
+          "text": "depends",
+          "start": 36.123999999999995,
+          "end": 36.524
+        },
+        {
+          "text": "I",
+          "start": 36.524,
+          "end": 36.604
+        },
+        {
+          "text": "mean",
+          "start": 36.604,
+          "end": 36.763999999999996
+        },
+        {
+          "text": "I",
+          "start": 36.763999999999996,
+          "end": 36.844
+        },
+        {
+          "text": "really",
+          "start": 37.083999999999996,
+          "end": 37.244
+        },
+        {
+          "text": "want",
+          "start": 37.324,
+          "end": 37.483999999999995
+        },
+        {
+          "text": "to",
+          "start": 37.483999999999995,
+          "end": 37.483999999999995
+        },
+        {
+          "text": "put",
+          "start": 37.483999999999995,
+          "end": 37.644
+        },
+        {
+          "text": "the",
+          "start": 37.644,
+          "end": 37.724
+        },
+        {
+          "text": "Somewhere",
+          "start": 37.788,
+          "end": 38.028
+        },
+        {
+          "text": "you",
+          "start": 38.028,
+          "end": 38.108
+        },
+        {
+          "text": "know",
+          "start": 38.108,
+          "end": 38.988
+        },
+        {
+          "text": "And",
+          "start": 39.739999999999995,
+          "end": 39.9
+        },
+        {
+          "text": "the",
+          "start": 39.9,
+          "end": 39.9
+        },
+        {
+          "text": "summary",
+          "start": 39.9,
+          "end": 40.3
+        },
+        {
+          "text": "for",
+          "start": 40.3,
+          "end": 40.54
+        },
+        {
+          "text": "example",
+          "start": 40.54,
+          "end": 40.86
+        },
+        {
+          "text": "it's",
+          "start": 40.86,
+          "end": 41.019999999999996
+        },
+        {
+          "text": "typical",
+          "start": 41.019999999999996,
+          "end": 41.339999999999996
+        },
+        {
+          "text": "You",
+          "start": 41.339999999999996,
+          "end": 41.58
+        },
+        {
+          "text": "open",
+          "start": 41.66,
+          "end": 42.059999999999995
+        },
+        {
+          "text": "the",
+          "start": 42.059999999999995,
+          "end": 42.14
+        },
+        {
+          "text": "window",
+          "start": 42.14,
+          "end": 42.62
+        },
+        {
+          "text": "you",
+          "start": 42.94,
+          "end": 43.019999999999996
+        },
+        {
+          "text": "read",
+          "start": 43.019999999999996,
+          "end": 43.26
+        },
+        {
+          "text": "through",
+          "start": 43.26,
+          "end": 43.5
+        },
+        {
+          "text": "it",
+          "start": 43.5,
+          "end": 43.66
+        },
+        {
+          "text": "You",
+          "start": 43.66,
+          "end": 43.739999999999995
+        },
+        {
+          "text": "might",
+          "start": 43.739999999999995,
+          "end": 43.98
+        },
+        {
+          "text": "click",
+          "start": 44.06,
+          "end": 44.3
+        },
+        {
+          "text": "on",
+          "start": 44.3,
+          "end": 44.379999999999995
+        },
+        {
+          "text": "you",
+          "start": 44.46,
+          "end": 44.54
+        },
+        {
+          "text": "know",
+          "start": 44.54,
+          "end": 44.699999999999996
+        },
+        {
+          "text": "close",
+          "start": 44.78,
+          "end": 45.019999999999996
+        },
+        {
+          "text": "it",
+          "start": 45.019999999999996,
+          "end": 45.099999999999994
+        },
+        {
+          "text": "again",
+          "start": 45.099999999999994,
+          "end": 45.26
+        },
+        {
+          "text": "straight",
+          "start": 45.26,
+          "end": 45.5
+        },
+        {
+          "text": "away",
+          "start": 45.5,
+          "end": 45.82
+        },
+        {
+          "text": "Yeah",
+          "start": 46.22,
+          "end": 46.46
+        },
+        {
+          "text": "but",
+          "start": 46.54,
+          "end": 46.78
+        },
+        {
+          "text": "it'd",
+          "start": 46.78,
+          "end": 46.78
+        },
+        {
+          "text": "be",
+          "start": 46.78,
+          "end": 46.86
+        },
+        {
+          "text": "good",
+          "start": 46.86,
+          "end": 47.099999999999994
+        },
+        {
+          "text": "to",
+          "start": 47.099999999999994,
+          "end": 47.18
+        },
+        {
+          "text": "have",
+          "start": 47.26,
+          "end": 47.42
+        },
+        {
+          "text": "I",
+          "start": 47.42,
+          "end": 47.42
+        },
+        {
+          "text": "think",
+          "start": 47.42,
+          "end": 47.66
+        },
+        {
+          "text": "it's",
+          "start": 47.66,
+          "end": 47.739999999999995
+        },
+        {
+          "text": "fine",
+          "start": 48.14,
+          "end": 48.14
+        },
+        {
+          "text": "But",
+          "start": 48.3,
+          "end": 48.46
+        },
+        {
+          "text": "well",
+          "start": 48.699999999999996,
+          "end": 49.099999999999994
+        },
+        {
+          "text": "couldn't",
+          "start": 49.099999999999994,
+          "end": 49.339999999999996
+        },
+        {
+          "text": "we",
+          "start": 49.42,
+          "end": 49.66
+        },
+        {
+          "text": "I",
+          "start": 49.66,
+          "end": 49.66
+        },
+        {
+          "text": "mean",
+          "start": 49.66,
+          "end": 49.98
+        },
+        {
+          "text": "you",
+          "start": 50.379999999999995,
+          "end": 50.54
+        },
+        {
+          "text": "probably",
+          "start": 50.78,
+          "end": 51.18
+        },
+        {
+          "text": "I",
+          "start": 51.18,
+          "end": 51.26
+        },
+        {
+          "text": "don't",
+          "start": 51.26,
+          "end": 51.42
+        },
+        {
+          "text": "know",
+          "start": 51.42,
+          "end": 51.58
+        },
+        {
+          "text": "if",
+          "start": 51.58,
+          "end": 51.739999999999995
+        },
+        {
+          "text": "you",
+          "start": 51.739999999999995,
+          "end": 51.82
+        },
+        {
+          "text": "want",
+          "start": 51.82,
+          "end": 51.98
+        },
+        {
+          "text": "to",
+          "start": 51.98,
+          "end": 52.06
+        },
+        {
+          "text": "have",
+          "start": 52.06,
+          "end": 52.54
+        },
+        {
+          "text": "like",
+          "start": 52.54,
+          "end": 52.86
+        },
+        {
+          "text": "the",
+          "start": 53.404,
+          "end": 53.644000000000005
+        },
+        {
+          "text": "the",
+          "start": 53.804,
+          "end": 53.884
+        },
+        {
+          "text": "full",
+          "start": 53.884,
+          "end": 54.124
+        },
+        {
+          "text": "transcription",
+          "start": 54.124,
+          "end": 54.764
+        },
+        {
+          "text": "and",
+          "start": 54.764,
+          "end": 54.92400000000001
+        },
+        {
+          "text": "the",
+          "start": 54.92400000000001,
+          "end": 55.004000000000005
+        },
+        {
+          "text": "summary",
+          "start": 55.004000000000005,
+          "end": 55.404
+        },
+        {
+          "text": "at",
+          "start": 55.404,
+          "end": 55.484
+        },
+        {
+          "text": "the",
+          "start": 55.484,
+          "end": 55.484
+        },
+        {
+          "text": "same",
+          "start": 55.484,
+          "end": 55.724000000000004
+        },
+        {
+          "text": "time",
+          "start": 55.724000000000004,
+          "end": 56.204
+        },
+        {
+          "text": "So",
+          "start": 57.58,
+          "end": 57.82
+        },
+        {
+          "text": "maybe",
+          "start": 57.82,
+          "end": 58.06
+        },
+        {
+          "text": "you",
+          "start": 58.06,
+          "end": 58.14
+        },
+        {
+          "text": "can",
+          "start": 58.14,
+          "end": 58.38
+        },
+        {
+          "text": "just",
+          "start": 58.46,
+          "end": 58.7
+        },
+        {
+          "text": "like",
+          "start": 58.86,
+          "end": 59.1
+        },
+        {
+          "text": "Choose",
+          "start": 59.868,
+          "end": 60.188
+        },
+        {
+          "text": "the",
+          "start": 60.268,
+          "end": 60.348
+        },
+        {
+          "text": "same",
+          "start": 60.588,
+          "end": 61.068000000000005
+        },
+        {
+          "text": "window",
+          "start": 61.068000000000005,
+          "end": 61.388000000000005
+        },
+        {
+          "text": "for",
+          "start": 61.548,
+          "end": 61.788000000000004
+        },
+        {
+          "text": "transcription",
+          "start": 61.948,
+          "end": 62.668
+        },
+        {
+          "text": "and",
+          "start": 62.668,
+          "end": 62.828
+        },
+        {
+          "text": "summary",
+          "start": 62.828,
+          "end": 63.388000000000005
+        },
+        {
+          "text": "It's",
+          "start": 63.628,
+          "end": 63.708
+        },
+        {
+          "text": "like",
+          "start": 63.788000000000004,
+          "end": 63.868
+        },
+        {
+          "text": "have",
+          "start": 63.948,
+          "end": 64.028
+        },
+        {
+          "text": "a",
+          "start": 64.028,
+          "end": 64.108
+        },
+        {
+          "text": "tab",
+          "start": 64.108,
+          "end": 64.428
+        },
+        {
+          "text": "there",
+          "start": 64.428,
+          "end": 64.58800000000001
+        },
+        {
+          "text": "for",
+          "start": 64.828,
+          "end": 64.908
+        },
+        {
+          "text": "something",
+          "start": 64.908,
+          "end": 65.148
+        },
+        {
+          "text": "I",
+          "start": 65.148,
+          "end": 65.22800000000001
+        },
+        {
+          "text": "was",
+          "start": 65.22800000000001,
+          "end": 65.308
+        },
+        {
+          "text": "just",
+          "start": 65.308,
+          "end": 65.388
+        },
+        {
+          "text": "yeah",
+          "start": 66.508,
+          "end": 66.748
+        },
+        {
+          "text": "tabs",
+          "start": 67.94800000000001,
+          "end": 68.188
+        },
+        {
+          "text": "Yeah",
+          "start": 68.208,
+          "end": 68.22800000000001
+        },
+        {
+          "text": "tabs",
+          "start": 68.248,
+          "end": 68.268
+        },
+        {
+          "text": "are",
+          "start": 68.268,
+          "end": 68.348
+        },
+        {
+          "text": "nice",
+          "start": 68.348,
+          "end": 68.668
+        },
+        {
+          "text": "Yeah",
+          "start": 69.148,
+          "end": 69.308
+        },
+        {
+          "text": "tabs",
+          "start": 69.308,
+          "end": 69.308
+        },
+        {
+          "text": "I",
+          "start": 69.628,
+          "end": 69.628
+        },
+        {
+          "text": "like",
+          "start": 69.628,
+          "end": 69.708
+        },
+        {
+          "text": "tabs",
+          "start": 69.708,
+          "end": 70.028
+        },
+        {
+          "text": "Mozilla",
+          "start": 70.028,
+          "end": 70.748
+        },
+        {
+          "text": "style",
+          "start": 70.748,
+          "end": 70.748
+        },
+        {
+          "text": "Yeah",
+          "start": 70.908,
+          "end": 72.028
+        },
+        {
+          "text": "yeah",
+          "start": 72.028,
+          "end": 72.50800000000001
+        },
+        {
+          "text": "yeah",
+          "start": 72.50800000000001,
+          "end": 72.50800000000001
+        },
+        {
+          "text": "That's",
+          "start": 72.50800000000001,
+          "end": 72.50800000000001
+        },
+        {
+          "text": "right",
+          "start": 72.50800000000001,
+          "end": 72.50800000000001
+        },
+        {
+          "text": "I'm",
+          "start": 73.372,
+          "end": 73.692
+        },
+        {
+          "text": "not",
+          "start": 73.692,
+          "end": 73.932
+        },
+        {
+          "text": "sure",
+          "start": 73.932,
+          "end": 74.412
+        },
+        {
+          "text": "Yeah",
+          "start": 74.492,
+          "end": 74.492
+        },
+        {
+          "text": "I",
+          "start": 74.892,
+          "end": 74.892
+        },
+        {
+          "text": "don't",
+          "start": 74.972,
+          "end": 75.052
+        },
+        {
+          "text": "know",
+          "start": 75.052,
+          "end": 75.132
+        },
+        {
+          "text": "Does",
+          "start": 75.132,
+          "end": 75.292
+        },
+        {
+          "text": "anybody",
+          "start": 75.292,
+          "end": 75.532
+        },
+        {
+          "text": "know",
+          "start": 75.532,
+          "end": 75.612
+        },
+        {
+          "text": "how",
+          "start": 75.612,
+          "end": 75.772
+        },
+        {
+          "text": "to",
+          "start": 75.772,
+          "end": 75.772
+        },
+        {
+          "text": "do",
+          "start": 75.772,
+          "end": 76.012
+        },
+        {
+          "text": "that",
+          "start": 76.012,
+          "end": 76.252
+        },
+        {
+          "text": "Can",
+          "start": 76.252,
+          "end": 76.412
+        },
+        {
+          "text": "you",
+          "start": 76.412,
+          "end": 76.572
+        },
+        {
+          "text": "do",
+          "start": 76.572,
+          "end": 76.572
+        },
+        {
+          "text": "that",
+          "start": 76.572,
+          "end": 77.372
+        },
+        {
+          "text": "Java",
+          "start": 77.372,
+          "end": 77.852
+        },
+        {
+          "text": "I",
+          "start": 77.852,
+          "end": 78.012
+        },
+        {
+          "text": "don't",
+          "start": 78.012,
+          "end": 78.012
+        },
+        {
+          "text": "think",
+          "start": 78.012,
+          "end": 78.012
+        },
+        {
+          "text": "Java",
+          "start": 78.012,
+          "end": 78.012
+        },
+        {
+          "text": "knows",
+          "start": 78.012,
+          "end": 78.012
+        },
+        {
+          "text": "how",
+          "start": 78.012,
+          "end": 78.092
+        },
+        {
+          "text": "to",
+          "start": 78.092,
+          "end": 78.252
+        },
+        {
+          "text": "do",
+          "start": 78.252,
+          "end": 78.332
+        },
+        {
+          "text": "that",
+          "start": 78.412,
+          "end": 78.572
+        },
+        {
+          "text": "Really",
+          "start": 78.572,
+          "end": 78.812
+        },
+        {
+          "text": "Maybe",
+          "start": 78.812,
+          "end": 79.612
+        },
+        {
+          "text": "you",
+          "start": 79.612,
+          "end": 79.612
+        },
+        {
+          "text": "probably",
+          "start": 79.69200000000001,
+          "end": 79.932
+        },
+        {
+          "text": "can",
+          "start": 79.932,
+          "end": 80.252
+        },
+        {
+          "text": "I'm",
+          "start": 80.252,
+          "end": 80.252
+        },
+        {
+          "text": "sure",
+          "start": 80.412,
+          "end": 80.652
+        },
+        {
+          "text": "Yeah",
+          "start": 80.652,
+          "end": 81.05199999999999
+        },
+        {
+          "text": "I'm",
+          "start": 81.452,
+          "end": 81.532
+        },
+        {
+          "text": "sure",
+          "start": 81.532,
+          "end": 81.69200000000001
+        },
+        {
+          "text": "you",
+          "start": 81.69200000000001,
+          "end": 81.772
+        },
+        {
+          "text": "can",
+          "start": 81.772,
+          "end": 81.852
+        },
+        {
+          "text": "do",
+          "start": 81.852,
+          "end": 81.932
+        },
+        {
+          "text": "anything",
+          "start": 82.092,
+          "end": 82.572
+        },
+        {
+          "text": "if",
+          "start": 82.972,
+          "end": 83.05199999999999
+        },
+        {
+          "text": "you",
+          "start": 83.05199999999999,
+          "end": 83.212
+        },
+        {
+          "text": "really",
+          "start": 83.212,
+          "end": 83.452
+        },
+        {
+          "text": "know",
+          "start": 83.452,
+          "end": 83.69200000000001
+        },
+        {
+          "text": "what",
+          "start": 83.69200000000001,
+          "end": 83.69200000000001
+        },
+        {
+          "text": "you're",
+          "start": 83.69200000000001,
+          "end": 83.852
+        },
+        {
+          "text": "doing",
+          "start": 83.852,
+          "end": 84.092
+        },
+        {
+          "text": "But",
+          "start": 84.092,
+          "end": 84.332
+        },
+        {
+          "text": "I",
+          "start": 84.492,
+          "end": 84.732
+        },
+        {
+          "text": "don't",
+          "start": 84.732,
+          "end": 84.812
+        },
+        {
+          "text": "know",
+          "start": 84.812,
+          "end": 84.812
+        },
+        {
+          "text": "It's",
+          "start": 85.82,
+          "end": 85.89999999999999
+        },
+        {
+          "text": "a",
+          "start": 85.89999999999999,
+          "end": 85.89999999999999
+        },
+        {
+          "text": "bit",
+          "start": 85.89999999999999,
+          "end": 86.06
+        },
+        {
+          "text": "of",
+          "start": 86.06,
+          "end": 86.14
+        },
+        {
+          "text": "a",
+          "start": 86.14,
+          "end": 86.22
+        },
+        {
+          "text": "cripple",
+          "start": 86.22,
+          "end": 86.61999999999999
+        },
+        {
+          "text": "Java's",
+          "start": 86.61999999999999,
+          "end": 86.94
+        },
+        {
+          "text": "windowing",
+          "start": 86.94,
+          "end": 87.42
+        },
+        {
+          "text": "toolkit",
+          "start": 87.42,
+          "end": 87.74
+        },
+        {
+          "text": "The",
+          "start": 87.89999999999999,
+          "end": 88.22
+        },
+        {
+          "text": "sometimes",
+          "start": 88.61999999999999,
+          "end": 89.17999999999999
+        }
+      ]
+    },
+    {
+      "id": "EN2002a-1500-1590",
+      "seconds": 2.689338374999352,
+      "words": [
+        {
+          "text": "Oh",
+          "start": 0.0,
+          "end": 0.0
+        },
+        {
+          "text": "Well",
+          "start": 0.412,
+          "end": 1.212
+        },
+        {
+          "text": "I'll",
+          "start": 2.172,
+          "end": 2.412
+        },
+        {
+          "text": "do",
+          "start": 2.412,
+          "end": 2.572
+        },
+        {
+          "text": "that",
+          "start": 2.572,
+          "end": 2.892
+        },
+        {
+          "text": "then",
+          "start": 2.892,
+          "end": 2.892
+        },
+        {
+          "text": "These",
+          "start": 2.892,
+          "end": 3.052
+        },
+        {
+          "text": "can",
+          "start": 3.052,
+          "end": 3.132
+        },
+        {
+          "text": "be",
+          "start": 3.132,
+          "end": 3.2119999999999997
+        },
+        {
+          "text": "changed",
+          "start": 3.2119999999999997,
+          "end": 3.452
+        },
+        {
+          "text": "Shall",
+          "start": 3.452,
+          "end": 3.532
+        },
+        {
+          "text": "I",
+          "start": 3.532,
+          "end": 4.732
+        },
+        {
+          "text": "do",
+          "start": 4.732,
+          "end": 4.812
+        },
+        {
+          "text": "that",
+          "start": 4.892,
+          "end": 4.9719999999999995
+        },
+        {
+          "text": "then",
+          "start": 4.9719999999999995,
+          "end": 5.372
+        },
+        {
+          "text": "I",
+          "start": 5.452,
+          "end": 5.452
+        },
+        {
+          "text": "don't",
+          "start": 5.532,
+          "end": 5.852
+        },
+        {
+          "text": "know",
+          "start": 6.092,
+          "end": 6.172
+        },
+        {
+          "text": "It",
+          "start": 6.172,
+          "end": 6.252
+        },
+        {
+          "text": "doesn't",
+          "start": 6.252,
+          "end": 6.412
+        },
+        {
+          "text": "matter",
+          "start": 6.732,
+          "end": 6.9719999999999995
+        },
+        {
+          "text": "If",
+          "start": 7.612,
+          "end": 7.772
+        },
+        {
+          "text": "you",
+          "start": 7.852,
+          "end": 7.9319999999999995
+        },
+        {
+          "text": "want",
+          "start": 7.9319999999999995,
+          "end": 8.172
+        },
+        {
+          "text": "to",
+          "start": 8.172,
+          "end": 8.252
+        },
+        {
+          "text": "I",
+          "start": 8.252,
+          "end": 8.252
+        },
+        {
+          "text": "mean",
+          "start": 8.492,
+          "end": 8.652000000000001
+        },
+        {
+          "text": "it's",
+          "start": 8.652000000000001,
+          "end": 8.812000000000001
+        },
+        {
+          "text": "just",
+          "start": 8.812000000000001,
+          "end": 9.052000000000001
+        },
+        {
+          "text": "you",
+          "start": 9.452,
+          "end": 9.532
+        },
+        {
+          "text": "know",
+          "start": 9.532,
+          "end": 9.612
+        },
+        {
+          "text": "play",
+          "start": 9.692,
+          "end": 9.852
+        },
+        {
+          "text": "around",
+          "start": 9.852,
+          "end": 10.012
+        },
+        {
+          "text": "with",
+          "start": 10.012,
+          "end": 10.092
+        },
+        {
+          "text": "some",
+          "start": 10.092,
+          "end": 10.172
+        },
+        {
+          "text": "extra",
+          "start": 10.172,
+          "end": 10.412
+        },
+        {
+          "text": "stuff",
+          "start": 10.412,
+          "end": 10.572000000000001
+        },
+        {
+          "text": "You",
+          "start": 10.652000000000001,
+          "end": 10.732000000000001
+        },
+        {
+          "text": "have",
+          "start": 10.732000000000001,
+          "end": 10.812000000000001
+        },
+        {
+          "text": "some",
+          "start": 10.812000000000001,
+          "end": 10.892000000000001
+        },
+        {
+          "text": "time",
+          "start": 10.972000000000001,
+          "end": 11.212000000000002
+        },
+        {
+          "text": "why",
+          "start": 11.932,
+          "end": 12.012
+        },
+        {
+          "text": "not",
+          "start": 12.012,
+          "end": 12.172
+        },
+        {
+          "text": "It",
+          "start": 12.412,
+          "end": 12.492
+        },
+        {
+          "text": "shouldn't",
+          "start": 12.492,
+          "end": 12.732000000000001
+        },
+        {
+          "text": "be",
+          "start": 12.732000000000001,
+          "end": 12.812000000000001
+        },
+        {
+          "text": "too",
+          "start": 12.812000000000001,
+          "end": 12.892000000000001
+        },
+        {
+          "text": "difficult",
+          "start": 12.892000000000001,
+          "end": 13.132000000000001
+        },
+        {
+          "text": "Yeah",
+          "start": 16.188,
+          "end": 16.348
+        },
+        {
+          "text": "So",
+          "start": 16.956,
+          "end": 17.116
+        },
+        {
+          "text": "what",
+          "start": 17.116,
+          "end": 17.195999999999998
+        },
+        {
+          "text": "courses",
+          "start": 17.195999999999998,
+          "end": 17.436
+        },
+        {
+          "text": "should",
+          "start": 17.436,
+          "end": 17.596
+        },
+        {
+          "text": "I",
+          "start": 17.596,
+          "end": 17.756
+        },
+        {
+          "text": "have",
+          "start": 17.756,
+          "end": 17.756
+        },
+        {
+          "text": "picked",
+          "start": 17.836,
+          "end": 18.076
+        },
+        {
+          "text": "to",
+          "start": 18.076,
+          "end": 18.076
+        },
+        {
+          "text": "be",
+          "start": 18.076,
+          "end": 18.236
+        },
+        {
+          "text": "not",
+          "start": 18.236,
+          "end": 18.396
+        },
+        {
+          "text": "doing",
+          "start": 18.396,
+          "end": 18.556
+        },
+        {
+          "text": "any",
+          "start": 18.556,
+          "end": 18.716
+        },
+        {
+          "text": "work",
+          "start": 18.716,
+          "end": 18.875999999999998
+        },
+        {
+          "text": "Yeah",
+          "start": 19.036,
+          "end": 19.276
+        },
+        {
+          "text": "and",
+          "start": 21.116,
+          "end": 21.195999999999998
+        },
+        {
+          "text": "I'm",
+          "start": 21.195999999999998,
+          "end": 21.355999999999998
+        },
+        {
+          "text": "doing",
+          "start": 21.355999999999998,
+          "end": 21.596
+        },
+        {
+          "text": "communications",
+          "start": 21.596,
+          "end": 22.476
+        },
+        {
+          "text": "which",
+          "start": 23.276,
+          "end": 23.276
+        },
+        {
+          "text": "we",
+          "start": 23.436,
+          "end": 23.756
+        },
+        {
+          "text": "had",
+          "start": 24.396,
+          "end": 24.555999999999997
+        },
+        {
+          "text": "one",
+          "start": 24.555999999999997,
+          "end": 24.875999999999998
+        },
+        {
+          "text": "exercise",
+          "start": 24.875999999999998,
+          "end": 25.516
+        },
+        {
+          "text": "and",
+          "start": 25.516,
+          "end": 25.596
+        },
+        {
+          "text": "I've",
+          "start": 25.596,
+          "end": 25.676000000000002
+        },
+        {
+          "text": "done",
+          "start": 25.756,
+          "end": 25.915999999999997
+        },
+        {
+          "text": "that",
+          "start": 25.996,
+          "end": 26.076
+        },
+        {
+          "text": "like",
+          "start": 26.156,
+          "end": 26.316
+        },
+        {
+          "text": "two",
+          "start": 26.396,
+          "end": 26.555999999999997
+        },
+        {
+          "text": "weeks",
+          "start": 26.636,
+          "end": 26.875999999999998
+        },
+        {
+          "text": "ago",
+          "start": 26.875999999999998,
+          "end": 27.195999999999998
+        },
+        {
+          "text": "That's",
+          "start": 28.076,
+          "end": 28.316
+        },
+        {
+          "text": "in",
+          "start": 28.396,
+          "end": 28.716
+        },
+        {
+          "text": "two",
+          "start": 29.195999999999998,
+          "end": 29.356
+        },
+        {
+          "text": "weeks",
+          "start": 29.356,
+          "end": 29.756
+        },
+        {
+          "text": "Informatics",
+          "start": 30.94,
+          "end": 31.82
+        },
+        {
+          "text": "course",
+          "start": 32.14,
+          "end": 32.300000000000004
+        },
+        {
+          "text": "yeah",
+          "start": 32.94,
+          "end": 33.34
+        },
+        {
+          "text": "it's",
+          "start": 33.34,
+          "end": 33.58
+        },
+        {
+          "text": "a",
+          "start": 33.58,
+          "end": 33.82
+        },
+        {
+          "text": "Oh",
+          "start": 34.284,
+          "end": 34.444
+        },
+        {
+          "text": "like",
+          "start": 34.524,
+          "end": 34.684
+        },
+        {
+          "text": "digital",
+          "start": 35.164,
+          "end": 35.484
+        },
+        {
+          "text": "nine",
+          "start": 35.644,
+          "end": 35.884
+        },
+        {
+          "text": "courses",
+          "start": 35.884,
+          "end": 36.204
+        },
+        {
+          "text": "well",
+          "start": 36.284,
+          "end": 36.524
+        },
+        {
+          "text": "or",
+          "start": 36.524,
+          "end": 36.524
+        },
+        {
+          "text": "ten",
+          "start": 36.524,
+          "end": 36.764
+        },
+        {
+          "text": "or",
+          "start": 36.844,
+          "end": 36.844
+        },
+        {
+          "text": "something",
+          "start": 36.924,
+          "end": 37.244
+        },
+        {
+          "text": "Okay",
+          "start": 37.804,
+          "end": 37.804
+        },
+        {
+          "text": "and",
+          "start": 37.804,
+          "end": 39.164
+        },
+        {
+          "text": "then",
+          "start": 39.164,
+          "end": 39.324
+        },
+        {
+          "text": "I'm",
+          "start": 40.124,
+          "end": 40.284
+        },
+        {
+          "text": "doing",
+          "start": 40.284,
+          "end": 40.764
+        },
+        {
+          "text": "parallel",
+          "start": 41.644,
+          "end": 42.204
+        },
+        {
+          "text": "programming",
+          "start": 42.284,
+          "end": 42.924
+        },
+        {
+          "text": "languages",
+          "start": 42.924,
+          "end": 43.324
+        },
+        {
+          "text": "and",
+          "start": 43.324,
+          "end": 43.403999999999996
+        },
+        {
+          "text": "systems",
+          "start": 43.403999999999996,
+          "end": 43.804
+        },
+        {
+          "text": "Which",
+          "start": 44.940000000000005,
+          "end": 45.260000000000005
+        },
+        {
+          "text": "we",
+          "start": 45.260000000000005,
+          "end": 45.34
+        },
+        {
+          "text": "had",
+          "start": 45.34,
+          "end": 45.580000000000005
+        },
+        {
+          "text": "one",
+          "start": 45.580000000000005,
+          "end": 45.74
+        },
+        {
+          "text": "exercise",
+          "start": 45.74,
+          "end": 46.220000000000006
+        },
+        {
+          "text": "as",
+          "start": 46.220000000000006,
+          "end": 46.38
+        },
+        {
+          "text": "well",
+          "start": 46.38,
+          "end": 46.620000000000005
+        },
+        {
+          "text": "and",
+          "start": 46.620000000000005,
+          "end": 46.7
+        },
+        {
+          "text": "that's",
+          "start": 46.7,
+          "end": 47.02
+        },
+        {
+          "text": "in",
+          "start": 47.02,
+          "end": 47.18
+        },
+        {
+          "text": "like",
+          "start": 47.18,
+          "end": 47.34
+        },
+        {
+          "text": "Friday",
+          "start": 47.42,
+          "end": 47.82
+        },
+        {
+          "text": "Well",
+          "start": 51.58,
+          "end": 51.660000000000004
+        },
+        {
+          "text": "I'm",
+          "start": 51.660000000000004,
+          "end": 51.74
+        },
+        {
+          "text": "not",
+          "start": 51.74,
+          "end": 51.980000000000004
+        },
+        {
+          "text": "doing",
+          "start": 51.980000000000004,
+          "end": 52.14
+        },
+        {
+          "text": "any",
+          "start": 52.14,
+          "end": 52.3
+        },
+        {
+          "text": "background",
+          "start": 52.3,
+          "end": 52.78
+        },
+        {
+          "text": "readings",
+          "start": 52.78,
+          "end": 53.18
+        },
+        {
+          "text": "Sorry",
+          "start": 53.18,
+          "end": 58.22
+        },
+        {
+          "text": "just",
+          "start": 58.22,
+          "end": 58.3
+        },
+        {
+          "text": "yeah",
+          "start": 58.620000000000005,
+          "end": 59.34
+        },
+        {
+          "text": "I'll",
+          "start": 60.556000000000004,
+          "end": 60.636
+        },
+        {
+          "text": "be",
+          "start": 60.636,
+          "end": 62.636
+        },
+        {
+          "text": "happy",
+          "start": 62.636,
+          "end": 62.876000000000005
+        },
+        {
+          "text": "when",
+          "start": 62.876000000000005,
+          "end": 62.956
+        },
+        {
+          "text": "this",
+          "start": 63.036,
+          "end": 63.116
+        },
+        {
+          "text": "week",
+          "start": 63.196000000000005,
+          "end": 63.276
+        },
+        {
+          "text": "is",
+          "start": 63.276,
+          "end": 63.356
+        },
+        {
+          "text": "over",
+          "start": 63.356,
+          "end": 63.676
+        },
+        {
+          "text": "I'll",
+          "start": 65.35600000000001,
+          "end": 65.436
+        },
+        {
+          "text": "be",
+          "start": 65.516,
+          "end": 65.596
+        },
+        {
+          "text": "happy",
+          "start": 65.596,
+          "end": 65.836
+        },
+        {
+          "text": "when",
+          "start": 65.836,
+          "end": 66.07600000000001
+        },
+        {
+          "text": "this",
+          "start": 66.07600000000001,
+          "end": 66.236
+        },
+        {
+          "text": "course",
+          "start": 66.236,
+          "end": 66.476
+        },
+        {
+          "text": "is",
+          "start": 66.476,
+          "end": 66.556
+        },
+        {
+          "text": "over",
+          "start": 66.636,
+          "end": 66.876
+        },
+        {
+          "text": "Yeah",
+          "start": 67.676,
+          "end": 67.836
+        },
+        {
+          "text": "Yeah",
+          "start": 67.836,
+          "end": 69.116
+        },
+        {
+          "text": "I",
+          "start": 69.116,
+          "end": 69.196
+        },
+        {
+          "text": "know",
+          "start": 70.556,
+          "end": 70.71600000000001
+        },
+        {
+          "text": "Is",
+          "start": 70.71600000000001,
+          "end": 70.796
+        },
+        {
+          "text": "that",
+          "start": 70.796,
+          "end": 70.876
+        },
+        {
+          "text": "about",
+          "start": 70.876,
+          "end": 71.116
+        },
+        {
+          "text": "it",
+          "start": 71.116,
+          "end": 71.196
+        },
+        {
+          "text": "then",
+          "start": 71.196,
+          "end": 72.07600000000001
+        },
+        {
+          "text": "Yeah",
+          "start": 72.07600000000001,
+          "end": 72.07600000000001
+        },
+        {
+          "text": "Anything",
+          "start": 72.588,
+          "end": 72.588
+        },
+        {
+          "text": "else",
+          "start": 72.828,
+          "end": 72.988
+        },
+        {
+          "text": "we",
+          "start": 72.988,
+          "end": 73.148
+        },
+        {
+          "text": "need",
+          "start": 73.628,
+          "end": 73.788
+        },
+        {
+          "text": "to",
+          "start": 73.948,
+          "end": 74.108
+        },
+        {
+          "text": "discuss",
+          "start": 74.108,
+          "end": 74.66799999999999
+        },
+        {
+          "text": "Did",
+          "start": 76.524,
+          "end": 76.684
+        },
+        {
+          "text": "we",
+          "start": 76.684,
+          "end": 76.764
+        },
+        {
+          "text": "want",
+          "start": 76.764,
+          "end": 76.924
+        },
+        {
+          "text": "to",
+          "start": 76.924,
+          "end": 77.004
+        },
+        {
+          "text": "meet",
+          "start": 77.004,
+          "end": 77.324
+        },
+        {
+          "text": "before",
+          "start": 77.56400000000001,
+          "end": 77.964
+        },
+        {
+          "text": "we",
+          "start": 77.964,
+          "end": 78.444
+        },
+        {
+          "text": "talk",
+          "start": 79.244,
+          "end": 79.404
+        },
+        {
+          "text": "to",
+          "start": 79.48400000000001,
+          "end": 79.48400000000001
+        },
+        {
+          "text": "Steve",
+          "start": 79.56400000000001,
+          "end": 79.964
+        },
+        {
+          "text": "next",
+          "start": 80.044,
+          "end": 80.284
+        },
+        {
+          "text": "week",
+          "start": 80.284,
+          "end": 80.524
+        },
+        {
+          "text": "Well",
+          "start": 83.00399999999999,
+          "end": 83.244
+        },
+        {
+          "text": "I",
+          "start": 83.484,
+          "end": 83.484
+        },
+        {
+          "text": "don't",
+          "start": 83.484,
+          "end": 83.64399999999999
+        },
+        {
+          "text": "know",
+          "start": 83.64399999999999,
+          "end": 83.80399999999999
+        },
+        {
+          "text": "We'll",
+          "start": 84.36399999999999,
+          "end": 84.44399999999999
+        },
+        {
+          "text": "probably",
+          "start": 84.44399999999999,
+          "end": 84.684
+        },
+        {
+          "text": "get",
+          "start": 84.684,
+          "end": 84.844
+        },
+        {
+          "text": "some",
+          "start": 84.844,
+          "end": 85.00399999999999
+        },
+        {
+          "text": "work",
+          "start": 85.00399999999999,
+          "end": 85.16399999999999
+        },
+        {
+          "text": "done",
+          "start": 85.16399999999999,
+          "end": 85.244
+        },
+        {
+          "text": "over",
+          "start": 85.324,
+          "end": 85.404
+        },
+        {
+          "text": "the",
+          "start": 85.404,
+          "end": 85.484
+        },
+        {
+          "text": "weekend",
+          "start": 85.484,
+          "end": 85.964
+        },
+        {
+          "text": "so",
+          "start": 86.044,
+          "end": 86.044
+        },
+        {
+          "text": "I",
+          "start": 86.044,
+          "end": 86.124
+        },
+        {
+          "text": "know",
+          "start": 86.524,
+          "end": 86.684
+        },
+        {
+          "text": "after",
+          "start": 87.404,
+          "end": 87.64399999999999
+        },
+        {
+          "text": "D",
+          "start": 87.64399999999999,
+          "end": 87.80399999999999
+        },
+        {
+          "text": "and",
+          "start": 87.80399999999999,
+          "end": 87.80399999999999
+        },
+        {
+          "text": "L",
+          "start": 87.884,
+          "end": 87.964
+        },
+        {
+          "text": "G",
+          "start": 87.964,
+          "end": 88.124
+        },
+        {
+          "text": "or",
+          "start": 88.204,
+          "end": 88.28399999999999
+        },
+        {
+          "text": "something",
+          "start": 88.28399999999999,
+          "end": 88.524
+        },
+        {
+          "text": "maybe",
+          "start": 88.684,
+          "end": 88.92399999999999
+        },
+        {
+          "text": "just",
+          "start": 88.92399999999999,
+          "end": 89.16399999999999
+        },
+        {
+          "text": "have",
+          "start": 89.484,
+          "end": 89.564
+        },
+        {
+          "text": "a",
+          "start": 89.564,
+          "end": 89.64399999999999
+        },
+        {
+          "text": "little",
+          "start": 89.64399999999999,
+          "end": 89.80399999999999
+        },
+        {
+          "text": "quick",
+          "start": 89.80399999999999,
+          "end": 89.964
+        }
+      ]
+    }
+  ],
+  "os_memory": {
+    "resident_size": 1795244032,
+    "phys_footprint": 5143760928,
+    "lifetime_max_phys_footprint": 5143760928
+  }
+}

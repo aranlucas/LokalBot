@@ -1,0 +1,116 @@
+{
+  "engine": "synthetic-benchmark",
+  "speakerAliases": {
+    "me": "Alex",
+    "them 1": "Ana",
+    "them 2": "Marko",
+    "them 3": "Iva"
+  },
+  "segments": [
+    {
+      "start": 0,
+      "end": 12,
+      "speaker": "me",
+      "text": "The Atlas release is scheduled for Friday, but publishing is conditional on the regression tests passing. Today we need clear owners and an accurate checklist.",
+      "timingPrecision": "span"
+    },
+    {
+      "start": 30,
+      "end": 42,
+      "speaker": "them 1",
+      "text": "I'll update the installation guide by Thursday.",
+      "timingPrecision": "span"
+    },
+    {
+      "start": 60,
+      "end": 72,
+      "speaker": "them 2",
+      "text": "I'll run the restore regression tests by Friday.",
+      "timingPrecision": "span"
+    },
+    {
+      "start": 90,
+      "end": 102,
+      "speaker": "me",
+      "text": "I'll send the revised onboarding checklist by Friday.",
+      "timingPrecision": "span"
+    },
+    {
+      "start": 120,
+      "end": 132,
+      "speaker": "them 1",
+      "text": "Alex, can you review the privacy copy?",
+      "timingPrecision": "span"
+    },
+    {
+      "start": 145,
+      "end": 157,
+      "speaker": "me",
+      "text": "Yes, I'll review the privacy copy by tomorrow.",
+      "timingPrecision": "span"
+    },
+    {
+      "start": 180,
+      "end": 192,
+      "speaker": "them 3",
+      "text": "I'll collect the beta feedback by Monday.",
+      "timingPrecision": "span"
+    },
+    {
+      "start": 215,
+      "end": 227,
+      "speaker": "them 2",
+      "text": "Ana, please check the signing certificate renewal date.",
+      "timingPrecision": "span"
+    },
+    {
+      "start": 238,
+      "end": 250,
+      "speaker": "them 1",
+      "text": "I'll check the signing certificate renewal date this afternoon.",
+      "timingPrecision": "span"
+    },
+    {
+      "start": 270,
+      "end": 282,
+      "speaker": "them 3",
+      "text": "The dashboard was updated yesterday. That work is complete.",
+      "timingPrecision": "span"
+    },
+    {
+      "start": 300,
+      "end": 312,
+      "speaker": "me",
+      "text": "We could automate screenshots later. That's an idea, not an agreed task.",
+      "timingPrecision": "span"
+    },
+    {
+      "start": 330,
+      "end": 342,
+      "speaker": "them 4",
+      "text": "Someone needs to reconcile the support ticket totals before launch. No owner has been assigned.",
+      "timingPrecision": "span"
+    },
+    {
+      "start": 365,
+      "end": 377,
+      "speaker": "me",
+      "text": "I'll publish the release notes after the tests pass.",
+      "timingPrecision": "span"
+    },
+    {
+      "start": 420,
+      "end": 432,
+      "speaker": "them 2",
+      "text": "The customer export can wait; no one is assigned to implement it.",
+      "timingPrecision": "span"
+    },
+    {
+      "start": 450,
+      "end": 462,
+      "speaker": "them 1",
+      "text": "The next planning session is Tuesday at ten.",
+      "timingPrecision": "span"
+    }
+  ]
+}

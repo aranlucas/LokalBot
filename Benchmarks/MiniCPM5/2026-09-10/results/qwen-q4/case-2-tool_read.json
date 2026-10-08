@@ -1,0 +1,107 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "",
+    "reasoning_content": "The user wants me to open/read the transcript of meeting A-104. I need to use the read_meeting function with the meeting_id parameter set to \"A-104\".\n",
+    "tool_calls": [
+      {
+        "type": "function",
+        "function": {
+          "name": "read_meeting",
+          "arguments": "{\"meeting_id\":\"A-104\"}"
+        },
+        "id": "oOCG6bjuYJz9hZObZc8mHrv0C5cAn9xh"
+      }
+    ]
+  },
+  "finish_reason": "tool_calls",
+  "usage": {
+    "completion_tokens": 75,
+    "prompt_tokens": 483,
+    "total_tokens": 558,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 483,
+    "prompt_ms": 407.872,
+    "prompt_per_token_ms": 0.8444554865424431,
+    "prompt_per_second": 1184.1950415816727,
+    "predicted_n": 75,
+    "predicted_ms": 765.128,
+    "predicted_per_token_ms": 10.201706666666666,
+    "predicted_per_second": 98.02281448332828
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "tool_calls",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "reasoning_content": "The user wants me to open/read the transcript of meeting A-104. I need to use the read_meeting function with the meeting_id parameter set to \"A-104\".\n",
+          "tool_calls": [
+            {
+              "type": "function",
+              "function": {
+                "name": "read_meeting",
+                "arguments": "{\"meeting_id\":\"A-104\"}"
+              },
+              "id": "oOCG6bjuYJz9hZObZc8mHrv0C5cAn9xh"
+            }
+          ]
+        }
+      }
+    ],
+    "created": 1789023106,
+    "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 75,
+      "prompt_tokens": 483,
+      "total_tokens": 558,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-RQ0751bpiDnN1ofDiGip6Wxc3gcb5mB7",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 483,
+      "prompt_ms": 407.872,
+      "prompt_per_token_ms": 0.8444554865424431,
+      "prompt_per_second": 1184.1950415816727,
+      "predicted_n": 75,
+      "predicted_ms": 765.128,
+      "predicted_per_token_ms": 10.201706666666666,
+      "predicted_per_second": 98.02281448332828
+    }
+  },
+  "wall_seconds": 1.1819110419601202,
+  "memory": {
+    "samples": 6,
+    "peak_rss_bytes": 7037829120,
+    "peak_physical_footprint_bytes": 4484847544
+  },
+  "id": "tool_read",
+  "group": "tools",
+  "repeat": 2,
+  "score": {
+    "passed": true,
+    "native_calls": [
+      {
+        "name": "read_meeting",
+        "args": {
+          "meeting_id": "A-104"
+        }
+      }
+    ],
+    "xml_calls_diagnostic": [],
+    "parse_errors": [],
+    "xml_semantically_correct": false
+  }
+}

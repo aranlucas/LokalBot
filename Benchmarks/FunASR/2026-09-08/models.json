@@ -1,0 +1,175 @@
+[
+  {
+    "repo": "Qwen/Qwen3-ASR-1.7B",
+    "revision": "7278e1e70fe206f11671096ffdd38061171dd6e5",
+    "path": "/private/tmp/lokalbot-funasr-comparison-20260908/models/Qwen/Qwen3-ASR-1.7B",
+    "files": [
+      {
+        "name": "tokenizer_config.json",
+        "bytes": 12487,
+        "sha256": "4942d005604266809309cabc9f4e9cb89ce855d59b14681fdc0e1cc62ea26c4c"
+      },
+      {
+        "name": "chat_template.json",
+        "bytes": 1161,
+        "sha256": "75a8cfca24f00de72d796fbfed6858fc9614ef3dabd8696684cc3bc03a9c58ff"
+      },
+      {
+        "name": "model-00001-of-00002.safetensors",
+        "bytes": 4220320824,
+        "sha256": "a4cd1f1a04d90b757dc7f7dd26254e69a013b19e80efe590a83c6a3bde8608d6"
+      },
+      {
+        "name": "config.json",
+        "bytes": 6194,
+        "sha256": "2e74a751548b8ad7d7526d29365ad8144c345d8b412b1152d25dc6698452712f"
+      },
+      {
+        "name": "generation_config.json",
+        "bytes": 142,
+        "sha256": "1da527824d81e07118facff437e03f2e24a23311e3bdeb2368973fe77e5f275c"
+      },
+      {
+        "name": "merges.txt",
+        "bytes": 1671853,
+        "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"
+      },
+      {
+        "name": ".gitattributes",
+        "bytes": 1519,
+        "sha256": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361"
+      },
+      {
+        "name": "model-00002-of-00002.safetensors",
+        "bytes": 478200688,
+        "sha256": "6e0b9d9e09e2e0238e7ef3cc8a484ab387e91b90f1900bedf88bc92d7929ccfc"
+      },
+      {
+        "name": "vocab.json",
+        "bytes": 2776833,
+        "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+      },
+      {
+        "name": "model.safetensors.index.json",
+        "bytes": 64821,
+        "sha256": "f994739fe38e5210b9e3e8ce6c6307315e2ceac3cb630e7b7414d69dce520f60"
+      },
+      {
+        "name": "preprocessor_config.json",
+        "bytes": 330,
+        "sha256": "45e120a4eda2c20c5d7f2ea9354e63536bf35e27aa573fb7cdf78017b378770d"
+      }
+    ]
+  },
+  {
+    "repo": "Qwen/Qwen3-ForcedAligner-0.6B",
+    "revision": "c7cbfc2048c462b0d63a45797104fc9db3ad62b7",
+    "path": "/private/tmp/lokalbot-funasr-comparison-20260908/models/Qwen/Qwen3-ForcedAligner-0.6B",
+    "files": [
+      {
+        "name": "model.safetensors",
+        "bytes": 1835544544,
+        "sha256": "47831d0e82f96b20e9034dba01a075ee06436654719f6a68289e49f1b65ce0e7"
+      },
+      {
+        "name": "tokenizer_config.json",
+        "bytes": 12666,
+        "sha256": "3ab80063f8511deb9566e6ad438d17b7a6277fcffd52d92854112f19d36bd81c"
+      },
+      {
+        "name": "chat_template.json",
+        "bytes": 1161,
+        "sha256": "75a8cfca24f00de72d796fbfed6858fc9614ef3dabd8696684cc3bc03a9c58ff"
+      },
+      {
+        "name": "config.json",
+        "bytes": 5982,
+        "sha256": "d616c65d46c4b90bdc651b0a0963ea932732241140f337f9bb6b0335a9c8ef09"
+      },
+      {
+        "name": "generation_config.json",
+        "bytes": 115,
+        "sha256": "948d089b23bca1d214e768d59c4438365665f52ec6d33678f4062206b3fbbb8c"
+      },
+      {
+        "name": "merges.txt",
+        "bytes": 1671853,
+        "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"
+      },
+      {
+        "name": ".gitattributes",
+        "bytes": 1519,
+        "sha256": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361"
+      },
+      {
+        "name": "vocab.json",
+        "bytes": 2776833,
+        "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+      },
+      {
+        "name": "preprocessor_config.json",
+        "bytes": 330,
+        "sha256": "45e120a4eda2c20c5d7f2ea9354e63536bf35e27aa573fb7cdf78017b378770d"
+      }
+    ]
+  },
+  {
+    "repo": "funasr/fsmn-vad",
+    "revision": "df20e6b30c653645fa4ff125cacfcabd1020a669",
+    "path": "/private/tmp/lokalbot-funasr-comparison-20260908/models/funasr/fsmn-vad",
+    "files": [
+      {
+        "name": "model.pt",
+        "bytes": 1721366,
+        "sha256": "b3be75be477f0780277f3bae0fe489f48718f585f3a6e45d7dd1fbb1a4255fc5"
+      },
+      {
+        "name": "am.mvn",
+        "bytes": 8033,
+        "sha256": "df189fd5f4352df84a0fd464eeab4e450a5e645665d6b38f13c832492261a739"
+      },
+      {
+        "name": "config.yaml",
+        "bytes": 1215,
+        "sha256": "486861ca26ddb79081663b6179cb204c6bfae71c52f04aafc48a9e9d8dde1e93"
+      },
+      {
+        "name": "configuration.json",
+        "bytes": 365,
+        "sha256": "7bce8867e37d55c3dd8f672695ced18077a2be199ea529a5d432d5350fc0acba"
+      },
+      {
+        "name": ".gitattributes",
+        "bytes": 1631,
+        "sha256": "3f42e385e87b2bfa950c3b9f804be185bd80c2fcd176dbcf1b4335412e0a2626"
+      }
+    ]
+  },
+  {
+    "repo": "funasr/campplus",
+    "revision": "e4b6ede7ce16997aff4ae69fbca1f0175e2afede",
+    "path": "/private/tmp/lokalbot-funasr-comparison-20260908/models/funasr/campplus",
+    "files": [
+      {
+        "name": "campplus_cn_common.bin",
+        "bytes": 28036335,
+        "sha256": "3388cf5fd3493c9ac9c69851d8e7a8badcfb4f3dc631020c4961371646d5ada8"
+      },
+      {
+        "name": "config.yaml",
+        "bytes": 537,
+        "sha256": "17342041bd5b22f6fd7e32f6e7a267b0bf65f018c0a721bada6547e3d28fbfc9"
+      },
+      {
+        "name": "configuration.json",
+        "bytes": 581,
+        "sha256": "6f7acaf1e81ca121f4a3c71b6ddb66beec24350a3ef330e2c846f17829176a8f"
+      },
+      {
+        "name": ".gitattributes",
+        "bytes": 1519,
+        "sha256": "11ad7efa24975ee4b0c3c3a38ed18737f0658a5f75a0a96787b576a78a023361"
+      }
+    ]
+  }
+]

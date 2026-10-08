@@ -1,0 +1,87 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"guide_owner\": \"Ива\",\n  \"guide_due\": \"00:30\",\n  \"marko_has_new_task\": true\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 35,
+    "prompt_tokens": 184,
+    "total_tokens": 219,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 184,
+    "prompt_ms": 74.095,
+    "prompt_per_token_ms": 0.40269021739130434,
+    "prompt_per_second": 2483.2984681827384,
+    "predicted_n": 35,
+    "predicted_ms": 252.28,
+    "predicted_per_token_ms": 7.208,
+    "predicted_per_second": 138.73473917869035
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"guide_owner\": \"Ива\",\n  \"guide_due\": \"00:30\",\n  \"marko_has_new_task\": true\n}"
+        }
+      }
+    ],
+    "created": 1789023567,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q8_0.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 35,
+      "prompt_tokens": 184,
+      "total_tokens": 219,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-mpKr0Bry7g1UvXBQ25BDf8e1Bx3a67a6",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 184,
+      "prompt_ms": 74.095,
+      "prompt_per_token_ms": 0.40269021739130434,
+      "prompt_per_second": 2483.2984681827384,
+      "predicted_n": 35,
+      "predicted_ms": 252.28,
+      "predicted_per_token_ms": 7.208,
+      "predicted_per_second": 138.73473917869035
+    }
+  },
+  "wall_seconds": 0.3291186250280589,
+  "memory": {
+    "samples": 2,
+    "peak_rss_bytes": 4269424640,
+    "peak_physical_footprint_bytes": 1710395256
+  },
+  "id": "serbian_cyrillic",
+  "group": "extraction",
+  "repeat": 1,
+  "score": {
+    "passed": false,
+    "json_valid": true,
+    "correct_fields": 1,
+    "total_fields": 3,
+    "wrong": {
+      "guide_due": {
+        "expected": "до сриједе",
+        "actual": "00:30"
+      },
+      "marko_has_new_task": {
+        "expected": false,
+        "actual": true
+      }
+    }
+  }
+}

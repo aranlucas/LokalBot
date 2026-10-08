@@ -1,0 +1,78 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"release_code\": \"AMBER-64\",\n  \"launch_date\": \"2026-09-25\",\n  \"checklist_owner\": \"Ana\",\n  \"checklist_due\": \"2026-09-23\",\n  \"launch_source\": \"R0255\",\n  \"checklist_source\": \"R0396\"\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 96,
+    "prompt_tokens": 19328,
+    "total_tokens": 19424,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 19328,
+    "prompt_ms": 17486.211,
+    "prompt_per_token_ms": 0.904708764486755,
+    "prompt_per_second": 1105.3280782211766,
+    "predicted_n": 96,
+    "predicted_ms": 1144.519,
+    "predicted_per_token_ms": 11.922072916666666,
+    "predicted_per_second": 83.87803085837805
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"release_code\": \"AMBER-64\",\n  \"launch_date\": \"2026-09-25\",\n  \"checklist_owner\": \"Ana\",\n  \"checklist_due\": \"2026-09-23\",\n  \"launch_source\": \"R0255\",\n  \"checklist_source\": \"R0396\"\n}"
+        }
+      }
+    ],
+    "created": 1789023103,
+    "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 96,
+      "prompt_tokens": 19328,
+      "total_tokens": 19424,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-V4q5ouMHlobKyIMEJNmEF65p1gapZfzz",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 19328,
+      "prompt_ms": 17486.211,
+      "prompt_per_token_ms": 0.904708764486755,
+      "prompt_per_second": 1105.3280782211766,
+      "predicted_n": 96,
+      "predicted_ms": 1144.519,
+      "predicted_per_token_ms": 11.922072916666666,
+      "predicted_per_second": 83.87803085837805
+    }
+  },
+  "wall_seconds": 18.656262082979083,
+  "memory": {
+    "samples": 90,
+    "peak_rss_bytes": 7037829120,
+    "peak_physical_footprint_bytes": 4485109688
+  },
+  "id": "long_context_updates",
+  "group": "long_context",
+  "repeat": 2,
+  "score": {
+    "passed": true,
+    "json_valid": true,
+    "correct_fields": 6,
+    "total_fields": 6,
+    "wrong": {}
+  }
+}

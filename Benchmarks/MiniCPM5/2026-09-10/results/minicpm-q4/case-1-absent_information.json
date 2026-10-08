@@ -1,0 +1,78 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"launch_date\": null,\n  \"search_owner\": null,\n  \"approved_budget\": null\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 27,
+    "prompt_tokens": 110,
+    "total_tokens": 137,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 110,
+    "prompt_ms": 53.246,
+    "prompt_per_token_ms": 0.48405454545454546,
+    "prompt_per_second": 2065.882883221275,
+    "predicted_n": 27,
+    "predicted_ms": 143.997,
+    "predicted_per_token_ms": 5.333222222222223,
+    "predicted_per_second": 187.50390633138187
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"launch_date\": null,\n  \"search_owner\": null,\n  \"approved_budget\": null\n}"
+        }
+      }
+    ],
+    "created": 1789022978,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 27,
+      "prompt_tokens": 110,
+      "total_tokens": 137,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-LUA0Atp7f1doowDndFH67aziun8odL4n",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 110,
+      "prompt_ms": 53.246,
+      "prompt_per_token_ms": 0.48405454545454546,
+      "prompt_per_second": 2065.882883221275,
+      "predicted_n": 27,
+      "predicted_ms": 143.997,
+      "predicted_per_token_ms": 5.333222222222223,
+      "predicted_per_second": 187.50390633138187
+    }
+  },
+  "wall_seconds": 0.1997873749351129,
+  "memory": {
+    "samples": 1,
+    "peak_rss_bytes": 3132948480,
+    "peak_physical_footprint_bytes": 1691700272
+  },
+  "id": "absent_information",
+  "group": "extraction",
+  "repeat": 1,
+  "score": {
+    "passed": true,
+    "json_valid": true,
+    "correct_fields": 3,
+    "total_fields": 3,
+    "wrong": {}
+  }
+}

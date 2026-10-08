@@ -1,0 +1,80 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "Hello!",
+    "reasoning_content": "The user is asking me to say hello in one sentence. They also mention \"You have all the information you need.\" This seems like a simple greeting request. I don't need to use any tools for this - it's just a greeting.\n"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 54,
+    "prompt_tokens": 422,
+    "total_tokens": 476,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 422,
+    "prompt_ms": 159.212,
+    "prompt_per_token_ms": 0.37727962085308053,
+    "prompt_per_second": 2650.553978343341,
+    "predicted_n": 54,
+    "predicted_ms": 291.212,
+    "predicted_per_token_ms": 5.392814814814814,
+    "predicted_per_second": 185.43191901432635
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "Hello!",
+          "reasoning_content": "The user is asking me to say hello in one sentence. They also mention \"You have all the information you need.\" This seems like a simple greeting request. I don't need to use any tools for this - it's just a greeting.\n"
+        }
+      }
+    ],
+    "created": 1789023011,
+    "model": "/private/tmp/lokalbot-minicpm5-20260910/models/MiniCPM5-2B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 54,
+      "prompt_tokens": 422,
+      "total_tokens": 476,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-LqRGOLZ6DduyHFBwXSzSuWqt2FuHf6tI",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 422,
+      "prompt_ms": 159.212,
+      "prompt_per_token_ms": 0.37727962085308053,
+      "prompt_per_second": 2650.553978343341,
+      "predicted_n": 54,
+      "predicted_ms": 291.212,
+      "predicted_per_token_ms": 5.392814814814814,
+      "predicted_per_second": 185.43191901432635
+    }
+  },
+  "wall_seconds": 0.45313454198185354,
+  "memory": {
+    "samples": 3,
+    "peak_rss_bytes": 4028809216,
+    "peak_physical_footprint_bytes": 2587627264
+  },
+  "id": "tool_no_call",
+  "group": "tools",
+  "repeat": 2,
+  "score": {
+    "passed": true,
+    "native_calls": [],
+    "xml_calls_diagnostic": [],
+    "parse_errors": [],
+    "xml_semantically_correct": false
+  }
+}

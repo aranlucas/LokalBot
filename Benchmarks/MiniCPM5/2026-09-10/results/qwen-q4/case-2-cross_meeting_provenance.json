@@ -1,0 +1,78 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"owner\": \"Ana\",\n  \"due\": \"Friday\",\n  \"meeting_id\": \"A-104\"\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 33,
+    "prompt_tokens": 154,
+    "total_tokens": 187,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 154,
+    "prompt_ms": 180.462,
+    "prompt_per_token_ms": 1.1718311688311687,
+    "prompt_per_second": 853.3652514102693,
+    "predicted_n": 33,
+    "predicted_ms": 325.248,
+    "predicted_per_token_ms": 9.856,
+    "predicted_per_second": 101.46103896103897
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"owner\": \"Ana\",\n  \"due\": \"Friday\",\n  \"meeting_id\": \"A-104\"\n}"
+        }
+      }
+    ],
+    "created": 1789023084,
+    "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 33,
+      "prompt_tokens": 154,
+      "total_tokens": 187,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-BHNkXkWq92fTqGIzor1B72UghoIgTEm0",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 154,
+      "prompt_ms": 180.462,
+      "prompt_per_token_ms": 1.1718311688311687,
+      "prompt_per_second": 853.3652514102693,
+      "predicted_n": 33,
+      "predicted_ms": 325.248,
+      "predicted_per_token_ms": 9.856,
+      "predicted_per_second": 101.46103896103897
+    }
+  },
+  "wall_seconds": 0.5206949169514701,
+  "memory": {
+    "samples": 3,
+    "peak_rss_bytes": 7037370368,
+    "peak_physical_footprint_bytes": 4484274104
+  },
+  "id": "cross_meeting_provenance",
+  "group": "extraction",
+  "repeat": 2,
+  "score": {
+    "passed": true,
+    "json_valid": true,
+    "correct_fields": 3,
+    "total_fields": 3,
+    "wrong": {}
+  }
+}

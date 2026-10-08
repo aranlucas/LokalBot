@@ -1,0 +1,330 @@
+{
+  "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+  "repeats": 2,
+  "temperature": 0,
+  "tool_thinking": true,
+  "extraction_thinking": false,
+  "startup_seconds": 1.6545360409654677,
+  "groups": {
+    "extraction": {
+      "passed": 14,
+      "total": 24,
+      "median_seconds": 0.5537161665852182,
+      "total_seconds": 14.465238538221456,
+      "correct_fields": 74,
+      "total_fields": 86,
+      "json_valid": 24,
+      "errors": 0,
+      "truncated": 0
+    },
+    "long_context": {
+      "passed": 2,
+      "total": 2,
+      "median_seconds": 18.03606120799668,
+      "total_seconds": 36.07212241599336,
+      "correct_fields": 12,
+      "total_fields": 12,
+      "json_valid": 2,
+      "errors": 0,
+      "truncated": 0
+    },
+    "tools": {
+      "passed": 12,
+      "total": 12,
+      "median_seconds": 1.566784250026103,
+      "total_seconds": 20.52096895687282,
+      "correct_fields": 0,
+      "total_fields": 0,
+      "json_valid": 0,
+      "errors": 0,
+      "truncated": 0
+    }
+  },
+  "multi_step": {
+    "id": "multi_step_meeting_answer",
+    "group": "multi_step",
+    "steps": [
+      {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "reasoning_content": "The user is asking about the latest Atlas meeting, specifically about:\n1. What date they agreed to launch\n2. Who will send the checklist\n3. They want the meeting ID and both source timestamps\n\nI need to first search for the latest Atlas meeting, then read the meeting transcript to find the relevant information.\n\nLet me start by searching for Atlas meetings.\n",
+          "tool_calls": [
+            {
+              "type": "function",
+              "function": {
+                "name": "search_meetings",
+                "arguments": "{\"query\":\"Atlas\",\"limit\":1}"
+              },
+              "id": "skEihrstAdIn9N6FEeDqDZsz4ZClyKZN"
+            }
+          ]
+        },
+        "finish_reason": "tool_calls",
+        "usage": {
+          "completion_tokens": 117,
+          "prompt_tokens": 503,
+          "total_tokens": 620,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 503,
+          "prompt_ms": 418.286,
+          "prompt_per_token_ms": 0.8315825049701789,
+          "prompt_per_second": 1202.5265010064884,
+          "predicted_n": 117,
+          "predicted_ms": 1197.679,
+          "predicted_per_token_ms": 10.23657264957265,
+          "predicted_per_second": 97.68894670441745
+        },
+        "raw": {
+          "choices": [
+            {
+              "finish_reason": "tool_calls",
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "",
+                "reasoning_content": "The user is asking about the latest Atlas meeting, specifically about:\n1. What date they agreed to launch\n2. Who will send the checklist\n3. They want the meeting ID and both source timestamps\n\nI need to first search for the latest Atlas meeting, then read the meeting transcript to find the relevant information.\n\nLet me start by searching for Atlas meetings.\n",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "function": {
+                      "name": "search_meetings",
+                      "arguments": "{\"query\":\"Atlas\",\"limit\":1}"
+                    },
+                    "id": "skEihrstAdIn9N6FEeDqDZsz4ZClyKZN"
+                  }
+                ]
+              }
+            }
+          ],
+          "created": 1789023114,
+          "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+          "system_fingerprint": "b10173-b10173",
+          "object": "chat.completion",
+          "usage": {
+            "completion_tokens": 117,
+            "prompt_tokens": 503,
+            "total_tokens": 620,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "id": "chatcmpl-VvqF7TWsuebh5PTuIPm9rHUQbEPrYEFk",
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 503,
+            "prompt_ms": 418.286,
+            "prompt_per_token_ms": 0.8315825049701789,
+            "prompt_per_second": 1202.5265010064884,
+            "predicted_n": 117,
+            "predicted_ms": 1197.679,
+            "predicted_per_token_ms": 10.23657264957265,
+            "predicted_per_second": 97.68894670441745
+          }
+        },
+        "wall_seconds": 1.62468045798596,
+        "memory": {
+          "samples": 7,
+          "peak_rss_bytes": 7037845504,
+          "peak_physical_footprint_bytes": 4484847544
+        }
+      },
+      {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "reasoning_content": "The user is asking about the latest Atlas meeting. From the search results, I can see there are two Atlas meetings:\n- A-210: \"Atlas release review\" on 2026-09-10 (latest)\n- A-104: \"Atlas planning\" on 2026-09-08\n\nThe latest one is A-210. I need to read the transcript of this meeting to find out:\n1. What date they agreed to launch\n2. Who will send the checklist\n3. The source timestamps for these decisions\n\nLet me read the meeting transcript.\n",
+          "tool_calls": [
+            {
+              "type": "function",
+              "function": {
+                "name": "read_meeting",
+                "arguments": "{\"meeting_id\":\"A-210\"}"
+              },
+              "id": "FICPC8BGNt9gsdRwrJqDUosV1Fk8i5PY"
+            }
+          ]
+        },
+        "finish_reason": "tool_calls",
+        "usage": {
+          "completion_tokens": 169,
+          "prompt_tokens": 629,
+          "total_tokens": 798,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 629,
+          "prompt_ms": 530.685,
+          "prompt_per_token_ms": 0.8436963434022257,
+          "prompt_per_second": 1185.2605594655963,
+          "predicted_n": 169,
+          "predicted_ms": 1714.802,
+          "predicted_per_token_ms": 10.146757396449704,
+          "predicted_per_second": 98.55365225839485
+        },
+        "raw": {
+          "choices": [
+            {
+              "finish_reason": "tool_calls",
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "",
+                "reasoning_content": "The user is asking about the latest Atlas meeting. From the search results, I can see there are two Atlas meetings:\n- A-210: \"Atlas release review\" on 2026-09-10 (latest)\n- A-104: \"Atlas planning\" on 2026-09-08\n\nThe latest one is A-210. I need to read the transcript of this meeting to find out:\n1. What date they agreed to launch\n2. Who will send the checklist\n3. The source timestamps for these decisions\n\nLet me read the meeting transcript.\n",
+                "tool_calls": [
+                  {
+                    "type": "function",
+                    "function": {
+                      "name": "read_meeting",
+                      "arguments": "{\"meeting_id\":\"A-210\"}"
+                    },
+                    "id": "FICPC8BGNt9gsdRwrJqDUosV1Fk8i5PY"
+                  }
+                ]
+              }
+            }
+          ],
+          "created": 1789023117,
+          "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+          "system_fingerprint": "b10173-b10173",
+          "object": "chat.completion",
+          "usage": {
+            "completion_tokens": 169,
+            "prompt_tokens": 629,
+            "total_tokens": 798,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "id": "chatcmpl-w6W7BqIhAq62gZ590UTdhsvrxVXm9gEV",
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 629,
+            "prompt_ms": 530.685,
+            "prompt_per_token_ms": 0.8436963434022257,
+            "prompt_per_second": 1185.2605594655963,
+            "predicted_n": 169,
+            "predicted_ms": 1714.802,
+            "predicted_per_token_ms": 10.146757396449704,
+            "predicted_per_second": 98.55365225839485
+          }
+        },
+        "wall_seconds": 2.2549112919950858,
+        "memory": {
+          "samples": 11,
+          "peak_rss_bytes": 7037878272,
+          "peak_physical_footprint_bytes": 4484863928
+        }
+      },
+      {
+        "message": {
+          "role": "assistant",
+          "content": "From the latest Atlas meeting (A-210), we agreed to launch Atlas on **September 25, 2026** (timestamp: 00:12), and **Ana** will send the onboarding checklist before the launch (timestamp: 00:38).",
+          "reasoning_content": "I have the information I need from the latest Atlas meeting (A-210):\n- Launch date: September 25, 2026 (timestamp 00:12)\n- Who will send the checklist: Ana (timestamp 00:38)\n\nI can now provide the answer with the meeting ID and both source timestamps.\n"
+        },
+        "finish_reason": "stop",
+        "usage": {
+          "completion_tokens": 143,
+          "prompt_tokens": 765,
+          "total_tokens": 908,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 765,
+          "prompt_ms": 630.466,
+          "prompt_per_token_ms": 0.8241385620915033,
+          "prompt_per_second": 1213.3881922260675,
+          "predicted_n": 143,
+          "predicted_ms": 1467.969,
+          "predicted_per_token_ms": 10.265517482517483,
+          "predicted_per_second": 97.41350123878638
+        },
+        "raw": {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "message": {
+                "role": "assistant",
+                "content": "From the latest Atlas meeting (A-210), we agreed to launch Atlas on **September 25, 2026** (timestamp: 00:12), and **Ana** will send the onboarding checklist before the launch (timestamp: 00:38).",
+                "reasoning_content": "I have the information I need from the latest Atlas meeting (A-210):\n- Launch date: September 25, 2026 (timestamp 00:12)\n- Who will send the checklist: Ana (timestamp 00:38)\n\nI can now provide the answer with the meeting ID and both source timestamps.\n"
+              }
+            }
+          ],
+          "created": 1789023119,
+          "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+          "system_fingerprint": "b10173-b10173",
+          "object": "chat.completion",
+          "usage": {
+            "completion_tokens": 143,
+            "prompt_tokens": 765,
+            "total_tokens": 908,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            }
+          },
+          "id": "chatcmpl-5S4SD0RUd8bE0ISiFzLzr4wSP2b7lFue",
+          "timings": {
+            "cache_n": 0,
+            "prompt_n": 765,
+            "prompt_ms": 630.466,
+            "prompt_per_token_ms": 0.8241385620915033,
+            "prompt_per_second": 1213.3881922260675,
+            "predicted_n": 143,
+            "predicted_ms": 1467.969,
+            "predicted_per_token_ms": 10.265517482517483,
+            "predicted_per_second": 97.41350123878638
+          }
+        },
+        "wall_seconds": 2.1089734999695793,
+        "memory": {
+          "samples": 10,
+          "peak_rss_bytes": 7037894656,
+          "peak_physical_footprint_bytes": 4484749240
+        }
+      }
+    ],
+    "used": [
+      {
+        "name": "search_meetings",
+        "args": {
+          "query": "Atlas",
+          "limit": 1
+        }
+      },
+      {
+        "name": "read_meeting",
+        "args": {
+          "meeting_id": "A-210"
+        }
+      }
+    ],
+    "answer": "From the latest Atlas meeting (A-210), we agreed to launch Atlas on **September 25, 2026** (timestamp: 00:12), and **Ana** will send the onboarding checklist before the launch (timestamp: 00:38).",
+    "xml_adapter_used_diagnostic_only": false,
+    "content_correct": true,
+    "path_correct": true,
+    "passed_native": true,
+    "wall_seconds": 5.988565249950625
+  },
+  "memory": {
+    "samples": 380,
+    "peak_rss_bytes": 7037894656,
+    "peak_physical_footprint_bytes": 4485109688
+  },
+  "load_average": [
+    1.38525390625,
+    1.7890625,
+    2.0078125
+  ]
+}

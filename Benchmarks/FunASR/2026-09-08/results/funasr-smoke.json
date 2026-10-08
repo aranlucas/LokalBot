@@ -1,0 +1,110 @@
+{
+  "torch": "2.8.0",
+  "device": "mps",
+  "dtype": "bf16",
+  "rows": [],
+  "load_seconds": 6.441642791964114,
+  "actual_model_device": "mps:0",
+  "actual_model_dtype": "torch.bfloat16",
+  "smoke": {
+    "id": "ami-15",
+    "seconds": 10.35073658300098,
+    "result": [
+      {
+        "key": "rand_key_2yW4Acq9GFz6Y",
+        "text": "We can always decide then. I mean, you know.",
+        "language": "English",
+        "timestamp": [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            1
+          ]
+        ]
+      }
+    ],
+    "raw_alignment_seconds": [
+      {
+        "text": "We can always decide then. I mean, you know.",
+        "words": [
+          {
+            "text": "We",
+            "start_time": 0.0,
+            "end_time": 0.16
+          },
+          {
+            "text": "can",
+            "start_time": 0.16,
+            "end_time": 0.32
+          },
+          {
+            "text": "always",
+            "start_time": 0.32,
+            "end_time": 0.4
+          },
+          {
+            "text": "decide",
+            "start_time": 0.4,
+            "end_time": 0.8
+          },
+          {
+            "text": "then",
+            "start_time": 0.8,
+            "end_time": 0.96
+          },
+          {
+            "text": "I",
+            "start_time": 1.04,
+            "end_time": 1.04
+          },
+          {
+            "text": "mean",
+            "start_time": 1.04,
+            "end_time": 1.28
+          },
+          {
+            "text": "you",
+            "start_time": 1.28,
+            "end_time": 1.28
+          },
+          {
+            "text": "know",
+            "start_time": 1.44,
+            "end_time": 1.52
+          }
+        ]
+      }
+    ]
+  }
+}

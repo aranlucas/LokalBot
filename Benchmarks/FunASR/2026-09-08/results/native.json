@@ -1,0 +1,1534 @@
+{
+  "diarizer_load_seconds" : 2.2890889644622803,
+  "model_load_seconds" : 0.67982494831085205,
+  "rows" : [
+    {
+      "asr_seconds" : 9.2961950302124023,
+      "diarization" : [
+        {
+          "end" : 14.821731567382812,
+          "speaker" : "S1",
+          "start" : 0
+        },
+        {
+          "end" : 24.023769378662109,
+          "speaker" : "S1",
+          "start" : 16.604413986206055
+        },
+        {
+          "end" : 40.696094512939453,
+          "speaker" : "S1",
+          "start" : 25.161291122436523
+        },
+        {
+          "end" : 48.67572021484375,
+          "speaker" : "S1",
+          "start" : 42.665534973144531
+        },
+        {
+          "end" : 56.638370513916016,
+          "speaker" : "S1",
+          "start" : 49.456707000732422
+        },
+        {
+          "end" : 58.064517974853516,
+          "speaker" : "S1",
+          "start" : 56.910015106201172
+        },
+        {
+          "end" : 59.813243865966797,
+          "speaker" : "S1",
+          "start" : 59.354839324951172
+        },
+        {
+          "end" : 77.86077880859375,
+          "speaker" : "S1",
+          "start" : 60.322582244873047
+        },
+        {
+          "end" : 81.748725891113281,
+          "speaker" : "S2",
+          "start" : 77.86077880859375
+        },
+        {
+          "end" : 82.563667297363281,
+          "speaker" : "S1",
+          "start" : 82.105262756347656
+        },
+        {
+          "end" : 83.56536865234375,
+          "speaker" : "S1",
+          "start" : 83.259765625
+        },
+        {
+          "end" : 86.655349731445312,
+          "speaker" : "S1",
+          "start" : 84.634971618652344
+        },
+        {
+          "end" : 90.033958435058594,
+          "speaker" : "S1",
+          "start" : 87.691001892089844
+        }
+      ],
+      "diarization_seconds" : 0.79052698612213135,
+      "duration" : 90,
+      "id" : "EN2002a-120-210",
+      "max_rss_bytes" : 3009970176,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 10.086923003196716,
+      "segments" : [
+        {
+          "end" : 7.7800000000000002,
+          "speaker" : "S1",
+          "start" : 0,
+          "text" : "button so that you actually in the transcription box, but so that you click on a button and then it opens whatever that speaker characterisation is."
+        },
+        {
+          "end" : 15.204000000000001,
+          "speaker" : "S1",
+          "start" : 8.0920000000000005,
+          "text" : "The problem is, the the left click is already used because it highlights that."
+        },
+        {
+          "end" : 24.420000000000002,
+          "speaker" : "S1",
+          "start" : 16.539999999999999,
+          "text" : "That part of speech or whatever that what he's been saying. The left click or the right click. The left click highlights it. Right. So that you can."
+        },
+        {
+          "end" : 33.636000000000003,
+          "speaker" : "S1",
+          "start" : 24.988,
+          "text" : "I don't know what happens when you double click actually, but that'd be a bit annoying if you have left click for one thing and double click for something else."
+        },
+        {
+          "end" : 40.804000000000002,
+          "speaker" : "S1",
+          "start" : 33.948,
+          "text" : "I think so. Yeah, when you left click it, you can, for example, set set the marker there so that the the audio goes from there. I think."
+        },
+        {
+          "end" : 48.996000000000002,
+          "speaker" : "S1",
+          "start" : 42.396000000000001,
+          "text" : "So we can't put it on left click. We could put it on right click. We could, for example, have a little menu that pops up."
+        },
+        {
+          "end" : 58.468000000000004,
+          "speaker" : "S1",
+          "start" : 49.308,
+          "text" : "Yeah, it might be quite good. I suppose. So, right-click on it, menu, you know, and you can click on speaker characterization. It pops the window. What else do we have in there?"
+        },
+        {
+          "end" : 60.003999999999998,
+          "speaker" : "S1",
+          "start" : 59.292000000000002,
+          "text" : "What?"
+        },
+        {
+          "end" : 73.828000000000003,
+          "speaker" : "S1",
+          "start" : 60.060000000000002,
+          "text" : "That's a good point. I don't know. Otherwise, we just have a right click or do. Yeah, yeah, but um, I don't know about you, but usually in Windows, right click doesn't do anything. Doesn't it opens a menu. A menu, yeah, yeah. That's what I do."
+        },
+        {
+          "end" : 86.884,
+          "speaker" : "S1",
+          "start" : 73.884,
+          "text" : "Yeah, I said it would maybe be a bit weird for it to just start bringing up stuff, isn't it? Yeah, to just have sort of the same sort of idiom throughout, kind of. Yeah, yeah. Um, or just you know, or just the button."
+        },
+        {
+          "end" : 90,
+          "speaker" : "S1",
+          "start" : 87.707999999999998,
+          "text" : "I guess a button button makes a bit."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 7.7800000000000002,
+          "start" : 0
+        },
+        {
+          "end" : 15.204000000000001,
+          "start" : 8.0920000000000005
+        },
+        {
+          "end" : 24.420000000000002,
+          "start" : 16.539999999999999
+        },
+        {
+          "end" : 33.636000000000003,
+          "start" : 24.988
+        },
+        {
+          "end" : 40.804000000000002,
+          "start" : 33.948
+        },
+        {
+          "end" : 48.996000000000002,
+          "start" : 42.396000000000001
+        },
+        {
+          "end" : 58.468000000000004,
+          "start" : 49.308
+        },
+        {
+          "end" : 60.003999999999998,
+          "start" : 59.292000000000002
+        },
+        {
+          "end" : 73.828000000000003,
+          "start" : 60.060000000000002
+        },
+        {
+          "end" : 86.884,
+          "start" : 73.884
+        },
+        {
+          "end" : 90,
+          "start" : 87.707999999999998
+        }
+      ],
+      "text" : "button so that you actually in the transcription box, but so that you click on a button and then it opens whatever that speaker characterisation is. The problem is, the the left click is already used because it highlights that. That part of speech or whatever that what he's been saying. The left click or the right click. The left click highlights it. Right. So that you can. I don't know what happens when you double click actually, but that'd be a bit annoying if you have left click for one thing and double click for something else. I think so. Yeah, when you left click it, you can, for example, set set the marker there so that the the audio goes from there. I think. So we can't put it on left click. We could put it on right click. We could, for example, have a little menu that pops up. Yeah, it might be quite good. I suppose. So, right-click on it, menu, you know, and you can click on speaker characterization. It pops the window. What else do we have in there? What? That's a good point. I don't know. Otherwise, we just have a right click or do. Yeah, yeah, but um, I don't know about you, but usually in Windows, right click doesn't do anything. Doesn't it opens a menu. A menu, yeah, yeah. That's what I do. Yeah, I said it would maybe be a bit weird for it to just start bringing up stuff, isn't it? Yeah, to just have sort of the same sort of idiom throughout, kind of. Yeah, yeah. Um, or just you know, or just the button. I guess a button button makes a bit.",
+      "vad_seconds" : 0.00020098686218261719,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 10.029582977294922,
+      "diarization" : [
+        {
+          "end" : 1.4940577745437622,
+          "speaker" : "S4",
+          "start" : 0
+        },
+        {
+          "end" : 1.9694397449493408,
+          "speaker" : "S1",
+          "start" : 1.4940577745437622
+        },
+        {
+          "end" : 7.3684210777282715,
+          "speaker" : "S1",
+          "start" : 6.7741937637329102
+        },
+        {
+          "end" : 16.213922500610352,
+          "speaker" : "S1",
+          "start" : 10.033955574035645
+        },
+        {
+          "end" : 20.628183364868164,
+          "speaker" : "S2",
+          "start" : 16.213922500610352
+        },
+        {
+          "end" : 25.008489608764648,
+          "speaker" : "S1",
+          "start" : 20.628183364868164
+        },
+        {
+          "end" : 26.129032135009766,
+          "speaker" : "S1",
+          "start" : 25.602716445922852
+        },
+        {
+          "end" : 36.349746704101562,
+          "speaker" : "S2",
+          "start" : 26.315790176391602
+        },
+        {
+          "end" : 49.626483917236328,
+          "speaker" : "S1",
+          "start" : 36.349746704101562
+        },
+        {
+          "end" : 63.412563323974609,
+          "speaker" : "S3",
+          "start" : 49.626483917236328
+        },
+        {
+          "end" : 64.499153137207031,
+          "speaker" : "S1",
+          "start" : 63.718166351318359
+        },
+        {
+          "end" : 72.427841186523438,
+          "speaker" : "S3",
+          "start" : 64.906623840332031
+        },
+        {
+          "end" : 82.580642700195312,
+          "speaker" : "S1",
+          "start" : 72.427841186523438
+        },
+        {
+          "end" : 89.269950866699219,
+          "speaker" : "S4",
+          "start" : 82.937179565429688
+        }
+      ],
+      "diarization_seconds" : 0.81370699405670166,
+      "duration" : 90,
+      "id" : "EN2002a-600-690",
+      "max_rss_bytes" : 3019112448,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 10.903871059417725,
+      "segments" : [
+        {
+          "end" : 3.1720000000000002,
+          "speaker" : "S4",
+          "start" : 0.92400000000000004,
+          "text" : "Yeah, the footprint will be big."
+        },
+        {
+          "end" : 7.524,
+          "speaker" : "S1",
+          "start" : 6.8120000000000003,
+          "text" : "Um."
+        },
+        {
+          "end" : 14.948,
+          "speaker" : "S1",
+          "start" : 10.140000000000001,
+          "text" : "Yeah, what do people think in general about the Windows cluttering that you mentioned? Do you think?"
+        },
+        {
+          "end" : 23.908000000000001,
+          "speaker" : "S2",
+          "start" : 15.26,
+          "text" : "I think we probably need that though to have the the full flexibility. We need to have that. That's what I feel. I mean, I'm I'm very much I I want to have everything."
+        },
+        {
+          "end" : 37.731999999999999,
+          "speaker" : "S2",
+          "start" : 23.963999999999999,
+          "text" : "Customizable. Although the thing is, typically, though, is someone going to have five windows open at the same time? Probably not. Probably not. No, two or three of whatever. Two or three maybe, but like dialogue acts. Yeah. Whatever. But yeah, it depends. I mean, I really want to put the."
+        },
+        {
+          "end" : 39.268000000000001,
+          "speaker" : "S1",
+          "start" : 37.787999999999997,
+          "text" : "Somewhere, you know."
+        },
+        {
+          "end" : 53.347999999999999,
+          "speaker" : "S1",
+          "start" : 39.579999999999998,
+          "text" : "And the summary, for example, it's typical. You open the window, you read through it. You might click on, you know, close it again straight away. Yeah, but it'd be good to have. I think it's fine. But well, couldn't we? I mean, you probably. I don't know if you want to have like."
+        },
+        {
+          "end" : 56.420000000000002,
+          "speaker" : "S3",
+          "start" : 53.404000000000003,
+          "text" : "the the full transcription and the summary at the same time."
+        },
+        {
+          "end" : 59.491999999999997,
+          "speaker" : "S3",
+          "start" : 57.5,
+          "text" : "So maybe you can just like."
+        },
+        {
+          "end" : 73.316000000000003,
+          "speaker" : "S3",
+          "start" : 59.548000000000002,
+          "text" : "Choose the same window for transcription and summary. It's like have a tab there for something. I was just yeah, tabs. Yeah, tabs are nice. Yeah, tabs. I like tabs. Mozilla style. Yeah, yeah, yeah. That's right."
+        },
+        {
+          "end" : 85.091999999999999,
+          "speaker" : "S1",
+          "start" : 73.372,
+          "text" : "I'm not sure. Yeah, I don't know. Does anybody know how to do that? Can you do that, Java? I don't think Java knows how to do that. Really? Maybe you probably can. I'm sure. Yeah. I'm sure you can do anything if you really know what you're doing. But I don't know."
+        },
+        {
+          "end" : 90,
+          "speaker" : "S4",
+          "start" : 85.659999999999997,
+          "text" : "It's a bit of a cripple. Java's windowing toolkit. The sometimes."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 3.1720000000000002,
+          "start" : 0.92400000000000004
+        },
+        {
+          "end" : 7.524,
+          "start" : 6.8120000000000003
+        },
+        {
+          "end" : 14.948,
+          "start" : 10.140000000000001
+        },
+        {
+          "end" : 23.908000000000001,
+          "start" : 15.26
+        },
+        {
+          "end" : 37.731999999999999,
+          "start" : 23.963999999999999
+        },
+        {
+          "end" : 39.268000000000001,
+          "start" : 37.787999999999997
+        },
+        {
+          "end" : 53.347999999999999,
+          "start" : 39.579999999999998
+        },
+        {
+          "end" : 56.420000000000002,
+          "start" : 53.404000000000003
+        },
+        {
+          "end" : 59.491999999999997,
+          "start" : 57.5
+        },
+        {
+          "end" : 73.316000000000003,
+          "start" : 59.548000000000002
+        },
+        {
+          "end" : 85.091999999999999,
+          "start" : 73.372
+        },
+        {
+          "end" : 90,
+          "start" : 85.659999999999997
+        }
+      ],
+      "text" : "Yeah, the footprint will be big. Um. Yeah, what do people think in general about the Windows cluttering that you mentioned? Do you think? I think we probably need that though to have the the full flexibility. We need to have that. That's what I feel. I mean, I'm I'm very much I I want to have everything. Customizable. Although the thing is, typically, though, is someone going to have five windows open at the same time? Probably not. Probably not. No, two or three of whatever. Two or three maybe, but like dialogue acts. Yeah. Whatever. But yeah, it depends. I mean, I really want to put the. Somewhere, you know. And the summary, for example, it's typical. You open the window, you read through it. You might click on, you know, close it again straight away. Yeah, but it'd be good to have. I think it's fine. But well, couldn't we? I mean, you probably. I don't know if you want to have like. the the full transcription and the summary at the same time. So maybe you can just like. Choose the same window for transcription and summary. It's like have a tab there for something. I was just yeah, tabs. Yeah, tabs are nice. Yeah, tabs. I like tabs. Mozilla style. Yeah, yeah, yeah. That's right. I'm not sure. Yeah, I don't know. Does anybody know how to do that? Can you do that, Java? I don't think Java knows how to do that. Really? Maybe you probably can. I'm sure. Yeah. I'm sure you can do anything if you really know what you're doing. But I don't know. It's a bit of a cripple. Java's windowing toolkit. The sometimes.",
+      "vad_seconds" : 0.060581088066101074,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 7.57579505443573,
+      "diarization" : [
+        {
+          "end" : 12.173174858093262,
+          "speaker" : "S1",
+          "start" : 0
+        },
+        {
+          "end" : 13.54838752746582,
+          "speaker" : "S3",
+          "start" : 12.359931945800781
+        },
+        {
+          "end" : 21.001697540283203,
+          "speaker" : "S2",
+          "start" : 16.910017013549805
+        },
+        {
+          "end" : 30.356536865234375,
+          "speaker" : "S3",
+          "start" : 21.001697540283203
+        },
+        {
+          "end" : 35.534805297851562,
+          "speaker" : "S1",
+          "start" : 30.356536865234375
+        },
+        {
+          "end" : 37.674022674560547,
+          "speaker" : "S3",
+          "start" : 35.534805297851562
+        },
+        {
+          "end" : 38.930389404296875,
+          "speaker" : "S3",
+          "start" : 37.826824188232422
+        },
+        {
+          "end" : 47.826824188232422,
+          "speaker" : "S3",
+          "start" : 38.998302459716797
+        },
+        {
+          "end" : 59.507640838623047,
+          "speaker" : "S3",
+          "start" : 51.375213623046875
+        },
+        {
+          "end" : 60.50933837890625,
+          "speaker" : "S1",
+          "start" : 59.507640838623047
+        },
+        {
+          "end" : 60.831916809082031,
+          "speaker" : "S3",
+          "start" : 60.50933837890625
+        },
+        {
+          "end" : 65.042442321777344,
+          "speaker" : "S1",
+          "start" : 60.831916809082031
+        },
+        {
+          "end" : 69.456703186035156,
+          "speaker" : "S3",
+          "start" : 65.042442321777344
+        },
+        {
+          "end" : 74.719863891601562,
+          "speaker" : "S1",
+          "start" : 70.424446105957031
+        },
+        {
+          "end" : 80.543296813964844,
+          "speaker" : "S1",
+          "start" : 76.485565185546875
+        },
+        {
+          "end" : 90.016975402832031,
+          "speaker" : "S1",
+          "start" : 82.95416259765625
+        }
+      ],
+      "diarization_seconds" : 0.83764588832855225,
+      "duration" : 90,
+      "id" : "EN2002a-1500-1590",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 8.476889967918396,
+      "segments" : [
+        {
+          "end" : 0.35599999999999998,
+          "speaker" : "S1",
+          "start" : 0,
+          "text" : "Oh."
+        },
+        {
+          "end" : 14.18,
+          "speaker" : "S1",
+          "start" : 0.41199999999999998,
+          "text" : "Well, I'll do that then. These can be changed. Shall I do that then? I don't know. It doesn't matter. If you want to, I mean, it's just you know, play around with some extra stuff. You have some time, why not? It shouldn't be too difficult."
+        },
+        {
+          "end" : 16.739999999999998,
+          "speaker" : "unknown",
+          "start" : 16.027999999999999,
+          "text" : "Yeah."
+        },
+        {
+          "end" : 30.564,
+          "speaker" : "S3",
+          "start" : 16.795999999999999,
+          "text" : "So, what courses should I have picked to be not doing any work? Yeah, and I'm doing communications, which we had one exercise, and I've done that like two weeks ago. That's in two weeks."
+        },
+        {
+          "end" : 34.148000000000003,
+          "speaker" : "S1",
+          "start" : 30.620000000000001,
+          "text" : "Informatics course, yeah, it's a."
+        },
+        {
+          "end" : 44.643999999999998,
+          "speaker" : "S3",
+          "start" : 34.204000000000001,
+          "text" : "Oh, like digital nine courses, well, or ten or something. Okay, and then I'm doing parallel programming languages and systems."
+        },
+        {
+          "end" : 47.972000000000001,
+          "speaker" : "S3",
+          "start" : 44.700000000000003,
+          "text" : "Which we had one exercise as well, and that's in like Friday."
+        },
+        {
+          "end" : 60.259999999999998,
+          "speaker" : "S3",
+          "start" : 49.82,
+          "text" : "Well, I'm not doing any background readings. Sorry, just yeah."
+        },
+        {
+          "end" : 72.292000000000002,
+          "speaker" : "S3",
+          "start" : 60.316000000000003,
+          "text" : "I'll be happy when this week is over. I'll be happy when this course is over. Yeah. Yeah. I know. Is that about it then? Yeah."
+        },
+        {
+          "end" : 75.108000000000004,
+          "speaker" : "S1",
+          "start" : 72.347999999999999,
+          "text" : "Anything else we need to discuss?"
+        },
+        {
+          "end" : 80.995999999999995,
+          "speaker" : "S1",
+          "start" : 76.444000000000003,
+          "text" : "Did we want to meet before we talk to Steve next week?"
+        },
+        {
+          "end" : 90,
+          "speaker" : "S1",
+          "start" : 82.843999999999994,
+          "text" : "Well, I don't know. We'll probably get some work done over the weekend, so I know after D and L G or something, maybe just have a little quick."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 0.35599999999999998,
+          "start" : 0
+        },
+        {
+          "end" : 14.18,
+          "start" : 0.41199999999999998
+        },
+        {
+          "end" : 16.739999999999998,
+          "start" : 16.027999999999999
+        },
+        {
+          "end" : 30.564,
+          "start" : 16.795999999999999
+        },
+        {
+          "end" : 34.148000000000003,
+          "start" : 30.620000000000001
+        },
+        {
+          "end" : 44.643999999999998,
+          "start" : 34.204000000000001
+        },
+        {
+          "end" : 47.972000000000001,
+          "start" : 44.700000000000003
+        },
+        {
+          "end" : 60.259999999999998,
+          "start" : 49.82
+        },
+        {
+          "end" : 72.292000000000002,
+          "start" : 60.316000000000003
+        },
+        {
+          "end" : 75.108000000000004,
+          "start" : 72.347999999999999
+        },
+        {
+          "end" : 80.995999999999995,
+          "start" : 76.444000000000003
+        },
+        {
+          "end" : 90,
+          "start" : 82.843999999999994
+        }
+      ],
+      "text" : "Oh. Well, I'll do that then. These can be changed. Shall I do that then? I don't know. It doesn't matter. If you want to, I mean, it's just you know, play around with some extra stuff. You have some time, why not? It shouldn't be too difficult. Yeah. So, what courses should I have picked to be not doing any work? Yeah, and I'm doing communications, which we had one exercise, and I've done that like two weeks ago. That's in two weeks. Informatics course, yeah, it's a. Oh, like digital nine courses, well, or ten or something. Okay, and then I'm doing parallel programming languages and systems. Which we had one exercise as well, and that's in like Friday. Well, I'm not doing any background readings. Sorry, just yeah. I'll be happy when this week is over. I'll be happy when this course is over. Yeah. Yeah. I know. Is that about it then? Yeah. Anything else we need to discuss? Did we want to meet before we talk to Steve next week? Well, I don't know. We'll probably get some work done over the weekend, so I know after D and L G or something, maybe just have a little quick.",
+      "vad_seconds" : 0.06344902515411377,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.34785604476928711,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 9.5367431640625e-07,
+      "duration" : 2.6099999999999999,
+      "id" : "ami-15",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.35107195377349854,
+      "segments" : [
+        {
+          "end" : 2.6099999999999999,
+          "speaker" : "unknown",
+          "start" : 0,
+          "text" : "We can always decide then. I mean, you know."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 2.6099999999999999,
+          "start" : 0
+        }
+      ],
+      "text" : "We can always decide then. I mean, you know.",
+      "vad_seconds" : 0.0032149553298950195,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.55315995216369629,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 1.0728836059570312e-06,
+      "duration" : 3.1699999999999999,
+      "id" : "ami-25",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.55664801597595215,
+      "segments" : [
+        {
+          "end" : 3.1699999999999999,
+          "speaker" : "unknown",
+          "start" : 0,
+          "text" : "So even if it doesn't work, you can jiggery pokery it around and make it work."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 3.1699999999999999,
+          "start" : 0
+        }
+      ],
+      "text" : "So even if it doesn't work, you can jiggery pokery it around and make it work.",
+      "vad_seconds" : 0.0034869909286499023,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.3006739616394043,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 1.0728836059570312e-06,
+      "duration" : 2.8099375000000002,
+      "id" : "ami-27",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.30388307571411133,
+      "segments" : [
+        {
+          "end" : 2.8099375000000002,
+          "speaker" : "unknown",
+          "start" : 0,
+          "text" : "But most will probably want to go with defaults."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 2.8099375000000002,
+          "start" : 0
+        }
+      ],
+      "text" : "But most will probably want to go with defaults.",
+      "vad_seconds" : 0.0032080411911010742,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.61663198471069336,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 0,
+      "duration" : 5.1399999999999997,
+      "id" : "ami-28",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.62126600742340088,
+      "segments" : [
+        {
+          "end" : 5.1399999999999997,
+          "speaker" : "unknown",
+          "start" : 0,
+          "text" : "You open the window. You read through it. You might click on, you know, close it again straight away."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 5.1399999999999997,
+          "start" : 0
+        }
+      ],
+      "text" : "You open the window. You read through it. You might click on, you know, close it again straight away.",
+      "vad_seconds" : 0.0046340227127075195,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.47976100444793701,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 9.5367431640625e-07,
+      "duration" : 5.0099999999999998,
+      "id" : "ami-31",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.48510396480560303,
+      "segments" : [
+        {
+          "end" : 5.0099999999999998,
+          "speaker" : "unknown",
+          "start" : 0,
+          "text" : "I mean, if you already started on on doing stuff, I guess we can."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 5.0099999999999998,
+          "start" : 0
+        }
+      ],
+      "text" : "I mean, if you already started on on doing stuff, I guess we can.",
+      "vad_seconds" : 0.0053420066833496094,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.30866193771362305,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 0,
+      "duration" : 2.8999999999999999,
+      "id" : "ami-35",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.31218695640563965,
+      "segments" : [
+        {
+          "end" : 2.8999999999999999,
+          "speaker" : "unknown",
+          "start" : 0,
+          "text" : "So, what do we need to talk about?"
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 2.8999999999999999,
+          "start" : 0
+        }
+      ],
+      "text" : "So, what do we need to talk about?",
+      "vad_seconds" : 0.0035229921340942383,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.5968860387802124,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 9.5367431640625e-07,
+      "duration" : 4.0199999999999996,
+      "id" : "ami-500",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.60086703300476074,
+      "segments" : [
+        {
+          "end" : 4.0199999999999996,
+          "speaker" : "unknown",
+          "start" : 0.156,
+          "text" : "Haven't dared throw out to throw out all the functions I have, you know, I don't need."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 4.0199999999999996,
+          "start" : 0.156
+        }
+      ],
+      "text" : "Haven't dared throw out to throw out all the functions I have, you know, I don't need.",
+      "vad_seconds" : 0.0039800405502319336,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.28756403923034668,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 0,
+      "duration" : 2.1000000000000001,
+      "id" : "ami-503",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.29037702083587646,
+      "segments" : [
+        {
+          "end" : 2.1000000000000001,
+          "speaker" : "unknown",
+          "start" : 0,
+          "text" : "Actually, Monday. Monday might be good."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 2.1000000000000001,
+          "start" : 0
+        }
+      ],
+      "text" : "Actually, Monday. Monday might be good.",
+      "vad_seconds" : 0.0028120279312133789,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.52766501903533936,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 9.5367431640625e-07,
+      "duration" : 3.5,
+      "id" : "ami-505",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.5316770076751709,
+      "segments" : [
+        {
+          "end" : 3.5,
+          "speaker" : "unknown",
+          "start" : 0,
+          "text" : "Otherwise, Photoshop has a lot of windows. If you ever use Photoshop, it's got loads."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 3.5,
+          "start" : 0
+        }
+      ],
+      "text" : "Otherwise, Photoshop has a lot of windows. If you ever use Photoshop, it's got loads.",
+      "vad_seconds" : 0.0040110349655151367,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.69119596481323242,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 1.0728836059570312e-06,
+      "duration" : 10.56,
+      "id" : "ami-510",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.70042002201080322,
+      "segments" : [
+        {
+          "end" : 10.56,
+          "speaker" : "unknown",
+          "start" : 0,
+          "text" : "It was there when I took it. Uses the the NXT search to get the data out of the out of the files."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 10.56,
+          "start" : 0
+        }
+      ],
+      "text" : "It was there when I took it. Uses the the NXT search to get the data out of the out of the files.",
+      "vad_seconds" : 0.0092229843139648438,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.42084896564483643,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 9.5367431640625e-07,
+      "duration" : 3.8300000000000001,
+      "id" : "ami-511",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.42475700378417969,
+      "segments" : [
+        {
+          "end" : 3.8300000000000001,
+          "speaker" : "unknown",
+          "start" : 0.156,
+          "text" : "Words or text or something in it, so just searches for those files."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 3.8300000000000001,
+          "start" : 0.156
+        }
+      ],
+      "text" : "Words or text or something in it, so just searches for those files.",
+      "vad_seconds" : 0.0039070844650268555,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.41323196887969971,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 9.5367431640625e-07,
+      "duration" : 3.1400000000000001,
+      "id" : "ami-522",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.41624796390533447,
+      "segments" : [
+        {
+          "end" : 3.1400000000000001,
+          "speaker" : "unknown",
+          "start" : 0,
+          "text" : "Like, I don't know, show the speaker characterization, for instance."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 3.1400000000000001,
+          "start" : 0
+        }
+      ],
+      "text" : "Like, I don't know, show the speaker characterization, for instance.",
+      "vad_seconds" : 0.0030150413513183594,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.58028304576873779,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 9.5367431640625e-07,
+      "duration" : 5.8550000000000004,
+      "id" : "librispeech-0",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.60825490951538086,
+      "segments" : [
+        {
+          "end" : 5.8550000000000004,
+          "speaker" : "unknown",
+          "start" : 0.41199999999999998,
+          "text" : "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 5.8550000000000004,
+          "start" : 0.41199999999999998
+        }
+      ],
+      "text" : "Mr. Quilter is the apostle of the middle classes, and we are glad to welcome his gospel.",
+      "vad_seconds" : 0.02797091007232666,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.40234696865081787,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 9.5367431640625e-07,
+      "duration" : 4.8150000000000004,
+      "id" : "librispeech-1",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.40851092338562012,
+      "segments" : [
+        {
+          "end" : 4.8150000000000004,
+          "speaker" : "unknown",
+          "start" : 0.41199999999999998,
+          "text" : "Nor is Mr. Quilter's manner less interesting than his matter."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 4.8150000000000004,
+          "start" : 0.41199999999999998
+        }
+      ],
+      "text" : "Nor is Mr. Quilter's manner less interesting than his matter.",
+      "vad_seconds" : 0.0061630010604858398,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.95027804374694824,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 0,
+      "duration" : 12.484999999999999,
+      "id" : "librispeech-2",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.96274900436401367,
+      "segments" : [
+        {
+          "end" : 12.484999999999999,
+          "speaker" : "unknown",
+          "start" : 0.41199999999999998,
+          "text" : "He tells us that at this festive season of the year, with Christmas and roast beef looming before us, similes drawn from eating and its results occur most readily to the mind."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 12.484999999999999,
+          "start" : 0.41199999999999998
+        }
+      ],
+      "text" : "He tells us that at this festive season of the year, with Christmas and roast beef looming before us, similes drawn from eating and its results occur most readily to the mind.",
+      "vad_seconds" : 0.012470006942749023,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.78320193290710449,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 1.0728836059570312e-06,
+      "duration" : 9.9000000000000004,
+      "id" : "librispeech-3",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.79330301284790039,
+      "segments" : [
+        {
+          "end" : 9.9000000000000004,
+          "speaker" : "unknown",
+          "start" : 0.41199999999999998,
+          "text" : "He has grave doubts whether Sir Frederick Leighton's work is really Greek after all, and can discover in it but little of Rocky Ithaca."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 9.9000000000000004,
+          "start" : 0.41199999999999998
+        }
+      ],
+      "text" : "He has grave doubts whether Sir Frederick Leighton's work is really Greek after all, and can discover in it but little of Rocky Ithaca.",
+      "vad_seconds" : 0.010100007057189941,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.58205997943878174,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 9.5367431640625e-07,
+      "duration" : 9.0099999999999998,
+      "id" : "librispeech-5",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.59198296070098877,
+      "segments" : [
+        {
+          "end" : 9.0099999999999998,
+          "speaker" : "unknown",
+          "start" : 0.41199999999999998,
+          "text" : "It is obviously unnecessary for us to point out how luminous these criticisms are, how delicate in expression."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 9.0099999999999998,
+          "start" : 0.41199999999999998
+        }
+      ],
+      "text" : "It is obviously unnecessary for us to point out how luminous these criticisms are, how delicate in expression.",
+      "vad_seconds" : 0.009920954704284668,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.45714294910430908,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 1.0728836059570312e-06,
+      "duration" : 5.6399999999999997,
+      "id" : "librispeech-6",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.46398508548736572,
+      "segments" : [
+        {
+          "end" : 5.6399999999999997,
+          "speaker" : "unknown",
+          "start" : 0.41199999999999998,
+          "text" : "On the general principles of art, Mr. Quilter writes with equal lucidity."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 5.6399999999999997,
+          "start" : 0.41199999999999998
+        }
+      ],
+      "text" : "On the general principles of art, Mr. Quilter writes with equal lucidity.",
+      "vad_seconds" : 0.0068410634994506836,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.63289797306060791,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 2.0265579223632812e-06,
+      "duration" : 9.2400000000000002,
+      "id" : "librispeech-7",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.64331305027008057,
+      "segments" : [
+        {
+          "end" : 9.2400000000000002,
+          "speaker" : "unknown",
+          "start" : 0.41199999999999998,
+          "text" : "Painting, he tells us, is of a different quality to mathematics, and finish in art is adding more effect."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 9.2400000000000002,
+          "start" : 0.41199999999999998
+        }
+      ],
+      "text" : "Painting, he tells us, is of a different quality to mathematics, and finish in art is adding more effect.",
+      "vad_seconds" : 0.010413050651550293,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.43186402320861816,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 9.5367431640625e-07,
+      "duration" : 5.1200000000000001,
+      "id" : "librispeech-8",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.43786191940307617,
+      "segments" : [
+        {
+          "end" : 5.1200000000000001,
+          "speaker" : "unknown",
+          "start" : 0.41199999999999998,
+          "text" : "As for etchings, they are of two kinds: British and foreign."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 5.1200000000000001,
+          "start" : 0.41199999999999998
+        }
+      ],
+      "text" : "As for etchings, they are of two kinds: British and foreign.",
+      "vad_seconds" : 0.0059969425201416016,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 1.2847659587860107,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 9.5367431640625e-07,
+      "duration" : 18.289999999999999,
+      "id" : "librispeech-9",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 1.3024590015411377,
+      "segments" : [
+        {
+          "end" : 8.548,
+          "speaker" : "unknown",
+          "start" : 0.41199999999999998,
+          "text" : "He laments most bitterly the divorce that has been made between decorative art and what we usually call pictures."
+        },
+        {
+          "end" : 18.289999999999999,
+          "speaker" : "unknown",
+          "start" : 8.6039999999999992,
+          "text" : "Makes a customary appeal to the last judgment and reminds us that in the great days of art, Michelangelo was the furnishing upholsterer."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 8.548,
+          "start" : 0.41199999999999998
+        },
+        {
+          "end" : 18.289999999999999,
+          "start" : 8.6039999999999992
+        }
+      ],
+      "text" : "He laments most bitterly the divorce that has been made between decorative art and what we usually call pictures. Makes a customary appeal to the last judgment and reminds us that in the great days of art, Michelangelo was the furnishing upholsterer.",
+      "vad_seconds" : 0.017692089080810547,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.46144294738769531,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 9.5367431640625e-07,
+      "duration" : 5.5999999999999996,
+      "id" : "librispeech-10",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.46774899959564209,
+      "segments" : [
+        {
+          "end" : 5.5999999999999996,
+          "speaker" : "unknown",
+          "start" : 0,
+          "text" : "Near the fire, and the ornaments Fred brought home from India on the mantel board."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 5.5999999999999996,
+          "start" : 0
+        }
+      ],
+      "text" : "Near the fire, and the ornaments Fred brought home from India on the mantel board.",
+      "vad_seconds" : 0.0063050985336303711,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 1.0877339839935303,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 1.0728836059570312e-06,
+      "duration" : 15.115,
+      "id" : "librispeech-11",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 1.1025910377502441,
+      "segments" : [
+        {
+          "end" : 8.2919999999999998,
+          "speaker" : "unknown",
+          "start" : 0.41199999999999998,
+          "text" : "In fact, he is quite severe on Mr. Ruskin for not recognizing that a picture should denote the frailty of man."
+        },
+        {
+          "end" : 15.115,
+          "speaker" : "unknown",
+          "start" : 8.3480000000000008,
+          "text" : "And remarks with pleasing courtesy and felicitous grace that many phases of feeling."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 8.2919999999999998,
+          "start" : 0.41199999999999998
+        },
+        {
+          "end" : 15.115,
+          "start" : 8.3480000000000008
+        }
+      ],
+      "text" : "In fact, he is quite severe on Mr. Ruskin for not recognizing that a picture should denote the frailty of man. And remarks with pleasing courtesy and felicitous grace that many phases of feeling.",
+      "vad_seconds" : 0.014855027198791504,
+      "warmup" : false
+    },
+    {
+      "asr_seconds" : 0.47689700126647949,
+      "diarization" : [
+
+      ],
+      "diarization_seconds" : 2.0265579223632812e-06,
+      "duration" : 5.3799999999999999,
+      "id" : "librispeech-12",
+      "max_rss_bytes" : 3020996608,
+      "mlx_peak_bytes" : 3632962170,
+      "seconds" : 0.48324596881866455,
+      "segments" : [
+        {
+          "end" : 5.3799999999999999,
+          "speaker" : "unknown",
+          "start" : 0.41199999999999998,
+          "text" : "Only, unfortunately, his own work never does get good."
+        }
+      ],
+      "spans" : [
+        {
+          "end" : 5.3799999999999999,
+          "start" : 0.41199999999999998
+        }
+      ],
+      "text" : "Only, unfortunately, his own work never does get good.",
+      "vad_seconds" : 0.0063469409942626953,
+      "warmup" : false
+    }
+  ],
+  "warmup" : {
+    "asr_seconds" : 10.860281944274902,
+    "diarization" : [
+      {
+        "end" : 14.821731567382812,
+        "speaker" : "S1",
+        "start" : 0
+      },
+      {
+        "end" : 24.023769378662109,
+        "speaker" : "S1",
+        "start" : 16.604413986206055
+      },
+      {
+        "end" : 40.696094512939453,
+        "speaker" : "S1",
+        "start" : 25.161291122436523
+      },
+      {
+        "end" : 48.67572021484375,
+        "speaker" : "S1",
+        "start" : 42.665534973144531
+      },
+      {
+        "end" : 56.638370513916016,
+        "speaker" : "S1",
+        "start" : 49.456707000732422
+      },
+      {
+        "end" : 58.064517974853516,
+        "speaker" : "S1",
+        "start" : 56.910015106201172
+      },
+      {
+        "end" : 59.813243865966797,
+        "speaker" : "S1",
+        "start" : 59.354839324951172
+      },
+      {
+        "end" : 77.86077880859375,
+        "speaker" : "S1",
+        "start" : 60.322582244873047
+      },
+      {
+        "end" : 81.748725891113281,
+        "speaker" : "S2",
+        "start" : 77.86077880859375
+      },
+      {
+        "end" : 82.563667297363281,
+        "speaker" : "S1",
+        "start" : 82.105262756347656
+      },
+      {
+        "end" : 83.56536865234375,
+        "speaker" : "S1",
+        "start" : 83.259765625
+      },
+      {
+        "end" : 86.655349731445312,
+        "speaker" : "S1",
+        "start" : 84.634971618652344
+      },
+      {
+        "end" : 90.033958435058594,
+        "speaker" : "S1",
+        "start" : 87.691001892089844
+      }
+    ],
+    "diarization_seconds" : 2.1993300914764404,
+    "duration" : 90,
+    "id" : "EN2002a-120-210",
+    "max_rss_bytes" : 2972762112,
+    "mlx_peak_bytes" : 3340612973,
+    "seconds" : 13.146301984786987,
+    "segments" : [
+      {
+        "end" : 7.7800000000000002,
+        "speaker" : "S1",
+        "start" : 0,
+        "text" : "button so that you actually in the transcription box, but so that you click on a button and then it opens whatever that speaker characterisation is."
+      },
+      {
+        "end" : 15.204000000000001,
+        "speaker" : "S1",
+        "start" : 8.0920000000000005,
+        "text" : "The problem is, the the left click is already used because it highlights that."
+      },
+      {
+        "end" : 24.420000000000002,
+        "speaker" : "S1",
+        "start" : 16.539999999999999,
+        "text" : "That part of speech or whatever that what he's been saying. The left click or the right click. The left click highlights it. Right. So that you can."
+      },
+      {
+        "end" : 33.636000000000003,
+        "speaker" : "S1",
+        "start" : 24.988,
+        "text" : "I don't know what happens when you double click actually, but that'd be a bit annoying if you have left click for one thing and double click for something else."
+      },
+      {
+        "end" : 40.804000000000002,
+        "speaker" : "S1",
+        "start" : 33.948,
+        "text" : "I think so. Yeah, when you left click it, you can, for example, set set the marker there so that the the audio goes from there. I think."
+      },
+      {
+        "end" : 48.996000000000002,
+        "speaker" : "S1",
+        "start" : 42.396000000000001,
+        "text" : "So we can't put it on left click. We could put it on right click. We could, for example, have a little menu that pops up."
+      },
+      {
+        "end" : 58.468000000000004,
+        "speaker" : "S1",
+        "start" : 49.308,
+        "text" : "Yeah, it might be quite good. I suppose. So, right-click on it, menu, you know, and you can click on speaker characterization. It pops the window. What else do we have in there?"
+      },
+      {
+        "end" : 60.003999999999998,
+        "speaker" : "S1",
+        "start" : 59.292000000000002,
+        "text" : "What?"
+      },
+      {
+        "end" : 73.828000000000003,
+        "speaker" : "S1",
+        "start" : 60.060000000000002,
+        "text" : "That's a good point. I don't know. Otherwise, we just have a right click or do. Yeah, yeah, but um, I don't know about you, but usually in Windows, right click doesn't do anything. Doesn't it opens a menu. A menu, yeah, yeah. That's what I do."
+      },
+      {
+        "end" : 86.884,
+        "speaker" : "S1",
+        "start" : 73.884,
+        "text" : "Yeah, I said it would maybe be a bit weird for it to just start bringing up stuff, isn't it? Yeah, to just have sort of the same sort of idiom throughout, kind of. Yeah, yeah. Um, or just you know, or just the button."
+      },
+      {
+        "end" : 90,
+        "speaker" : "S1",
+        "start" : 87.707999999999998,
+        "text" : "I guess a button button makes a bit."
+      }
+    ],
+    "spans" : [
+      {
+        "end" : 7.7800000000000002,
+        "start" : 0
+      },
+      {
+        "end" : 15.204000000000001,
+        "start" : 8.0920000000000005
+      },
+      {
+        "end" : 24.420000000000002,
+        "start" : 16.539999999999999
+      },
+      {
+        "end" : 33.636000000000003,
+        "start" : 24.988
+      },
+      {
+        "end" : 40.804000000000002,
+        "start" : 33.948
+      },
+      {
+        "end" : 48.996000000000002,
+        "start" : 42.396000000000001
+      },
+      {
+        "end" : 58.468000000000004,
+        "start" : 49.308
+      },
+      {
+        "end" : 60.003999999999998,
+        "start" : 59.292000000000002
+      },
+      {
+        "end" : 73.828000000000003,
+        "start" : 60.060000000000002
+      },
+      {
+        "end" : 86.884,
+        "start" : 73.884
+      },
+      {
+        "end" : 90,
+        "start" : 87.707999999999998
+      }
+    ],
+    "text" : "button so that you actually in the transcription box, but so that you click on a button and then it opens whatever that speaker characterisation is. The problem is, the the left click is already used because it highlights that. That part of speech or whatever that what he's been saying. The left click or the right click. The left click highlights it. Right. So that you can. I don't know what happens when you double click actually, but that'd be a bit annoying if you have left click for one thing and double click for something else. I think so. Yeah, when you left click it, you can, for example, set set the marker there so that the the audio goes from there. I think. So we can't put it on left click. We could put it on right click. We could, for example, have a little menu that pops up. Yeah, it might be quite good. I suppose. So, right-click on it, menu, you know, and you can click on speaker characterization. It pops the window. What else do we have in there? What? That's a good point. I don't know. Otherwise, we just have a right click or do. Yeah, yeah, but um, I don't know about you, but usually in Windows, right click doesn't do anything. Doesn't it opens a menu. A menu, yeah, yeah. That's what I do. Yeah, I said it would maybe be a bit weird for it to just start bringing up stuff, isn't it? Yeah, to just have sort of the same sort of idiom throughout, kind of. Yeah, yeah. Um, or just you know, or just the button. I guess a button button makes a bit.",
+    "vad_seconds" : 0.086689949035644531,
+    "warmup" : true
+  }
+}

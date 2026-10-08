@@ -1,0 +1,277 @@
+{
+  "breeze": [
+    {
+      "id": "short",
+      "phase": "cold",
+      "first_audio_s": 10.35133695800323,
+      "elapsed_s": 13.694570624968037,
+      "audio_s": 6.08,
+      "rtf": 2.252396484369743,
+      "first_chunk_audio_s": 0.32,
+      "simulated_stall_s": 0.46733704192563863,
+      "simulated_stall_count": 1,
+      "minimum_extra_buffer_s": 0.4673370419256389,
+      "earliest_continuous_start_s_from_trace": 10.818673999928869,
+      "process_lifetime_peak_phys_gib": 6.420189835131168
+    },
+    {
+      "id": "short",
+      "phase": "warm",
+      "first_audio_s": 0.8486014580121264,
+      "elapsed_s": 4.174696000060067,
+      "audio_s": 6.08,
+      "rtf": 0.6866276315888268,
+      "first_chunk_audio_s": 0.32,
+      "simulated_stall_s": 0.4665117080509662,
+      "simulated_stall_count": 1,
+      "minimum_extra_buffer_s": 0.46651170805096626,
+      "earliest_continuous_start_s_from_trace": 1.3151131660630926,
+      "process_lifetime_peak_phys_gib": 6.420189835131168
+    },
+    {
+      "id": "short",
+      "phase": "warm_seed43",
+      "first_audio_s": 0.835986457997933,
+      "elapsed_s": 3.5776047919644043,
+      "audio_s": 5.12,
+      "rtf": 0.6987509359305477,
+      "first_chunk_audio_s": 0.32,
+      "simulated_stall_s": 0.4647650420153513,
+      "simulated_stall_count": 1,
+      "minimum_extra_buffer_s": 0.46476504201535135,
+      "earliest_continuous_start_s_from_trace": 1.3007515000132843,
+      "process_lifetime_peak_phys_gib": 6.420189835131168
+    },
+    {
+      "id": "digest",
+      "phase": "warm",
+      "first_audio_s": 0.9908850829815492,
+      "elapsed_s": 11.856766916927882,
+      "audio_s": 17.04,
+      "rtf": 0.6958196547492889,
+      "first_chunk_audio_s": 0.32,
+      "simulated_stall_s": 0.46017858392558986,
+      "simulated_stall_count": 1,
+      "minimum_extra_buffer_s": 0.4601785839255899,
+      "earliest_continuous_start_s_from_trace": 1.451063666907139,
+      "process_lifetime_peak_phys_gib": 6.420189835131168
+    },
+    {
+      "id": "names_numbers",
+      "phase": "warm",
+      "first_audio_s": 0.8700884580612183,
+      "elapsed_s": 13.505784958018921,
+      "audio_s": 19.6,
+      "rtf": 0.6890706611234143,
+      "first_chunk_audio_s": 0.32,
+      "simulated_stall_s": 0.4592997090145945,
+      "simulated_stall_count": 1,
+      "minimum_extra_buffer_s": 0.45929970901459455,
+      "earliest_continuous_start_s_from_trace": 1.3293881670758128,
+      "process_lifetime_peak_phys_gib": 6.420189835131168
+    },
+    {
+      "id": "neutral",
+      "phase": "warm",
+      "first_audio_s": 0.8780947499908507,
+      "elapsed_s": 6.703587374999188,
+      "audio_s": 10.0,
+      "rtf": 0.6703587374999188,
+      "first_chunk_audio_s": 0.32,
+      "simulated_stall_s": 0.4372774169966578,
+      "simulated_stall_count": 1,
+      "minimum_extra_buffer_s": 0.43727741699665784,
+      "earliest_continuous_start_s_from_trace": 1.3153721669875085,
+      "process_lifetime_peak_phys_gib": 6.420189835131168
+    },
+    {
+      "id": "directed",
+      "phase": "warm",
+      "first_audio_s": 1.1187747080111876,
+      "elapsed_s": 8.451245375094004,
+      "audio_s": 10.72,
+      "rtf": 0.7883624417065301,
+      "first_chunk_audio_s": 0.32,
+      "simulated_stall_s": 0.5686807920644059,
+      "simulated_stall_count": 1,
+      "minimum_extra_buffer_s": 0.5686807920644059,
+      "earliest_continuous_start_s_from_trace": 1.6874555000755935,
+      "process_lifetime_peak_phys_gib": 6.420189835131168
+    },
+    {
+      "id": "long",
+      "phase": "warm",
+      "first_audio_s": 0.903410041006282,
+      "elapsed_s": 63.119760291068815,
+      "audio_s": 92.08,
+      "rtf": 0.6854882742296787,
+      "first_chunk_audio_s": 0.32,
+      "simulated_stall_s": 0.45899116708431387,
+      "simulated_stall_count": 1,
+      "minimum_extra_buffer_s": 0.4589911670843139,
+      "earliest_continuous_start_s_from_trace": 1.3624012080905958,
+      "process_lifetime_peak_phys_gib": 6.420189835131168
+    }
+  ],
+  "kokoro": [
+    {
+      "id": "reference",
+      "elapsed_s": 3.414938500034623,
+      "audio_s": 8.270375,
+      "rtf": 0.4129121714595315,
+      "process_lifetime_peak_phys_gib": 0.7185985743999481
+    },
+    {
+      "id": "short",
+      "elapsed_s": 2.071257165982388,
+      "audio_s": 4.631,
+      "rtf": 0.44725915914109,
+      "process_lifetime_peak_phys_gib": 0.666123554110527
+    },
+    {
+      "id": "digest",
+      "elapsed_s": 5.727865584078245,
+      "audio_s": 16.05925,
+      "rtf": 0.3566708024396062,
+      "process_lifetime_peak_phys_gib": 0.7149364873766899
+    },
+    {
+      "id": "names_numbers",
+      "elapsed_s": 6.272356832982041,
+      "audio_s": 18.418375,
+      "rtf": 0.3405488721443689,
+      "process_lifetime_peak_phys_gib": 0.7432262822985649
+    },
+    {
+      "id": "neutral",
+      "elapsed_s": 3.35709283396136,
+      "audio_s": 8.169583333333334,
+      "rtf": 0.410925832687676,
+      "process_lifetime_peak_phys_gib": 0.6690685003995895
+    },
+    {
+      "id": "long",
+      "elapsed_s": 26.956255416967906,
+      "audio_s": 80.995125,
+      "rtf": 0.3328133071832151,
+      "process_lifetime_peak_phys_gib": 0.8106854781508446
+    }
+  ],
+  "same_seed_audio_identical": true,
+  "different_seed_audio_differs": true,
+  "breeze_warm_median_first_audio_s": 0.8780947499908507,
+  "breeze_warm_weighted_rtf": 0.6934103940994353,
+  "breeze_warm_trace_continuous_start_range_s": [
+    1.3007515000132843,
+    1.6874555000755935
+  ],
+  "streaming_limits": "Offline simulation from client event times, with constant-rate PCM playback. Extra buffer is the minimum for these traces and excludes device scheduling and future jitter. Breeze memory peaks are process-lifetime high-water marks, shared across requests.",
+  "content": {
+    "matched_cases": [
+      "short",
+      "digest",
+      "neutral",
+      "long"
+    ],
+    "normalization": [
+      "Lowercase, apostrophe normalization, punctuation ignored.",
+      "2:30 and two thirty are equivalent; % and percent are equivalent, applied to both sides.",
+      "Use one warm seed-42 Breeze result and one Kokoro result per case; exclude reference, duplicate short runs, directed-only case, and numeric case from the matched aggregate."
+    ],
+    "models": {
+      "breeze": {
+        "rows": [
+          {
+            "file": "breeze_short_warm.wav",
+            "id": "short",
+            "raw_edits": 0,
+            "raw_reference_words": 15,
+            "normalized_edits": 0,
+            "normalized_reference_words": 15
+          },
+          {
+            "file": "breeze_digest_warm.wav",
+            "id": "digest",
+            "raw_edits": 2,
+            "raw_reference_words": 54,
+            "normalized_edits": 0,
+            "normalized_reference_words": 54
+          },
+          {
+            "file": "breeze_neutral_warm.wav",
+            "id": "neutral",
+            "raw_edits": 0,
+            "raw_reference_words": 32,
+            "normalized_edits": 0,
+            "normalized_reference_words": 32
+          },
+          {
+            "file": "breeze_long_warm.wav",
+            "id": "long",
+            "raw_edits": 1,
+            "raw_reference_words": 255,
+            "normalized_edits": 1,
+            "normalized_reference_words": 255
+          }
+        ],
+        "raw": {
+          "edits": 3,
+          "reference_words": 356,
+          "wer": 0.008426966292134831
+        },
+        "normalized": {
+          "edits": 1,
+          "reference_words": 356,
+          "wer": 0.0028089887640449437
+        }
+      },
+      "kokoro": {
+        "rows": [
+          {
+            "file": "kokoro_short.wav",
+            "id": "short",
+            "raw_edits": 0,
+            "raw_reference_words": 15,
+            "normalized_edits": 0,
+            "normalized_reference_words": 15
+          },
+          {
+            "file": "kokoro_digest.wav",
+            "id": "digest",
+            "raw_edits": 2,
+            "raw_reference_words": 54,
+            "normalized_edits": 0,
+            "normalized_reference_words": 54
+          },
+          {
+            "file": "kokoro_neutral.wav",
+            "id": "neutral",
+            "raw_edits": 0,
+            "raw_reference_words": 32,
+            "normalized_edits": 0,
+            "normalized_reference_words": 32
+          },
+          {
+            "file": "kokoro_long.wav",
+            "id": "long",
+            "raw_edits": 1,
+            "raw_reference_words": 255,
+            "normalized_edits": 1,
+            "normalized_reference_words": 255
+          }
+        ],
+        "raw": {
+          "edits": 3,
+          "reference_words": 356,
+          "wer": 0.008426966292134831
+        },
+        "normalized": {
+          "edits": 1,
+          "reference_words": 356,
+          "wer": 0.0028089887640449437
+        }
+      }
+    },
+    "limits": "ASR agreement is not human-rated TTS quality. Both long transcriptions render next step as next steps; this may be a shared recognition ambiguity. Numeric/name cases should be listened to; brand spelling is not evidence of a pronunciation error."
+  }
+}

@@ -1,0 +1,164 @@
+{
+  "model": "/private/tmp/lokalbot-funasr-comparison-20260908/models/Qwen/Qwen3-ASR-1.7B",
+  "qwen_asr_version": "0.0.6",
+  "torch_version": "2.8.0",
+  "device": "mps:0",
+  "dtype": "torch.bfloat16",
+  "rows": [
+    {
+      "file": "breeze_digest_warm.wav",
+      "id": "digest",
+      "reference": "Here is your daily summary. The team approved the new onboarding flow. Maya will finish the first draft by Friday, while Daniel will check the export feature. The launch date is still undecided. Your next meeting starts at two thirty. Before then, review the customer feedback and send your comments to the design team.",
+      "transcript": "Here is your daily summary. The team approved the new onboarding flow. Maya will finish the first draft by Friday, while Daniel will check the export feature. The launch date is still undecided. Your next meeting starts at 2:30. Before then, review the customer feedback and send your comments to the design team.",
+      "edits": 2,
+      "reference_words": 54,
+      "raw_wer": 0.037037037037037035,
+      "include_in_aggregate": true,
+      "asr_seconds": 14.701190000050701
+    },
+    {
+      "file": "breeze_directed_warm.wav",
+      "id": "directed",
+      "reference": "I thought the door was locked. Then I heard a quiet click, and the handle began to turn. Someone was standing on the other side. For a moment, neither of us moved.",
+      "transcript": "I thought the door was locked. Then I heard a quiet click, and the handle began to turn. Someone was standing on the other side. For a moment, neither of us moved.",
+      "edits": 0,
+      "reference_words": 32,
+      "raw_wer": 0.0,
+      "include_in_aggregate": true,
+      "asr_seconds": 3.136358458083123
+    },
+    {
+      "file": "breeze_long_warm.wav",
+      "id": "long",
+      "reference": "This morning, the team met to review the first week of the project. The goal was simple: understand what worked, identify what still needed attention, and agree on a realistic plan for the next few days. Everyone had read the notes in advance, so the discussion began with the questions that mattered most. First, the group reviewed the new onboarding flow. Several people found the opening screen clear, but the next step still needed a better explanation. Maya offered to revise the instructions and bring a new draft to the next meeting. Daniel agreed to check the export feature using a small sample document. No one committed to a launch date. The group wanted to see the results of those two tasks before making that decision. After a short break, the conversation moved to customer feedback. One customer asked for a simpler way to find earlier decisions. Another wanted action items to include the person responsible and the original deadline. The team agreed that both requests were useful, although they had different priorities. Improving the search experience could help immediately. Changing how deadlines were stored would require more careful planning. By the end of the meeting, there were three clear next steps. Maya would update the onboarding draft. Daniel would test document exports. The project lead would gather a few examples of missing or confusing deadlines. They would review the results together on Friday. Until then, the existing release would remain available, and the team would focus on making the next version easier to understand.",
+      "transcript": "This morning, the team met to review the first week of the project. The goal was simple: understand what worked, identify what still needed attention, and agree on a realistic plan for the next few days. Everyone had read the notes in advance, so the discussion began with the questions that mattered most. First, the group reviewed the new onboarding flow. Several people found the opening screen clear, but the next steps still needed a better explanation. Maya offered to revise the instructions and bring a new draft to the next meeting. Daniel agreed to check the export feature using a small sample document. No one committed to a launch date. The group wanted to see the results of those two tasks before making that decision. After a short break, the conversation moved to customer feedback. One customer asked for a simpler way to find earlier decisions. Another wanted action items to include the person responsible and the original deadline. The team agreed that both requests were useful, although they had different priorities. Improving the search experience could help immediately. Changing how deadlines were stored would require more careful planning. By the end of the meeting, there were three clear next steps. Maya would update the onboarding draft. Daniel would test document exports. The project lead would gather a few examples of missing or confusing deadlines. They would review the results together on Friday. Until then, the existing release would remain available, and the team would focus on making the next version easier to understand.",
+      "edits": 1,
+      "reference_words": 255,
+      "raw_wer": 0.00392156862745098,
+      "include_in_aggregate": true,
+      "asr_seconds": 14.313237541005947
+    },
+    {
+      "file": "breeze_names_numbers_warm.wav",
+      "id": "names_numbers",
+      "reference": "LokalBot version 0.8.0 is ready for review. The meeting starts at 14:30 on September 9, 2026. Revenue increased by 12.5 percent to 2,450 euros. Please check the API, the PDF export, and the GitHub pull request before Friday.",
+      "transcript": "Localbot version 0.8.0 is ready for review. The meeting starts at 14:30 on September 9, 2026. Revenue increased by 12.5% to 2,450 euros. Please check the API, the PDF export, and the GitHub pull request before Friday.",
+      "edits": 2,
+      "reference_words": 43,
+      "raw_wer": 0.046511627906976744,
+      "include_in_aggregate": false,
+      "asr_seconds": 3.150404875050299
+    },
+    {
+      "file": "breeze_neutral_warm.wav",
+      "id": "neutral",
+      "reference": "I thought the door was locked. Then I heard a quiet click, and the handle began to turn. Someone was standing on the other side. For a moment, neither of us moved.",
+      "transcript": "I thought the door was locked. Then I heard a quiet click, and the handle began to turn. Someone was standing on the other side. For a moment, neither of us moved.",
+      "edits": 0,
+      "reference_words": 32,
+      "raw_wer": 0.0,
+      "include_in_aggregate": true,
+      "asr_seconds": 1.7779599580680951
+    },
+    {
+      "file": "breeze_short_cold.wav",
+      "id": "short",
+      "reference": "Your meeting summary is ready. You have three action items and one decision to review.",
+      "transcript": "Your meeting summary is ready. You have three action items and one decision to review.",
+      "edits": 0,
+      "reference_words": 15,
+      "raw_wer": 0.0,
+      "include_in_aggregate": true,
+      "asr_seconds": 1.5350993330357596
+    },
+    {
+      "file": "breeze_short_warm.wav",
+      "id": "short",
+      "reference": "Your meeting summary is ready. You have three action items and one decision to review.",
+      "transcript": "Your meeting summary is ready. You have three action items and one decision to review.",
+      "edits": 0,
+      "reference_words": 15,
+      "raw_wer": 0.0,
+      "include_in_aggregate": true,
+      "asr_seconds": 0.6662004999816418
+    },
+    {
+      "file": "breeze_short_warm_seed43.wav",
+      "id": "short",
+      "reference": "Your meeting summary is ready. You have three action items and one decision to review.",
+      "transcript": "Your meeting summary is ready. You have three action items and one decision to review.",
+      "edits": 0,
+      "reference_words": 15,
+      "raw_wer": 0.0,
+      "include_in_aggregate": true,
+      "asr_seconds": 1.768939874949865
+    },
+    {
+      "file": "kokoro_digest.wav",
+      "id": "digest",
+      "reference": "Here is your daily summary. The team approved the new onboarding flow. Maya will finish the first draft by Friday, while Daniel will check the export feature. The launch date is still undecided. Your next meeting starts at two thirty. Before then, review the customer feedback and send your comments to the design team.",
+      "transcript": "Here is your daily summary. The team approved the new onboarding flow. Maya will finish the first draft by Friday, while Daniel will check the export feature. The launch date is still undecided. Your next meeting starts at 2:30. Before then, review the customer feedback and send your comments to the design team.",
+      "edits": 2,
+      "reference_words": 54,
+      "raw_wer": 0.037037037037037035,
+      "include_in_aggregate": true,
+      "asr_seconds": 2.792554041952826
+    },
+    {
+      "file": "kokoro_long.wav",
+      "id": "long",
+      "reference": "This morning, the team met to review the first week of the project. The goal was simple: understand what worked, identify what still needed attention, and agree on a realistic plan for the next few days. Everyone had read the notes in advance, so the discussion began with the questions that mattered most. First, the group reviewed the new onboarding flow. Several people found the opening screen clear, but the next step still needed a better explanation. Maya offered to revise the instructions and bring a new draft to the next meeting. Daniel agreed to check the export feature using a small sample document. No one committed to a launch date. The group wanted to see the results of those two tasks before making that decision. After a short break, the conversation moved to customer feedback. One customer asked for a simpler way to find earlier decisions. Another wanted action items to include the person responsible and the original deadline. The team agreed that both requests were useful, although they had different priorities. Improving the search experience could help immediately. Changing how deadlines were stored would require more careful planning. By the end of the meeting, there were three clear next steps. Maya would update the onboarding draft. Daniel would test document exports. The project lead would gather a few examples of missing or confusing deadlines. They would review the results together on Friday. Until then, the existing release would remain available, and the team would focus on making the next version easier to understand.",
+      "transcript": "This morning, the team met to review the first week of the project. The goal was simple: understand what worked, identify what still needed attention, and agree on a realistic plan for the next few days. Everyone had read the notes in advance, so the discussion began with the questions that mattered most. First, the group reviewed the new onboarding flow. Several people found the opening screen clear, but the next steps still needed a better explanation. Maya offered to revise the instructions and bring a new draft to the next meeting. Daniel agreed to check the export feature using a small sample document. No one committed to a launch date. The group wanted to see the results of those two tasks before making that decision. After a short break, the conversation moved to customer feedback. One customer asked for a simpler way to find earlier decisions. Another wanted action items to include the person responsible and the original deadline. The team agreed that both requests were useful, although they had different priorities. Improving the search experience could help immediately. Changing how deadlines were stored would require more careful planning. By the end of the meeting, there were three clear next steps. Maya would update the onboarding draft. Daniel would test document exports. The project lead would gather a few examples of missing or confusing deadlines. They would review the results together on Friday. Until then, the existing release would remain available, and the team would focus on making the next version easier to understand.",
+      "edits": 1,
+      "reference_words": 255,
+      "raw_wer": 0.00392156862745098,
+      "include_in_aggregate": true,
+      "asr_seconds": 13.433043875033036
+    },
+    {
+      "file": "kokoro_names_numbers.wav",
+      "id": "names_numbers",
+      "reference": "LokalBot version 0.8.0 is ready for review. The meeting starts at 14:30 on September 9, 2026. Revenue increased by 12.5 percent to 2,450 euros. Please check the API, the PDF export, and the GitHub pull request before Friday.",
+      "transcript": "Local bot version 0.8.0 is ready for review. The meeting starts at 14:30 on September 9, 2026. Revenue increased by 12.5% to 2,450 euros. Please check the API, the PDF export, and the GitHub pull request before Friday.",
+      "edits": 3,
+      "reference_words": 43,
+      "raw_wer": 0.06976744186046512,
+      "include_in_aggregate": false,
+      "asr_seconds": 3.0134009580360726
+    },
+    {
+      "file": "kokoro_neutral.wav",
+      "id": "neutral",
+      "reference": "I thought the door was locked. Then I heard a quiet click, and the handle began to turn. Someone was standing on the other side. For a moment, neither of us moved.",
+      "transcript": "I thought the door was locked. Then I heard a quiet click, and the handle began to turn. Someone was standing on the other side. For a moment, neither of us moved.",
+      "edits": 0,
+      "reference_words": 32,
+      "raw_wer": 0.0,
+      "include_in_aggregate": true,
+      "asr_seconds": 1.7674025829182938
+    },
+    {
+      "file": "kokoro_reference.wav",
+      "id": "reference",
+      "reference": "Today we will review the decisions from our meeting, the work that is still in progress, and the next steps. Take a moment to check the details before we continue.",
+      "transcript": "Today, we will review the decisions from our meeting, the work that is still in progress, and the next steps. Take a moment to check the details before we continue.",
+      "edits": 0,
+      "reference_words": 30,
+      "raw_wer": 0.0,
+      "include_in_aggregate": false,
+      "asr_seconds": 1.363188709015958
+    },
+    {
+      "file": "kokoro_short.wav",
+      "id": "short",
+      "reference": "Your meeting summary is ready. You have three action items and one decision to review.",
+      "transcript": "Your meeting summary is ready. You have three action items and one decision to review.",
+      "edits": 0,
+      "reference_words": 15,
+      "raw_wer": 0.0,
+      "include_in_aggregate": true,
+      "asr_seconds": 0.944940209039487
+    }
+  ],
+  "limits": "ASR transcript agreement is a diagnostic, not human listening or a perceptual quality score. Numeric case excluded from aggregate WER because written/spoken forms differ."
+}

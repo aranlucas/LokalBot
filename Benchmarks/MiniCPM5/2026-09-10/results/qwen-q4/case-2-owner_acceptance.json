@@ -1,0 +1,78 @@
+{
+  "message": {
+    "role": "assistant",
+    "content": "{\n  \"release_notes_owner\": \"Marko\",\n  \"release_notes_due\": \"Friday\",\n  \"download_totals_owner\": null\n}"
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "completion_tokens": 33,
+    "prompt_tokens": 162,
+    "total_tokens": 195,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    }
+  },
+  "timings": {
+    "cache_n": 0,
+    "prompt_n": 162,
+    "prompt_ms": 182.699,
+    "prompt_per_token_ms": 1.1277716049382718,
+    "prompt_per_second": 886.7043607244702,
+    "predicted_n": 33,
+    "predicted_ms": 328.704,
+    "predicted_per_token_ms": 9.960727272727272,
+    "predicted_per_second": 100.39427570093457
+  },
+  "raw": {
+    "choices": [
+      {
+        "finish_reason": "stop",
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"release_notes_owner\": \"Marko\",\n  \"release_notes_due\": \"Friday\",\n  \"download_totals_owner\": null\n}"
+        }
+      }
+    ],
+    "created": 1789023077,
+    "model": "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "system_fingerprint": "b10173-b10173",
+    "object": "chat.completion",
+    "usage": {
+      "completion_tokens": 33,
+      "prompt_tokens": 162,
+      "total_tokens": 195,
+      "prompt_tokens_details": {
+        "cached_tokens": 0
+      }
+    },
+    "id": "chatcmpl-k2GQYSdr7HMSM1OBA7hvX0RmybKkef7n",
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 162,
+      "prompt_ms": 182.699,
+      "prompt_per_token_ms": 1.1277716049382718,
+      "prompt_per_second": 886.7043607244702,
+      "predicted_n": 33,
+      "predicted_ms": 328.704,
+      "predicted_per_token_ms": 9.960727272727272,
+      "predicted_per_second": 100.39427570093457
+    }
+  },
+  "wall_seconds": 0.5344650830375031,
+  "memory": {
+    "samples": 3,
+    "peak_rss_bytes": 6990135296,
+    "peak_physical_footprint_bytes": 4437039032
+  },
+  "id": "owner_acceptance",
+  "group": "extraction",
+  "repeat": 2,
+  "score": {
+    "passed": true,
+    "json_valid": true,
+    "correct_fields": 3,
+    "total_fields": 3,
+    "wrong": {}
+  }
+}

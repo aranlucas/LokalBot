@@ -1,0 +1,994 @@
+{
+  "native": {
+    "summary": {
+      "clip": {
+        "count": 24,
+        "wer": 0.05275779376498801,
+        "errors": 22,
+        "reference_words": 417,
+        "seconds": 13.860511898994446,
+        "audio_seconds": 155.2399375,
+        "rtfx": 11.200159029571077
+      },
+      "meeting": {
+        "count": 3,
+        "wer": 0.2833969465648855,
+        "errors": 297,
+        "reference_words": 1048,
+        "seconds": 29.467684030532837,
+        "audio_seconds": 270.0,
+        "rtfx": 9.162579581084161,
+        "cpwer": 0.6631578947368421,
+        "der": {
+          "0.0": {
+            "fraction": 0.36559973627394365,
+            "total": 331.2299999999993,
+            "false alarm": 1.8901130485531041,
+            "confusion": 22.674814801216684,
+            "correct": 212.0225124025343,
+            "missed detection": 96.5326727962483
+          },
+          "0.25": {
+            "fraction": 0.31857388676045945,
+            "total": 270.41999999999973,
+            "false alarm": 0.9780302429198287,
+            "confusion": 16.88147827148461,
+            "correct": 185.2492797851562,
+            "missed detection": 68.28924194335892
+          }
+        }
+      }
+    },
+    "rows": [
+      {
+        "id": "EN2002a-120-210",
+        "kind": "meeting",
+        "seconds": 10.086923003196716,
+        "duration": 90.0,
+        "wer": {
+          "errors": 79,
+          "reference_words": 346,
+          "wer": 0.22832369942196531,
+          "substitutions": 25,
+          "deletions": 52,
+          "insertions": 2
+        },
+        "cpwer": {
+          "errors": 203,
+          "reference_words": 346,
+          "cpwer": 0.5867052023121387,
+          "reference_speakers": 4,
+          "hypothesis_speakers": 1
+        },
+        "der": {
+          "0.0": {
+            "total": 103.12000000000006,
+            "false alarm": 0.2981758880614791,
+            "confusion": 6.820608673095734,
+            "correct": 71.9813893890381,
+            "missed detection": 24.318001937866228,
+            "diarization error rate": 0.30485634696492847
+          },
+          "0.25": {
+            "total": 87.53999999999996,
+            "false alarm": 0.008243865966790054,
+            "confusion": 5.389678649902379,
+            "correct": 64.62743476867672,
+            "missed detection": 17.522886581420863,
+            "diarization error rate": 0.26183240915341605
+          }
+        }
+      },
+      {
+        "id": "EN2002a-600-690",
+        "kind": "meeting",
+        "seconds": 10.903871059417725,
+        "duration": 90.0,
+        "wer": {
+          "errors": 127,
+          "reference_words": 415,
+          "wer": 0.3060240963855422,
+          "substitutions": 10,
+          "deletions": 115,
+          "insertions": 2
+        },
+        "cpwer": {
+          "errors": 319,
+          "reference_words": 415,
+          "cpwer": 0.7686746987951807,
+          "reference_speakers": 4,
+          "hypothesis_speakers": 4
+        },
+        "der": {
+          "0.0": {
+            "total": 118.57999999999993,
+            "false alarm": 1.313513698577708,
+            "confusion": 4.309049267768842,
+            "correct": 74.32650391101856,
+            "missed detection": 39.94444682121252,
+            "diarization error rate": 0.3842723038249207
+          },
+          "0.25": {
+            "total": 96.51000000000056,
+            "false alarm": 0.9499999999999318,
+            "confusion": 3.0141531372071313,
+            "correct": 64.89723442077661,
+            "missed detection": 28.598612442016815,
+            "diarization error rate": 0.3374030212332783
+          }
+        }
+      },
+      {
+        "id": "EN2002a-1500-1590",
+        "kind": "meeting",
+        "seconds": 8.476889967918396,
+        "duration": 90.0,
+        "wer": {
+          "errors": 91,
+          "reference_words": 287,
+          "wer": 0.3170731707317073,
+          "substitutions": 18,
+          "deletions": 70,
+          "insertions": 3
+        },
+        "cpwer": {
+          "errors": 171,
+          "reference_words": 284,
+          "cpwer": 0.602112676056338,
+          "reference_speakers": 4,
+          "hypothesis_speakers": 3
+        },
+        "der": {
+          "0.0": {
+            "total": 109.52999999999929,
+            "false alarm": 0.278423461913917,
+            "confusion": 11.545156860352108,
+            "correct": 65.71461910247763,
+            "missed detection": 32.270224037169555,
+            "diarization error rate": 0.40257285090327644
+          },
+          "0.25": {
+            "total": 86.36999999999921,
+            "false alarm": 0.01978637695310681,
+            "confusion": 8.4776464843751,
+            "correct": 55.72461059570287,
+            "missed detection": 22.16774291992124,
+            "diarization error rate": 0.3550442952558727
+          }
+        }
+      },
+      {
+        "id": "ami-15",
+        "kind": "clip",
+        "seconds": 0.35107195377349854,
+        "duration": 2.61,
+        "wer": {
+          "errors": 2,
+          "reference_words": 8,
+          "wer": 0.25,
+          "substitutions": 1,
+          "deletions": 0,
+          "insertions": 1
+        }
+      },
+      {
+        "id": "ami-25",
+        "kind": "clip",
+        "seconds": 0.5566480159759521,
+        "duration": 3.17,
+        "wer": {
+          "errors": 1,
+          "reference_words": 16,
+          "wer": 0.0625,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 1
+        }
+      },
+      {
+        "id": "ami-27",
+        "kind": "clip",
+        "seconds": 0.30388307571411133,
+        "duration": 2.8099375,
+        "wer": {
+          "errors": 0,
+          "reference_words": 9,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-28",
+        "kind": "clip",
+        "seconds": 0.6212660074234009,
+        "duration": 5.14,
+        "wer": {
+          "errors": 0,
+          "reference_words": 19,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-31",
+        "kind": "clip",
+        "seconds": 0.485103964805603,
+        "duration": 5.01,
+        "wer": {
+          "errors": 1,
+          "reference_words": 15,
+          "wer": 0.06666666666666667,
+          "substitutions": 0,
+          "deletions": 1,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-35",
+        "kind": "clip",
+        "seconds": 0.31218695640563965,
+        "duration": 2.9,
+        "wer": {
+          "errors": 0,
+          "reference_words": 8,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-500",
+        "kind": "clip",
+        "seconds": 0.6008670330047607,
+        "duration": 4.02,
+        "wer": {
+          "errors": 6,
+          "reference_words": 23,
+          "wer": 0.2608695652173913,
+          "substitutions": 2,
+          "deletions": 4,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-503",
+        "kind": "clip",
+        "seconds": 0.29037702083587646,
+        "duration": 2.1,
+        "wer": {
+          "errors": 1,
+          "reference_words": 7,
+          "wer": 0.14285714285714285,
+          "substitutions": 0,
+          "deletions": 1,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-505",
+        "kind": "clip",
+        "seconds": 0.5316770076751709,
+        "duration": 3.5,
+        "wer": {
+          "errors": 1,
+          "reference_words": 17,
+          "wer": 0.058823529411764705,
+          "substitutions": 0,
+          "deletions": 1,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-510",
+        "kind": "clip",
+        "seconds": 0.7004200220108032,
+        "duration": 10.56,
+        "wer": {
+          "errors": 4,
+          "reference_words": 24,
+          "wer": 0.16666666666666666,
+          "substitutions": 1,
+          "deletions": 2,
+          "insertions": 1
+        }
+      },
+      {
+        "id": "ami-511",
+        "kind": "clip",
+        "seconds": 0.4247570037841797,
+        "duration": 3.83,
+        "wer": {
+          "errors": 1,
+          "reference_words": 14,
+          "wer": 0.07142857142857142,
+          "substitutions": 0,
+          "deletions": 1,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-522",
+        "kind": "clip",
+        "seconds": 0.4162479639053345,
+        "duration": 3.14,
+        "wer": {
+          "errors": 1,
+          "reference_words": 11,
+          "wer": 0.09090909090909091,
+          "substitutions": 1,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-0",
+        "kind": "clip",
+        "seconds": 0.6082549095153809,
+        "duration": 5.855,
+        "wer": {
+          "errors": 0,
+          "reference_words": 17,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-1",
+        "kind": "clip",
+        "seconds": 0.4085109233856201,
+        "duration": 4.815,
+        "wer": {
+          "errors": 0,
+          "reference_words": 11,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-2",
+        "kind": "clip",
+        "seconds": 0.9627490043640137,
+        "duration": 12.485,
+        "wer": {
+          "errors": 0,
+          "reference_words": 32,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-3",
+        "kind": "clip",
+        "seconds": 0.7933030128479004,
+        "duration": 9.9,
+        "wer": {
+          "errors": 0,
+          "reference_words": 25,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-5",
+        "kind": "clip",
+        "seconds": 0.5919829607009888,
+        "duration": 9.01,
+        "wer": {
+          "errors": 0,
+          "reference_words": 18,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-6",
+        "kind": "clip",
+        "seconds": 0.4639850854873657,
+        "duration": 5.64,
+        "wer": {
+          "errors": 0,
+          "reference_words": 12,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-7",
+        "kind": "clip",
+        "seconds": 0.6433130502700806,
+        "duration": 9.24,
+        "wer": {
+          "errors": 1,
+          "reference_words": 19,
+          "wer": 0.05263157894736842,
+          "substitutions": 1,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-8",
+        "kind": "clip",
+        "seconds": 0.43786191940307617,
+        "duration": 5.12,
+        "wer": {
+          "errors": 0,
+          "reference_words": 11,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-9",
+        "kind": "clip",
+        "seconds": 1.3024590015411377,
+        "duration": 18.29,
+        "wer": {
+          "errors": 3,
+          "reference_words": 43,
+          "wer": 0.06976744186046512,
+          "substitutions": 2,
+          "deletions": 1,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-10",
+        "kind": "clip",
+        "seconds": 0.4677489995956421,
+        "duration": 5.6,
+        "wer": {
+          "errors": 0,
+          "reference_words": 15,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-11",
+        "kind": "clip",
+        "seconds": 1.1025910377502441,
+        "duration": 15.115,
+        "wer": {
+          "errors": 0,
+          "reference_words": 34,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-12",
+        "kind": "clip",
+        "seconds": 0.48324596881866455,
+        "duration": 5.38,
+        "wer": {
+          "errors": 0,
+          "reference_words": 9,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      }
+    ]
+  },
+  "funasr": {
+    "summary": {
+      "clip": {
+        "count": 24,
+        "wer": 0.050359712230215826,
+        "errors": 21,
+        "reference_words": 417,
+        "seconds": 31.5625359127298,
+        "audio_seconds": 155.2399375,
+        "rtfx": 4.9184874729089385
+      },
+      "meeting": {
+        "count": 3,
+        "wer": 0.31679389312977096,
+        "errors": 332,
+        "reference_words": 1048,
+        "seconds": 93.13671279198024,
+        "audio_seconds": 270.0,
+        "rtfx": 2.8989642419852397,
+        "cpwer": 0.6373205741626794,
+        "der": {
+          "0.0": {
+            "fraction": 0.43622256438124274,
+            "total": 331.22999999999905,
+            "false alarm": 10.879999999999692,
+            "confusion": 39.120000000000076,
+            "correct": 197.62000000000012,
+            "missed detection": 94.48999999999884
+          },
+          "0.25": {
+            "fraction": 0.38573330374972153,
+            "total": 270.41999999999973,
+            "false alarm": 6.395000000000019,
+            "confusion": 30.28000000000008,
+            "correct": 172.50500000000017,
+            "missed detection": 67.6349999999995
+          }
+        }
+      }
+    },
+    "rows": [
+      {
+        "id": "EN2002a-120-210",
+        "kind": "meeting",
+        "seconds": 22.423192834015936,
+        "duration": 90.0,
+        "wer": {
+          "errors": 93,
+          "reference_words": 346,
+          "wer": 0.26878612716763006,
+          "substitutions": 26,
+          "deletions": 67,
+          "insertions": 0
+        },
+        "cpwer": {
+          "errors": 169,
+          "reference_words": 346,
+          "cpwer": 0.4884393063583815,
+          "reference_speakers": 4,
+          "hypothesis_speakers": 2
+        },
+        "der": {
+          "0.0": {
+            "total": 103.12000000000006,
+            "false alarm": 3.529999999999898,
+            "confusion": 8.800000000000018,
+            "correct": 71.47000000000006,
+            "missed detection": 22.849999999999987,
+            "diarization error rate": 0.34115593483320295
+          },
+          "0.25": {
+            "total": 87.53999999999996,
+            "false alarm": 1.654999999999955,
+            "confusion": 7.369999999999997,
+            "correct": 63.805,
+            "missed detection": 16.364999999999966,
+            "diarization error rate": 0.2900388393877077
+          }
+        }
+      },
+      {
+        "id": "EN2002a-600-690",
+        "kind": "meeting",
+        "seconds": 29.559007124975324,
+        "duration": 90.0,
+        "wer": {
+          "errors": 140,
+          "reference_words": 415,
+          "wer": 0.3373493975903614,
+          "substitutions": 15,
+          "deletions": 121,
+          "insertions": 4
+        },
+        "cpwer": {
+          "errors": 304,
+          "reference_words": 415,
+          "cpwer": 0.7325301204819277,
+          "reference_speakers": 4,
+          "hypothesis_speakers": 5
+        },
+        "der": {
+          "0.0": {
+            "total": 118.57999999999993,
+            "false alarm": 2.5899999999999275,
+            "confusion": 12.049999999999862,
+            "correct": 69.05000000000022,
+            "missed detection": 37.47999999999985,
+            "diarization error rate": 0.43953449148254065
+          },
+          "0.25": {
+            "total": 96.51000000000056,
+            "false alarm": 1.4099999999998638,
+            "confusion": 9.184999999999981,
+            "correct": 60.115000000000386,
+            "missed detection": 27.210000000000193,
+            "diarization error rate": 0.3917210651745914
+          }
+        }
+      },
+      {
+        "id": "EN2002a-1500-1590",
+        "kind": "meeting",
+        "seconds": 41.154512832988985,
+        "duration": 90.0,
+        "wer": {
+          "errors": 99,
+          "reference_words": 287,
+          "wer": 0.34494773519163763,
+          "substitutions": 24,
+          "deletions": 72,
+          "insertions": 3
+        },
+        "cpwer": {
+          "errors": 193,
+          "reference_words": 284,
+          "cpwer": 0.6795774647887324,
+          "reference_speakers": 4,
+          "hypothesis_speakers": 4
+        },
+        "der": {
+          "0.0": {
+            "total": 109.52999999999908,
+            "false alarm": 4.759999999999867,
+            "confusion": 18.270000000000195,
+            "correct": 57.09999999999985,
+            "missed detection": 34.159999999999016,
+            "diarization error rate": 0.5221400529535246
+          },
+          "0.25": {
+            "total": 86.36999999999921,
+            "false alarm": 3.330000000000201,
+            "confusion": 13.725000000000101,
+            "correct": 48.58499999999977,
+            "missed detection": 24.059999999999334,
+            "diarization error rate": 0.4760333449114278
+          }
+        }
+      },
+      {
+        "id": "ami-15",
+        "kind": "clip",
+        "seconds": 1.0175994170131162,
+        "duration": 2.61,
+        "wer": {
+          "errors": 2,
+          "reference_words": 8,
+          "wer": 0.25,
+          "substitutions": 1,
+          "deletions": 0,
+          "insertions": 1
+        }
+      },
+      {
+        "id": "ami-25",
+        "kind": "clip",
+        "seconds": 1.5054892909829505,
+        "duration": 3.17,
+        "wer": {
+          "errors": 1,
+          "reference_words": 16,
+          "wer": 0.0625,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 1
+        }
+      },
+      {
+        "id": "ami-27",
+        "kind": "clip",
+        "seconds": 0.8975616659736261,
+        "duration": 2.8099375,
+        "wer": {
+          "errors": 0,
+          "reference_words": 9,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-28",
+        "kind": "clip",
+        "seconds": 1.7826185409794562,
+        "duration": 5.14,
+        "wer": {
+          "errors": 0,
+          "reference_words": 19,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-31",
+        "kind": "clip",
+        "seconds": 1.0915718749747612,
+        "duration": 5.01,
+        "wer": {
+          "errors": 1,
+          "reference_words": 15,
+          "wer": 0.06666666666666667,
+          "substitutions": 0,
+          "deletions": 1,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-35",
+        "kind": "clip",
+        "seconds": 1.0254542079637758,
+        "duration": 2.9,
+        "wer": {
+          "errors": 0,
+          "reference_words": 8,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-500",
+        "kind": "clip",
+        "seconds": 1.9308232920011505,
+        "duration": 4.02,
+        "wer": {
+          "errors": 5,
+          "reference_words": 23,
+          "wer": 0.21739130434782608,
+          "substitutions": 2,
+          "deletions": 3,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-503",
+        "kind": "clip",
+        "seconds": 0.44314795796526596,
+        "duration": 2.1,
+        "wer": {
+          "errors": 2,
+          "reference_words": 7,
+          "wer": 0.2857142857142857,
+          "substitutions": 0,
+          "deletions": 2,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-505",
+        "kind": "clip",
+        "seconds": 1.1363707919954322,
+        "duration": 3.5,
+        "wer": {
+          "errors": 1,
+          "reference_words": 17,
+          "wer": 0.058823529411764705,
+          "substitutions": 0,
+          "deletions": 1,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-510",
+        "kind": "clip",
+        "seconds": 1.3881424160208553,
+        "duration": 10.56,
+        "wer": {
+          "errors": 4,
+          "reference_words": 24,
+          "wer": 0.16666666666666666,
+          "substitutions": 1,
+          "deletions": 2,
+          "insertions": 1
+        }
+      },
+      {
+        "id": "ami-511",
+        "kind": "clip",
+        "seconds": 0.8232795409858227,
+        "duration": 3.83,
+        "wer": {
+          "errors": 0,
+          "reference_words": 14,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "ami-522",
+        "kind": "clip",
+        "seconds": 0.7084840419702232,
+        "duration": 3.14,
+        "wer": {
+          "errors": 1,
+          "reference_words": 11,
+          "wer": 0.09090909090909091,
+          "substitutions": 1,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-0",
+        "kind": "clip",
+        "seconds": 1.1504292080062442,
+        "duration": 5.855,
+        "wer": {
+          "errors": 0,
+          "reference_words": 17,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-1",
+        "kind": "clip",
+        "seconds": 0.905409624974709,
+        "duration": 4.815,
+        "wer": {
+          "errors": 0,
+          "reference_words": 11,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-2",
+        "kind": "clip",
+        "seconds": 2.243344458984211,
+        "duration": 12.485,
+        "wer": {
+          "errors": 0,
+          "reference_words": 32,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-3",
+        "kind": "clip",
+        "seconds": 1.6304234159761108,
+        "duration": 9.9,
+        "wer": {
+          "errors": 1,
+          "reference_words": 25,
+          "wer": 0.04,
+          "substitutions": 1,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-5",
+        "kind": "clip",
+        "seconds": 1.352437291003298,
+        "duration": 9.01,
+        "wer": {
+          "errors": 0,
+          "reference_words": 18,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-6",
+        "kind": "clip",
+        "seconds": 1.0057666249922477,
+        "duration": 5.64,
+        "wer": {
+          "errors": 0,
+          "reference_words": 12,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-7",
+        "kind": "clip",
+        "seconds": 1.3547097919508815,
+        "duration": 9.24,
+        "wer": {
+          "errors": 0,
+          "reference_words": 19,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-8",
+        "kind": "clip",
+        "seconds": 0.9269057909841649,
+        "duration": 5.12,
+        "wer": {
+          "errors": 0,
+          "reference_words": 11,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-9",
+        "kind": "clip",
+        "seconds": 2.8188799580093473,
+        "duration": 18.29,
+        "wer": {
+          "errors": 3,
+          "reference_words": 43,
+          "wer": 0.06976744186046512,
+          "substitutions": 2,
+          "deletions": 1,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-10",
+        "kind": "clip",
+        "seconds": 1.1165543330134824,
+        "duration": 5.6,
+        "wer": {
+          "errors": 0,
+          "reference_words": 15,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-11",
+        "kind": "clip",
+        "seconds": 2.4737319590058178,
+        "duration": 15.115,
+        "wer": {
+          "errors": 0,
+          "reference_words": 34,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      },
+      {
+        "id": "librispeech-12",
+        "kind": "clip",
+        "seconds": 0.8334004170028493,
+        "duration": 5.38,
+        "wer": {
+          "errors": 0,
+          "reference_words": 9,
+          "wer": 0.0,
+          "substitutions": 0,
+          "deletions": 0,
+          "insertions": 0
+        }
+      }
+    ]
+  }
+}

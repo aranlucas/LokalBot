@@ -1,0 +1,170 @@
+{
+  "config": {
+    "host": "127.0.0.1",
+    "port": 18649,
+    "backend": "metal",
+    "device": 0,
+    "threads": 4,
+    "lazy_load": true,
+    "log_request_body": false,
+    "max_loaded_models": 1,
+    "models": [
+      {
+        "id": "breeze",
+        "family": "breeze_tts",
+        "path": "/private/tmp/lokalbot-breeze-eval.q3p6Ds/breeze-tts-2-q8_0.gguf",
+        "task": "tts",
+        "mode": "streaming",
+        "session_options": {
+          "breeze_tts.attention": "auto"
+        }
+      }
+    ]
+  },
+  "rows": [
+    {
+      "id": "short",
+      "phase": "cold",
+      "memory_before": {
+        "resident_size": 81100800,
+        "phys_footprint": 74646080,
+        "lifetime_max_phys_footprint": 75203136
+      },
+      "first_audio_s": 17.405008917092346,
+      "events": [
+        {
+          "elapsed_s": 17.405008917092346,
+          "pcm_bytes": 15360
+        },
+        {
+          "elapsed_s": 18.198894458008,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 19.068269875016995,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 19.977641125093214,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 20.76959258306306,
+          "pcm_bytes": 92160
+        }
+      ],
+      "done": {
+        "type": "speech.audio.done",
+        "timing": {
+          "ttft_ms": 1806.47
+        }
+      },
+      "errors": [],
+      "request": {
+        "model": "breeze",
+        "input": "Your meeting summary is ready. You have three action items and one decision to review.",
+        "stream": true,
+        "stream_format": "sse",
+        "response_format": "pcm",
+        "voice_ref": "/Users/0xmithrandir/Documents/GitHub/LokalBot/Benchmarks/Breeze/2026-09-09/audio/kokoro_reference.wav",
+        "reference_text": "Today we will review the decisions from our meeting, the work that is still in progress, and the next steps. Take a moment to check the details before we continue.",
+        "options": {
+          "instruction": "Speak clearly and naturally in a calm, helpful voice.",
+          "guidance_scale": 1.0,
+          "seed": 42,
+          "max_tokens": 1500,
+          "text_chunk_size": 600,
+          "stream_frames_per_event": 16,
+          "stream_lookahead_margin": 12
+        }
+      },
+      "headers_s": 0.0034472501138225198,
+      "elapsed_s": 20.769745750003494,
+      "sample_rate": 24000,
+      "samples": 145920,
+      "duration_s": 6.08,
+      "peak_amplitude": 0.390655517578125,
+      "rms": 0.053944291660682514,
+      "clipped_fraction": 0.0,
+      "rtf": 3.4160766036189956,
+      "memory_after": {
+        "resident_size": 9190375424,
+        "phys_footprint": 5703442808,
+        "lifetime_max_phys_footprint": 6920823784
+      },
+      "server_returncode": null
+    },
+    {
+      "id": "short",
+      "phase": "warm",
+      "memory_before": {
+        "resident_size": 9190375424,
+        "phys_footprint": 5703442808,
+        "lifetime_max_phys_footprint": 6920823784
+      },
+      "first_audio_s": 0.8444439159939066,
+      "events": [
+        {
+          "elapsed_s": 0.8444439159939066,
+          "pcm_bytes": 15360
+        },
+        {
+          "elapsed_s": 1.6267497909720987,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 2.493882375070825,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 3.385436665965244,
+          "pcm_bytes": 61440
+        },
+        {
+          "elapsed_s": 4.151326999999583,
+          "pcm_bytes": 92160
+        }
+      ],
+      "done": {
+        "type": "speech.audio.done",
+        "timing": {
+          "ttft_ms": 842.635
+        }
+      },
+      "errors": [],
+      "request": {
+        "model": "breeze",
+        "input": "Your meeting summary is ready. You have three action items and one decision to review.",
+        "stream": true,
+        "stream_format": "sse",
+        "response_format": "pcm",
+        "voice_ref": "/Users/0xmithrandir/Documents/GitHub/LokalBot/Benchmarks/Breeze/2026-09-09/audio/kokoro_reference.wav",
+        "reference_text": "Today we will review the decisions from our meeting, the work that is still in progress, and the next steps. Take a moment to check the details before we continue.",
+        "options": {
+          "instruction": "Speak clearly and naturally in a calm, helpful voice.",
+          "guidance_scale": 1.0,
+          "seed": 42,
+          "max_tokens": 1500,
+          "text_chunk_size": 600,
+          "stream_frames_per_event": 16,
+          "stream_lookahead_margin": 12
+        }
+      },
+      "headers_s": 0.0016207080334424973,
+      "elapsed_s": 4.151450415956788,
+      "sample_rate": 24000,
+      "samples": 145920,
+      "duration_s": 6.08,
+      "peak_amplitude": 0.390655517578125,
+      "rms": 0.053944291660682514,
+      "clipped_fraction": 0.0,
+      "rtf": 0.6828043447297348,
+      "memory_after": {
+        "resident_size": 9191866368,
+        "phys_footprint": 5704900984,
+        "lifetime_max_phys_footprint": 6920823784
+      },
+      "server_returncode": null
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "actions": [
+    {
+      "source": "s4",
+      "basis": "commitment",
+      "context": ["s1", "s13"],
+      "owner": "unknown",
+      "importance": 5,
+      "due": "Friday",
+      "text": "Send the revised onboarding checklist by Friday."
+    },
+    {
+      "source": "s6",
+      "basis": "commitment",
+      "context": ["s5"],
+      "owner": "unknown",
+      "importance": 5,
+      "due": "tomorrow",
+      "text": "Review the privacy copy by tomorrow."
+    },
+    {
+      "source": "s13",
+      "basis": "commitment",
+      "context": ["s1"],
+      "owner": "unknown",
+      "importance": 5,
+      "due": "after tests pass",
+      "text": "Publish the release notes after the regression tests pass."
+    }
+  ],
+  "notes": [
+    {
+      "text": "The Atlas release is scheduled for Friday, pending passing regression tests.",
+      "source": "s1","section": "Key points"
+    },
+    {
+      "text": "Clear owners and an accurate checklist are needed today to proceed.",
+      "source": "s1", "section": "Key points"
+    },
+    {
+      "text": "The installation guide will be updated by Thursday.",
+      "source": "s2", "section": "Key points"
+    },
+    {
+      "text": "Restore regression tests will be run by Friday.",
+      "source": "s3", "section": "Key points"
+    },
+    {
+      "text": "Alex requested a review of the privacy copy.",
+      "source": "s5", "section": "Key points"
+    },
+    {
+      "text": "Beta feedback will be collected by Monday.",
+      "source": "s7", "section": "Key points"
+    },
+    {
+      "text": "Ana was asked to check the signing certificate renewal date.",
+      "source": "s8", "section": "Key points"
+    },
+    {
+      "text": "The dashboard update work is complete.",
+      "source": "s10", "section": "Key points"
+    },
+    {
+      "text": "Automating screenshots was discussed but remains an idea, not a task.",
+      "source": "s11", "section": "Key points"
+    },
+    {
+      "text": "Support ticket totals need reconciliation before launch with no owner assigned.",
+      "source": "s12", "section": "Key points"
+    },
+    {
+      "text": "Customer export implementation can wait with no owner assigned.",
+      "source": "s14", "section": "Key points"
+    },
+    {
+      "text": "The next planning session is scheduled for Tuesday at ten.",
+      "source": "s15", "section": "Key points"
+    }
+  ],
+  "has_more": false
+}

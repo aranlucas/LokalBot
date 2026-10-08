@@ -1,0 +1,7761 @@
+{
+  "torch": "2.8.0",
+  "device": "mps",
+  "dtype": "bf16",
+  "rows": [
+    {
+      "id": "EN2002a-120-210",
+      "kind": "meeting",
+      "warmup": false,
+      "duration": 90.0,
+      "seconds": 21.448435291997157,
+      "qwen_seconds": 18.031050792953465,
+      "align_seconds": 1.7114736639196053,
+      "max_rss_bytes": 3062431744,
+      "mps_current_bytes": 5953348352,
+      "mps_driver_bytes": 7570767872,
+      "text": "So that you actually in the transcription box, but so that you click on a button and then it opens whatever that speaker characterization is. The problem is the the left click is already used because it highlights that. That part of speech or whatever that what he's been saying. The left click or the right. The left click highlights it. Right. So you double click. I don't know what happens when you double click actually, but that'd be a bit annoying if you have left click for one thing and double click for something. I think so. Yeah, when you left-click it, you can, for example, set set the marker there so that the the audio goes from there. I think. Um. So we can't put it on left click. We could put it on right click. We could, for example, have a little menu that pops up. Yeah, might be quite good that way. So right click on it, menu. You know, and you can click on speaker characterization. It pops the window. What else? We have in the menu. That's a good point. Huh. Otherwise, we just have a right click or two. Um. I don't know about you, but usually in Windows, right-click. Doesn't do anything, does it? It opens a menu. A menu, yeah. That's what everybody does. Yeah. It would maybe be a bit weird for it to just start bringing out stuff, wouldn't it? To just have sort of the same sort of. Idiom throughout. Yeah. Yeah. Or just you know, or just the button. I guess a bottom button makes a bit.",
+      "result": {
+        "key": "rand_key_pW9EwNsRwL85O",
+        "text": "So that you actually in the transcription box, but so that you click on a button and then it opens whatever that speaker characterization is. The problem is the the left click is already used because it highlights that. That part of speech or whatever that what he's been saying. The left click or the right. The left click highlights it. Right. So you double click. I don't know what happens when you double click actually, but that'd be a bit annoying if you have left click for one thing and double click for something. I think so. Yeah, when you left-click it, you can, for example, set set the marker there so that the the audio goes from there. I think. Um. So we can't put it on left click. We could put it on right click. We could, for example, have a little menu that pops up. Yeah, might be quite good that way. So right click on it, menu. You know, and you can click on speaker characterization. It pops the window. What else? We have in the menu. That's a good point. Huh. Otherwise, we just have a right click or two. Um. I don't know about you, but usually in Windows, right-click. Doesn't do anything, does it? It opens a menu. A menu, yeah. That's what everybody does. Yeah. It would maybe be a bit weird for it to just start bringing out stuff, wouldn't it? To just have sort of the same sort of. Idiom throughout. Yeah. Yeah. Or just you know, or just the button. I guess a bottom button makes a bit.",
+        "language": "EnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglish",
+        "timestamp": [
+          [
+            100,
+            100
+          ],
+          [
+            100,
+            100
+          ],
+          [
+            100,
+            100
+          ],
+          [
+            101,
+            101
+          ],
+          [
+            101,
+            102
+          ],
+          [
+            102,
+            102
+          ],
+          [
+            102,
+            102
+          ],
+          [
+            102,
+            103
+          ],
+          [
+            103,
+            103
+          ],
+          [
+            103,
+            103
+          ],
+          [
+            103,
+            103
+          ],
+          [
+            103,
+            103
+          ],
+          [
+            103,
+            103
+          ],
+          [
+            103,
+            104
+          ],
+          [
+            104,
+            104
+          ],
+          [
+            104,
+            104
+          ],
+          [
+            104,
+            104
+          ],
+          [
+            104,
+            104
+          ],
+          [
+            104,
+            104
+          ],
+          [
+            104,
+            105
+          ],
+          [
+            105,
+            105
+          ],
+          [
+            105,
+            105
+          ],
+          [
+            105,
+            106
+          ],
+          [
+            106,
+            107
+          ],
+          [
+            107,
+            107
+          ],
+          [
+            108,
+            108
+          ],
+          [
+            108,
+            108
+          ],
+          [
+            108,
+            109
+          ],
+          [
+            109,
+            109
+          ],
+          [
+            110,
+            110
+          ],
+          [
+            110,
+            110
+          ],
+          [
+            110,
+            111
+          ],
+          [
+            111,
+            111
+          ],
+          [
+            111,
+            111
+          ],
+          [
+            111,
+            112
+          ],
+          [
+            112,
+            112
+          ],
+          [
+            112,
+            112
+          ],
+          [
+            113,
+            113
+          ],
+          [
+            113,
+            114
+          ],
+          [
+            16340,
+            16340
+          ],
+          [
+            16340,
+            16340
+          ],
+          [
+            16340,
+            16340
+          ],
+          [
+            16340,
+            16341
+          ],
+          [
+            16341,
+            16341
+          ],
+          [
+            16341,
+            16341
+          ],
+          [
+            16341,
+            16341
+          ],
+          [
+            16342,
+            16342
+          ],
+          [
+            16342,
+            16342
+          ],
+          [
+            16342,
+            16342
+          ],
+          [
+            16342,
+            16342
+          ],
+          [
+            16342,
+            16343
+          ],
+          [
+            16343,
+            16343
+          ],
+          [
+            16343,
+            16343
+          ],
+          [
+            16343,
+            16343
+          ],
+          [
+            16344,
+            16344
+          ],
+          [
+            16344,
+            16344
+          ],
+          [
+            16344,
+            16344
+          ],
+          [
+            16344,
+            16344
+          ],
+          [
+            16344,
+            16344
+          ],
+          [
+            16345,
+            16345
+          ],
+          [
+            16345,
+            16345
+          ],
+          [
+            16345,
+            16346
+          ],
+          [
+            16346,
+            16346
+          ],
+          [
+            16346,
+            16346
+          ],
+          [
+            16346,
+            16346
+          ],
+          [
+            16346,
+            16347
+          ],
+          [
+            16347,
+            16347
+          ],
+          [
+            16348,
+            16348
+          ],
+          [
+            16349,
+            16349
+          ],
+          [
+            16349,
+            16349
+          ],
+          [
+            16349,
+            16349
+          ],
+          [
+            16349,
+            16349
+          ],
+          [
+            16349,
+            16349
+          ],
+          [
+            16349,
+            16350
+          ],
+          [
+            16350,
+            16350
+          ],
+          [
+            16350,
+            16350
+          ],
+          [
+            16351,
+            16351
+          ],
+          [
+            16351,
+            16351
+          ],
+          [
+            16351,
+            16351
+          ],
+          [
+            16351,
+            16351
+          ],
+          [
+            16351,
+            16351
+          ],
+          [
+            16351,
+            16352
+          ],
+          [
+            16352,
+            16352
+          ],
+          [
+            16352,
+            16352
+          ],
+          [
+            16352,
+            16352
+          ],
+          [
+            16352,
+            16352
+          ],
+          [
+            16352,
+            16353
+          ],
+          [
+            16353,
+            16353
+          ],
+          [
+            16353,
+            16353
+          ],
+          [
+            16353,
+            16353
+          ],
+          [
+            16353,
+            16353
+          ],
+          [
+            16354,
+            16354
+          ],
+          [
+            16354,
+            16354
+          ],
+          [
+            16354,
+            16354
+          ],
+          [
+            16354,
+            16355
+          ],
+          [
+            31351,
+            31351
+          ],
+          [
+            31352,
+            31353
+          ],
+          [
+            31353,
+            31353
+          ],
+          [
+            31353,
+            31353
+          ],
+          [
+            31353,
+            31353
+          ],
+          [
+            31353,
+            31353
+          ],
+          [
+            31353,
+            31354
+          ],
+          [
+            31354,
+            31354
+          ],
+          [
+            31354,
+            31354
+          ],
+          [
+            31354,
+            31354
+          ],
+          [
+            31354,
+            31354
+          ],
+          [
+            31354,
+            31355
+          ],
+          [
+            31355,
+            31355
+          ],
+          [
+            31355,
+            31355
+          ],
+          [
+            31356,
+            31356
+          ],
+          [
+            31356,
+            31356
+          ],
+          [
+            31356,
+            31356
+          ],
+          [
+            31356,
+            31356
+          ],
+          [
+            31356,
+            31356
+          ],
+          [
+            31356,
+            31357
+          ],
+          [
+            31357,
+            31358
+          ],
+          [
+            31358,
+            31358
+          ],
+          [
+            31358,
+            31358
+          ],
+          [
+            31358,
+            31358
+          ],
+          [
+            31358,
+            31358
+          ],
+          [
+            31358,
+            31358
+          ],
+          [
+            31359,
+            31359
+          ],
+          [
+            42420,
+            42420
+          ],
+          [
+            42420,
+            42420
+          ],
+          [
+            42420,
+            42420
+          ],
+          [
+            42420,
+            42421
+          ],
+          [
+            42421,
+            42421
+          ],
+          [
+            42421,
+            42421
+          ],
+          [
+            42421,
+            42421
+          ],
+          [
+            42421,
+            42421
+          ],
+          [
+            42421,
+            42421
+          ],
+          [
+            42421,
+            42422
+          ],
+          [
+            42422,
+            42422
+          ],
+          [
+            42422,
+            42422
+          ],
+          [
+            42422,
+            42422
+          ],
+          [
+            42422,
+            42422
+          ],
+          [
+            42422,
+            42423
+          ],
+          [
+            42423,
+            42423
+          ],
+          [
+            42424,
+            42424
+          ],
+          [
+            42424,
+            42424
+          ],
+          [
+            42424,
+            42424
+          ],
+          [
+            42424,
+            42424
+          ],
+          [
+            42424,
+            42425
+          ],
+          [
+            42425,
+            42425
+          ],
+          [
+            42425,
+            42425
+          ],
+          [
+            42425,
+            42425
+          ],
+          [
+            42425,
+            42425
+          ],
+          [
+            42425,
+            42426
+          ],
+          [
+            42426,
+            42426
+          ],
+          [
+            42427,
+            42427
+          ],
+          [
+            42427,
+            42427
+          ],
+          [
+            42427,
+            42427
+          ],
+          [
+            42427,
+            42427
+          ],
+          [
+            42427,
+            42427
+          ],
+          [
+            42427,
+            42428
+          ],
+          [
+            42428,
+            42428
+          ],
+          [
+            42428,
+            42428
+          ],
+          [
+            42428,
+            42428
+          ],
+          [
+            42428,
+            42428
+          ],
+          [
+            42428,
+            42429
+          ],
+          [
+            42429,
+            42429
+          ],
+          [
+            42429,
+            42429
+          ],
+          [
+            42429,
+            42429
+          ],
+          [
+            42430,
+            42430
+          ],
+          [
+            42430,
+            42430
+          ],
+          [
+            42430,
+            42430
+          ],
+          [
+            42430,
+            42430
+          ],
+          [
+            42431,
+            42431
+          ],
+          [
+            42431,
+            42432
+          ],
+          [
+            42432,
+            42432
+          ],
+          [
+            42432,
+            42433
+          ],
+          [
+            42433,
+            42433
+          ],
+          [
+            42433,
+            42433
+          ],
+          [
+            42433,
+            42433
+          ],
+          [
+            42433,
+            42434
+          ],
+          [
+            42434,
+            42434
+          ],
+          [
+            42434,
+            42434
+          ],
+          [
+            57430,
+            57430
+          ],
+          [
+            57430,
+            57430
+          ],
+          [
+            57430,
+            57430
+          ],
+          [
+            57430,
+            57430
+          ],
+          [
+            57432,
+            57432
+          ],
+          [
+            60080,
+            60080
+          ],
+          [
+            60080,
+            60080
+          ],
+          [
+            60080,
+            60080
+          ],
+          [
+            60080,
+            60080
+          ],
+          [
+            61980,
+            61980
+          ],
+          [
+            62780,
+            62780
+          ],
+          [
+            62780,
+            62780
+          ],
+          [
+            62780,
+            62781
+          ],
+          [
+            62781,
+            62781
+          ],
+          [
+            62781,
+            62781
+          ],
+          [
+            62781,
+            62781
+          ],
+          [
+            62781,
+            62781
+          ],
+          [
+            62781,
+            62781
+          ],
+          [
+            62781,
+            62782
+          ],
+          [
+            66130,
+            66130
+          ],
+          [
+            66660,
+            66660
+          ],
+          [
+            66660,
+            66660
+          ],
+          [
+            66660,
+            66660
+          ],
+          [
+            66660,
+            66660
+          ],
+          [
+            66660,
+            66661
+          ],
+          [
+            66661,
+            66661
+          ],
+          [
+            66661,
+            66661
+          ],
+          [
+            66661,
+            66662
+          ],
+          [
+            66662,
+            66662
+          ],
+          [
+            66662,
+            66662
+          ],
+          [
+            69790,
+            69790
+          ],
+          [
+            69790,
+            69790
+          ],
+          [
+            69790,
+            69791
+          ],
+          [
+            69791,
+            69791
+          ],
+          [
+            69791,
+            69791
+          ],
+          [
+            71390,
+            71390
+          ],
+          [
+            71390,
+            71390
+          ],
+          [
+            71390,
+            71390
+          ],
+          [
+            71390,
+            71390
+          ],
+          [
+            71390,
+            71390
+          ],
+          [
+            71390,
+            71391
+          ],
+          [
+            71391,
+            71391
+          ],
+          [
+            71391,
+            71392
+          ],
+          [
+            71392,
+            71392
+          ],
+          [
+            71392,
+            71392
+          ],
+          [
+            71392,
+            71392
+          ],
+          [
+            71392,
+            71393
+          ],
+          [
+            71393,
+            71393
+          ],
+          [
+            71393,
+            71393
+          ],
+          [
+            71393,
+            71393
+          ],
+          [
+            71393,
+            71393
+          ],
+          [
+            71393,
+            71394
+          ],
+          [
+            71394,
+            71394
+          ],
+          [
+            71394,
+            71394
+          ],
+          [
+            71394,
+            71394
+          ],
+          [
+            71394,
+            71394
+          ],
+          [
+            71394,
+            71394
+          ],
+          [
+            71394,
+            71395
+          ],
+          [
+            71395,
+            71395
+          ],
+          [
+            71395,
+            71395
+          ],
+          [
+            71395,
+            71395
+          ],
+          [
+            71395,
+            71396
+          ],
+          [
+            71396,
+            71396
+          ],
+          [
+            71396,
+            71396
+          ],
+          [
+            78230,
+            78230
+          ],
+          [
+            78230,
+            78230
+          ],
+          [
+            78230,
+            78230
+          ],
+          [
+            78230,
+            78230
+          ],
+          [
+            78230,
+            78230
+          ],
+          [
+            78231,
+            78231
+          ],
+          [
+            78231,
+            78231
+          ],
+          [
+            78231,
+            78231
+          ],
+          [
+            78231,
+            78231
+          ],
+          [
+            80230,
+            80230
+          ],
+          [
+            80230,
+            80230
+          ],
+          [
+            81860,
+            81860
+          ],
+          [
+            82980,
+            82980
+          ],
+          [
+            84400,
+            84400
+          ],
+          [
+            84400,
+            84400
+          ],
+          [
+            84401,
+            84401
+          ],
+          [
+            84401,
+            84401
+          ],
+          [
+            84401,
+            84401
+          ],
+          [
+            84401,
+            84401
+          ],
+          [
+            84401,
+            84401
+          ],
+          [
+            84401,
+            84402
+          ],
+          [
+            87510,
+            87510
+          ],
+          [
+            87510,
+            87510
+          ],
+          [
+            87510,
+            87510
+          ],
+          [
+            87510,
+            87511
+          ],
+          [
+            87511,
+            87511
+          ],
+          [
+            87511,
+            87512
+          ],
+          [
+            87512,
+            87512
+          ],
+          [
+            87512,
+            87512
+          ]
+        ],
+        "sentence_info": [
+          {
+            "start": 100,
+            "end": 15110,
+            "text": "So that you actually in the transcription box, but so that you click on a button and then it opens whatever that speaker characterization is. The problem is the the left click is already used because it highlights that.",
+            "sentence": "So that you actually in the transcription box, but so that you click on a button and then it opens whatever that speaker characterization is. The problem is the the left click is already used because it highlights that.",
+            "timestamp": [
+              [
+                100,
+                100
+              ],
+              [
+                100,
+                100
+              ],
+              [
+                100,
+                100
+              ],
+              [
+                101,
+                101
+              ],
+              [
+                101,
+                102
+              ],
+              [
+                102,
+                102
+              ],
+              [
+                102,
+                102
+              ],
+              [
+                102,
+                103
+              ],
+              [
+                103,
+                103
+              ],
+              [
+                103,
+                103
+              ],
+              [
+                103,
+                103
+              ],
+              [
+                103,
+                103
+              ],
+              [
+                103,
+                103
+              ],
+              [
+                103,
+                104
+              ],
+              [
+                104,
+                104
+              ],
+              [
+                104,
+                104
+              ],
+              [
+                104,
+                104
+              ],
+              [
+                104,
+                104
+              ],
+              [
+                104,
+                104
+              ],
+              [
+                104,
+                105
+              ],
+              [
+                105,
+                105
+              ],
+              [
+                105,
+                105
+              ],
+              [
+                105,
+                106
+              ],
+              [
+                106,
+                107
+              ],
+              [
+                107,
+                107
+              ],
+              [
+                108,
+                108
+              ],
+              [
+                108,
+                108
+              ],
+              [
+                108,
+                109
+              ],
+              [
+                109,
+                109
+              ],
+              [
+                110,
+                110
+              ],
+              [
+                110,
+                110
+              ],
+              [
+                110,
+                111
+              ],
+              [
+                111,
+                111
+              ],
+              [
+                111,
+                111
+              ],
+              [
+                111,
+                112
+              ],
+              [
+                112,
+                112
+              ],
+              [
+                112,
+                112
+              ],
+              [
+                113,
+                113
+              ],
+              [
+                113,
+                114
+              ]
+            ],
+            "spk": 0
+          },
+          {
+            "start": 16340,
+            "end": 31350,
+            "text": "That part of speech or whatever that what he's been saying. The left click or the right. The left click highlights it. Right. So you double click. I don't know what happens when you double click actually, but that'd be a bit annoying if you have left click for one thing and double click for something.",
+            "sentence": "That part of speech or whatever that what he's been saying. The left click or the right. The left click highlights it. Right. So you double click. I don't know what happens when you double click actually, but that'd be a bit annoying if you have left click for one thing and double click for something.",
+            "timestamp": [
+              [
+                16340,
+                16340
+              ],
+              [
+                16340,
+                16340
+              ],
+              [
+                16340,
+                16340
+              ],
+              [
+                16340,
+                16341
+              ],
+              [
+                16341,
+                16341
+              ],
+              [
+                16341,
+                16341
+              ],
+              [
+                16341,
+                16341
+              ],
+              [
+                16342,
+                16342
+              ],
+              [
+                16342,
+                16342
+              ],
+              [
+                16342,
+                16342
+              ],
+              [
+                16342,
+                16342
+              ],
+              [
+                16342,
+                16343
+              ],
+              [
+                16343,
+                16343
+              ],
+              [
+                16343,
+                16343
+              ],
+              [
+                16343,
+                16343
+              ],
+              [
+                16344,
+                16344
+              ],
+              [
+                16344,
+                16344
+              ],
+              [
+                16344,
+                16344
+              ],
+              [
+                16344,
+                16344
+              ],
+              [
+                16344,
+                16344
+              ],
+              [
+                16345,
+                16345
+              ],
+              [
+                16345,
+                16345
+              ],
+              [
+                16345,
+                16346
+              ],
+              [
+                16346,
+                16346
+              ],
+              [
+                16346,
+                16346
+              ],
+              [
+                16346,
+                16346
+              ],
+              [
+                16346,
+                16347
+              ],
+              [
+                16347,
+                16347
+              ],
+              [
+                16348,
+                16348
+              ],
+              [
+                16349,
+                16349
+              ],
+              [
+                16349,
+                16349
+              ],
+              [
+                16349,
+                16349
+              ],
+              [
+                16349,
+                16349
+              ],
+              [
+                16349,
+                16349
+              ],
+              [
+                16349,
+                16350
+              ],
+              [
+                16350,
+                16350
+              ],
+              [
+                16350,
+                16350
+              ],
+              [
+                16351,
+                16351
+              ],
+              [
+                16351,
+                16351
+              ],
+              [
+                16351,
+                16351
+              ],
+              [
+                16351,
+                16351
+              ],
+              [
+                16351,
+                16351
+              ],
+              [
+                16351,
+                16352
+              ],
+              [
+                16352,
+                16352
+              ],
+              [
+                16352,
+                16352
+              ],
+              [
+                16352,
+                16352
+              ],
+              [
+                16352,
+                16352
+              ],
+              [
+                16352,
+                16353
+              ],
+              [
+                16353,
+                16353
+              ],
+              [
+                16353,
+                16353
+              ],
+              [
+                16353,
+                16353
+              ],
+              [
+                16353,
+                16353
+              ],
+              [
+                16354,
+                16354
+              ],
+              [
+                16354,
+                16354
+              ],
+              [
+                16354,
+                16354
+              ],
+              [
+                16354,
+                16355
+              ]
+            ],
+            "spk": 0
+          },
+          {
+            "start": 31350,
+            "end": 40900,
+            "text": "I think so. Yeah, when you left-click it, you can, for example, set set the marker there so that the the audio goes from there. I think.",
+            "sentence": "I think so. Yeah, when you left-click it, you can, for example, set set the marker there so that the the audio goes from there. I think.",
+            "timestamp": [
+              [
+                31351,
+                31351
+              ],
+              [
+                31352,
+                31353
+              ],
+              [
+                31353,
+                31353
+              ],
+              [
+                31353,
+                31353
+              ],
+              [
+                31353,
+                31353
+              ],
+              [
+                31353,
+                31353
+              ],
+              [
+                31353,
+                31354
+              ],
+              [
+                31354,
+                31354
+              ],
+              [
+                31354,
+                31354
+              ],
+              [
+                31354,
+                31354
+              ],
+              [
+                31354,
+                31354
+              ],
+              [
+                31354,
+                31355
+              ],
+              [
+                31355,
+                31355
+              ],
+              [
+                31355,
+                31355
+              ],
+              [
+                31356,
+                31356
+              ],
+              [
+                31356,
+                31356
+              ],
+              [
+                31356,
+                31356
+              ],
+              [
+                31356,
+                31356
+              ],
+              [
+                31356,
+                31356
+              ],
+              [
+                31356,
+                31357
+              ],
+              [
+                31357,
+                31358
+              ],
+              [
+                31358,
+                31358
+              ],
+              [
+                31358,
+                31358
+              ],
+              [
+                31358,
+                31358
+              ],
+              [
+                31358,
+                31358
+              ],
+              [
+                31358,
+                31358
+              ],
+              [
+                31359,
+                31359
+              ]
+            ],
+            "spk": 0
+          },
+          {
+            "start": 42420,
+            "end": 57430,
+            "text": "Um. So we can't put it on left click. We could put it on right click. We could, for example, have a little menu that pops up. Yeah, might be quite good that way. So right click on it, menu. You know, and you can click on speaker characterization. It pops the window. What else?",
+            "sentence": "Um. So we can't put it on left click. We could put it on right click. We could, for example, have a little menu that pops up. Yeah, might be quite good that way. So right click on it, menu. You know, and you can click on speaker characterization. It pops the window. What else?",
+            "timestamp": [
+              [
+                42420,
+                42420
+              ],
+              [
+                42420,
+                42420
+              ],
+              [
+                42420,
+                42420
+              ],
+              [
+                42420,
+                42421
+              ],
+              [
+                42421,
+                42421
+              ],
+              [
+                42421,
+                42421
+              ],
+              [
+                42421,
+                42421
+              ],
+              [
+                42421,
+                42421
+              ],
+              [
+                42421,
+                42421
+              ],
+              [
+                42421,
+                42422
+              ],
+              [
+                42422,
+                42422
+              ],
+              [
+                42422,
+                42422
+              ],
+              [
+                42422,
+                42422
+              ],
+              [
+                42422,
+                42422
+              ],
+              [
+                42422,
+                42423
+              ],
+              [
+                42423,
+                42423
+              ],
+              [
+                42424,
+                42424
+              ],
+              [
+                42424,
+                42424
+              ],
+              [
+                42424,
+                42424
+              ],
+              [
+                42424,
+                42424
+              ],
+              [
+                42424,
+                42425
+              ],
+              [
+                42425,
+                42425
+              ],
+              [
+                42425,
+                42425
+              ],
+              [
+                42425,
+                42425
+              ],
+              [
+                42425,
+                42425
+              ],
+              [
+                42425,
+                42426
+              ],
+              [
+                42426,
+                42426
+              ],
+              [
+                42427,
+                42427
+              ],
+              [
+                42427,
+                42427
+              ],
+              [
+                42427,
+                42427
+              ],
+              [
+                42427,
+                42427
+              ],
+              [
+                42427,
+                42427
+              ],
+              [
+                42427,
+                42428
+              ],
+              [
+                42428,
+                42428
+              ],
+              [
+                42428,
+                42428
+              ],
+              [
+                42428,
+                42428
+              ],
+              [
+                42428,
+                42428
+              ],
+              [
+                42428,
+                42429
+              ],
+              [
+                42429,
+                42429
+              ],
+              [
+                42429,
+                42429
+              ],
+              [
+                42429,
+                42429
+              ],
+              [
+                42430,
+                42430
+              ],
+              [
+                42430,
+                42430
+              ],
+              [
+                42430,
+                42430
+              ],
+              [
+                42430,
+                42430
+              ],
+              [
+                42431,
+                42431
+              ],
+              [
+                42431,
+                42432
+              ],
+              [
+                42432,
+                42432
+              ],
+              [
+                42432,
+                42433
+              ],
+              [
+                42433,
+                42433
+              ],
+              [
+                42433,
+                42433
+              ],
+              [
+                42433,
+                42433
+              ],
+              [
+                42433,
+                42434
+              ],
+              [
+                42434,
+                42434
+              ],
+              [
+                42434,
+                42434
+              ]
+            ],
+            "spk": 0
+          },
+          {
+            "start": 57430,
+            "end": 60000,
+            "text": "We have in the menu.",
+            "sentence": "We have in the menu.",
+            "timestamp": [
+              [
+                57430,
+                57430
+              ],
+              [
+                57430,
+                57430
+              ],
+              [
+                57430,
+                57430
+              ],
+              [
+                57430,
+                57430
+              ],
+              [
+                57432,
+                57432
+              ]
+            ],
+            "spk": 1
+          },
+          {
+            "start": 60080,
+            "end": 61150,
+            "text": "That's a good point.",
+            "sentence": "That's a good point.",
+            "timestamp": [
+              [
+                60080,
+                60080
+              ],
+              [
+                60080,
+                60080
+              ],
+              [
+                60080,
+                60080
+              ],
+              [
+                60080,
+                60080
+              ]
+            ],
+            "spk": 0
+          },
+          {
+            "start": 61980,
+            "end": 62780,
+            "text": "Huh.",
+            "sentence": "Huh.",
+            "timestamp": [
+              [
+                61980,
+                61980
+              ]
+            ],
+            "spk": 1
+          },
+          {
+            "start": 62780,
+            "end": 66130,
+            "text": "Otherwise, we just have a right click or two.",
+            "sentence": "Otherwise, we just have a right click or two.",
+            "timestamp": [
+              [
+                62780,
+                62780
+              ],
+              [
+                62780,
+                62780
+              ],
+              [
+                62780,
+                62781
+              ],
+              [
+                62781,
+                62781
+              ],
+              [
+                62781,
+                62781
+              ],
+              [
+                62781,
+                62781
+              ],
+              [
+                62781,
+                62781
+              ],
+              [
+                62781,
+                62781
+              ],
+              [
+                62781,
+                62782
+              ]
+            ],
+            "spk": 1
+          },
+          {
+            "start": 66130,
+            "end": 66660,
+            "text": "Um.",
+            "sentence": "Um.",
+            "timestamp": [
+              [
+                66130,
+                66130
+              ]
+            ],
+            "spk": 0
+          },
+          {
+            "start": 66660,
+            "end": 69790,
+            "text": "I don't know about you, but usually in Windows, right-click.",
+            "sentence": "I don't know about you, but usually in Windows, right-click.",
+            "timestamp": [
+              [
+                66660,
+                66660
+              ],
+              [
+                66660,
+                66660
+              ],
+              [
+                66660,
+                66660
+              ],
+              [
+                66660,
+                66660
+              ],
+              [
+                66660,
+                66661
+              ],
+              [
+                66661,
+                66661
+              ],
+              [
+                66661,
+                66661
+              ],
+              [
+                66661,
+                66662
+              ],
+              [
+                66662,
+                66662
+              ],
+              [
+                66662,
+                66662
+              ]
+            ],
+            "spk": 0
+          },
+          {
+            "start": 69790,
+            "end": 71390,
+            "text": "Doesn't do anything, does it?",
+            "sentence": "Doesn't do anything, does it?",
+            "timestamp": [
+              [
+                69790,
+                69790
+              ],
+              [
+                69790,
+                69790
+              ],
+              [
+                69790,
+                69791
+              ],
+              [
+                69791,
+                69791
+              ],
+              [
+                69791,
+                69791
+              ]
+            ],
+            "spk": 1
+          },
+          {
+            "start": 71390,
+            "end": 78050,
+            "text": "It opens a menu. A menu, yeah. That's what everybody does. Yeah. It would maybe be a bit weird for it to just start bringing out stuff, wouldn't it?",
+            "sentence": "It opens a menu. A menu, yeah. That's what everybody does. Yeah. It would maybe be a bit weird for it to just start bringing out stuff, wouldn't it?",
+            "timestamp": [
+              [
+                71390,
+                71390
+              ],
+              [
+                71390,
+                71390
+              ],
+              [
+                71390,
+                71390
+              ],
+              [
+                71390,
+                71390
+              ],
+              [
+                71390,
+                71390
+              ],
+              [
+                71390,
+                71391
+              ],
+              [
+                71391,
+                71391
+              ],
+              [
+                71391,
+                71392
+              ],
+              [
+                71392,
+                71392
+              ],
+              [
+                71392,
+                71392
+              ],
+              [
+                71392,
+                71392
+              ],
+              [
+                71392,
+                71393
+              ],
+              [
+                71393,
+                71393
+              ],
+              [
+                71393,
+                71393
+              ],
+              [
+                71393,
+                71393
+              ],
+              [
+                71393,
+                71393
+              ],
+              [
+                71393,
+                71394
+              ],
+              [
+                71394,
+                71394
+              ],
+              [
+                71394,
+                71394
+              ],
+              [
+                71394,
+                71394
+              ],
+              [
+                71394,
+                71394
+              ],
+              [
+                71394,
+                71394
+              ],
+              [
+                71394,
+                71395
+              ],
+              [
+                71395,
+                71395
+              ],
+              [
+                71395,
+                71395
+              ],
+              [
+                71395,
+                71395
+              ],
+              [
+                71395,
+                71396
+              ],
+              [
+                71396,
+                71396
+              ],
+              [
+                71396,
+                71396
+              ]
+            ],
+            "spk": 1
+          },
+          {
+            "start": 78230,
+            "end": 80230,
+            "text": "To just have sort of the same sort of.",
+            "sentence": "To just have sort of the same sort of.",
+            "timestamp": [
+              [
+                78230,
+                78230
+              ],
+              [
+                78230,
+                78230
+              ],
+              [
+                78230,
+                78230
+              ],
+              [
+                78230,
+                78230
+              ],
+              [
+                78230,
+                78230
+              ],
+              [
+                78231,
+                78231
+              ],
+              [
+                78231,
+                78231
+              ],
+              [
+                78231,
+                78231
+              ],
+              [
+                78231,
+                78231
+              ]
+            ],
+            "spk": 1
+          },
+          {
+            "start": 80230,
+            "end": 81350,
+            "text": "Idiom throughout.",
+            "sentence": "Idiom throughout.",
+            "timestamp": [
+              [
+                80230,
+                80230
+              ],
+              [
+                80230,
+                80230
+              ]
+            ],
+            "spk": 1
+          },
+          {
+            "start": 81860,
+            "end": 82690,
+            "text": "Yeah.",
+            "sentence": "Yeah.",
+            "timestamp": [
+              [
+                81860,
+                81860
+              ]
+            ],
+            "spk": 0
+          },
+          {
+            "start": 82980,
+            "end": 83760,
+            "text": "Yeah.",
+            "sentence": "Yeah.",
+            "timestamp": [
+              [
+                82980,
+                82980
+              ]
+            ],
+            "spk": 1
+          },
+          {
+            "start": 84400,
+            "end": 86710,
+            "text": "Or just you know, or just the button.",
+            "sentence": "Or just you know, or just the button.",
+            "timestamp": [
+              [
+                84400,
+                84400
+              ],
+              [
+                84400,
+                84400
+              ],
+              [
+                84401,
+                84401
+              ],
+              [
+                84401,
+                84401
+              ],
+              [
+                84401,
+                84401
+              ],
+              [
+                84401,
+                84401
+              ],
+              [
+                84401,
+                84401
+              ],
+              [
+                84401,
+                84402
+              ]
+            ],
+            "spk": 0
+          },
+          {
+            "start": 87510,
+            "end": 89980,
+            "text": "I guess a bottom button makes a bit.",
+            "sentence": "I guess a bottom button makes a bit.",
+            "timestamp": [
+              [
+                87510,
+                87510
+              ],
+              [
+                87510,
+                87510
+              ],
+              [
+                87510,
+                87510
+              ],
+              [
+                87510,
+                87511
+              ],
+              [
+                87511,
+                87511
+              ],
+              [
+                87511,
+                87512
+              ],
+              [
+                87512,
+                87512
+              ],
+              [
+                87512,
+                87512
+              ]
+            ],
+            "spk": 0
+          }
+        ]
+      },
+      "diarization": [
+        {
+          "start": 0.1,
+          "end": 15.11,
+          "speaker": "0"
+        },
+        {
+          "start": 16.34,
+          "end": 18.96,
+          "speaker": "0"
+        },
+        {
+          "start": 18.96,
+          "end": 20.46,
+          "speaker": "1"
+        },
+        {
+          "start": 20.46,
+          "end": 40.9,
+          "speaker": "0"
+        },
+        {
+          "start": 42.42,
+          "end": 48.8,
+          "speaker": "0"
+        },
+        {
+          "start": 48.8,
+          "end": 51.05,
+          "speaker": "1"
+        },
+        {
+          "start": 51.05,
+          "end": 56.3,
+          "speaker": "0"
+        },
+        {
+          "start": 56.3,
+          "end": 60.0,
+          "speaker": "1"
+        },
+        {
+          "start": 60.08,
+          "end": 61.15,
+          "speaker": "0"
+        },
+        {
+          "start": 61.98,
+          "end": 66.13,
+          "speaker": "1"
+        },
+        {
+          "start": 66.13,
+          "end": 69.79,
+          "speaker": "0"
+        },
+        {
+          "start": 69.79,
+          "end": 78.05,
+          "speaker": "1"
+        },
+        {
+          "start": 78.23,
+          "end": 81.35,
+          "speaker": "1"
+        },
+        {
+          "start": 81.86,
+          "end": 82.69,
+          "speaker": "0"
+        },
+        {
+          "start": 82.98,
+          "end": 83.76,
+          "speaker": "1"
+        },
+        {
+          "start": 84.4,
+          "end": 86.71,
+          "speaker": "0"
+        },
+        {
+          "start": 87.51,
+          "end": 89.98,
+          "speaker": "0"
+        }
+      ],
+      "raw_alignment_seconds": [
+        {
+          "text": "Um.",
+          "words": [
+            {
+              "text": "Um",
+              "start_time": 0.0,
+              "end_time": 0.48
+            }
+          ]
+        },
+        {
+          "text": "Yeah.",
+          "words": [
+            {
+              "text": "Yeah",
+              "start_time": 0.32,
+              "end_time": 0.56
+            }
+          ]
+        },
+        {
+          "text": "Huh.",
+          "words": [
+            {
+              "text": "Huh",
+              "start_time": 0.32,
+              "end_time": 0.56
+            }
+          ]
+        },
+        {
+          "text": "Yeah.",
+          "words": [
+            {
+              "text": "Yeah",
+              "start_time": 0.24,
+              "end_time": 0.56
+            }
+          ]
+        },
+        {
+          "text": "That's a good point.",
+          "words": [
+            {
+              "text": "That's",
+              "start_time": 0.24,
+              "end_time": 0.48
+            },
+            {
+              "text": "a",
+              "start_time": 0.48,
+              "end_time": 0.48
+            },
+            {
+              "text": "good",
+              "start_time": 0.48,
+              "end_time": 0.64
+            },
+            {
+              "text": "point",
+              "start_time": 0.64,
+              "end_time": 0.88
+            }
+          ]
+        },
+        {
+          "text": "Idiom throughout.",
+          "words": [
+            {
+              "text": "Idiom",
+              "start_time": 0.24,
+              "end_time": 0.48
+            },
+            {
+              "text": "throughout",
+              "start_time": 0.56,
+              "end_time": 0.88
+            }
+          ]
+        },
+        {
+          "text": "Doesn't do anything, does it?",
+          "words": [
+            {
+              "text": "Doesn't",
+              "start_time": 0.32,
+              "end_time": 0.64
+            },
+            {
+              "text": "do",
+              "start_time": 0.64,
+              "end_time": 0.8
+            },
+            {
+              "text": "anything",
+              "start_time": 0.8,
+              "end_time": 1.2
+            },
+            {
+              "text": "does",
+              "start_time": 1.2,
+              "end_time": 1.36
+            },
+            {
+              "text": "it",
+              "start_time": 1.36,
+              "end_time": 1.52
+            }
+          ]
+        },
+        {
+          "text": "To just have sort of the same sort of.",
+          "words": [
+            {
+              "text": "To",
+              "start_time": 0.32,
+              "end_time": 0.32
+            },
+            {
+              "text": "just",
+              "start_time": 0.32,
+              "end_time": 0.48
+            },
+            {
+              "text": "have",
+              "start_time": 0.48,
+              "end_time": 0.64
+            },
+            {
+              "text": "sort",
+              "start_time": 0.64,
+              "end_time": 0.88
+            },
+            {
+              "text": "of",
+              "start_time": 0.88,
+              "end_time": 0.96
+            },
+            {
+              "text": "the",
+              "start_time": 1.04,
+              "end_time": 1.12
+            },
+            {
+              "text": "same",
+              "start_time": 1.28,
+              "end_time": 1.52
+            },
+            {
+              "text": "sort",
+              "start_time": 1.52,
+              "end_time": 1.68
+            },
+            {
+              "text": "of",
+              "start_time": 1.68,
+              "end_time": 1.76
+            }
+          ]
+        },
+        {
+          "text": "Or just you know, or just the button.",
+          "words": [
+            {
+              "text": "Or",
+              "start_time": 0.48,
+              "end_time": 0.64
+            },
+            {
+              "text": "just",
+              "start_time": 0.64,
+              "end_time": 0.96
+            },
+            {
+              "text": "you",
+              "start_time": 1.04,
+              "end_time": 1.12
+            },
+            {
+              "text": "know",
+              "start_time": 1.12,
+              "end_time": 1.28
+            },
+            {
+              "text": "or",
+              "start_time": 1.28,
+              "end_time": 1.36
+            },
+            {
+              "text": "just",
+              "start_time": 1.36,
+              "end_time": 1.6
+            },
+            {
+              "text": "the",
+              "start_time": 1.6,
+              "end_time": 1.68
+            },
+            {
+              "text": "button",
+              "start_time": 1.68,
+              "end_time": 2.08
+            }
+          ]
+        },
+        {
+          "text": "I guess a bottom button makes a bit.",
+          "words": [
+            {
+              "text": "I",
+              "start_time": 0.32,
+              "end_time": 0.4
+            },
+            {
+              "text": "guess",
+              "start_time": 0.4,
+              "end_time": 0.56
+            },
+            {
+              "text": "a",
+              "start_time": 0.56,
+              "end_time": 0.64
+            },
+            {
+              "text": "bottom",
+              "start_time": 0.64,
+              "end_time": 1.28
+            },
+            {
+              "text": "button",
+              "start_time": 1.28,
+              "end_time": 1.76
+            },
+            {
+              "text": "makes",
+              "start_time": 1.84,
+              "end_time": 2.24
+            },
+            {
+              "text": "a",
+              "start_time": 2.24,
+              "end_time": 2.32
+            },
+            {
+              "text": "bit",
+              "start_time": 2.32,
+              "end_time": 2.48
+            }
+          ]
+        },
+        {
+          "text": "We have in the menu.",
+          "words": [
+            {
+              "text": "We",
+              "start_time": 0.0,
+              "end_time": 0.08
+            },
+            {
+              "text": "have",
+              "start_time": 0.08,
+              "end_time": 0.24
+            },
+            {
+              "text": "in",
+              "start_time": 0.24,
+              "end_time": 0.32
+            },
+            {
+              "text": "the",
+              "start_time": 0.32,
+              "end_time": 0.48
+            },
+            {
+              "text": "menu",
+              "start_time": 2.0,
+              "end_time": 2.32
+            }
+          ]
+        },
+        {
+          "text": "I don't know about you, but usually in Windows, right-click.",
+          "words": [
+            {
+              "text": "I",
+              "start_time": 0.32,
+              "end_time": 0.48
+            },
+            {
+              "text": "don't",
+              "start_time": 0.48,
+              "end_time": 0.64
+            },
+            {
+              "text": "know",
+              "start_time": 0.64,
+              "end_time": 0.72
+            },
+            {
+              "text": "about",
+              "start_time": 0.72,
+              "end_time": 0.96
+            },
+            {
+              "text": "you",
+              "start_time": 0.96,
+              "end_time": 1.12
+            },
+            {
+              "text": "but",
+              "start_time": 1.12,
+              "end_time": 1.36
+            },
+            {
+              "text": "usually",
+              "start_time": 1.44,
+              "end_time": 1.92
+            },
+            {
+              "text": "in",
+              "start_time": 1.92,
+              "end_time": 2.0
+            },
+            {
+              "text": "Windows",
+              "start_time": 2.0,
+              "end_time": 2.4
+            },
+            {
+              "text": "rightclick",
+              "start_time": 2.4,
+              "end_time": 2.88
+            }
+          ]
+        },
+        {
+          "text": "Otherwise, we just have a right click or two.",
+          "words": [
+            {
+              "text": "Otherwise",
+              "start_time": 0.0,
+              "end_time": 0.8
+            },
+            {
+              "text": "we",
+              "start_time": 0.8,
+              "end_time": 0.88
+            },
+            {
+              "text": "just",
+              "start_time": 0.88,
+              "end_time": 1.12
+            },
+            {
+              "text": "have",
+              "start_time": 1.12,
+              "end_time": 1.2
+            },
+            {
+              "text": "a",
+              "start_time": 1.2,
+              "end_time": 1.2
+            },
+            {
+              "text": "right",
+              "start_time": 1.2,
+              "end_time": 1.44
+            },
+            {
+              "text": "click",
+              "start_time": 1.44,
+              "end_time": 1.6
+            },
+            {
+              "text": "or",
+              "start_time": 1.68,
+              "end_time": 1.76
+            },
+            {
+              "text": "two",
+              "start_time": 1.76,
+              "end_time": 2.08
+            }
+          ]
+        },
+        {
+          "text": "It opens a menu. A menu, yeah. That's what everybody does. Yeah. It would maybe be a bit weird for it to just start bringing out stuff, wouldn't it?",
+          "words": [
+            {
+              "text": "It",
+              "start_time": 0.0,
+              "end_time": 0.16
+            },
+            {
+              "text": "opens",
+              "start_time": 0.24,
+              "end_time": 0.56
+            },
+            {
+              "text": "a",
+              "start_time": 0.56,
+              "end_time": 0.64
+            },
+            {
+              "text": "menu",
+              "start_time": 0.64,
+              "end_time": 0.64
+            },
+            {
+              "text": "A",
+              "start_time": 0.96,
+              "end_time": 0.96
+            },
+            {
+              "text": "menu",
+              "start_time": 0.96,
+              "end_time": 1.28
+            },
+            {
+              "text": "yeah",
+              "start_time": 1.28,
+              "end_time": 1.6
+            },
+            {
+              "text": "That's",
+              "start_time": 1.92,
+              "end_time": 2.08
+            },
+            {
+              "text": "what",
+              "start_time": 2.08,
+              "end_time": 2.24
+            },
+            {
+              "text": "everybody",
+              "start_time": 2.24,
+              "end_time": 2.48
+            },
+            {
+              "text": "does",
+              "start_time": 2.48,
+              "end_time": 2.64
+            },
+            {
+              "text": "Yeah",
+              "start_time": 2.88,
+              "end_time": 3.04
+            },
+            {
+              "text": "It",
+              "start_time": 3.12,
+              "end_time": 3.12
+            },
+            {
+              "text": "would",
+              "start_time": 3.28,
+              "end_time": 3.44
+            },
+            {
+              "text": "maybe",
+              "start_time": 3.44,
+              "end_time": 3.84
+            },
+            {
+              "text": "be",
+              "start_time": 3.84,
+              "end_time": 3.84
+            },
+            {
+              "text": "a",
+              "start_time": 3.84,
+              "end_time": 4.0
+            },
+            {
+              "text": "bit",
+              "start_time": 4.0,
+              "end_time": 4.0
+            },
+            {
+              "text": "weird",
+              "start_time": 4.0,
+              "end_time": 4.32
+            },
+            {
+              "text": "for",
+              "start_time": 4.48,
+              "end_time": 4.64
+            },
+            {
+              "text": "it",
+              "start_time": 4.64,
+              "end_time": 4.72
+            },
+            {
+              "text": "to",
+              "start_time": 4.72,
+              "end_time": 4.88
+            },
+            {
+              "text": "just",
+              "start_time": 4.88,
+              "end_time": 5.12
+            },
+            {
+              "text": "start",
+              "start_time": 5.2,
+              "end_time": 5.44
+            },
+            {
+              "text": "bringing",
+              "start_time": 5.44,
+              "end_time": 5.68
+            },
+            {
+              "text": "out",
+              "start_time": 5.68,
+              "end_time": 5.84
+            },
+            {
+              "text": "stuff",
+              "start_time": 5.84,
+              "end_time": 6.08
+            },
+            {
+              "text": "wouldn't",
+              "start_time": 6.16,
+              "end_time": 6.4
+            },
+            {
+              "text": "it",
+              "start_time": 6.4,
+              "end_time": 6.48
+            }
+          ]
+        },
+        {
+          "text": "I think so. Yeah, when you left-click it, you can, for example, set set the marker there so that the the audio goes from there. I think.",
+          "words": [
+            {
+              "text": "I",
+              "start_time": 1.6,
+              "end_time": 1.76
+            },
+            {
+              "text": "think",
+              "start_time": 2.72,
+              "end_time": 3.12
+            },
+            {
+              "text": "so",
+              "start_time": 3.2,
+              "end_time": 3.44
+            },
+            {
+              "text": "Yeah",
+              "start_time": 3.44,
+              "end_time": 3.68
+            },
+            {
+              "text": "when",
+              "start_time": 3.68,
+              "end_time": 3.84
+            },
+            {
+              "text": "you",
+              "start_time": 3.84,
+              "end_time": 3.92
+            },
+            {
+              "text": "leftclick",
+              "start_time": 3.92,
+              "end_time": 4.4
+            },
+            {
+              "text": "it",
+              "start_time": 4.4,
+              "end_time": 4.48
+            },
+            {
+              "text": "you",
+              "start_time": 4.48,
+              "end_time": 4.56
+            },
+            {
+              "text": "can",
+              "start_time": 4.56,
+              "end_time": 4.72
+            },
+            {
+              "text": "for",
+              "start_time": 4.72,
+              "end_time": 4.88
+            },
+            {
+              "text": "example",
+              "start_time": 4.88,
+              "end_time": 5.2
+            },
+            {
+              "text": "set",
+              "start_time": 5.2,
+              "end_time": 5.52
+            },
+            {
+              "text": "set",
+              "start_time": 5.76,
+              "end_time": 5.92
+            },
+            {
+              "text": "the",
+              "start_time": 6.0,
+              "end_time": 6.0
+            },
+            {
+              "text": "marker",
+              "start_time": 6.0,
+              "end_time": 6.4
+            },
+            {
+              "text": "there",
+              "start_time": 6.4,
+              "end_time": 6.56
+            },
+            {
+              "text": "so",
+              "start_time": 6.56,
+              "end_time": 6.72
+            },
+            {
+              "text": "that",
+              "start_time": 6.72,
+              "end_time": 6.88
+            },
+            {
+              "text": "the",
+              "start_time": 6.96,
+              "end_time": 7.2
+            },
+            {
+              "text": "the",
+              "start_time": 7.68,
+              "end_time": 8.0
+            },
+            {
+              "text": "audio",
+              "start_time": 8.0,
+              "end_time": 8.32
+            },
+            {
+              "text": "goes",
+              "start_time": 8.32,
+              "end_time": 8.56
+            },
+            {
+              "text": "from",
+              "start_time": 8.56,
+              "end_time": 8.72
+            },
+            {
+              "text": "there",
+              "start_time": 8.72,
+              "end_time": 8.8
+            },
+            {
+              "text": "I",
+              "start_time": 8.8,
+              "end_time": 8.96
+            },
+            {
+              "text": "think",
+              "start_time": 9.04,
+              "end_time": 9.28
+            }
+          ]
+        },
+        {
+          "text": "So that you actually in the transcription box, but so that you click on a button and then it opens whatever that speaker characterization is. The problem is the the left click is already used because it highlights that.",
+          "words": [
+            {
+              "text": "So",
+              "start_time": 0.32,
+              "end_time": 0.48
+            },
+            {
+              "text": "that",
+              "start_time": 0.48,
+              "end_time": 0.64
+            },
+            {
+              "text": "you",
+              "start_time": 0.64,
+              "end_time": 0.88
+            },
+            {
+              "text": "actually",
+              "start_time": 1.6,
+              "end_time": 1.92
+            },
+            {
+              "text": "in",
+              "start_time": 1.92,
+              "end_time": 2.08
+            },
+            {
+              "text": "the",
+              "start_time": 2.08,
+              "end_time": 2.08
+            },
+            {
+              "text": "transcription",
+              "start_time": 2.08,
+              "end_time": 2.72
+            },
+            {
+              "text": "box",
+              "start_time": 2.72,
+              "end_time": 3.04
+            },
+            {
+              "text": "but",
+              "start_time": 3.04,
+              "end_time": 3.2
+            },
+            {
+              "text": "so",
+              "start_time": 3.2,
+              "end_time": 3.36
+            },
+            {
+              "text": "that",
+              "start_time": 3.44,
+              "end_time": 3.52
+            },
+            {
+              "text": "you",
+              "start_time": 3.52,
+              "end_time": 3.68
+            },
+            {
+              "text": "click",
+              "start_time": 3.68,
+              "end_time": 3.92
+            },
+            {
+              "text": "on",
+              "start_time": 3.92,
+              "end_time": 4.0
+            },
+            {
+              "text": "a",
+              "start_time": 4.0,
+              "end_time": 4.08
+            },
+            {
+              "text": "button",
+              "start_time": 4.08,
+              "end_time": 4.4
+            },
+            {
+              "text": "and",
+              "start_time": 4.4,
+              "end_time": 4.56
+            },
+            {
+              "text": "then",
+              "start_time": 4.56,
+              "end_time": 4.72
+            },
+            {
+              "text": "it",
+              "start_time": 4.72,
+              "end_time": 4.88
+            },
+            {
+              "text": "opens",
+              "start_time": 4.88,
+              "end_time": 5.36
+            },
+            {
+              "text": "whatever",
+              "start_time": 5.44,
+              "end_time": 5.68
+            },
+            {
+              "text": "that",
+              "start_time": 5.68,
+              "end_time": 5.84
+            },
+            {
+              "text": "speaker",
+              "start_time": 5.84,
+              "end_time": 6.24
+            },
+            {
+              "text": "characterization",
+              "start_time": 6.24,
+              "end_time": 7.04
+            },
+            {
+              "text": "is",
+              "start_time": 7.04,
+              "end_time": 7.2
+            },
+            {
+              "text": "The",
+              "start_time": 8.32,
+              "end_time": 8.32
+            },
+            {
+              "text": "problem",
+              "start_time": 8.32,
+              "end_time": 8.64
+            },
+            {
+              "text": "is",
+              "start_time": 8.64,
+              "end_time": 9.04
+            },
+            {
+              "text": "the",
+              "start_time": 9.6,
+              "end_time": 9.92
+            },
+            {
+              "text": "the",
+              "start_time": 10.4,
+              "end_time": 10.48
+            },
+            {
+              "text": "left",
+              "start_time": 10.48,
+              "end_time": 10.8
+            },
+            {
+              "text": "click",
+              "start_time": 10.8,
+              "end_time": 11.2
+            },
+            {
+              "text": "is",
+              "start_time": 11.2,
+              "end_time": 11.36
+            },
+            {
+              "text": "already",
+              "start_time": 11.36,
+              "end_time": 11.68
+            },
+            {
+              "text": "used",
+              "start_time": 11.68,
+              "end_time": 12.16
+            },
+            {
+              "text": "because",
+              "start_time": 12.16,
+              "end_time": 12.64
+            },
+            {
+              "text": "it",
+              "start_time": 12.88,
+              "end_time": 12.96
+            },
+            {
+              "text": "highlights",
+              "start_time": 13.04,
+              "end_time": 13.76
+            },
+            {
+              "text": "that",
+              "start_time": 13.84,
+              "end_time": 14.08
+            }
+          ]
+        },
+        {
+          "text": "That part of speech or whatever that what he's been saying. The left click or the right. The left click highlights it. Right. So you double click. I don't know what happens when you double click actually, but that'd be a bit annoying if you have left click for one thing and double click for something.",
+          "words": [
+            {
+              "text": "That",
+              "start_time": 0.32,
+              "end_time": 0.48
+            },
+            {
+              "text": "part",
+              "start_time": 0.56,
+              "end_time": 0.8
+            },
+            {
+              "text": "of",
+              "start_time": 0.8,
+              "end_time": 0.8
+            },
+            {
+              "text": "speech",
+              "start_time": 0.8,
+              "end_time": 1.12
+            },
+            {
+              "text": "or",
+              "start_time": 1.12,
+              "end_time": 1.2
+            },
+            {
+              "text": "whatever",
+              "start_time": 1.2,
+              "end_time": 1.52
+            },
+            {
+              "text": "that",
+              "start_time": 1.6,
+              "end_time": 1.76
+            },
+            {
+              "text": "what",
+              "start_time": 2.16,
+              "end_time": 2.32
+            },
+            {
+              "text": "he's",
+              "start_time": 2.32,
+              "end_time": 2.48
+            },
+            {
+              "text": "been",
+              "start_time": 2.48,
+              "end_time": 2.64
+            },
+            {
+              "text": "saying",
+              "start_time": 2.72,
+              "end_time": 2.96
+            },
+            {
+              "text": "The",
+              "start_time": 2.96,
+              "end_time": 3.04
+            },
+            {
+              "text": "left",
+              "start_time": 3.04,
+              "end_time": 3.36
+            },
+            {
+              "text": "click",
+              "start_time": 3.44,
+              "end_time": 3.6
+            },
+            {
+              "text": "or",
+              "start_time": 3.68,
+              "end_time": 3.76
+            },
+            {
+              "text": "the",
+              "start_time": 4.32,
+              "end_time": 4.32
+            },
+            {
+              "text": "right",
+              "start_time": 4.4,
+              "end_time": 4.4
+            },
+            {
+              "text": "The",
+              "start_time": 4.4,
+              "end_time": 4.4
+            },
+            {
+              "text": "left",
+              "start_time": 4.4,
+              "end_time": 4.8
+            },
+            {
+              "text": "click",
+              "start_time": 4.8,
+              "end_time": 4.96
+            },
+            {
+              "text": "highlights",
+              "start_time": 5.04,
+              "end_time": 5.52
+            },
+            {
+              "text": "it",
+              "start_time": 5.52,
+              "end_time": 5.68
+            },
+            {
+              "text": "Right",
+              "start_time": 5.84,
+              "end_time": 6.0
+            },
+            {
+              "text": "So",
+              "start_time": 6.32,
+              "end_time": 6.48
+            },
+            {
+              "text": "you",
+              "start_time": 6.48,
+              "end_time": 6.48
+            },
+            {
+              "text": "double",
+              "start_time": 6.72,
+              "end_time": 6.96
+            },
+            {
+              "text": "click",
+              "start_time": 6.96,
+              "end_time": 7.12
+            },
+            {
+              "text": "I",
+              "start_time": 7.44,
+              "end_time": 7.44
+            },
+            {
+              "text": "don't",
+              "start_time": 8.88,
+              "end_time": 8.88
+            },
+            {
+              "text": "know",
+              "start_time": 9.04,
+              "end_time": 9.2
+            },
+            {
+              "text": "what",
+              "start_time": 9.2,
+              "end_time": 9.2
+            },
+            {
+              "text": "happens",
+              "start_time": 9.2,
+              "end_time": 9.44
+            },
+            {
+              "text": "when",
+              "start_time": 9.44,
+              "end_time": 9.6
+            },
+            {
+              "text": "you",
+              "start_time": 9.6,
+              "end_time": 9.68
+            },
+            {
+              "text": "double",
+              "start_time": 9.68,
+              "end_time": 10.0
+            },
+            {
+              "text": "click",
+              "start_time": 10.08,
+              "end_time": 10.16
+            },
+            {
+              "text": "actually",
+              "start_time": 10.24,
+              "end_time": 10.72
+            },
+            {
+              "text": "but",
+              "start_time": 11.2,
+              "end_time": 11.36
+            },
+            {
+              "text": "that'd",
+              "start_time": 11.36,
+              "end_time": 11.44
+            },
+            {
+              "text": "be",
+              "start_time": 11.44,
+              "end_time": 11.6
+            },
+            {
+              "text": "a",
+              "start_time": 11.6,
+              "end_time": 11.6
+            },
+            {
+              "text": "bit",
+              "start_time": 11.6,
+              "end_time": 11.84
+            },
+            {
+              "text": "annoying",
+              "start_time": 11.92,
+              "end_time": 12.32
+            },
+            {
+              "text": "if",
+              "start_time": 12.32,
+              "end_time": 12.4
+            },
+            {
+              "text": "you",
+              "start_time": 12.4,
+              "end_time": 12.48
+            },
+            {
+              "text": "have",
+              "start_time": 12.48,
+              "end_time": 12.64
+            },
+            {
+              "text": "left",
+              "start_time": 12.64,
+              "end_time": 12.96
+            },
+            {
+              "text": "click",
+              "start_time": 12.96,
+              "end_time": 13.12
+            },
+            {
+              "text": "for",
+              "start_time": 13.2,
+              "end_time": 13.28
+            },
+            {
+              "text": "one",
+              "start_time": 13.28,
+              "end_time": 13.52
+            },
+            {
+              "text": "thing",
+              "start_time": 13.6,
+              "end_time": 13.76
+            },
+            {
+              "text": "and",
+              "start_time": 13.76,
+              "end_time": 13.92
+            },
+            {
+              "text": "double",
+              "start_time": 14.08,
+              "end_time": 14.32
+            },
+            {
+              "text": "click",
+              "start_time": 14.4,
+              "end_time": 14.56
+            },
+            {
+              "text": "for",
+              "start_time": 14.72,
+              "end_time": 14.8
+            },
+            {
+              "text": "something",
+              "start_time": 14.8,
+              "end_time": 15.04
+            }
+          ]
+        },
+        {
+          "text": "Um. So we can't put it on left click. We could put it on right click. We could, for example, have a little menu that pops up. Yeah, might be quite good that way. So right click on it, menu. You know, and you can click on speaker characterization. It pops the window. What else?",
+          "words": [
+            {
+              "text": "Um",
+              "start_time": 0.32,
+              "end_time": 0.56
+            },
+            {
+              "text": "So",
+              "start_time": 0.56,
+              "end_time": 0.8
+            },
+            {
+              "text": "we",
+              "start_time": 0.8,
+              "end_time": 0.88
+            },
+            {
+              "text": "can't",
+              "start_time": 0.88,
+              "end_time": 1.12
+            },
+            {
+              "text": "put",
+              "start_time": 1.2,
+              "end_time": 1.28
+            },
+            {
+              "text": "it",
+              "start_time": 1.28,
+              "end_time": 1.36
+            },
+            {
+              "text": "on",
+              "start_time": 1.36,
+              "end_time": 1.52
+            },
+            {
+              "text": "left",
+              "start_time": 1.52,
+              "end_time": 1.76
+            },
+            {
+              "text": "click",
+              "start_time": 1.76,
+              "end_time": 1.92
+            },
+            {
+              "text": "We",
+              "start_time": 1.92,
+              "end_time": 2.0
+            },
+            {
+              "text": "could",
+              "start_time": 2.0,
+              "end_time": 2.24
+            },
+            {
+              "text": "put",
+              "start_time": 2.24,
+              "end_time": 2.48
+            },
+            {
+              "text": "it",
+              "start_time": 2.48,
+              "end_time": 2.56
+            },
+            {
+              "text": "on",
+              "start_time": 2.56,
+              "end_time": 2.72
+            },
+            {
+              "text": "right",
+              "start_time": 2.88,
+              "end_time": 3.12
+            },
+            {
+              "text": "click",
+              "start_time": 3.12,
+              "end_time": 3.52
+            },
+            {
+              "text": "We",
+              "start_time": 4.0,
+              "end_time": 4.08
+            },
+            {
+              "text": "could",
+              "start_time": 4.08,
+              "end_time": 4.32
+            },
+            {
+              "text": "for",
+              "start_time": 4.4,
+              "end_time": 4.48
+            },
+            {
+              "text": "example",
+              "start_time": 4.48,
+              "end_time": 4.8
+            },
+            {
+              "text": "have",
+              "start_time": 4.88,
+              "end_time": 5.04
+            },
+            {
+              "text": "a",
+              "start_time": 5.04,
+              "end_time": 5.12
+            },
+            {
+              "text": "little",
+              "start_time": 5.12,
+              "end_time": 5.2
+            },
+            {
+              "text": "menu",
+              "start_time": 5.2,
+              "end_time": 5.6
+            },
+            {
+              "text": "that",
+              "start_time": 5.6,
+              "end_time": 5.76
+            },
+            {
+              "text": "pops",
+              "start_time": 5.76,
+              "end_time": 6.08
+            },
+            {
+              "text": "up",
+              "start_time": 6.08,
+              "end_time": 6.24
+            },
+            {
+              "text": "Yeah",
+              "start_time": 7.04,
+              "end_time": 7.28
+            },
+            {
+              "text": "might",
+              "start_time": 7.28,
+              "end_time": 7.52
+            },
+            {
+              "text": "be",
+              "start_time": 7.52,
+              "end_time": 7.52
+            },
+            {
+              "text": "quite",
+              "start_time": 7.52,
+              "end_time": 7.76
+            },
+            {
+              "text": "good",
+              "start_time": 7.76,
+              "end_time": 7.92
+            },
+            {
+              "text": "that",
+              "start_time": 7.92,
+              "end_time": 8.08
+            },
+            {
+              "text": "way",
+              "start_time": 8.16,
+              "end_time": 8.24
+            },
+            {
+              "text": "So",
+              "start_time": 8.24,
+              "end_time": 8.48
+            },
+            {
+              "text": "right",
+              "start_time": 8.56,
+              "end_time": 8.8
+            },
+            {
+              "text": "click",
+              "start_time": 8.8,
+              "end_time": 8.96
+            },
+            {
+              "text": "on",
+              "start_time": 8.96,
+              "end_time": 9.12
+            },
+            {
+              "text": "it",
+              "start_time": 9.12,
+              "end_time": 9.2
+            },
+            {
+              "text": "menu",
+              "start_time": 9.2,
+              "end_time": 9.76
+            },
+            {
+              "text": "You",
+              "start_time": 9.92,
+              "end_time": 9.92
+            },
+            {
+              "text": "know",
+              "start_time": 10.0,
+              "end_time": 10.08
+            },
+            {
+              "text": "and",
+              "start_time": 10.32,
+              "end_time": 10.4
+            },
+            {
+              "text": "you",
+              "start_time": 10.4,
+              "end_time": 10.56
+            },
+            {
+              "text": "can",
+              "start_time": 10.56,
+              "end_time": 10.72
+            },
+            {
+              "text": "click",
+              "start_time": 11.68,
+              "end_time": 11.92
+            },
+            {
+              "text": "on",
+              "start_time": 11.92,
+              "end_time": 12.16
+            },
+            {
+              "text": "speaker",
+              "start_time": 12.16,
+              "end_time": 12.48
+            },
+            {
+              "text": "characterization",
+              "start_time": 12.48,
+              "end_time": 13.28
+            },
+            {
+              "text": "It",
+              "start_time": 13.28,
+              "end_time": 13.28
+            },
+            {
+              "text": "pops",
+              "start_time": 13.52,
+              "end_time": 13.76
+            },
+            {
+              "text": "the",
+              "start_time": 13.76,
+              "end_time": 13.92
+            },
+            {
+              "text": "window",
+              "start_time": 13.92,
+              "end_time": 14.16
+            },
+            {
+              "text": "What",
+              "start_time": 14.48,
+              "end_time": 14.72
+            },
+            {
+              "text": "else",
+              "start_time": 14.72,
+              "end_time": 14.88
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "load_seconds": 6.315768666972872,
+  "actual_model_device": "mps:0",
+  "actual_model_dtype": "torch.bfloat16",
+  "warmup": {
+    "id": "EN2002a-120-210",
+    "kind": "meeting",
+    "warmup": true,
+    "duration": 90.0,
+    "seconds": 28.700692582991906,
+    "qwen_seconds": 22.44118320790585,
+    "align_seconds": 2.7984152929857373,
+    "max_rss_bytes": 3020226560,
+    "mps_current_bytes": 5953348352,
+    "mps_driver_bytes": 7570767872,
+    "text": "So that you actually in the transcription box, but so that you click on a button and then it opens whatever that speaker characterization is. The problem is the the left click is already used because it highlights that. That part of speech or whatever that what he's been saying. The left click or the right. The left click highlights it. Right. So you double click. I don't know what happens when you double click actually, but that'd be a bit annoying if you have left click for one thing and double click for something. I think so. Yeah, when you left-click it, you can, for example, set set the marker there so that the the audio goes from there. I think. Um. So we can't put it on left click. We could put it on right click. We could, for example, have a little menu that pops up. Yeah, might be quite good that way. So right click on it, menu. You know, and you can click on speaker characterization. It pops the window. What else? We have in the menu. That's a good point. Huh. Otherwise, we just have a right click or two. Um. I don't know about you, but usually in Windows, right-click. Doesn't do anything, does it? It opens a menu. A menu, yeah. That's what everybody does. Yeah. It would maybe be a bit weird for it to just start bringing out stuff, wouldn't it? To just have sort of the same sort of. Idiom throughout. Yeah. Yeah. Or just you know, or just the button. I guess a bottom button makes a bit.",
+    "result": {
+      "key": "rand_key_2yW4Acq9GFz6Y",
+      "text": "So that you actually in the transcription box, but so that you click on a button and then it opens whatever that speaker characterization is. The problem is the the left click is already used because it highlights that. That part of speech or whatever that what he's been saying. The left click or the right. The left click highlights it. Right. So you double click. I don't know what happens when you double click actually, but that'd be a bit annoying if you have left click for one thing and double click for something. I think so. Yeah, when you left-click it, you can, for example, set set the marker there so that the the audio goes from there. I think. Um. So we can't put it on left click. We could put it on right click. We could, for example, have a little menu that pops up. Yeah, might be quite good that way. So right click on it, menu. You know, and you can click on speaker characterization. It pops the window. What else? We have in the menu. That's a good point. Huh. Otherwise, we just have a right click or two. Um. I don't know about you, but usually in Windows, right-click. Doesn't do anything, does it? It opens a menu. A menu, yeah. That's what everybody does. Yeah. It would maybe be a bit weird for it to just start bringing out stuff, wouldn't it? To just have sort of the same sort of. Idiom throughout. Yeah. Yeah. Or just you know, or just the button. I guess a bottom button makes a bit.",
+      "language": "EnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglishEnglish",
+      "timestamp": [
+        [
+          100,
+          100
+        ],
+        [
+          100,
+          100
+        ],
+        [
+          100,
+          100
+        ],
+        [
+          101,
+          101
+        ],
+        [
+          101,
+          102
+        ],
+        [
+          102,
+          102
+        ],
+        [
+          102,
+          102
+        ],
+        [
+          102,
+          103
+        ],
+        [
+          103,
+          103
+        ],
+        [
+          103,
+          103
+        ],
+        [
+          103,
+          103
+        ],
+        [
+          103,
+          103
+        ],
+        [
+          103,
+          103
+        ],
+        [
+          103,
+          104
+        ],
+        [
+          104,
+          104
+        ],
+        [
+          104,
+          104
+        ],
+        [
+          104,
+          104
+        ],
+        [
+          104,
+          104
+        ],
+        [
+          104,
+          104
+        ],
+        [
+          104,
+          105
+        ],
+        [
+          105,
+          105
+        ],
+        [
+          105,
+          105
+        ],
+        [
+          105,
+          106
+        ],
+        [
+          106,
+          107
+        ],
+        [
+          107,
+          107
+        ],
+        [
+          108,
+          108
+        ],
+        [
+          108,
+          108
+        ],
+        [
+          108,
+          109
+        ],
+        [
+          109,
+          109
+        ],
+        [
+          110,
+          110
+        ],
+        [
+          110,
+          110
+        ],
+        [
+          110,
+          111
+        ],
+        [
+          111,
+          111
+        ],
+        [
+          111,
+          111
+        ],
+        [
+          111,
+          112
+        ],
+        [
+          112,
+          112
+        ],
+        [
+          112,
+          112
+        ],
+        [
+          113,
+          113
+        ],
+        [
+          113,
+          114
+        ],
+        [
+          16340,
+          16340
+        ],
+        [
+          16340,
+          16340
+        ],
+        [
+          16340,
+          16340
+        ],
+        [
+          16340,
+          16341
+        ],
+        [
+          16341,
+          16341
+        ],
+        [
+          16341,
+          16341
+        ],
+        [
+          16341,
+          16341
+        ],
+        [
+          16342,
+          16342
+        ],
+        [
+          16342,
+          16342
+        ],
+        [
+          16342,
+          16342
+        ],
+        [
+          16342,
+          16342
+        ],
+        [
+          16342,
+          16343
+        ],
+        [
+          16343,
+          16343
+        ],
+        [
+          16343,
+          16343
+        ],
+        [
+          16343,
+          16343
+        ],
+        [
+          16344,
+          16344
+        ],
+        [
+          16344,
+          16344
+        ],
+        [
+          16344,
+          16344
+        ],
+        [
+          16344,
+          16344
+        ],
+        [
+          16344,
+          16344
+        ],
+        [
+          16345,
+          16345
+        ],
+        [
+          16345,
+          16345
+        ],
+        [
+          16345,
+          16346
+        ],
+        [
+          16346,
+          16346
+        ],
+        [
+          16346,
+          16346
+        ],
+        [
+          16346,
+          16346
+        ],
+        [
+          16346,
+          16347
+        ],
+        [
+          16347,
+          16347
+        ],
+        [
+          16348,
+          16348
+        ],
+        [
+          16349,
+          16349
+        ],
+        [
+          16349,
+          16349
+        ],
+        [
+          16349,
+          16349
+        ],
+        [
+          16349,
+          16349
+        ],
+        [
+          16349,
+          16349
+        ],
+        [
+          16349,
+          16350
+        ],
+        [
+          16350,
+          16350
+        ],
+        [
+          16350,
+          16350
+        ],
+        [
+          16351,
+          16351
+        ],
+        [
+          16351,
+          16351
+        ],
+        [
+          16351,
+          16351
+        ],
+        [
+          16351,
+          16351
+        ],
+        [
+          16351,
+          16351
+        ],
+        [
+          16351,
+          16352
+        ],
+        [
+          16352,
+          16352
+        ],
+        [
+          16352,
+          16352
+        ],
+        [
+          16352,
+          16352
+        ],
+        [
+          16352,
+          16352
+        ],
+        [
+          16352,
+          16353
+        ],
+        [
+          16353,
+          16353
+        ],
+        [
+          16353,
+          16353
+        ],
+        [
+          16353,
+          16353
+        ],
+        [
+          16353,
+          16353
+        ],
+        [
+          16354,
+          16354
+        ],
+        [
+          16354,
+          16354
+        ],
+        [
+          16354,
+          16354
+        ],
+        [
+          16354,
+          16355
+        ],
+        [
+          31351,
+          31351
+        ],
+        [
+          31352,
+          31353
+        ],
+        [
+          31353,
+          31353
+        ],
+        [
+          31353,
+          31353
+        ],
+        [
+          31353,
+          31353
+        ],
+        [
+          31353,
+          31353
+        ],
+        [
+          31353,
+          31354
+        ],
+        [
+          31354,
+          31354
+        ],
+        [
+          31354,
+          31354
+        ],
+        [
+          31354,
+          31354
+        ],
+        [
+          31354,
+          31354
+        ],
+        [
+          31354,
+          31355
+        ],
+        [
+          31355,
+          31355
+        ],
+        [
+          31355,
+          31355
+        ],
+        [
+          31356,
+          31356
+        ],
+        [
+          31356,
+          31356
+        ],
+        [
+          31356,
+          31356
+        ],
+        [
+          31356,
+          31356
+        ],
+        [
+          31356,
+          31356
+        ],
+        [
+          31356,
+          31357
+        ],
+        [
+          31357,
+          31358
+        ],
+        [
+          31358,
+          31358
+        ],
+        [
+          31358,
+          31358
+        ],
+        [
+          31358,
+          31358
+        ],
+        [
+          31358,
+          31358
+        ],
+        [
+          31358,
+          31358
+        ],
+        [
+          31359,
+          31359
+        ],
+        [
+          42420,
+          42420
+        ],
+        [
+          42420,
+          42420
+        ],
+        [
+          42420,
+          42420
+        ],
+        [
+          42420,
+          42421
+        ],
+        [
+          42421,
+          42421
+        ],
+        [
+          42421,
+          42421
+        ],
+        [
+          42421,
+          42421
+        ],
+        [
+          42421,
+          42421
+        ],
+        [
+          42421,
+          42421
+        ],
+        [
+          42421,
+          42422
+        ],
+        [
+          42422,
+          42422
+        ],
+        [
+          42422,
+          42422
+        ],
+        [
+          42422,
+          42422
+        ],
+        [
+          42422,
+          42422
+        ],
+        [
+          42422,
+          42423
+        ],
+        [
+          42423,
+          42423
+        ],
+        [
+          42424,
+          42424
+        ],
+        [
+          42424,
+          42424
+        ],
+        [
+          42424,
+          42424
+        ],
+        [
+          42424,
+          42424
+        ],
+        [
+          42424,
+          42425
+        ],
+        [
+          42425,
+          42425
+        ],
+        [
+          42425,
+          42425
+        ],
+        [
+          42425,
+          42425
+        ],
+        [
+          42425,
+          42425
+        ],
+        [
+          42425,
+          42426
+        ],
+        [
+          42426,
+          42426
+        ],
+        [
+          42427,
+          42427
+        ],
+        [
+          42427,
+          42427
+        ],
+        [
+          42427,
+          42427
+        ],
+        [
+          42427,
+          42427
+        ],
+        [
+          42427,
+          42427
+        ],
+        [
+          42427,
+          42428
+        ],
+        [
+          42428,
+          42428
+        ],
+        [
+          42428,
+          42428
+        ],
+        [
+          42428,
+          42428
+        ],
+        [
+          42428,
+          42428
+        ],
+        [
+          42428,
+          42429
+        ],
+        [
+          42429,
+          42429
+        ],
+        [
+          42429,
+          42429
+        ],
+        [
+          42429,
+          42429
+        ],
+        [
+          42430,
+          42430
+        ],
+        [
+          42430,
+          42430
+        ],
+        [
+          42430,
+          42430
+        ],
+        [
+          42430,
+          42430
+        ],
+        [
+          42431,
+          42431
+        ],
+        [
+          42431,
+          42432
+        ],
+        [
+          42432,
+          42432
+        ],
+        [
+          42432,
+          42433
+        ],
+        [
+          42433,
+          42433
+        ],
+        [
+          42433,
+          42433
+        ],
+        [
+          42433,
+          42433
+        ],
+        [
+          42433,
+          42434
+        ],
+        [
+          42434,
+          42434
+        ],
+        [
+          42434,
+          42434
+        ],
+        [
+          57430,
+          57430
+        ],
+        [
+          57430,
+          57430
+        ],
+        [
+          57430,
+          57430
+        ],
+        [
+          57430,
+          57430
+        ],
+        [
+          57432,
+          57432
+        ],
+        [
+          60080,
+          60080
+        ],
+        [
+          60080,
+          60080
+        ],
+        [
+          60080,
+          60080
+        ],
+        [
+          60080,
+          60080
+        ],
+        [
+          61980,
+          61980
+        ],
+        [
+          62780,
+          62780
+        ],
+        [
+          62780,
+          62780
+        ],
+        [
+          62780,
+          62781
+        ],
+        [
+          62781,
+          62781
+        ],
+        [
+          62781,
+          62781
+        ],
+        [
+          62781,
+          62781
+        ],
+        [
+          62781,
+          62781
+        ],
+        [
+          62781,
+          62781
+        ],
+        [
+          62781,
+          62782
+        ],
+        [
+          66130,
+          66130
+        ],
+        [
+          66660,
+          66660
+        ],
+        [
+          66660,
+          66660
+        ],
+        [
+          66660,
+          66660
+        ],
+        [
+          66660,
+          66660
+        ],
+        [
+          66660,
+          66661
+        ],
+        [
+          66661,
+          66661
+        ],
+        [
+          66661,
+          66661
+        ],
+        [
+          66661,
+          66662
+        ],
+        [
+          66662,
+          66662
+        ],
+        [
+          66662,
+          66662
+        ],
+        [
+          69790,
+          69790
+        ],
+        [
+          69790,
+          69790
+        ],
+        [
+          69790,
+          69791
+        ],
+        [
+          69791,
+          69791
+        ],
+        [
+          69791,
+          69791
+        ],
+        [
+          71390,
+          71390
+        ],
+        [
+          71390,
+          71390
+        ],
+        [
+          71390,
+          71390
+        ],
+        [
+          71390,
+          71390
+        ],
+        [
+          71390,
+          71390
+        ],
+        [
+          71390,
+          71391
+        ],
+        [
+          71391,
+          71391
+        ],
+        [
+          71391,
+          71392
+        ],
+        [
+          71392,
+          71392
+        ],
+        [
+          71392,
+          71392
+        ],
+        [
+          71392,
+          71392
+        ],
+        [
+          71392,
+          71393
+        ],
+        [
+          71393,
+          71393
+        ],
+        [
+          71393,
+          71393
+        ],
+        [
+          71393,
+          71393
+        ],
+        [
+          71393,
+          71393
+        ],
+        [
+          71393,
+          71394
+        ],
+        [
+          71394,
+          71394
+        ],
+        [
+          71394,
+          71394
+        ],
+        [
+          71394,
+          71394
+        ],
+        [
+          71394,
+          71394
+        ],
+        [
+          71394,
+          71394
+        ],
+        [
+          71394,
+          71395
+        ],
+        [
+          71395,
+          71395
+        ],
+        [
+          71395,
+          71395
+        ],
+        [
+          71395,
+          71395
+        ],
+        [
+          71395,
+          71396
+        ],
+        [
+          71396,
+          71396
+        ],
+        [
+          71396,
+          71396
+        ],
+        [
+          78230,
+          78230
+        ],
+        [
+          78230,
+          78230
+        ],
+        [
+          78230,
+          78230
+        ],
+        [
+          78230,
+          78230
+        ],
+        [
+          78230,
+          78230
+        ],
+        [
+          78231,
+          78231
+        ],
+        [
+          78231,
+          78231
+        ],
+        [
+          78231,
+          78231
+        ],
+        [
+          78231,
+          78231
+        ],
+        [
+          80230,
+          80230
+        ],
+        [
+          80230,
+          80230
+        ],
+        [
+          81860,
+          81860
+        ],
+        [
+          82980,
+          82980
+        ],
+        [
+          84400,
+          84400
+        ],
+        [
+          84400,
+          84400
+        ],
+        [
+          84401,
+          84401
+        ],
+        [
+          84401,
+          84401
+        ],
+        [
+          84401,
+          84401
+        ],
+        [
+          84401,
+          84401
+        ],
+        [
+          84401,
+          84401
+        ],
+        [
+          84401,
+          84402
+        ],
+        [
+          87510,
+          87510
+        ],
+        [
+          87510,
+          87510
+        ],
+        [
+          87510,
+          87510
+        ],
+        [
+          87510,
+          87511
+        ],
+        [
+          87511,
+          87511
+        ],
+        [
+          87511,
+          87512
+        ],
+        [
+          87512,
+          87512
+        ],
+        [
+          87512,
+          87512
+        ]
+      ],
+      "sentence_info": [
+        {
+          "start": 100,
+          "end": 15110,
+          "text": "So that you actually in the transcription box, but so that you click on a button and then it opens whatever that speaker characterization is. The problem is the the left click is already used because it highlights that.",
+          "sentence": "So that you actually in the transcription box, but so that you click on a button and then it opens whatever that speaker characterization is. The problem is the the left click is already used because it highlights that.",
+          "timestamp": [
+            [
+              100,
+              100
+            ],
+            [
+              100,
+              100
+            ],
+            [
+              100,
+              100
+            ],
+            [
+              101,
+              101
+            ],
+            [
+              101,
+              102
+            ],
+            [
+              102,
+              102
+            ],
+            [
+              102,
+              102
+            ],
+            [
+              102,
+              103
+            ],
+            [
+              103,
+              103
+            ],
+            [
+              103,
+              103
+            ],
+            [
+              103,
+              103
+            ],
+            [
+              103,
+              103
+            ],
+            [
+              103,
+              103
+            ],
+            [
+              103,
+              104
+            ],
+            [
+              104,
+              104
+            ],
+            [
+              104,
+              104
+            ],
+            [
+              104,
+              104
+            ],
+            [
+              104,
+              104
+            ],
+            [
+              104,
+              104
+            ],
+            [
+              104,
+              105
+            ],
+            [
+              105,
+              105
+            ],
+            [
+              105,
+              105
+            ],
+            [
+              105,
+              106
+            ],
+            [
+              106,
+              107
+            ],
+            [
+              107,
+              107
+            ],
+            [
+              108,
+              108
+            ],
+            [
+              108,
+              108
+            ],
+            [
+              108,
+              109
+            ],
+            [
+              109,
+              109
+            ],
+            [
+              110,
+              110
+            ],
+            [
+              110,
+              110
+            ],
+            [
+              110,
+              111
+            ],
+            [
+              111,
+              111
+            ],
+            [
+              111,
+              111
+            ],
+            [
+              111,
+              112
+            ],
+            [
+              112,
+              112
+            ],
+            [
+              112,
+              112
+            ],
+            [
+              113,
+              113
+            ],
+            [
+              113,
+              114
+            ]
+          ],
+          "spk": 0
+        },
+        {
+          "start": 16340,
+          "end": 31350,
+          "text": "That part of speech or whatever that what he's been saying. The left click or the right. The left click highlights it. Right. So you double click. I don't know what happens when you double click actually, but that'd be a bit annoying if you have left click for one thing and double click for something.",
+          "sentence": "That part of speech or whatever that what he's been saying. The left click or the right. The left click highlights it. Right. So you double click. I don't know what happens when you double click actually, but that'd be a bit annoying if you have left click for one thing and double click for something.",
+          "timestamp": [
+            [
+              16340,
+              16340
+            ],
+            [
+              16340,
+              16340
+            ],
+            [
+              16340,
+              16340
+            ],
+            [
+              16340,
+              16341
+            ],
+            [
+              16341,
+              16341
+            ],
+            [
+              16341,
+              16341
+            ],
+            [
+              16341,
+              16341
+            ],
+            [
+              16342,
+              16342
+            ],
+            [
+              16342,
+              16342
+            ],
+            [
+              16342,
+              16342
+            ],
+            [
+              16342,
+              16342
+            ],
+            [
+              16342,
+              16343
+            ],
+            [
+              16343,
+              16343
+            ],
+            [
+              16343,
+              16343
+            ],
+            [
+              16343,
+              16343
+            ],
+            [
+              16344,
+              16344
+            ],
+            [
+              16344,
+              16344
+            ],
+            [
+              16344,
+              16344
+            ],
+            [
+              16344,
+              16344
+            ],
+            [
+              16344,
+              16344
+            ],
+            [
+              16345,
+              16345
+            ],
+            [
+              16345,
+              16345
+            ],
+            [
+              16345,
+              16346
+            ],
+            [
+              16346,
+              16346
+            ],
+            [
+              16346,
+              16346
+            ],
+            [
+              16346,
+              16346
+            ],
+            [
+              16346,
+              16347
+            ],
+            [
+              16347,
+              16347
+            ],
+            [
+              16348,
+              16348
+            ],
+            [
+              16349,
+              16349
+            ],
+            [
+              16349,
+              16349
+            ],
+            [
+              16349,
+              16349
+            ],
+            [
+              16349,
+              16349
+            ],
+            [
+              16349,
+              16349
+            ],
+            [
+              16349,
+              16350
+            ],
+            [
+              16350,
+              16350
+            ],
+            [
+              16350,
+              16350
+            ],
+            [
+              16351,
+              16351
+            ],
+            [
+              16351,
+              16351
+            ],
+            [
+              16351,
+              16351
+            ],
+            [
+              16351,
+              16351
+            ],
+            [
+              16351,
+              16351
+            ],
+            [
+              16351,
+              16352
+            ],
+            [
+              16352,
+              16352
+            ],
+            [
+              16352,
+              16352
+            ],
+            [
+              16352,
+              16352
+            ],
+            [
+              16352,
+              16352
+            ],
+            [
+              16352,
+              16353
+            ],
+            [
+              16353,
+              16353
+            ],
+            [
+              16353,
+              16353
+            ],
+            [
+              16353,
+              16353
+            ],
+            [
+              16353,
+              16353
+            ],
+            [
+              16354,
+              16354
+            ],
+            [
+              16354,
+              16354
+            ],
+            [
+              16354,
+              16354
+            ],
+            [
+              16354,
+              16355
+            ]
+          ],
+          "spk": 0
+        },
+        {
+          "start": 31350,
+          "end": 40900,
+          "text": "I think so. Yeah, when you left-click it, you can, for example, set set the marker there so that the the audio goes from there. I think.",
+          "sentence": "I think so. Yeah, when you left-click it, you can, for example, set set the marker there so that the the audio goes from there. I think.",
+          "timestamp": [
+            [
+              31351,
+              31351
+            ],
+            [
+              31352,
+              31353
+            ],
+            [
+              31353,
+              31353
+            ],
+            [
+              31353,
+              31353
+            ],
+            [
+              31353,
+              31353
+            ],
+            [
+              31353,
+              31353
+            ],
+            [
+              31353,
+              31354
+            ],
+            [
+              31354,
+              31354
+            ],
+            [
+              31354,
+              31354
+            ],
+            [
+              31354,
+              31354
+            ],
+            [
+              31354,
+              31354
+            ],
+            [
+              31354,
+              31355
+            ],
+            [
+              31355,
+              31355
+            ],
+            [
+              31355,
+              31355
+            ],
+            [
+              31356,
+              31356
+            ],
+            [
+              31356,
+              31356
+            ],
+            [
+              31356,
+              31356
+            ],
+            [
+              31356,
+              31356
+            ],
+            [
+              31356,
+              31356
+            ],
+            [
+              31356,
+              31357
+            ],
+            [
+              31357,
+              31358
+            ],
+            [
+              31358,
+              31358
+            ],
+            [
+              31358,
+              31358
+            ],
+            [
+              31358,
+              31358
+            ],
+            [
+              31358,
+              31358
+            ],
+            [
+              31358,
+              31358
+            ],
+            [
+              31359,
+              31359
+            ]
+          ],
+          "spk": 0
+        },
+        {
+          "start": 42420,
+          "end": 57430,
+          "text": "Um. So we can't put it on left click. We could put it on right click. We could, for example, have a little menu that pops up. Yeah, might be quite good that way. So right click on it, menu. You know, and you can click on speaker characterization. It pops the window. What else?",
+          "sentence": "Um. So we can't put it on left click. We could put it on right click. We could, for example, have a little menu that pops up. Yeah, might be quite good that way. So right click on it, menu. You know, and you can click on speaker characterization. It pops the window. What else?",
+          "timestamp": [
+            [
+              42420,
+              42420
+            ],
+            [
+              42420,
+              42420
+            ],
+            [
+              42420,
+              42420
+            ],
+            [
+              42420,
+              42421
+            ],
+            [
+              42421,
+              42421
+            ],
+            [
+              42421,
+              42421
+            ],
+            [
+              42421,
+              42421
+            ],
+            [
+              42421,
+              42421
+            ],
+            [
+              42421,
+              42421
+            ],
+            [
+              42421,
+              42422
+            ],
+            [
+              42422,
+              42422
+            ],
+            [
+              42422,
+              42422
+            ],
+            [
+              42422,
+              42422
+            ],
+            [
+              42422,
+              42422
+            ],
+            [
+              42422,
+              42423
+            ],
+            [
+              42423,
+              42423
+            ],
+            [
+              42424,
+              42424
+            ],
+            [
+              42424,
+              42424
+            ],
+            [
+              42424,
+              42424
+            ],
+            [
+              42424,
+              42424
+            ],
+            [
+              42424,
+              42425
+            ],
+            [
+              42425,
+              42425
+            ],
+            [
+              42425,
+              42425
+            ],
+            [
+              42425,
+              42425
+            ],
+            [
+              42425,
+              42425
+            ],
+            [
+              42425,
+              42426
+            ],
+            [
+              42426,
+              42426
+            ],
+            [
+              42427,
+              42427
+            ],
+            [
+              42427,
+              42427
+            ],
+            [
+              42427,
+              42427
+            ],
+            [
+              42427,
+              42427
+            ],
+            [
+              42427,
+              42427
+            ],
+            [
+              42427,
+              42428
+            ],
+            [
+              42428,
+              42428
+            ],
+            [
+              42428,
+              42428
+            ],
+            [
+              42428,
+              42428
+            ],
+            [
+              42428,
+              42428
+            ],
+            [
+              42428,
+              42429
+            ],
+            [
+              42429,
+              42429
+            ],
+            [
+              42429,
+              42429
+            ],
+            [
+              42429,
+              42429
+            ],
+            [
+              42430,
+              42430
+            ],
+            [
+              42430,
+              42430
+            ],
+            [
+              42430,
+              42430
+            ],
+            [
+              42430,
+              42430
+            ],
+            [
+              42431,
+              42431
+            ],
+            [
+              42431,
+              42432
+            ],
+            [
+              42432,
+              42432
+            ],
+            [
+              42432,
+              42433
+            ],
+            [
+              42433,
+              42433
+            ],
+            [
+              42433,
+              42433
+            ],
+            [
+              42433,
+              42433
+            ],
+            [
+              42433,
+              42434
+            ],
+            [
+              42434,
+              42434
+            ],
+            [
+              42434,
+              42434
+            ]
+          ],
+          "spk": 0
+        },
+        {
+          "start": 57430,
+          "end": 60000,
+          "text": "We have in the menu.",
+          "sentence": "We have in the menu.",
+          "timestamp": [
+            [
+              57430,
+              57430
+            ],
+            [
+              57430,
+              57430
+            ],
+            [
+              57430,
+              57430
+            ],
+            [
+              57430,
+              57430
+            ],
+            [
+              57432,
+              57432
+            ]
+          ],
+          "spk": 1
+        },
+        {
+          "start": 60080,
+          "end": 61150,
+          "text": "That's a good point.",
+          "sentence": "That's a good point.",
+          "timestamp": [
+            [
+              60080,
+              60080
+            ],
+            [
+              60080,
+              60080
+            ],
+            [
+              60080,
+              60080
+            ],
+            [
+              60080,
+              60080
+            ]
+          ],
+          "spk": 0
+        },
+        {
+          "start": 61980,
+          "end": 62780,
+          "text": "Huh.",
+          "sentence": "Huh.",
+          "timestamp": [
+            [
+              61980,
+              61980
+            ]
+          ],
+          "spk": 1
+        },
+        {
+          "start": 62780,
+          "end": 66130,
+          "text": "Otherwise, we just have a right click or two.",
+          "sentence": "Otherwise, we just have a right click or two.",
+          "timestamp": [
+            [
+              62780,
+              62780
+            ],
+            [
+              62780,
+              62780
+            ],
+            [
+              62780,
+              62781
+            ],
+            [
+              62781,
+              62781
+            ],
+            [
+              62781,
+              62781
+            ],
+            [
+              62781,
+              62781
+            ],
+            [
+              62781,
+              62781
+            ],
+            [
+              62781,
+              62781
+            ],
+            [
+              62781,
+              62782
+            ]
+          ],
+          "spk": 1
+        },
+        {
+          "start": 66130,
+          "end": 66660,
+          "text": "Um.",
+          "sentence": "Um.",
+          "timestamp": [
+            [
+              66130,
+              66130
+            ]
+          ],
+          "spk": 0
+        },
+        {
+          "start": 66660,
+          "end": 69790,
+          "text": "I don't know about you, but usually in Windows, right-click.",
+          "sentence": "I don't know about you, but usually in Windows, right-click.",
+          "timestamp": [
+            [
+              66660,
+              66660
+            ],
+            [
+              66660,
+              66660
+            ],
+            [
+              66660,
+              66660
+            ],
+            [
+              66660,
+              66660
+            ],
+            [
+              66660,
+              66661
+            ],
+            [
+              66661,
+              66661
+            ],
+            [
+              66661,
+              66661
+            ],
+            [
+              66661,
+              66662
+            ],
+            [
+              66662,
+              66662
+            ],
+            [
+              66662,
+              66662
+            ]
+          ],
+          "spk": 0
+        },
+        {
+          "start": 69790,
+          "end": 71390,
+          "text": "Doesn't do anything, does it?",
+          "sentence": "Doesn't do anything, does it?",
+          "timestamp": [
+            [
+              69790,
+              69790
+            ],
+            [
+              69790,
+              69790
+            ],
+            [
+              69790,
+              69791
+            ],
+            [
+              69791,
+              69791
+            ],
+            [
+              69791,
+              69791
+            ]
+          ],
+          "spk": 1
+        },
+        {
+          "start": 71390,
+          "end": 78050,
+          "text": "It opens a menu. A menu, yeah. That's what everybody does. Yeah. It would maybe be a bit weird for it to just start bringing out stuff, wouldn't it?",
+          "sentence": "It opens a menu. A menu, yeah. That's what everybody does. Yeah. It would maybe be a bit weird for it to just start bringing out stuff, wouldn't it?",
+          "timestamp": [
+            [
+              71390,
+              71390
+            ],
+            [
+              71390,
+              71390
+            ],
+            [
+              71390,
+              71390
+            ],
+            [
+              71390,
+              71390
+            ],
+            [
+              71390,
+              71390
+            ],
+            [
+              71390,
+              71391
+            ],
+            [
+              71391,
+              71391
+            ],
+            [
+              71391,
+              71392
+            ],
+            [
+              71392,
+              71392
+            ],
+            [
+              71392,
+              71392
+            ],
+            [
+              71392,
+              71392
+            ],
+            [
+              71392,
+              71393
+            ],
+            [
+              71393,
+              71393
+            ],
+            [
+              71393,
+              71393
+            ],
+            [
+              71393,
+              71393
+            ],
+            [
+              71393,
+              71393
+            ],
+            [
+              71393,
+              71394
+            ],
+            [
+              71394,
+              71394
+            ],
+            [
+              71394,
+              71394
+            ],
+            [
+              71394,
+              71394
+            ],
+            [
+              71394,
+              71394
+            ],
+            [
+              71394,
+              71394
+            ],
+            [
+              71394,
+              71395
+            ],
+            [
+              71395,
+              71395
+            ],
+            [
+              71395,
+              71395
+            ],
+            [
+              71395,
+              71395
+            ],
+            [
+              71395,
+              71396
+            ],
+            [
+              71396,
+              71396
+            ],
+            [
+              71396,
+              71396
+            ]
+          ],
+          "spk": 1
+        },
+        {
+          "start": 78230,
+          "end": 80230,
+          "text": "To just have sort of the same sort of.",
+          "sentence": "To just have sort of the same sort of.",
+          "timestamp": [
+            [
+              78230,
+              78230
+            ],
+            [
+              78230,
+              78230
+            ],
+            [
+              78230,
+              78230
+            ],
+            [
+              78230,
+              78230
+            ],
+            [
+              78230,
+              78230
+            ],
+            [
+              78231,
+              78231
+            ],
+            [
+              78231,
+              78231
+            ],
+            [
+              78231,
+              78231
+            ],
+            [
+              78231,
+              78231
+            ]
+          ],
+          "spk": 1
+        },
+        {
+          "start": 80230,
+          "end": 81350,
+          "text": "Idiom throughout.",
+          "sentence": "Idiom throughout.",
+          "timestamp": [
+            [
+              80230,
+              80230
+            ],
+            [
+              80230,
+              80230
+            ]
+          ],
+          "spk": 1
+        },
+        {
+          "start": 81860,
+          "end": 82690,
+          "text": "Yeah.",
+          "sentence": "Yeah.",
+          "timestamp": [
+            [
+              81860,
+              81860
+            ]
+          ],
+          "spk": 0
+        },
+        {
+          "start": 82980,
+          "end": 83760,
+          "text": "Yeah.",
+          "sentence": "Yeah.",
+          "timestamp": [
+            [
+              82980,
+              82980
+            ]
+          ],
+          "spk": 1
+        },
+        {
+          "start": 84400,
+          "end": 86710,
+          "text": "Or just you know, or just the button.",
+          "sentence": "Or just you know, or just the button.",
+          "timestamp": [
+            [
+              84400,
+              84400
+            ],
+            [
+              84400,
+              84400
+            ],
+            [
+              84401,
+              84401
+            ],
+            [
+              84401,
+              84401
+            ],
+            [
+              84401,
+              84401
+            ],
+            [
+              84401,
+              84401
+            ],
+            [
+              84401,
+              84401
+            ],
+            [
+              84401,
+              84402
+            ]
+          ],
+          "spk": 0
+        },
+        {
+          "start": 87510,
+          "end": 89980,
+          "text": "I guess a bottom button makes a bit.",
+          "sentence": "I guess a bottom button makes a bit.",
+          "timestamp": [
+            [
+              87510,
+              87510
+            ],
+            [
+              87510,
+              87510
+            ],
+            [
+              87510,
+              87510
+            ],
+            [
+              87510,
+              87511
+            ],
+            [
+              87511,
+              87511
+            ],
+            [
+              87511,
+              87512
+            ],
+            [
+              87512,
+              87512
+            ],
+            [
+              87512,
+              87512
+            ]
+          ],
+          "spk": 0
+        }
+      ]
+    },
+    "diarization": [
+      {
+        "start": 0.1,
+        "end": 15.11,
+        "speaker": "0"
+      },
+      {
+        "start": 16.34,
+        "end": 18.96,
+        "speaker": "0"
+      },
+      {
+        "start": 18.96,
+        "end": 20.46,
+        "speaker": "1"
+      },
+      {
+        "start": 20.46,
+        "end": 40.9,
+        "speaker": "0"
+      },
+      {
+        "start": 42.42,
+        "end": 48.8,
+        "speaker": "0"
+      },
+      {
+        "start": 48.8,
+        "end": 51.05,
+        "speaker": "1"
+      },
+      {
+        "start": 51.05,
+        "end": 56.3,
+        "speaker": "0"
+      },
+      {
+        "start": 56.3,
+        "end": 60.0,
+        "speaker": "1"
+      },
+      {
+        "start": 60.08,
+        "end": 61.15,
+        "speaker": "0"
+      },
+      {
+        "start": 61.98,
+        "end": 66.13,
+        "speaker": "1"
+      },
+      {
+        "start": 66.13,
+        "end": 69.79,
+        "speaker": "0"
+      },
+      {
+        "start": 69.79,
+        "end": 78.05,
+        "speaker": "1"
+      },
+      {
+        "start": 78.23,
+        "end": 81.35,
+        "speaker": "1"
+      },
+      {
+        "start": 81.86,
+        "end": 82.69,
+        "speaker": "0"
+      },
+      {
+        "start": 82.98,
+        "end": 83.76,
+        "speaker": "1"
+      },
+      {
+        "start": 84.4,
+        "end": 86.71,
+        "speaker": "0"
+      },
+      {
+        "start": 87.51,
+        "end": 89.98,
+        "speaker": "0"
+      }
+    ],
+    "raw_alignment_seconds": [
+      {
+        "text": "Um.",
+        "words": [
+          {
+            "text": "Um",
+            "start_time": 0.0,
+            "end_time": 0.48
+          }
+        ]
+      },
+      {
+        "text": "Yeah.",
+        "words": [
+          {
+            "text": "Yeah",
+            "start_time": 0.32,
+            "end_time": 0.56
+          }
+        ]
+      },
+      {
+        "text": "Huh.",
+        "words": [
+          {
+            "text": "Huh",
+            "start_time": 0.32,
+            "end_time": 0.56
+          }
+        ]
+      },
+      {
+        "text": "Yeah.",
+        "words": [
+          {
+            "text": "Yeah",
+            "start_time": 0.24,
+            "end_time": 0.56
+          }
+        ]
+      },
+      {
+        "text": "That's a good point.",
+        "words": [
+          {
+            "text": "That's",
+            "start_time": 0.24,
+            "end_time": 0.48
+          },
+          {
+            "text": "a",
+            "start_time": 0.48,
+            "end_time": 0.48
+          },
+          {
+            "text": "good",
+            "start_time": 0.48,
+            "end_time": 0.64
+          },
+          {
+            "text": "point",
+            "start_time": 0.64,
+            "end_time": 0.88
+          }
+        ]
+      },
+      {
+        "text": "Idiom throughout.",
+        "words": [
+          {
+            "text": "Idiom",
+            "start_time": 0.24,
+            "end_time": 0.48
+          },
+          {
+            "text": "throughout",
+            "start_time": 0.56,
+            "end_time": 0.88
+          }
+        ]
+      },
+      {
+        "text": "Doesn't do anything, does it?",
+        "words": [
+          {
+            "text": "Doesn't",
+            "start_time": 0.32,
+            "end_time": 0.64
+          },
+          {
+            "text": "do",
+            "start_time": 0.64,
+            "end_time": 0.8
+          },
+          {
+            "text": "anything",
+            "start_time": 0.8,
+            "end_time": 1.2
+          },
+          {
+            "text": "does",
+            "start_time": 1.2,
+            "end_time": 1.36
+          },
+          {
+            "text": "it",
+            "start_time": 1.36,
+            "end_time": 1.52
+          }
+        ]
+      },
+      {
+        "text": "To just have sort of the same sort of.",
+        "words": [
+          {
+            "text": "To",
+            "start_time": 0.32,
+            "end_time": 0.32
+          },
+          {
+            "text": "just",
+            "start_time": 0.32,
+            "end_time": 0.48
+          },
+          {
+            "text": "have",
+            "start_time": 0.48,
+            "end_time": 0.64
+          },
+          {
+            "text": "sort",
+            "start_time": 0.64,
+            "end_time": 0.88
+          },
+          {
+            "text": "of",
+            "start_time": 0.88,
+            "end_time": 0.96
+          },
+          {
+            "text": "the",
+            "start_time": 1.04,
+            "end_time": 1.12
+          },
+          {
+            "text": "same",
+            "start_time": 1.28,
+            "end_time": 1.52
+          },
+          {
+            "text": "sort",
+            "start_time": 1.52,
+            "end_time": 1.68
+          },
+          {
+            "text": "of",
+            "start_time": 1.68,
+            "end_time": 1.76
+          }
+        ]
+      },
+      {
+        "text": "Or just you know, or just the button.",
+        "words": [
+          {
+            "text": "Or",
+            "start_time": 0.48,
+            "end_time": 0.64
+          },
+          {
+            "text": "just",
+            "start_time": 0.64,
+            "end_time": 0.96
+          },
+          {
+            "text": "you",
+            "start_time": 1.04,
+            "end_time": 1.12
+          },
+          {
+            "text": "know",
+            "start_time": 1.12,
+            "end_time": 1.28
+          },
+          {
+            "text": "or",
+            "start_time": 1.28,
+            "end_time": 1.36
+          },
+          {
+            "text": "just",
+            "start_time": 1.36,
+            "end_time": 1.6
+          },
+          {
+            "text": "the",
+            "start_time": 1.6,
+            "end_time": 1.68
+          },
+          {
+            "text": "button",
+            "start_time": 1.68,
+            "end_time": 2.08
+          }
+        ]
+      },
+      {
+        "text": "I guess a bottom button makes a bit.",
+        "words": [
+          {
+            "text": "I",
+            "start_time": 0.32,
+            "end_time": 0.4
+          },
+          {
+            "text": "guess",
+            "start_time": 0.4,
+            "end_time": 0.56
+          },
+          {
+            "text": "a",
+            "start_time": 0.56,
+            "end_time": 0.64
+          },
+          {
+            "text": "bottom",
+            "start_time": 0.64,
+            "end_time": 1.28
+          },
+          {
+            "text": "button",
+            "start_time": 1.28,
+            "end_time": 1.76
+          },
+          {
+            "text": "makes",
+            "start_time": 1.84,
+            "end_time": 2.24
+          },
+          {
+            "text": "a",
+            "start_time": 2.24,
+            "end_time": 2.32
+          },
+          {
+            "text": "bit",
+            "start_time": 2.32,
+            "end_time": 2.48
+          }
+        ]
+      },
+      {
+        "text": "We have in the menu.",
+        "words": [
+          {
+            "text": "We",
+            "start_time": 0.0,
+            "end_time": 0.08
+          },
+          {
+            "text": "have",
+            "start_time": 0.08,
+            "end_time": 0.24
+          },
+          {
+            "text": "in",
+            "start_time": 0.24,
+            "end_time": 0.32
+          },
+          {
+            "text": "the",
+            "start_time": 0.32,
+            "end_time": 0.48
+          },
+          {
+            "text": "menu",
+            "start_time": 2.0,
+            "end_time": 2.32
+          }
+        ]
+      },
+      {
+        "text": "I don't know about you, but usually in Windows, right-click.",
+        "words": [
+          {
+            "text": "I",
+            "start_time": 0.32,
+            "end_time": 0.48
+          },
+          {
+            "text": "don't",
+            "start_time": 0.48,
+            "end_time": 0.64
+          },
+          {
+            "text": "know",
+            "start_time": 0.64,
+            "end_time": 0.72
+          },
+          {
+            "text": "about",
+            "start_time": 0.72,
+            "end_time": 0.96
+          },
+          {
+            "text": "you",
+            "start_time": 0.96,
+            "end_time": 1.12
+          },
+          {
+            "text": "but",
+            "start_time": 1.12,
+            "end_time": 1.36
+          },
+          {
+            "text": "usually",
+            "start_time": 1.44,
+            "end_time": 1.92
+          },
+          {
+            "text": "in",
+            "start_time": 1.92,
+            "end_time": 2.0
+          },
+          {
+            "text": "Windows",
+            "start_time": 2.0,
+            "end_time": 2.4
+          },
+          {
+            "text": "rightclick",
+            "start_time": 2.4,
+            "end_time": 2.88
+          }
+        ]
+      },
+      {
+        "text": "Otherwise, we just have a right click or two.",
+        "words": [
+          {
+            "text": "Otherwise",
+            "start_time": 0.0,
+            "end_time": 0.8
+          },
+          {
+            "text": "we",
+            "start_time": 0.8,
+            "end_time": 0.88
+          },
+          {
+            "text": "just",
+            "start_time": 0.88,
+            "end_time": 1.12
+          },
+          {
+            "text": "have",
+            "start_time": 1.12,
+            "end_time": 1.2
+          },
+          {
+            "text": "a",
+            "start_time": 1.2,
+            "end_time": 1.2
+          },
+          {
+            "text": "right",
+            "start_time": 1.2,
+            "end_time": 1.44
+          },
+          {
+            "text": "click",
+            "start_time": 1.44,
+            "end_time": 1.6
+          },
+          {
+            "text": "or",
+            "start_time": 1.68,
+            "end_time": 1.76
+          },
+          {
+            "text": "two",
+            "start_time": 1.76,
+            "end_time": 2.08
+          }
+        ]
+      },
+      {
+        "text": "It opens a menu. A menu, yeah. That's what everybody does. Yeah. It would maybe be a bit weird for it to just start bringing out stuff, wouldn't it?",
+        "words": [
+          {
+            "text": "It",
+            "start_time": 0.0,
+            "end_time": 0.16
+          },
+          {
+            "text": "opens",
+            "start_time": 0.24,
+            "end_time": 0.56
+          },
+          {
+            "text": "a",
+            "start_time": 0.56,
+            "end_time": 0.64
+          },
+          {
+            "text": "menu",
+            "start_time": 0.64,
+            "end_time": 0.64
+          },
+          {
+            "text": "A",
+            "start_time": 0.96,
+            "end_time": 0.96
+          },
+          {
+            "text": "menu",
+            "start_time": 0.96,
+            "end_time": 1.28
+          },
+          {
+            "text": "yeah",
+            "start_time": 1.28,
+            "end_time": 1.6
+          },
+          {
+            "text": "That's",
+            "start_time": 1.92,
+            "end_time": 2.08
+          },
+          {
+            "text": "what",
+            "start_time": 2.08,
+            "end_time": 2.24
+          },
+          {
+            "text": "everybody",
+            "start_time": 2.24,
+            "end_time": 2.48
+          },
+          {
+            "text": "does",
+            "start_time": 2.48,
+            "end_time": 2.64
+          },
+          {
+            "text": "Yeah",
+            "start_time": 2.88,
+            "end_time": 3.04
+          },
+          {
+            "text": "It",
+            "start_time": 3.12,
+            "end_time": 3.12
+          },
+          {
+            "text": "would",
+            "start_time": 3.28,
+            "end_time": 3.44
+          },
+          {
+            "text": "maybe",
+            "start_time": 3.44,
+            "end_time": 3.84
+          },
+          {
+            "text": "be",
+            "start_time": 3.84,
+            "end_time": 3.84
+          },
+          {
+            "text": "a",
+            "start_time": 3.84,
+            "end_time": 4.0
+          },
+          {
+            "text": "bit",
+            "start_time": 4.0,
+            "end_time": 4.0
+          },
+          {
+            "text": "weird",
+            "start_time": 4.0,
+            "end_time": 4.32
+          },
+          {
+            "text": "for",
+            "start_time": 4.48,
+            "end_time": 4.64
+          },
+          {
+            "text": "it",
+            "start_time": 4.64,
+            "end_time": 4.72
+          },
+          {
+            "text": "to",
+            "start_time": 4.72,
+            "end_time": 4.88
+          },
+          {
+            "text": "just",
+            "start_time": 4.88,
+            "end_time": 5.12
+          },
+          {
+            "text": "start",
+            "start_time": 5.2,
+            "end_time": 5.44
+          },
+          {
+            "text": "bringing",
+            "start_time": 5.44,
+            "end_time": 5.68
+          },
+          {
+            "text": "out",
+            "start_time": 5.68,
+            "end_time": 5.84
+          },
+          {
+            "text": "stuff",
+            "start_time": 5.84,
+            "end_time": 6.08
+          },
+          {
+            "text": "wouldn't",
+            "start_time": 6.16,
+            "end_time": 6.4
+          },
+          {
+            "text": "it",
+            "start_time": 6.4,
+            "end_time": 6.48
+          }
+        ]
+      },
+      {
+        "text": "I think so. Yeah, when you left-click it, you can, for example, set set the marker there so that the the audio goes from there. I think.",
+        "words": [
+          {
+            "text": "I",
+            "start_time": 1.6,
+            "end_time": 1.76
+          },
+          {
+            "text": "think",
+            "start_time": 2.72,
+            "end_time": 3.12
+          },
+          {
+            "text": "so",
+            "start_time": 3.2,
+            "end_time": 3.44
+          },
+          {
+            "text": "Yeah",
+            "start_time": 3.44,
+            "end_time": 3.68
+          },
+          {
+            "text": "when",
+            "start_time": 3.68,
+            "end_time": 3.84
+          },
+          {
+            "text": "you",
+            "start_time": 3.84,
+            "end_time": 3.92
+          },
+          {
+            "text": "leftclick",
+            "start_time": 3.92,
+            "end_time": 4.4
+          },
+          {
+            "text": "it",
+            "start_time": 4.4,
+            "end_time": 4.48
+          },
+          {
+            "text": "you",
+            "start_time": 4.48,
+            "end_time": 4.56
+          },
+          {
+            "text": "can",
+            "start_time": 4.56,
+            "end_time": 4.72
+          },
+          {
+            "text": "for",
+            "start_time": 4.72,
+            "end_time": 4.88
+          },
+          {
+            "text": "example",
+            "start_time": 4.88,
+            "end_time": 5.2
+          },
+          {
+            "text": "set",
+            "start_time": 5.2,
+            "end_time": 5.52
+          },
+          {
+            "text": "set",
+            "start_time": 5.76,
+            "end_time": 5.92
+          },
+          {
+            "text": "the",
+            "start_time": 6.0,
+            "end_time": 6.0
+          },
+          {
+            "text": "marker",
+            "start_time": 6.0,
+            "end_time": 6.4
+          },
+          {
+            "text": "there",
+            "start_time": 6.4,
+            "end_time": 6.56
+          },
+          {
+            "text": "so",
+            "start_time": 6.56,
+            "end_time": 6.72
+          },
+          {
+            "text": "that",
+            "start_time": 6.72,
+            "end_time": 6.88
+          },
+          {
+            "text": "the",
+            "start_time": 6.96,
+            "end_time": 7.2
+          },
+          {
+            "text": "the",
+            "start_time": 7.68,
+            "end_time": 8.0
+          },
+          {
+            "text": "audio",
+            "start_time": 8.0,
+            "end_time": 8.32
+          },
+          {
+            "text": "goes",
+            "start_time": 8.32,
+            "end_time": 8.56
+          },
+          {
+            "text": "from",
+            "start_time": 8.56,
+            "end_time": 8.72
+          },
+          {
+            "text": "there",
+            "start_time": 8.72,
+            "end_time": 8.8
+          },
+          {
+            "text": "I",
+            "start_time": 8.8,
+            "end_time": 8.96
+          },
+          {
+            "text": "think",
+            "start_time": 9.04,
+            "end_time": 9.28
+          }
+        ]
+      },
+      {
+        "text": "So that you actually in the transcription box, but so that you click on a button and then it opens whatever that speaker characterization is. The problem is the the left click is already used because it highlights that.",
+        "words": [
+          {
+            "text": "So",
+            "start_time": 0.32,
+            "end_time": 0.48
+          },
+          {
+            "text": "that",
+            "start_time": 0.48,
+            "end_time": 0.64
+          },
+          {
+            "text": "you",
+            "start_time": 0.64,
+            "end_time": 0.88
+          },
+          {
+            "text": "actually",
+            "start_time": 1.6,
+            "end_time": 1.92
+          },
+          {
+            "text": "in",
+            "start_time": 1.92,
+            "end_time": 2.08
+          },
+          {
+            "text": "the",
+            "start_time": 2.08,
+            "end_time": 2.08
+          },
+          {
+            "text": "transcription",
+            "start_time": 2.08,
+            "end_time": 2.72
+          },
+          {
+            "text": "box",
+            "start_time": 2.72,
+            "end_time": 3.04
+          },
+          {
+            "text": "but",
+            "start_time": 3.04,
+            "end_time": 3.2
+          },
+          {
+            "text": "so",
+            "start_time": 3.2,
+            "end_time": 3.36
+          },
+          {
+            "text": "that",
+            "start_time": 3.44,
+            "end_time": 3.52
+          },
+          {
+            "text": "you",
+            "start_time": 3.52,
+            "end_time": 3.68
+          },
+          {
+            "text": "click",
+            "start_time": 3.68,
+            "end_time": 3.92
+          },
+          {
+            "text": "on",
+            "start_time": 3.92,
+            "end_time": 4.0
+          },
+          {
+            "text": "a",
+            "start_time": 4.0,
+            "end_time": 4.08
+          },
+          {
+            "text": "button",
+            "start_time": 4.08,
+            "end_time": 4.4
+          },
+          {
+            "text": "and",
+            "start_time": 4.4,
+            "end_time": 4.56
+          },
+          {
+            "text": "then",
+            "start_time": 4.56,
+            "end_time": 4.72
+          },
+          {
+            "text": "it",
+            "start_time": 4.72,
+            "end_time": 4.88
+          },
+          {
+            "text": "opens",
+            "start_time": 4.88,
+            "end_time": 5.36
+          },
+          {
+            "text": "whatever",
+            "start_time": 5.44,
+            "end_time": 5.68
+          },
+          {
+            "text": "that",
+            "start_time": 5.68,
+            "end_time": 5.84
+          },
+          {
+            "text": "speaker",
+            "start_time": 5.84,
+            "end_time": 6.24
+          },
+          {
+            "text": "characterization",
+            "start_time": 6.24,
+            "end_time": 7.04
+          },
+          {
+            "text": "is",
+            "start_time": 7.04,
+            "end_time": 7.2
+          },
+          {
+            "text": "The",
+            "start_time": 8.32,
+            "end_time": 8.32
+          },
+          {
+            "text": "problem",
+            "start_time": 8.32,
+            "end_time": 8.64
+          },
+          {
+            "text": "is",
+            "start_time": 8.64,
+            "end_time": 9.04
+          },
+          {
+            "text": "the",
+            "start_time": 9.6,
+            "end_time": 9.92
+          },
+          {
+            "text": "the",
+            "start_time": 10.4,
+            "end_time": 10.48
+          },
+          {
+            "text": "left",
+            "start_time": 10.48,
+            "end_time": 10.8
+          },
+          {
+            "text": "click",
+            "start_time": 10.8,
+            "end_time": 11.2
+          },
+          {
+            "text": "is",
+            "start_time": 11.2,
+            "end_time": 11.36
+          },
+          {
+            "text": "already",
+            "start_time": 11.36,
+            "end_time": 11.68
+          },
+          {
+            "text": "used",
+            "start_time": 11.68,
+            "end_time": 12.16
+          },
+          {
+            "text": "because",
+            "start_time": 12.16,
+            "end_time": 12.64
+          },
+          {
+            "text": "it",
+            "start_time": 12.88,
+            "end_time": 12.96
+          },
+          {
+            "text": "highlights",
+            "start_time": 13.04,
+            "end_time": 13.76
+          },
+          {
+            "text": "that",
+            "start_time": 13.84,
+            "end_time": 14.08
+          }
+        ]
+      },
+      {
+        "text": "That part of speech or whatever that what he's been saying. The left click or the right. The left click highlights it. Right. So you double click. I don't know what happens when you double click actually, but that'd be a bit annoying if you have left click for one thing and double click for something.",
+        "words": [
+          {
+            "text": "That",
+            "start_time": 0.32,
+            "end_time": 0.48
+          },
+          {
+            "text": "part",
+            "start_time": 0.56,
+            "end_time": 0.8
+          },
+          {
+            "text": "of",
+            "start_time": 0.8,
+            "end_time": 0.8
+          },
+          {
+            "text": "speech",
+            "start_time": 0.8,
+            "end_time": 1.12
+          },
+          {
+            "text": "or",
+            "start_time": 1.12,
+            "end_time": 1.2
+          },
+          {
+            "text": "whatever",
+            "start_time": 1.2,
+            "end_time": 1.52
+          },
+          {
+            "text": "that",
+            "start_time": 1.6,
+            "end_time": 1.76
+          },
+          {
+            "text": "what",
+            "start_time": 2.16,
+            "end_time": 2.32
+          },
+          {
+            "text": "he's",
+            "start_time": 2.32,
+            "end_time": 2.48
+          },
+          {
+            "text": "been",
+            "start_time": 2.48,
+            "end_time": 2.64
+          },
+          {
+            "text": "saying",
+            "start_time": 2.72,
+            "end_time": 2.96
+          },
+          {
+            "text": "The",
+            "start_time": 2.96,
+            "end_time": 3.04
+          },
+          {
+            "text": "left",
+            "start_time": 3.04,
+            "end_time": 3.36
+          },
+          {
+            "text": "click",
+            "start_time": 3.44,
+            "end_time": 3.6
+          },
+          {
+            "text": "or",
+            "start_time": 3.68,
+            "end_time": 3.76
+          },
+          {
+            "text": "the",
+            "start_time": 4.32,
+            "end_time": 4.32
+          },
+          {
+            "text": "right",
+            "start_time": 4.4,
+            "end_time": 4.4
+          },
+          {
+            "text": "The",
+            "start_time": 4.4,
+            "end_time": 4.4
+          },
+          {
+            "text": "left",
+            "start_time": 4.4,
+            "end_time": 4.8
+          },
+          {
+            "text": "click",
+            "start_time": 4.8,
+            "end_time": 4.96
+          },
+          {
+            "text": "highlights",
+            "start_time": 5.04,
+            "end_time": 5.52
+          },
+          {
+            "text": "it",
+            "start_time": 5.52,
+            "end_time": 5.68
+          },
+          {
+            "text": "Right",
+            "start_time": 5.84,
+            "end_time": 6.0
+          },
+          {
+            "text": "So",
+            "start_time": 6.32,
+            "end_time": 6.48
+          },
+          {
+            "text": "you",
+            "start_time": 6.48,
+            "end_time": 6.48
+          },
+          {
+            "text": "double",
+            "start_time": 6.72,
+            "end_time": 6.96
+          },
+          {
+            "text": "click",
+            "start_time": 6.96,
+            "end_time": 7.12
+          },
+          {
+            "text": "I",
+            "start_time": 7.44,
+            "end_time": 7.44
+          },
+          {
+            "text": "don't",
+            "start_time": 8.88,
+            "end_time": 8.88
+          },
+          {
+            "text": "know",
+            "start_time": 9.04,
+            "end_time": 9.2
+          },
+          {
+            "text": "what",
+            "start_time": 9.2,
+            "end_time": 9.2
+          },
+          {
+            "text": "happens",
+            "start_time": 9.2,
+            "end_time": 9.44
+          },
+          {
+            "text": "when",
+            "start_time": 9.44,
+            "end_time": 9.6
+          },
+          {
+            "text": "you",
+            "start_time": 9.6,
+            "end_time": 9.68
+          },
+          {
+            "text": "double",
+            "start_time": 9.68,
+            "end_time": 10.0
+          },
+          {
+            "text": "click",
+            "start_time": 10.08,
+            "end_time": 10.16
+          },
+          {
+            "text": "actually",
+            "start_time": 10.24,
+            "end_time": 10.72
+          },
+          {
+            "text": "but",
+            "start_time": 11.2,
+            "end_time": 11.36
+          },
+          {
+            "text": "that'd",
+            "start_time": 11.36,
+            "end_time": 11.44
+          },
+          {
+            "text": "be",
+            "start_time": 11.44,
+            "end_time": 11.6
+          },
+          {
+            "text": "a",
+            "start_time": 11.6,
+            "end_time": 11.6
+          },
+          {
+            "text": "bit",
+            "start_time": 11.6,
+            "end_time": 11.84
+          },
+          {
+            "text": "annoying",
+            "start_time": 11.92,
+            "end_time": 12.32
+          },
+          {
+            "text": "if",
+            "start_time": 12.32,
+            "end_time": 12.4
+          },
+          {
+            "text": "you",
+            "start_time": 12.4,
+            "end_time": 12.48
+          },
+          {
+            "text": "have",
+            "start_time": 12.48,
+            "end_time": 12.64
+          },
+          {
+            "text": "left",
+            "start_time": 12.64,
+            "end_time": 12.96
+          },
+          {
+            "text": "click",
+            "start_time": 12.96,
+            "end_time": 13.12
+          },
+          {
+            "text": "for",
+            "start_time": 13.2,
+            "end_time": 13.28
+          },
+          {
+            "text": "one",
+            "start_time": 13.28,
+            "end_time": 13.52
+          },
+          {
+            "text": "thing",
+            "start_time": 13.6,
+            "end_time": 13.76
+          },
+          {
+            "text": "and",
+            "start_time": 13.76,
+            "end_time": 13.92
+          },
+          {
+            "text": "double",
+            "start_time": 14.08,
+            "end_time": 14.32
+          },
+          {
+            "text": "click",
+            "start_time": 14.4,
+            "end_time": 14.56
+          },
+          {
+            "text": "for",
+            "start_time": 14.72,
+            "end_time": 14.8
+          },
+          {
+            "text": "something",
+            "start_time": 14.8,
+            "end_time": 15.04
+          }
+        ]
+      },
+      {
+        "text": "Um. So we can't put it on left click. We could put it on right click. We could, for example, have a little menu that pops up. Yeah, might be quite good that way. So right click on it, menu. You know, and you can click on speaker characterization. It pops the window. What else?",
+        "words": [
+          {
+            "text": "Um",
+            "start_time": 0.32,
+            "end_time": 0.56
+          },
+          {
+            "text": "So",
+            "start_time": 0.56,
+            "end_time": 0.8
+          },
+          {
+            "text": "we",
+            "start_time": 0.8,
+            "end_time": 0.88
+          },
+          {
+            "text": "can't",
+            "start_time": 0.88,
+            "end_time": 1.12
+          },
+          {
+            "text": "put",
+            "start_time": 1.2,
+            "end_time": 1.28
+          },
+          {
+            "text": "it",
+            "start_time": 1.28,
+            "end_time": 1.36
+          },
+          {
+            "text": "on",
+            "start_time": 1.36,
+            "end_time": 1.52
+          },
+          {
+            "text": "left",
+            "start_time": 1.52,
+            "end_time": 1.76
+          },
+          {
+            "text": "click",
+            "start_time": 1.76,
+            "end_time": 1.92
+          },
+          {
+            "text": "We",
+            "start_time": 1.92,
+            "end_time": 2.0
+          },
+          {
+            "text": "could",
+            "start_time": 2.0,
+            "end_time": 2.24
+          },
+          {
+            "text": "put",
+            "start_time": 2.24,
+            "end_time": 2.48
+          },
+          {
+            "text": "it",
+            "start_time": 2.48,
+            "end_time": 2.56
+          },
+          {
+            "text": "on",
+            "start_time": 2.56,
+            "end_time": 2.72
+          },
+          {
+            "text": "right",
+            "start_time": 2.88,
+            "end_time": 3.12
+          },
+          {
+            "text": "click",
+            "start_time": 3.12,
+            "end_time": 3.52
+          },
+          {
+            "text": "We",
+            "start_time": 4.0,
+            "end_time": 4.08
+          },
+          {
+            "text": "could",
+            "start_time": 4.08,
+            "end_time": 4.32
+          },
+          {
+            "text": "for",
+            "start_time": 4.4,
+            "end_time": 4.48
+          },
+          {
+            "text": "example",
+            "start_time": 4.48,
+            "end_time": 4.8
+          },
+          {
+            "text": "have",
+            "start_time": 4.88,
+            "end_time": 5.04
+          },
+          {
+            "text": "a",
+            "start_time": 5.04,
+            "end_time": 5.12
+          },
+          {
+            "text": "little",
+            "start_time": 5.12,
+            "end_time": 5.2
+          },
+          {
+            "text": "menu",
+            "start_time": 5.2,
+            "end_time": 5.6
+          },
+          {
+            "text": "that",
+            "start_time": 5.6,
+            "end_time": 5.76
+          },
+          {
+            "text": "pops",
+            "start_time": 5.76,
+            "end_time": 6.08
+          },
+          {
+            "text": "up",
+            "start_time": 6.08,
+            "end_time": 6.24
+          },
+          {
+            "text": "Yeah",
+            "start_time": 7.04,
+            "end_time": 7.28
+          },
+          {
+            "text": "might",
+            "start_time": 7.28,
+            "end_time": 7.52
+          },
+          {
+            "text": "be",
+            "start_time": 7.52,
+            "end_time": 7.52
+          },
+          {
+            "text": "quite",
+            "start_time": 7.52,
+            "end_time": 7.76
+          },
+          {
+            "text": "good",
+            "start_time": 7.76,
+            "end_time": 7.92
+          },
+          {
+            "text": "that",
+            "start_time": 7.92,
+            "end_time": 8.08
+          },
+          {
+            "text": "way",
+            "start_time": 8.16,
+            "end_time": 8.24
+          },
+          {
+            "text": "So",
+            "start_time": 8.24,
+            "end_time": 8.48
+          },
+          {
+            "text": "right",
+            "start_time": 8.56,
+            "end_time": 8.8
+          },
+          {
+            "text": "click",
+            "start_time": 8.8,
+            "end_time": 8.96
+          },
+          {
+            "text": "on",
+            "start_time": 8.96,
+            "end_time": 9.12
+          },
+          {
+            "text": "it",
+            "start_time": 9.12,
+            "end_time": 9.2
+          },
+          {
+            "text": "menu",
+            "start_time": 9.2,
+            "end_time": 9.76
+          },
+          {
+            "text": "You",
+            "start_time": 9.92,
+            "end_time": 9.92
+          },
+          {
+            "text": "know",
+            "start_time": 10.0,
+            "end_time": 10.08
+          },
+          {
+            "text": "and",
+            "start_time": 10.32,
+            "end_time": 10.4
+          },
+          {
+            "text": "you",
+            "start_time": 10.4,
+            "end_time": 10.56
+          },
+          {
+            "text": "can",
+            "start_time": 10.56,
+            "end_time": 10.72
+          },
+          {
+            "text": "click",
+            "start_time": 11.68,
+            "end_time": 11.92
+          },
+          {
+            "text": "on",
+            "start_time": 11.92,
+            "end_time": 12.16
+          },
+          {
+            "text": "speaker",
+            "start_time": 12.16,
+            "end_time": 12.48
+          },
+          {
+            "text": "characterization",
+            "start_time": 12.48,
+            "end_time": 13.28
+          },
+          {
+            "text": "It",
+            "start_time": 13.28,
+            "end_time": 13.28
+          },
+          {
+            "text": "pops",
+            "start_time": 13.52,
+            "end_time": 13.76
+          },
+          {
+            "text": "the",
+            "start_time": 13.76,
+            "end_time": 13.92
+          },
+          {
+            "text": "window",
+            "start_time": 13.92,
+            "end_time": 14.16
+          },
+          {
+            "text": "What",
+            "start_time": 14.48,
+            "end_time": 14.72
+          },
+          {
+            "text": "else",
+            "start_time": 14.72,
+            "end_time": 14.88
+          }
+        ]
+      }
+    ]
+  },
+  "os_memory": {
+    "resident_size": 3062448128,
+    "phys_footprint": 10792686296,
+    "lifetime_max_phys_footprint": 10813477568
+  }
+}
