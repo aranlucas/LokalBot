@@ -5,6 +5,7 @@ LokalBot is a private work-memory app for macOS. Meetings are one input. Preserv
 ## Working agreements
 
 - Complete the requested scope through relevant verification and correction of failures caused by the change. Reuse authorization already given; ask when a material decision or action exceeds that scope. Keep reviews and audits read-only unless implementation is requested.
+- Open pull requests as drafts while still pushing fixes, and mark them ready for review when complete. The required UI suite (about an hour of macOS runner time) runs only on pull requests that are ready for review.
 - Preserve unrelated work. When committing is authorized, stage only task files. Publication, releases, and production changes require authorization covering those actions.
 - Run checks relevant to the change and required by the repository. Repeat or broaden them when new changes, failures, or unresolved risks justify it. Documentation-only edits need link and diff checks, not an app build.
 - Never run UI tests locally on this MacBook. Use hosted CI or a remote runner; `Scripts/ui-tests.sh --remote` is the explicit remote entry point. Local compilation and non-UI tests are allowed. Verify the tested revision includes the requested changes.

@@ -49,6 +49,26 @@ class PublicationGateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.check(jobs=lambda run: [dict(name='Build', conclusion='skipped')])
 
+    def test_only_ui_tests_accepts_an_exact_commit_dispatch(self):
+        dispatched = dict(self.run, event='workflow_dispatch')
+        self.assertEqual(release.successful_gate([dispatched], self.jobs, 'candidate', ['Build'],
+                                                 ('push', 'workflow_dispatch')), 1)
+        with self.assertRaises(ValueError):
+            self.check([dispatched])
+        self.assertEqual(release.GATE_EVENTS, {'ui-tests.yml': ('push', 'workflow_dispatch')})
+        prepare = (ROOT / 'Scripts/prepare-release.sh').read_text()
+        self.assertIn('gh workflow run ui-tests.yml --ref master --raw-field "candidate_sha=$sha"', prepare)
+
+    def test_ui_tests_no_longer_run_on_master_pushes_but_build_still_does(self):
+        ui = (ROOT / '.github/workflows/ui-tests.yml').read_text()
+        triggers = ui.split('\non:\n', 1)[1].split('\nconcurrency:', 1)[0]
+        self.assertNotIn('\n  push:', triggers)
+        build = (ROOT / '.github/workflows/build.yml').read_text()
+        self.assertIn('\n  push:\n    branches: [master, dev]', build)
+        job = build.split('\n  build:\n', 1)[1].split('    steps:', 1)[0]
+        self.assertIn('needs: changes', job)
+        self.assertIn("if: needs.changes.outputs.relevant == 'true'", job)
+
     def test_new_failed_run_or_attempt_overrides_old_success(self):
         for newer in [dict(self.run, id=2, run_number=8, conclusion='failure'),
                       dict(self.run, run_attempt=2, conclusion='failure')]:

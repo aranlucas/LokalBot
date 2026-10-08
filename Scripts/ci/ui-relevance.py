@@ -3,7 +3,9 @@
 
 Every pull request runs ui-tests.yml so its aggregate `XCUITest (macOS)` check
 always reports. Changes that cannot affect the app or its UI tests skip the
-expensive jobs and pass the aggregate gate.
+expensive jobs and pass the aggregate gate. So do draft pull requests: the
+suite runs when one is marked ready for review (`ready_for_review`), and that
+run's pending check blocks merging until it passes. Drafts cannot be merged.
 """
 import fnmatch
 import os
@@ -54,6 +56,10 @@ def write_output(value):
 def main(argv):
     if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
         write_output(True)
+        return 0
+    if os.environ.get("PULL_REQUEST_DRAFT") == "true":
+        print("Draft pull request: the UI suite runs when it is marked ready for review.")
+        write_output(False)
         return 0
     paths = changed_paths(argv[1], argv[2])
     warning = size_warning(paths)

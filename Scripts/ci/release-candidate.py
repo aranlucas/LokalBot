@@ -14,6 +14,11 @@ GATES = {
     'lint.yml': ['SwiftLint'],
     'xcodegen.yml': ['project.yml generates cleanly'],
 }
+# UI Tests no longer runs on every master push. prepare-release.sh dispatches
+# it for the candidate, and that run binds itself to the exact SHA it was
+# asked to test before any job runs. Only a full run reports `XCUITest
+# (macOS)`; filtered and legacy-comparison dispatches use another name.
+GATE_EVENTS = {'ui-tests.yml': ('push', 'workflow_dispatch')}
 
 
 def command(*args):
@@ -43,13 +48,13 @@ def trusted_tip():
     return sha
 
 
-def successful_gate(runs, jobs, sha, required):
-    # The newest push run on this exact master SHA is authoritative. An older
-    # successful attempt cannot hide a running or failed rerun.
+def successful_gate(runs, jobs, sha, required, events=('push',)):
+    # The newest qualifying run on this exact master SHA is authoritative. An
+    # older successful attempt cannot hide a running or failed rerun.
     candidates = [run for run in runs if run['head_sha'] == sha and run['head_branch'] == 'master'
-                  and run['event'] == 'push']
+                  and run['event'] in events]
     if not candidates:
-        raise ValueError('No trusted master push validation for this exact commit')
+        raise ValueError('No trusted master validation for this exact commit')
     run = max(candidates, key=lambda item: (item['run_number'], item.get('run_attempt', 1)))
     if run['status'] != 'completed' or run['conclusion'] != 'success':
         raise ValueError('Latest exact-commit validation is not successful')
@@ -64,8 +69,11 @@ def successful_gate(runs, jobs, sha, required):
 def gates():
     sha = trusted_tip()
     for workflow, required in GATES.items():
-        runs = api(f'actions/workflows/{workflow}/runs?head_sha={sha}&event=push&per_page=100')['workflow_runs']
-        run_id = successful_gate(runs, lambda run: api(f'actions/runs/{run}/jobs?filter=latest&per_page=100')['jobs'], sha, required)
+        events = GATE_EVENTS.get(workflow, ('push',))
+        runs = [run for event in events
+                for run in api(f'actions/workflows/{workflow}/runs?head_sha={sha}&event={event}&per_page=100')['workflow_runs']]
+        run_id = successful_gate(runs, lambda run: api(f'actions/runs/{run}/jobs?filter=latest&per_page=100')['jobs'],
+                                 sha, required, events)
         print(f"Verified {workflow} run {run_id}: {', '.join(required)}")
 
 

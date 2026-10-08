@@ -10,4 +10,6 @@ remote_sha="$(git ls-remote origin refs/heads/master | cut -f1)"
 [ "$sha" = "$remote_sha" ] || { echo 'Candidate must be the pushed master commit.' >&2; exit 1; }
 python3 Scripts/release-preflight.py --candidate --version "$version"
 gh workflow run release.yml --ref master --raw-field "version=$version"
-printf 'Archive preparation dispatched for %s. Wait for its successful completion and all five push gates before tagging.\n' "$sha"
+# UI Tests no longer runs on every master push; validate this exact candidate.
+gh workflow run ui-tests.yml --ref master --raw-field "candidate_sha=$sha"
+printf 'Archive preparation and UI Tests dispatched for %s. Wait for both, and the Build, Lint and XcodeGen push runs, before tagging.\n' "$sha"
