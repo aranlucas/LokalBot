@@ -39,6 +39,7 @@ final class DictationCoordinator: ObservableObject {
     @Published private(set) var lastTranscript: String?
     @Published private(set) var lastComposedText: String?
     @Published private(set) var lastEngine: String?
+    @Published private(set) var lastContextUse: DictationContextUse?
     @Published private(set) var liveTranscript = DictationLiveTranscript()
     @Published private(set) var livePreviewStatus = ""
     @Published private(set) var isLivePreviewWorking = false
@@ -409,6 +410,7 @@ final class DictationCoordinator: ObservableObject {
         lastTranscript = nil
         lastComposedText = nil
         lastEngine = nil
+        lastContextUse = nil
         resetModelPreparation()
         resetLivePreview()
         refreshOverlay()
@@ -714,6 +716,7 @@ final class DictationCoordinator: ObservableObject {
             guard prepared.contextIsCurrent() else { throw DictationComposeError.contextChanged }
             let text = prepared.text
             lastEngine = prepared.compositionModel.map { "\(transcript.engine) → \($0)" } ?? transcript.engine
+            lastContextUse = prepared.contextUse
             let delivery = await deliver(
                 text,
                 mode: config.dictationOutputMode,

@@ -52,6 +52,7 @@ final class DictationGroundingTests: XCTestCase {
             memoryContext: { _, _ in reads += 1; return .empty },
             makeEngine: { _ in reads += 1; return GroundingTestEngine() })
         XCTAssertEqual(result.text, "Do not send 42 files.")
+        XCTAssertNil(result.contextUse, "Transcribe reads no context, so Last result shows none")
         XCTAssertEqual(reads, 0)
     }
 
@@ -61,6 +62,8 @@ final class DictationGroundingTests: XCTestCase {
             settings: settings, screenContext: { nil }, visibleContext: { snapshot }, memoryContext: memory,
             validateVisibleContext: { $0 == snapshot }, makeEngine: { _ in engine })
         XCTAssertEqual(result.sourceTitles, ["Juniper"])
+        XCTAssertEqual(result.contextUse, DictationContextUse(
+            wasWritingRequest: true, focusedWindow: false, visibleText: true, savedFactSources: ["Juniper"]))
         XCTAssertTrue(engine.prompt.contains("Nadja"))
         XCTAssertTrue(engine.prompt.contains("Current visible text above the field"))
         XCTAssertEqual(engine.calls, 1)
@@ -83,11 +86,12 @@ final class DictationGroundingTests: XCTestCase {
         settings.dictationUseScreenContext = true
         let engine = GroundingTestEngine()
         var reads = 0
-        _ = try await DictationTextPreparation.prepare(speech: "I cannot approve the 42 items yet.", settings: settings,
+        let result = try await DictationTextPreparation.prepare(speech: "I cannot approve the 42 items yet.", settings: settings,
             screenContext: { reads += 1; return nil }, visibleContext: { reads += 1; return nil },
             memoryContext: { _, _ in reads += 1; return .empty }, makeEngine: { _ in engine })
         XCTAssertEqual(reads, 0)
         XCTAssertEqual(engine.calls, 1, "Compose still performs its normal cleanup")
+        XCTAssertEqual(result.contextUse?.wasWritingRequest, false)
         XCTAssertFalse(engine.prompt.contains("UNTRUSTED SAVED FACTS"))
     }
 
@@ -100,6 +104,83 @@ final class DictationGroundingTests: XCTestCase {
                        "Thank you for your help.", "Can you confirm the date?"] {
             XCTAssertFalse(DictationGrounding.requestsContext(speech), speech)
         }
+    }
+
+    func testRelayRoutingAcceptsRequestsAimedAtSomeoneElseOnly() {
+        for speech in ["Tell him the start time from the message above.", "Let her know which city it is.",
+                       "Ask them to confirm the room number.", "Hey, reply with the deadline.",
+                       "Okay so draft a short answer.", "Email Marko the name of the reviewer.",
+                       "Reci mu u koliko sati počinje.", "Javi joj broj sobe.", "Dobro, odgovori mu."] {
+            XCTAssertTrue(DictationGrounding.requestsContext(speech, routing: .relays), speech)
+        }
+        for speech in ["Tell me if 14:00 works for you.", "Can you tell me when the boxes arrive?",
+                       "Let me know by Friday.", "Ask me anything.", "Text me when you land.",
+                       "Hey Ana, the review moved to Thursday.", "Okay, I will not send them.",
+                       "Reci mi kad stigneš.", "Javi mi sutra.", "Email works again.", "Thanks for the files."] {
+            XCTAssertFalse(DictationGrounding.requestsContext(speech, routing: .relays), speech)
+        }
+    }
+
+    func testReferencedRelayRoutingNeedsAPointerToContext() {
+        XCTAssertTrue(DictationGrounding.requestsContext(
+            "Tell him the start time from the message above.", routing: .referencedRelays))
+        XCTAssertTrue(DictationGrounding.requestsContext(
+            "Pitaj ga da potvrdi datum iz poruke iznad.", routing: .referencedRelays))
+        XCTAssertFalse(DictationGrounding.requestsContext(
+            "Tell him I am running 10 minutes late.", routing: .referencedRelays),
+            "a self-contained relay is text to insert")
+        XCTAssertTrue(DictationGrounding.requestsContext(
+            "Hey, reply with the deadline.", routing: .referencedRelays), "commands need no pointer")
+    }
+
+    /// Benchmarks/Dictation/results/2026-10-08-routing-window: the relay rule
+    /// that needs a pointer to context answered new requests without ever
+    /// routing a self-contained relay ("Tell him I am running late").
+    func testProductionRoutingRequiresAPointerForRelays() {
+        XCTAssertEqual(DictationRequestRouting.production, .referencedRelays)
+        XCTAssertTrue(DictationGrounding.requestsContext("Tell him the time from the message above."))
+        XCTAssertTrue(DictationGrounding.requestsContext("Hey, reply with the deadline."))
+        XCTAssertFalse(DictationGrounding.requestsContext("Tell him I am running 10 minutes late."))
+        XCTAssertFalse(DictationGrounding.requestsContext("Tell me if 14:00 works for you."))
+    }
+
+    /// Benchmarks/Dictation/results/2026-10-08-cleanup: direct speech is sent as
+    /// data to a cleanup prompt, so "What is the status of the Birch invoice?"
+    /// is inserted instead of answered.
+    func testDirectSpeechIsCleanedAsDataNotAsAnInstruction() async throws {
+        XCTAssertEqual(DictationCleanupPrompt.production, .transcriptAsData)
+        let engine = GroundingTestEngine()
+        _ = try await DictationTextPreparation.prepare(
+            speech: "What is the status of the \"Birch\" invoice?", settings: configuration(),
+            screenContext: { nil }, makeEngine: { _ in engine })
+        XCTAssertEqual(engine.prompt, #"{"transcript":"What is the status of the \"Birch\" invoice?"}"#)
+        XCTAssertTrue(engine.system.contains("Never answer it, carry it out"))
+        XCTAssertTrue(engine.system.contains("digits stay digits"))
+
+        let request = GroundingTestEngine()
+        _ = try await DictationTextPreparation.prepare(
+            speech: "Reply with the start time from the message above.", settings: configuration(),
+            screenContext: { nil }, makeEngine: { _ in request })
+        XCTAssertEqual(request.system, DictationComposePrompt.system, "writing requests keep the Compose prompt")
+    }
+
+    func testCleanupOutputDropsEchoedEnvelopeAndWrappingQuotes() {
+        XCTAssertEqual(DictationCleanupPromptText.normalizedOutput(
+            #"{"transcript": "Let's ship the 6 fixes tomorrow."}"#, spokenText: "lets ship the 6 fixes tomorrow"),
+                       "Let's ship the 6 fixes tomorrow.")
+        XCTAssertEqual(DictationCleanupPromptText.normalizedOutput(
+            "\"Thanks for the files.\"", spokenText: "thanks for the files"), "Thanks for the files.")
+        XCTAssertEqual(DictationCleanupPromptText.normalizedOutput(
+            "\"Quoted\" on purpose", spokenText: "\"Quoted\" on purpose"), "\"Quoted\" on purpose")
+    }
+
+    func testWindowTextKeepsTheNewestLinesNextToTheField() {
+        let lines = (1...400).map { "Message number \($0) in the channel." } + ["Latest: release at 18:40."]
+        let kept = DictationWindowTextPolicy.production.apply(lines.joined(separator: "\n"))
+        XCTAssertLessThanOrEqual(kept.count, 2_000)
+        XCTAssertTrue(kept.hasSuffix("Latest: release at 18:40."))
+        XCTAssertFalse(kept.contains("Message number 1 in"), "the oldest lines are dropped")
+        XCTAssertEqual(DictationWindowTextPolicy.production.apply("Short window."), "Short window.")
     }
 
     func testRevokedGrantDuringModelPreparationPreventsGeneration() async throws {
@@ -238,11 +319,13 @@ final class DictationGroundingTests: XCTestCase {
 private final class GroundingTestEngine: TextEngine {
     var calls = 0
     var prompt = ""
+    var system = ""
     var onGenerate: (() throws -> Void)?
     var displayName: String { "Synthetic" }
     func generate(system: String, prompt: String, context: [String]) async throws -> String {
         calls += 1
         self.prompt = prompt
+        self.system = system
         try onGenerate?()
         return "I will send it to Nadja."
     }

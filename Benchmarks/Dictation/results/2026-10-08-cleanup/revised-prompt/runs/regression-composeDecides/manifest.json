@@ -1,0 +1,73 @@
+{
+  "appSHA256": "cb172c226106d435212b46141dd8c48b5c01f3785d6f1496adb21b272b3d3a1e",
+  "serverSHA256": "9c7232e055e96b6594884e407094ded43bc66ec48e1ef2fca3404a4940057511",
+  "modelSHA256": "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4",
+  "modelFile": "Qwen3.5-4B-Q4_K_M.gguf",
+  "corpusSHA256": "7063219ea6bd61a439b07ed8042142844e259f7fb81298b53872f1bcfdfff17c",
+  "scriptSHA256": "15d70d2a6afc5ba1f1a8e5686ce13ad8bff8379d4f102306eb27815250da1474",
+  "split": "heldout",
+  "caseIDs": [
+    "held-day",
+    "held-place",
+    "held-person",
+    "held-serbian",
+    "held-memory-owner",
+    "held-memory-format",
+    "held-linked-reviewer",
+    "held-linked-place",
+    "held-conflict-owner",
+    "held-conflict-date",
+    "held-screen-memory",
+    "held-mixed-memory",
+    "held-explicit-owner",
+    "held-direct-negation",
+    "held-direct-uncertainty",
+    "held-direct-name",
+    "held-hidden",
+    "held-domain",
+    "held-credential",
+    "held-injection",
+    "held-transcribe-command",
+    "held-transcribe-facts"
+  ],
+  "serverArguments": [
+    "/private/tmp/lokalbot-bench-stage4/LokalBot.app/Contents/Resources/llama-cpp/llama-server",
+    "-m",
+    "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "59147",
+    "-c",
+    "32768",
+    "-ngl",
+    "99",
+    "--parallel",
+    "1",
+    "--jinja",
+    "--no-webui",
+    "--seed",
+    "12648430"
+  ],
+  "variants": [
+    "neither",
+    "visible",
+    "memory",
+    "both",
+    "all"
+  ],
+  "windowPolicies": {
+    "head": {
+      "limit": 12000,
+      "keepsEnd": false
+    },
+    "tail": {
+      "limit": 2000,
+      "keepsEnd": true
+    }
+  },
+  "routing": "production",
+  "cleanupPrompt": "composeDecides",
+  "settings": "Production Compose: temperature 0.2, max 4096 output tokens, reasoning disabled; fixed server seed",
+  "scope": "Synthetic recognized speech, AX trees and saved facts. No microphone, live screen or user library."
+}

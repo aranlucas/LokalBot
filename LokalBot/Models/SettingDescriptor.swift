@@ -148,6 +148,8 @@ struct SettingDescriptor: Identifiable {
         .init(id: "settings.dictationShowOverlay", title: "Show floating dictation status", category: .dictation, aliases: "overlay pill"),
         .init(id: "settings.dictationLivePreview", title: "Show live transcript", category: .dictation, aliases: "speech preview"),
         .init(id: "settings.dictationRetainAudio", title: "Keep dictation audio files", category: .dictation, aliases: "speech recording retention"),
+        .init(id: "settings.dictationUseScreenContext", title: "Use the focused window as context", category: .dictation, aliases: "dictation compose screenshot screen recording ocr window"),
+        .init(id: "settings.dictationWritingProfile", title: "Writing profile", category: .dictation, aliases: "dictation compose tone name style terminology"),
         .init(id: "settings.dictationUseVisibleContext", title: "Use visible text above the field", category: .dictation, aliases: "dictation compose screen context messages accessibility"),
         .init(id: "settings.dictationUseMeetingMemory", title: "Use meeting and work memory", category: .dictation, aliases: "dictation compose saved facts notes context"),
         .init(id: "settings.dictationUseScreenMemory", title: "Use screen-derived work memory", category: .dictation, aliases: "dictation compose saved screen facts context"),

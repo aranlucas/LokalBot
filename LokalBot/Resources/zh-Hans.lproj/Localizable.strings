@@ -164,6 +164,7 @@
 "Choose the models behind Transcribe, Think, and Autocomplete." = "选择用于转写、思考和自动补全的模型。";
 "Cleanup" = "清理";
 "Cleanup cannot be undone. The policy stays unchanged until you apply this review. Failed deletions remain visible and can be retried." = "清理无法撤销。应用此次更改前，策略保持不变。删除失败的条目仍会显示，可再次尝试。";
+"Cleanup only. Context is read only for writing requests such as “reply…” or “draft…”." = "仅整理文字。只有“回复……”“起草……”等写作请求才会读取上下文。";
 "Clear" = "清除";
 "Clear History" = "清除历史记录";
 "Clear Work Memory" = "清除工作记忆";
@@ -191,6 +192,7 @@
 "Command Palette…" = "命令面板…";
 "Command palette input" = "命令面板输入";
 "Compose" = "撰写";
+"Compose uses it for tone, your name and terminology." = "撰写时会用它来确定语气、你的名字和术语。";
 "Composing" = "正在撰写";
 "Configure Overnight Review" = "配置夜间回顾";
 "Configure overnight review" = "配置夜间回顾";
@@ -298,6 +300,7 @@
 "Earlier" = "更早";
 "Edit" = "编辑";
 "Edit as follow-up" = "编辑为跟进消息";
+"Edit…" = "编辑…";
 "Email addresses stay in this meeting's local metadata and help distinguish guests." = "电子邮件地址保存在此会议的本地元数据中，用于区分受邀者。";
 "Emoji autocomplete" = "表情符号自动补全";
 "Enable autocomplete" = "启用自动补全";
@@ -340,6 +343,7 @@
 "Find on this meeting page (⌘F)" = "在此会议页面查找（⌘F）";
 "Fit" = "适应窗口";
 "Focus Composer" = "聚焦输入框";
+"focused window" = "当前窗口";
 "Folder" = "文件夹";
 "Follow Live" = "跟随实时内容";
 "Follow OpenRouter Policy" = "遵循 OpenRouter 策略";
@@ -422,6 +426,7 @@
 "Known date" = "已知日期";
 "Language" = "语言";
 "Language & vocabulary…" = "语言与词汇…";
+"Languages" = "语言";
 "Languages (optional)" = "语言（可选）";
 "Large" = "大";
 "Larger" = "更大";
@@ -684,6 +689,7 @@
 "Question or search" = "提问或搜索";
 "Quit LokalBot" = "退出 LokalBot";
 "Read coding agent sessions" = "读取编程智能体会话";
+"Reads the focused window's text from a screenshot. Needs Screen Recording; the image and text are not saved." = "通过截图读取当前窗口的文字。需要屏幕录制权限；图像和文字都不会保存。";
 "Reads visible interface text through Accessibility; no screenshots are stored." = "通过辅助功能读取可见的界面文字，不保存屏幕截图。";
 "Reads window titles and visible interface text for activity and text-context features." = "读取窗口标题和界面可见文字，用于活动记录和文字上下文功能。";
 "Reads your Mac Calendar to confirm meetings and suggest attendee names for speakers. Attendee emails stay in local meeting metadata." = "读取 Mac 日历以确认会议，并根据参与者姓名建议说话人名称。参与者电子邮件地址仅保存在本地会议元数据中。";
@@ -796,6 +802,7 @@
 "Save correction" = "保存修正";
 "Save key" = "保存密钥";
 "Saved Agent sessions" = "已保存的智能体会话";
+"saved facts from %@" = "来自 %@ 的已保存事实";
 "Saved Moment Note" = "已保存的时刻笔记";
 "Saved Sessions" = "已保存会话";
 "Saved conversations" = "已保存对话";
@@ -911,6 +918,7 @@
 "Stop recording" = "停止录制";
 "Storage: this Mac" = "存储位置：这台 Mac";
 "Stored in Keychain only when you choose Save key. Leave empty for a server that needs no key." = "只有选择“保存密钥”时才会写入钥匙串。无需密钥的服务器可留空。";
+"Style" = "风格";
 "Subject" = "主题";
 "Suggest actions that look done" = "提示可能已完成的行动项";
 "Suggest in integrated terminals" = "在集成终端中显示建议";
@@ -929,6 +937,7 @@
 "Task options" = "任务选项";
 "Tasks" = "任务";
 "Technical details — select to copy" = "技术详情 — 选中即可复制";
+"Terminology" = "术语";
 "Text + visual context" = "文字与视觉上下文";
 "Text Context" = "文字上下文";
 "Text and images build on app activity. Images are encrypted on disk; captured text remains searchable under your retention policy." = "文字和图像采集以应用活动为基础。图像在磁盘上加密存储；采集的文字按保留策略保存并可搜索。";
@@ -941,6 +950,7 @@
 "The model downloads when semantic search is first used. Meeting text and text captured from your screen are indexed locally." = "首次使用语义搜索时下载模型。会议文字和从屏幕采集的文字会在本机建立索引。";
 "The opened source remains visible outside these filters." = "已打开的来源不受这些筛选条件影响，仍会显示。";
 "The original action, due phrase and citations stay available." = "原始行动项、截止时间表述和引用仍会保留。";
+"The sources below are read only when you start with a writing request, such as “reply…”, “write…” or “draft…”. Other dictation is only cleaned up." = "只有以写作请求开头时（如“回复……”“写……”或“起草……”）才会读取以下来源。其他听写只会整理文字。";
 "Theme" = "主题";
 "These are captured window titles. Expand a title to inspect the activity behind it." = "这些是采集的窗口标题。展开标题可查看背后的活动。";
 "These choices are applied on the final Review step." = "这些选择将在最后的确认步骤生效。";
@@ -1032,11 +1042,13 @@
 "Use the original playback timeline; for example, 2:30 is 150 seconds." = "使用原始播放时间线，例如 2:30 为 150 秒。";
 "Use up to two relevant facts from recent meeting notes, decisions, and work memory to help with names and details. Processed on this Mac." = "从最近的会议笔记、决策和工作记忆中使用最多两条相关事实，辅助补充姓名和细节。在这台 Mac 上处理。";
 "Use visible text above the field" = "使用输入框上方的可见文字";
+"Used: %@" = "已使用：%@";
 "Verify Agent runtime…" = "验证智能体运行时…";
 "Verifying Agent runtime…" = "正在验证智能体运行时…";
 "View" = "查看";
 "View Full Size" = "查看原始大小";
 "View all" = "查看全部";
+"visible text" = "可见文字";
 "Voice" = "语音";
 "Wait before stopping" = "停止前的等待时间";
 "Waiting for models" = "等待模型就绪";
@@ -1064,6 +1076,8 @@
 "Writes the Timeline digest to your local journal at the chosen time, then finalizes yesterday after midnight so late activity is included." = "在所选时间将时间线摘要写入本地日志，并在午夜后补齐前一天的日志，以包含较晚的活动。";
 "Writing" = "写作";
 "Writing for the focused app" = "正在为当前应用撰写内容";
+"Writing profile" = "写作偏好";
+"Writing request. No enabled context matched it." = "写作请求。没有匹配的已启用上下文。";
 "Writing settings…" = "写作设置…";
 "Writing style (optional)" = "写作风格（可选）";
 "Writing tool" = "写作工具";

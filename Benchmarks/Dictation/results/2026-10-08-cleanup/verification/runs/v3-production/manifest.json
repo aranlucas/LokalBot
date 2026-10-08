@@ -1,0 +1,71 @@
+{
+  "appSHA256": "6160274a42cd1b889dd7929b6f168e7f2c4932fd28fbe8ae77df17eeed8cb875",
+  "serverSHA256": "9c7232e055e96b6594884e407094ded43bc66ec48e1ef2fca3404a4940057511",
+  "modelSHA256": "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4",
+  "modelFile": "Qwen3.5-4B-Q4_K_M.gguf",
+  "corpusSHA256": "3e0936c0fd4f78192ee9a5046af32845db2dc319a477a1b66438628d3988acf2",
+  "scriptSHA256": "15d70d2a6afc5ba1f1a8e5686ce13ad8bff8379d4f102306eb27815250da1474",
+  "split": "heldout",
+  "caseIDs": [
+    "c3-send-slides",
+    "c3-what-time",
+    "c3-remind-me",
+    "c3-tell-marko",
+    "c3-ask-sara",
+    "c3-check-server",
+    "c3-explain-build",
+    "c3-lets-ship",
+    "c3-owe-coffee",
+    "c3-did-not-say",
+    "c3-filler",
+    "c3-summarize-thoughts",
+    "c3-sr-slajdovi",
+    "c3-sr-podsjeti",
+    "c3-sr-kada",
+    "c3-sr-objasni",
+    "c3-req-reply-time",
+    "c3-req-draft-room",
+    "c3-req-sr",
+    "c3-transcribe"
+  ],
+  "serverArguments": [
+    "/private/tmp/lokalbot-bench-stage5/LokalBot.app/Contents/Resources/llama-cpp/llama-server",
+    "-m",
+    "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/Qwen3.5-4B-Q4_K_M.gguf",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "60496",
+    "-c",
+    "32768",
+    "-ngl",
+    "99",
+    "--parallel",
+    "1",
+    "--jinja",
+    "--no-webui",
+    "--seed",
+    "12648430"
+  ],
+  "variants": [
+    "neither",
+    "visible",
+    "memory",
+    "both",
+    "all"
+  ],
+  "windowPolicies": {
+    "head": {
+      "limit": 12000,
+      "keepsEnd": false
+    },
+    "tail": {
+      "limit": 2000,
+      "keepsEnd": true
+    }
+  },
+  "routing": "production",
+  "cleanupPrompt": "production",
+  "settings": "Production Compose: temperature 0.2, max 4096 output tokens, reasoning disabled; fixed server seed",
+  "scope": "Synthetic recognized speech, AX trees and saved facts. No microphone, live screen or user library."
+}

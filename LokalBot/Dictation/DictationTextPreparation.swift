@@ -8,6 +8,8 @@ enum DictationTextPreparation {
         let compositionModel: String?
         var sourceTitles: [String] = []
         var contextIsCurrent: @MainActor () -> Bool = { true }
+        /// What Compose read for this request; nil for Transcribe.
+        var contextUse: DictationContextUse?
     }
 
     /// No thinking turn, a low temperature for faithful cleanup, and an output
@@ -24,6 +26,9 @@ enum DictationTextPreparation {
         currentSettings: @escaping () -> AppSettings? = { nil },
         validateVisibleContext: (CotypingVisibleContext.Snapshot) async -> Bool = { _ in false },
         validateScreenContext: (DictationScreenContext) async -> Bool = { _ in false },
+        windowTextPolicy: DictationWindowTextPolicy = .production,
+        routing: DictationRequestRouting = .production,
+        cleanupPrompt: DictationCleanupPrompt = .production,
         makeEngine: (AppSettings) async throws -> TextEngine
     ) async throws -> Result {
         try Task.checkCancellation()
@@ -34,7 +39,7 @@ enum DictationTextPreparation {
             DictationGrounding.permissionsMatch(settings, currentSettings() ?? settings)
         }
         guard permissionsCurrent() else { throw DictationComposeError.contextChanged }
-        let usesContext = DictationGrounding.requestsContext(speech)
+        let usesContext = DictationGrounding.requestsContext(speech, routing: routing)
         let context = usesContext && settings.dictationUseScreenContext ? await screenContext() : nil
         try Task.checkCancellation()
         guard permissionsCurrent() else { throw DictationComposeError.contextChanged }
@@ -59,18 +64,59 @@ enum DictationTextPreparation {
         try await validate()
         let engine = try await makeEngine(settings)
         try await validate()
-        let prompt = DictationComposePrompt.userPrompt(
-            spokenText: speech, context: context,
-            profile: DictationComposeProfile(personalization: settings.cotypingPersonalization),
-            visibleContext: visible?.text, memoryContext: memory.selection.text)
+        let profile = DictationComposeProfile(personalization: settings.cotypingPersonalization)
+        // Direct speech is text to insert, so it goes to a cleanup prompt as
+        // data rather than to a prompt that may treat it as an instruction.
+        let cleansAsData = !usesContext && cleanupPrompt == .transcriptAsData
+        let system = cleansAsData ? DictationCleanupPromptText.system(profile: profile) : DictationComposePrompt.system
+        let prompt = cleansAsData
+            ? DictationCleanupPromptText.userPrompt(spokenText: speech)
+            : DictationComposePrompt.userPrompt(
+                spokenText: speech, context: context, profile: profile,
+                visibleContext: visible?.text, memoryContext: memory.selection.text,
+                windowTextPolicy: windowTextPolicy)
         // Someone is waiting to insert this text. Without options the built-in
         // server would allow an 8K-token thinking turn before any visible text.
-        let output = try await engine.generate(system: DictationComposePrompt.system, prompt: prompt, context: [],
+        let output = try await engine.generate(system: system, prompt: prompt, context: [],
                                                options: Self.composeOptions)
         try await validate()
-        let text = DictationComposePrompt.normalizedOutput(output)
+        let text = cleansAsData
+            ? DictationCleanupPromptText.normalizedOutput(output, spokenText: speech)
+            : DictationComposePrompt.normalizedOutput(output)
         guard !text.isEmpty else { throw DictationComposeError.emptyOutput }
+        let contextUse = DictationContextUse(
+            wasWritingRequest: usesContext,
+            focusedWindow: !(context?.visibleText.isEmpty ?? true),
+            visibleText: !(visible?.text?.isEmpty ?? true),
+            savedFactSources: memory.selection.sourceTitles)
         return Result(text: text, compositionModel: engine.displayName,
-                      sourceTitles: memory.selection.sourceTitles, contextIsCurrent: isCurrent)
+                      sourceTitles: memory.selection.sourceTitles, contextIsCurrent: isCurrent,
+                      contextUse: contextUse)
+    }
+}
+
+/// Which context a Compose request actually used, shown under Last result so
+/// the context settings can be judged by what they contributed.
+struct DictationContextUse: Equatable, Sendable {
+    /// Context is read only for writing requests ("reply…", "draft…").
+    var wasWritingRequest: Bool
+    var focusedWindow = false
+    var visibleText = false
+    var savedFactSources: [String] = []
+
+    /// The line under Last result, in the interface language.
+    func summary(localized: (String) -> String = { $0 }) -> String {
+        guard wasWritingRequest else {
+            return localized("Cleanup only. Context is read only for writing requests such as “reply…” or “draft…”.")
+        }
+        var used: [String] = []
+        if focusedWindow { used.append(localized("focused window")) }
+        if visibleText { used.append(localized("visible text")) }
+        if !savedFactSources.isEmpty {
+            used.append(String(format: localized("saved facts from %@"),
+                               savedFactSources.joined(separator: ", ")))
+        }
+        guard !used.isEmpty else { return localized("Writing request. No enabled context matched it.") }
+        return String(format: localized("Used: %@"), used.joined(separator: "; "))
     }
 }

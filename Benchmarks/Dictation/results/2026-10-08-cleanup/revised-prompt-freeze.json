@@ -1,0 +1,12 @@
+{
+  "frozenBeforeInference": true,
+  "note": "Revised cleanup prompt (digits stay digits) and context-cleanup-v4.json fixed before the revised prompt ran. v3 informed the revision and is no longer a holdout for it.",
+  "baseCommit": "47633e3410144e4458f52ee894abf7ae98819f89",
+  "sha256": {
+    "Benchmarks/Dictation/context-cleanup-v4.json": "bdced6d436ff6ceeb58121a7a55a85e85707888d0e4fa4638a0819e339b07c39",
+    "Benchmarks/Dictation/context-cleanup-v3.json": "3e0936c0fd4f78192ee9a5046af32845db2dc319a477a1b66438628d3988acf2",
+    "Benchmarks/Dictation/context_replay.py": "15d70d2a6afc5ba1f1a8e5686ce13ad8bff8379d4f102306eb27815250da1474",
+    "LokalBot/Dictation/DictationComposition.swift": "6269651a38f5d15b3e7c043cf79b19d3e54a594806388f7605105e5dc7021b16",
+    "LokalBot/Dictation/DictationTextPreparation.swift": "0e1085d0973a146d79334372b242a8a04327ab9041f1e325d900b70b2e1a9a81"
+  }
+}

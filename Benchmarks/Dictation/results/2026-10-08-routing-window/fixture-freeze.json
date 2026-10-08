@@ -1,0 +1,14 @@
+{
+  "frozenBeforeInference": true,
+  "note": "Corpus labels and scorer fixed before any model run. Routing source hash is the baseline (original command list).",
+  "baseCommit": "9e81719c4670692f4457b0cec855530aec6e6cec",
+  "sha256": {
+    "Benchmarks/Dictation/context-routing-v2.json": "57b002a18a2ec548bc0d78efd0a36a854f66c29ae83c2a96497e75f338431367",
+    "Benchmarks/Dictation/context_replay.py": "b82ed0ec24804f0a93656f7f8260e581ffe25e24baa6f0c3a0a4ca7531ae94d8",
+    "Benchmarks/Dictation/test_context_replay.py": "aeb4c05090f95be11899dc86e8ffc1435c633542c1bb0d2d5d96ba61e0aaaa0b",
+    "LokalBot/Dictation/DictationGrounding.swift": "3431583bd6a1553cce5c645143f29dc73f09b56f22bb0596ad2de8df0c799c17",
+    "LokalBot/Dictation/DictationContextReplay.swift": "e738e0b84836923488912c89eef397ef98ca70ba2402854dfead4973079a3473",
+    "LokalBot/Dictation/DictationComposition.swift": "899e15cbaea45c45f95baea6fd80aba3b8aa7599420083dca4c4ea9f38c8cd69",
+    "LokalBot/Dictation/DictationTextPreparation.swift": "ef54d3b95602ccf93ba77e55b4ff8983e98c9440142d7bfd8e82d5ec19cd6e82"
+  }
+}

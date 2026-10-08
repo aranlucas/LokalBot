@@ -2,7 +2,7 @@ import copy
 import json
 from pathlib import Path
 import unittest
-from context_replay import VARIANTS, contains, replay_input, score
+from context_replay import VARIANT_SETS, VARIANTS, contains, flags, replay_input, score
 
 
 class ReplayTests(unittest.TestCase):
@@ -72,6 +72,32 @@ class ReplayTests(unittest.TestCase):
         self.case.pop('contextEligible')
         with self.assertRaises(ValueError):
             score([self.case], self.runs)
+
+
+    def testWindowVariantsPassTheScreenFixtureAndPolicy(self):
+        case = dict(self.case, screen={'appName': 'Slack', 'windowTitle': 'general', 'text': 'Dana: 18:40'})
+        windowed = replay_input(self.corpus, [case], 'window-tail')
+        self.assertTrue(windowed['useScreenContext'])
+        self.assertEqual(windowed['windowTextPolicy'], {'limit': 2000, 'keepsEnd': True})
+        self.assertIn('screen', windowed['cases'][0])
+        self.assertNotIn('useScreenContext', replay_input(self.corpus, [case], 'all'))
+
+    def testWindowIsReadOnlyForEligibleRequestsInWindowVariants(self):
+        variants = VARIANT_SETS['full']
+        def runs_for(case, reads):
+            return {name: [dict(id=case['id'], text='Neda', prompt='p', system='s', modelCalls=1, latencyMs=1,
+                                memoryIDs=case['expectedMemoryIDs'] if flags(name)[1] and flags(name)[0] else [],
+                                visibleIDs=['message'] if flags(name)[0] else [],
+                                textReadIDs=['message'] if flags(name)[0] else [],
+                                screenReads=reads(name))] for name in variants}
+        rows = score([self.case], runs_for(self.case, lambda name: 1 if flags(name)[3] else 0), variants)['cases']
+        self.assertTrue(all(r['screenReadsCorrect'] for r in rows))
+        rows = score([self.case], runs_for(self.case, lambda name: 1), variants)['cases']
+        self.assertFalse(all(r['screenReadsCorrect'] for r in rows), 'grant off must not read the window')
+        direct = dict(self.case, contextEligible=False)
+        rows = score([direct], runs_for(direct, lambda name: 1 if flags(name)[3] else 0), variants)['cases']
+        self.assertFalse(any(r['screenReadsCorrect'] for r in rows if flags(r['variant'])[3]),
+                         'direct speech must never read the window')
 
 
 if __name__ == '__main__':

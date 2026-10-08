@@ -1,0 +1,13 @@
+{
+  "frozenBeforeInference": true,
+  "note": "Cleanup corpus and both prompt candidates fixed before any model run.",
+  "baseCommit": "79be422488c4b8144c0bdfc744fb9a9973f1ccb3",
+  "sha256": {
+    "Benchmarks/Dictation/context-cleanup-v3.json": "3e0936c0fd4f78192ee9a5046af32845db2dc319a477a1b66438628d3988acf2",
+    "Benchmarks/Dictation/context_replay.py": "15d70d2a6afc5ba1f1a8e5686ce13ad8bff8379d4f102306eb27815250da1474",
+    "LokalBot/Dictation/DictationComposition.swift": "22b2ece6c0aa5a1f4835269f6035f87704c998e0aa8f133a432e3ac085c2caa8",
+    "LokalBot/Dictation/DictationTextPreparation.swift": "0e1085d0973a146d79334372b242a8a04327ab9041f1e325d900b70b2e1a9a81",
+    "LokalBot/Dictation/DictationGrounding.swift": "0ad712783e70117170b4cbfdb4f2e1414ab2a84ac34857213bca71efc6094a92",
+    "LokalBot/Dictation/DictationContextReplay.swift": "9b3d7bfc62ca7c0d6f91c9cc57a9e3881555be783de9301717be3084301736b2"
+  }
+}

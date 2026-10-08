@@ -10,6 +10,11 @@ enum DictationContextReplay {
         var useVisibleContext: Bool
         var useMeetingMemory: Bool
         var useScreenMemory: Bool = false
+        /// The focused-window (OCR) option. Optional so older fixtures decode.
+        var useScreenContext: Bool?
+        var windowTextPolicy: DictationWindowTextPolicy?
+        var routing: DictationRequestRouting?
+        var cleanupPrompt: DictationCleanupPrompt?
     }
 
     struct Case: Decodable {
@@ -17,6 +22,14 @@ enum DictationContextReplay {
         var speech: String
         var transcribe: Bool?
         var visible: CotypingVisibleContextReplay.Fixture?
+        /// Synthetic OCR text of the focused window.
+        var screen: ScreenFixture?
+    }
+
+    struct ScreenFixture: Decodable {
+        var appName: String
+        var windowTitle: String
+        var text: String
     }
 
     struct Observation: Encodable {
@@ -28,6 +41,9 @@ enum DictationContextReplay {
         var visibleIDs: [String]
         var textReadIDs: [String]
         var modelCalls: Int
+        var screenReads: Int
+        /// Whether the routing rule treated the speech as a writing request.
+        var routedAsRequest: Bool?
         var latencyMs: Double
         var error: String?
     }
@@ -63,19 +79,26 @@ enum DictationContextReplay {
     private static func replay(_ item: Case, fixture: Input, endpoint: URL) async -> Observation {
         var settings = AppSettings()
         settings.dictationIntent = item.transcribe == true ? .transcribe : .compose
-        settings.dictationUseScreenContext = false
+        let useScreen = fixture.useScreenContext ?? false
+        settings.dictationUseScreenContext = useScreen
         settings.dictationUseVisibleContext = fixture.useVisibleContext
         settings.dictationUseMeetingMemory = fixture.useMeetingMemory
         settings.dictationUseScreenMemory = fixture.useScreenMemory
         let source = item.visible.map(CotypingVisibleContextReplay.init)
         var visible: CotypingVisibleContext.Snapshot?
         var selection = CotypingMemoryContext.Selection()
+        var screenReads = 0
         let engine = RecordingEngine(baseURL: endpoint)
         let start = ContinuousClock.now
-        var output = "", failure: String?
+        var output = "", failure: String?, routed: Bool?
         do {
-            output = try await DictationTextPreparation.prepare(speech: item.speech, settings: settings,
-                screenContext: { nil }, visibleContext: {
+            let prepared = try await DictationTextPreparation.prepare(speech: item.speech, settings: settings,
+                screenContext: {
+                    screenReads += 1
+                    guard useScreen, let screen = item.screen else { return nil }
+                    return DictationScreenContext(appName: screen.appName, bundleID: nil,
+                                                  windowTitle: screen.windowTitle, visibleText: screen.text)
+                }, visibleContext: {
                     visible = source?.capture(enabled: fixture.useVisibleContext)
                     return visible
                 }, memoryContext: { field, selected in
@@ -84,12 +107,19 @@ enum DictationContextReplay {
                         includeTitle: selected.cotypingUseAppContext, policy: policy, now: fixture.now, allowBodyMatch: false)
                     return .init(selection: selection, policy: policy)
                 }, validateVisibleContext: { expected in source?.capture(enabled: fixture.useVisibleContext) == expected },
-                makeEngine: { _ in engine }).text
+                validateScreenContext: { _ in true },
+                windowTextPolicy: fixture.windowTextPolicy ?? .production,
+                routing: fixture.routing ?? .production,
+                cleanupPrompt: fixture.cleanupPrompt ?? .production,
+                makeEngine: { _ in engine })
+            output = prepared.text
+            routed = prepared.contextUse?.wasWritingRequest
         } catch { failure = String(describing: error) }
         let duration = start.duration(to: .now).components
         return .init(id: item.id, text: output, prompt: engine.prompt, system: engine.system,
                      memoryIDs: selection.items.map(\.id), visibleIDs: visible?.excerpts.map(\.id) ?? [],
-                     textReadIDs: source?.textReadIDs ?? [], modelCalls: engine.calls,
+                     textReadIDs: source?.textReadIDs ?? [], modelCalls: engine.calls, screenReads: screenReads,
+                     routedAsRequest: routed,
                      latencyMs: Double(duration.seconds) * 1000 + Double(duration.attoseconds) / 1e15, error: failure)
     }
 
