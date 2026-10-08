@@ -227,6 +227,72 @@ final class DictationReliabilityTests: XCTestCase {
         XCTAssertEqual(patient.snapshot?.focusIdentityKey, "composer")
     }
 
+    /// Review finding: the retry took a fresh focus read during recording, so
+    /// switching apps right after the shortcut made the second app the paste
+    /// destination. The late answer must come from the shortcut's own read.
+    func testSlowFocusReadStillBindsTheFieldFocusedAtTheShortcut() async {
+        let focus = FocusedApp(processID: 42)
+        let executor = DictationFocusSnapshotExecutor(deadlineMilliseconds: 20) {
+            let processID = focus.processID
+            Thread.sleep(forTimeInterval: 0.25)
+            return DictationFocusSnapshot(
+                processID: processID, bundleID: nil, focusIdentityKey: "field-\(processID)",
+                isSecureOrBlocked: false)
+        }
+        let full = Task { await executor.capture(deadlineMilliseconds: 2_000) }
+        let started = ContinuousClock.now
+        let early = await DictationCoordinator.focusCapture(full, within: .milliseconds(60))
+        XCTAssertTrue(early.timedOut)
+        XCTAssertLessThan(started.duration(to: .now), .milliseconds(200), "the microphone does not wait")
+
+        focus.processID = 7 // the person switches apps while dictation starts
+        let late = await full.value
+        XCTAssertEqual(late.snapshot?.processID, 42)
+    }
+
+    func testLateFocusAnswerIsRefusedForAnotherApp() {
+        func capture(_ processID: pid_t, secure: Bool = false) -> DictationFocusCaptureResult {
+            .init(snapshot: DictationFocusSnapshot(
+                processID: processID, bundleID: nil, focusIdentityKey: "field", isSecureOrBlocked: secure),
+                  timedOut: false)
+        }
+        let other = DictationCoordinator.lateDeliveryBinding(capture: capture(7), pressedProcessID: 42)
+        XCTAssertNil(other.target)
+        XCTAssertEqual(other.issue, .focusMoved)
+
+        let same = DictationCoordinator.lateDeliveryBinding(capture: capture(42), pressedProcessID: 42)
+        XCTAssertEqual(same.target?.processID, 42)
+        XCTAssertNil(same.issue)
+
+        XCTAssertEqual(DictationCoordinator.lateDeliveryBinding(
+            capture: capture(42, secure: true), pressedProcessID: 42).issue, .secureField)
+        XCTAssertEqual(DictationCoordinator.lateDeliveryBinding(
+            capture: .timeout, pressedProcessID: 42).issue, .fieldUnreadable)
+        XCTAssertNil(DictationCoordinator.lateDeliveryBinding(
+            capture: capture(42), pressedProcessID: nil).target)
+    }
+
+    /// Review finding: after waiting for the paste, a cancelled dictation
+    /// still completed (resetting a newer recording) and could type its
+    /// fallback text.
+    func testCancelledDictationNeverFinishesDeliveryAfterThePasteWait() {
+        for outcome in [CotypingInserter.PasteOutcome.pasted, .unconfirmed, .failed] {
+            var typed = false
+            XCTAssertEqual(DictationCoordinator.pasteDeliveryResult(
+                outcome, sessionIsCurrent: false, typeFallback: { typed = true; return true }),
+                           .cancelled)
+            XCTAssertFalse(typed, "no fallback typing for a cancelled dictation (\(outcome))")
+        }
+        var typed = false
+        XCTAssertEqual(DictationCoordinator.pasteDeliveryResult(
+            .failed, sessionIsCurrent: true, typeFallback: { typed = true; return true }), .inserted)
+        XCTAssertTrue(typed)
+        XCTAssertEqual(DictationCoordinator.pasteDeliveryResult(
+            .pasted, sessionIsCurrent: true, typeFallback: { true }), .inserted)
+        XCTAssertEqual(DictationCoordinator.pasteDeliveryResult(
+            .unconfirmed, sessionIsCurrent: true, typeFallback: { true }), .unconfirmed)
+    }
+
     // MARK: - Paste
 
     func testPasteIsConfirmedByTheAppReadingTheText() async throws {
@@ -355,6 +421,20 @@ final class DictationReliabilityTests: XCTestCase {
             result, blockBufferAllocator: nil, blockBufferMemoryAllocator: nil, flags: 0,
             bufferList: buffer.audioBufferList), noErr)
         return result
+    }
+}
+
+private final class FocusedApp: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: pid_t
+
+    init(processID: pid_t) {
+        value = processID
+    }
+
+    var processID: pid_t {
+        get { lock.withLock { value } }
+        set { lock.withLock { value = newValue } }
     }
 }
 

@@ -336,8 +336,18 @@ final class DictationCoordinator: ObservableObject {
         activeConfig = initialConfig
         let outputMode = initialConfig.dictationOutputMode
         let screenTarget = DictationScreenTarget.frontmost()
-        let focusCaptureTask = Task { [focusSnapshotExecutor] in
-            await focusSnapshotExecutor.capture()
+        // One focus read, started at the shortcut. The microphone waits only
+        // for the short deadline; a slow app's answer to the same read can
+        // still bind the destination later. A fresh read during recording
+        // would bind whichever app had focus by then.
+        let fullFocusCapture = Task { [focusSnapshotExecutor] in
+            await focusSnapshotExecutor.capture(
+                deadlineMilliseconds: Self.deliveryCheckDeadlineMilliseconds)
+        }
+        let focusCaptureTask = Task {
+            await Self.focusCapture(
+                fullFocusCapture,
+                within: .milliseconds(DictationFocusSnapshotExecutor.defaultDeadlineMilliseconds))
         }
         discardScreenContext()
         if initialConfig.dictationIntent == .compose, initialConfig.dictationUseScreenContext, let screenTarget {
@@ -444,7 +454,10 @@ final class DictationCoordinator: ObservableObject {
                 self.prewarmSelectedModel(reason: source)
                 self.startLivePreviewIfNeeded(audioURL: audioURL, config: config, generation: session)
                 if focusCapture.timedOut, outputMode == .pasteIntoFocusedApp {
-                    self.retryDeliveryTargetCapture(generation: session)
+                    self.bindLateDeliveryTarget(
+                        fullFocusCapture,
+                        pressedProcessID: screenTarget?.processID,
+                        generation: session)
                 }
                 lokalbotLog("dictation recording started source=\(source)")
                 if let pendingFinishSource = self.pendingFinishSource {
@@ -667,12 +680,15 @@ final class DictationCoordinator: ObservableObject {
             guard prepared.contextIsCurrent() else { throw DictationComposeError.contextChanged }
             let text = prepared.text
             lastEngine = prepared.compositionModel.map { "\(transcript.engine) → \($0)" } ?? transcript.engine
-            switch await deliver(
+            let delivery = await deliver(
                 text,
                 mode: config.dictationOutputMode,
                 generation: session,
-                contextIsCurrent: prepared.contextIsCurrent
-            ) {
+                contextIsCurrent: prepared.contextIsCurrent)
+            // Delivery can wait for the target app; a newer session may own
+            // the coordinator by the time it returns.
+            guard generation == session else { return }
+            switch delivery {
             case .inserted, .copied, .displayed:
                 break
             case .notDelivered(let check):
@@ -709,7 +725,27 @@ final class DictationCoordinator: ObservableObject {
         }
     }
 
-    private enum DeliveryResult {
+    /// The paste waits up to 1.5 s for the app to read the text. If the
+    /// dictation was cancelled meanwhile (and another may already be
+    /// recording), report it as cancelled so nothing touches the new session,
+    /// and never type the fallback.
+    static func pasteDeliveryResult(
+        _ outcome: CotypingInserter.PasteOutcome,
+        sessionIsCurrent: Bool,
+        typeFallback: () -> Bool
+    ) -> DeliveryResult {
+        guard sessionIsCurrent else { return .cancelled }
+        switch outcome {
+        case .pasted:
+            return .inserted
+        case .unconfirmed:
+            return .unconfirmed
+        case .failed:
+            return typeFallback() ? .inserted : .failed
+        }
+    }
+
+    enum DeliveryResult: Equatable {
         case displayed
         case inserted
         case copied
@@ -740,14 +776,11 @@ final class DictationCoordinator: ObservableObject {
                     ? .notDelivered(check) : .failed
             }
             guard !Task.isCancelled, generation == session else { return .cancelled }
-            switch await inserter.insertViaPaste(text) {
-            case .pasted:
-                return .inserted
-            case .unconfirmed:
-                return .unconfirmed
-            case .failed:
-                return inserter.typeInChunks(text) ? .inserted : .failed
-            }
+            let outcome = await inserter.insertViaPaste(text)
+            return Self.pasteDeliveryResult(
+                outcome,
+                sessionIsCurrent: !Task.isCancelled && generation == session,
+                typeFallback: { inserter.typeInChunks(text) })
         case .copyToClipboard:
             guard !Task.isCancelled, generation == session else { return .cancelled }
             NSPasteboard.general.clearContents()
@@ -804,18 +837,53 @@ final class DictationCoordinator: ObservableObject {
     }
 
     /// The start snapshot has a short deadline so the microphone opens without
-    /// delay. When it times out, read the field again while the person speaks
-    /// instead of copying every dictation into a slow app to the clipboard.
-    private func retryDeliveryTargetCapture(generation session: Int) {
+    /// delay. When it times out, wait for the same read rather than copying
+    /// every dictation into a slow app to the clipboard.
+    private func bindLateDeliveryTarget(
+        _ fullCapture: Task<DictationFocusCaptureResult, Never>,
+        pressedProcessID: pid_t?,
+        generation session: Int
+    ) {
         deliveryTargetRetryTask?.cancel()
-        deliveryTargetRetryTask = Task { [weak self, focusSnapshotExecutor] in
-            let capture = await focusSnapshotExecutor.capture(
-                deadlineMilliseconds: Self.deliveryCheckDeadlineMilliseconds)
+        deliveryTargetRetryTask = Task { [weak self] in
+            let capture = await fullCapture.value
             guard let self, !Task.isCancelled, self.generation == session,
                   self.state.isRecording, self.deliveryTarget == nil else { return }
-            self.deliveryTarget = Self.deliveryTarget(for: .pasteIntoFocusedApp, capture: capture)
-            self.deliveryTargetIssue = Self.deliveryTargetIssue(for: capture)
+            let binding = Self.lateDeliveryBinding(capture: capture, pressedProcessID: pressedProcessID)
+            self.deliveryTarget = binding.target
+            self.deliveryTargetIssue = binding.issue
             self.deliveryTargetRetryTask = nil
+        }
+    }
+
+    /// The late answer to the shortcut's focus read, accepted only for the app
+    /// that was frontmost when the shortcut was pressed.
+    nonisolated static func lateDeliveryBinding(
+        capture: DictationFocusCaptureResult,
+        pressedProcessID: pid_t?
+    ) -> (target: DictationDeliveryTarget?, issue: DictationDeliveryCheck?) {
+        if let snapshot = capture.snapshot, !capture.timedOut,
+           let pressedProcessID, snapshot.processID != pressedProcessID {
+            return (nil, .focusMoved)
+        }
+        if pressedProcessID == nil { return (nil, .fieldUnreadable) }
+        let target = deliveryTarget(for: .pasteIntoFocusedApp, capture: capture)
+        return (target, target == nil ? deliveryTargetIssue(for: capture) ?? .fieldUnreadable : nil)
+    }
+
+    /// `capture`'s result if it arrives within `deadline`, otherwise a
+    /// timeout; `capture` itself keeps running for a later reader.
+    nonisolated static func focusCapture(
+        _ capture: Task<DictationFocusCaptureResult, Never>,
+        within deadline: Duration
+    ) async -> DictationFocusCaptureResult {
+        await withCheckedContinuation { continuation in
+            let once = ResumeOnce(continuation)
+            Task { once.resume(await capture.value) }
+            Task {
+                try? await Task.sleep(for: deadline)
+                once.resume(.timeout)
+            }
         }
     }
 
@@ -1407,5 +1475,23 @@ private enum DictationError: LocalizedError {
         case .noAudio: "Recording was too short to transcribe."
         case .noSpeech: "No speech detected."
         }
+    }
+}
+
+/// Resumes a continuation exactly once, from whichever racer finishes first.
+private final class ResumeOnce<Value: Sendable>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<Value, Never>?
+
+    init(_ continuation: CheckedContinuation<Value, Never>) {
+        self.continuation = continuation
+    }
+
+    func resume(_ value: Value) {
+        lock.lock()
+        let continuation = self.continuation
+        self.continuation = nil
+        lock.unlock()
+        continuation?.resume(returning: value)
     }
 }

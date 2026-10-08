@@ -66,6 +66,9 @@ final class CotypingInserter {
     private var savedClipboardForRestore: [[NSPasteboard.PasteboardType: Data]]?
     /// Kept alive while its promised text may still be read.
     private var activeHandoff: DictationPasteboardHandoff?
+    /// The paste in progress. A second paste waits for it; otherwise it would
+    /// snapshot the first one's dictated text as the user's clipboard.
+    private var pasteInProgress: Task<PasteOutcome, Never>?
     private var cachedPasteMenuItems: [pid_t: AXUIElement] = [:]
     private let suppressionController: CotypingInputSuppressionController
 
@@ -237,6 +240,19 @@ final class CotypingInserter {
     /// and that app pasted the previous clipboard instead. A trimmed port of
     /// Cotabby's `insertViaPaste`, used by dictation commits.
     func insertViaPaste(_ text: String) async -> PasteOutcome {
+        let previous = pasteInProgress
+        let paste = Task { @MainActor [weak self] () -> PasteOutcome in
+            _ = await previous?.value
+            guard let self else { return .failed }
+            return await self.pasteAndConfirm(text)
+        }
+        pasteInProgress = paste
+        let outcome = await paste.value
+        if pasteInProgress == paste { pasteInProgress = nil }
+        return outcome
+    }
+
+    private func pasteAndConfirm(_ text: String) async -> PasteOutcome {
         let scrubbed = text.replacingOccurrences(of: "\r", with: "")
         guard !scrubbed.isEmpty else { return .failed }
         let pasteboard = NSPasteboard.general
