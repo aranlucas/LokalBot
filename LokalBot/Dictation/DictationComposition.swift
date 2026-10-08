@@ -45,7 +45,7 @@ enum DictationScreenPrivacy {
         target: DictationScreenTarget
     ) -> Bool {
         guard !focus.timedOut, let snapshot = focus.snapshot else { return false }
-        return !snapshot.isSecureOrBlocked && snapshot.processID == target.processID
+        return !snapshot.blocksContextCapture && snapshot.processID == target.processID
     }
 
     static func isExcluded(target: DictationScreenTarget, excludedApps: [String]) -> Bool {

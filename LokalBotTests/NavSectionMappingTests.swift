@@ -27,6 +27,7 @@ final class NavSectionMappingTests: XCTestCase {
         XCTAssertEqual(AppState.SettingsTab(captureName: "models"), .models)
         XCTAssertEqual(AppState.SettingsTab(captureName: "general"), .general)
         XCTAssertEqual(AppState.SettingsTab(captureName: "recording"), .recording)
+        XCTAssertEqual(AppState.SettingsTab(captureName: "dictation"), .dictation)
         XCTAssertEqual(AppState.SettingsTab(captureName: "privacy"), .privacy)
         XCTAssertEqual(AppState.SettingsTab(captureName: "advanced"), .advanced)
         XCTAssertNil(AppState.SettingsTab(captureName: "settings"))

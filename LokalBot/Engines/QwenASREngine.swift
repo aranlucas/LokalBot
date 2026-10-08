@@ -289,8 +289,13 @@ actor QwenASREngine: TranscriptionEngine {
     /// language holds at least 80% of its text. Mixed-language tracks stay on
     /// per-window detection: a 50/50 English–German track votes up to 66%
     /// German by text length (Benchmarks/QwenSpanLength).
+    ///
+    /// A single window is never pinned: its only vote is its own decode, so
+    /// decoding it again in that language cannot correct anything. Short
+    /// dictations are one window, and pinning them doubled their decode time.
     nonisolated static func pinnedLanguage(for texts: [String]) -> String? {
-        guard let vote = TranscriptLanguageVote.dominant(in: texts), vote.share >= 0.8,
+        guard texts.count >= 2,
+              let vote = TranscriptLanguageVote.dominant(in: texts), vote.share >= 0.8,
               supportedLanguages.contains(vote.code) else { return nil }
         return vote.code
     }

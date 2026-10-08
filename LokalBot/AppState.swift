@@ -54,7 +54,7 @@ final class AppState: ObservableObject {
     /// Which tab the Settings surface shows (spec §2.5 — Settings absorbs
     /// Models as a tab strip). Session-sticky like TypeTab.
     enum SettingsTab: String, CaseIterable {
-        case general, recording, dayMemory, writing, models, privacy, advanced
+        case general, recording, dayMemory, writing, dictation, models, privacy, advanced
 
         var displayName: String {
             switch self {
@@ -71,6 +71,7 @@ final class AppState: ObservableObject {
             case .recording: "person.2"
             case .dayMemory: "calendar.day.timeline.left"
             case .writing: "pencil"
+            case .dictation: "mic"
             case .models: "shippingbox"
             case .privacy: "lock"
             case .advanced: "slider.horizontal.3"
@@ -85,6 +86,7 @@ final class AppState: ObservableObject {
             case "recording", "meetings": self = .recording
             case "daymemory", "day memory": self = .dayMemory
             case "writing", "write": self = .writing
+            case "dictation": self = .dictation
             case "models": self = .models
             case "privacy": self = .privacy
             case "advanced": self = .advanced
@@ -411,7 +413,7 @@ final class AppState: ObservableObject {
     /// Keep legacy writing commands routed to the corresponding Settings section.
     func openType(_ tab: TypeTab) {
         typeTab = tab
-        openSettings(tab: .writing)
+        openSettings(tab: tab == .cotyping ? .writing : .dictation)
         focusedSettingID = tab == .cotyping ? "settings.autocompletePreview" : "settings.dictationPreview"
     }
 

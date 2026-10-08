@@ -82,11 +82,12 @@ final class CotypingInserterTests: XCTestCase {
     }
 
     @MainActor
-    func testInsertViaPasteRejectsEmptyText() {
+    func testInsertViaPasteRejectsEmptyText() async {
         let inserter = CotypingInserter()
 
-        XCTAssertFalse(inserter.insertViaPaste(""),
-                       "an empty paste must bail before touching the pasteboard")
-        XCTAssertFalse(inserter.insertViaPaste("\r"))
+        let empty = await inserter.insertViaPaste("")
+        XCTAssertEqual(empty, .failed, "an empty paste must bail before touching the pasteboard")
+        let carriageReturn = await inserter.insertViaPaste("\r")
+        XCTAssertEqual(carriageReturn, .failed)
     }
 }

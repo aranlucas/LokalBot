@@ -37,6 +37,7 @@
 "Add model" = "Add model";
 "Add names LokalBot already knows" = "Add names LokalBot already knows";
 "Add ~/.local/bin to PATH" = "Add ~/.local/bin to PATH";
+"Add ⌃, ⌥ or ⌘ so the shortcut does not block typing, or use a function key." = "Add ⌃, ⌥ or ⌘ so the shortcut does not block typing, or use a function key.";
 "Additional saved audio is outside the meeting boundaries." = "Additional saved audio is outside the meeting boundaries.";
 "Adds titles of documents and pages captured during the call, never their captured text. Requires screen context in Day Memory." = "Adds titles of documents and pages captured during the call, never their captured text. Requires screen context in Day Memory.";
 "Advanced" = "Advanced";
@@ -74,6 +75,7 @@
 "Apply Choices and Start" = "Apply Choices and Start";
 "Apply policy and cleanup" = "Apply policy and cleanup";
 "Apply…" = "Apply…";
+"Apps use ⌘ with a single key. Add ⌃, ⌥ or ⇧." = "Apps use ⌘ with a single key. Add ⌃, ⌥ or ⇧.";
 "Archived" = "Archived";
 "Arrived in the field" = "Arrived in the field";
 "Ask" = "Ask";
@@ -97,6 +99,7 @@
 "Autocomplete" = "Autocomplete";
 "Autocomplete also reads the text just above where you type, such as the message you are answering, to fit its suggestions. It stays on this Mac and is never saved; turn it off in Settings → Writing." = "Autocomplete also reads the text just above where you type, such as the message you are answering, to fit its suggestions. It stays on this Mac and is never saved; turn it off in Settings → Writing.";
 "Autocomplete and global dictation shortcuts can be enabled later from Write." = "Autocomplete and global dictation shortcuts can be enabled later from Write.";
+"Autocomplete and your writing profile." = "Autocomplete and your writing profile.";
 "Autocomplete model" = "Autocomplete model";
 "Autocorrect the current word" = "Autocorrect the current word";
 "Automatic" = "Automatic";
@@ -134,6 +137,7 @@
 "Captured" = "Captured";
 "Captured screen" = "Captured screen";
 "Captures encrypted visuals for day memory. Only used in Text + visual context mode; system-audio capture does not use this permission." = "Captures encrypted visuals for day memory. Only used in Text + visual context mode; system-audio capture does not use this permission.";
+"Change the dictation shortcut" = "Change the dictation shortcut";
 "Changes the interface immediately. Transcription and notes languages are set separately." = "Changes the interface immediately. Transcription and notes languages are set separately.";
 "Change…" = "Change…";
 "Check Setup…" = "Check Setup…";
@@ -262,6 +266,7 @@
 "Dictation composition follows Think and will also run locally." = "Dictation composition follows Think and will also run locally.";
 "Dictation composition will also use this model." = "Dictation composition will also use this model.";
 "Dictation output" = "Dictation output";
+"Dictation settings…" = "Dictation settings…";
 "Dictation shortcut" = "Dictation shortcut";
 "Dictation trigger" = "Dictation trigger";
 "Dictation, autocomplete, and your writing profile." = "Dictation, autocomplete, and your writing profile.";
@@ -306,6 +311,7 @@
 "Enabled" = "Enabled";
 "End (seconds)" = "End (seconds)";
 "English" = "English";
+"Esc cancels recording a shortcut. Choose another key." = "Esc cancels recording a shortcut. Choose another key.";
 "Escape on a suggestion" = "Escape on a suggestion";
 "Every app and window is tracked, including browsers and private windows. Add apps or sites here to keep them out. Password managers (Passwords, Keychain Access, 1Password, Bitwarden, KeePassXC), focused password fields, and detected credentials are never captured." = "Every app and window is tracked, including browsers and private windows. Add apps or sites here to keep them out. Password managers (Passwords, Keychain Access, 1Password, Bitwarden, KeePassXC), focused password fields, and detected credentials are never captured.";
 "Every source remains attached to its original meeting." = "Every source remains attached to its original meeting.";
@@ -382,6 +388,7 @@
 "Harrier 0.6B · On this Mac" = "Harrier 0.6B · On this Mac";
 "Helps spell names and relate the discussion to the meeting. Names only; email addresses are never included. The transcript stays the only evidence for decisions and actions." = "Helps spell names and relate the discussion to the meeting. Names only; email addresses are never included. The transcript stays the only evidence for decisions and actions.";
 "Highlights" = "Highlights";
+"Hold at least two modifier keys, like ⌃⌥, or add a key." = "Hold at least two modifier keys, like ⌃⌥, or add a key.";
 "Home" = "Home";
 "How routines run" = "How routines run";
 "How screen context is captured" = "How screen context is captured";
@@ -649,7 +656,10 @@
 "Preparing…" = "Preparing…";
 "Preset" = "Preset";
 "Presets" = "Presets";
+"Press %@ again to compose" = "Press %@ again to compose";
+"Press a shortcut…" = "Press a shortcut…";
 "Press Delete or use the list menu to remove them." = "Press Delete or use the list menu to remove them.";
+"Press the new shortcut, or Esc to cancel." = "Press the new shortcut, or Esc to cancel.";
 "Preview attached source" = "Preview attached source";
 "Preview only. The session starts when you choose Open." = "Preview only. The session starts when you choose Open.";
 "Preview paused. Recording continues; resume picks up where you left off." = "Preview paused. Recording continues; resume picks up where you left off.";
@@ -927,6 +937,7 @@
 "Text size" = "Text size";
 "The answer can retrieve passages from these meetings and screen moments, including collapsed matches. It may use only the passages relevant to your question." = "The answer can retrieve passages from these meetings and screen moments, including collapsed matches. It may use only the passages relevant to your question.";
 "The command-line helper is not included in this build. Install a current LokalBot release to use Agent CLI access." = "The command-line helper is not included in this build. Install a current LokalBot release to use Agent CLI access.";
+"The dictation shortcut, speech model, and where the text goes." = "The dictation shortcut, speech model, and where the text goes.";
 "The model downloads when semantic search is first used. Meeting text and text captured from your screen are indexed locally." = "The model downloads when semantic search is first used. Meeting text and text captured from your screen are indexed locally.";
 "The opened source remains visible outside these filters." = "The opened source remains visible outside these filters.";
 "The original action, due phrase and citations stay available." = "The original action, due phrase and citations stay available.";

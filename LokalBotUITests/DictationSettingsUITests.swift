@@ -26,8 +26,7 @@ final class DictationSettingsUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["today.header"]
             .waitForExistence(timeout: 10), "main window never rendered its Today landing")
         UITestHarness.clickSidebar("sidebar.settings", in: app)
-        UITestHarness.selectSettingsCategory("Writing", in: app)
-        UITestHarness.selectSegment("Dictation", pickerIdentifier: "settings.writing.sections", in: app)
+        UITestHarness.selectSettingsCategory("Dictation", in: app)
         UITestHarness.scrollTo(app.buttons["Try here"], in: app, within: app.scrollViews["settings.form"], attempts: 16)
         XCTAssertTrue(dictationForm.waitForExistence(timeout: 8),
                       "Dictation tab did not render")
@@ -42,7 +41,7 @@ final class DictationSettingsUITests: XCTestCase {
     func testComposeByDefaultControlsRenderWithoutStartingRecording() {
         XCTAssertTrue(app.buttons["Try here"].exists)
         XCTAssertTrue(formText(containing: "never inserts into another app").exists)
-        XCTAssertFalse(app.buttons["Writing settings…"].exists)
+        XCTAssertFalse(app.buttons["Dictation settings…"].exists)
         XCTAssertTrue(formText(containing: "Speech uses the meeting ASR model").exists)
         XCTAssertTrue(formText(containing: "Compose").exists)
         XCTAssertFalse(formText(containing: "Listening").exists)
@@ -56,7 +55,7 @@ final class DictationSettingsUITests: XCTestCase {
         XCTAssertTrue(UITestHarness.waitUntil { String(describing: toggle.value ?? "") == "1" },
                       "The dictation shortcut switch must turn on before leaving settings")
         UITestHarness.clickSidebar("sidebar.settings", in: app)
-        UITestHarness.selectSettingsCategory("Writing", in: app)
+        UITestHarness.selectSettingsCategory("Dictation", in: app)
         UITestHarness.scrollTo(formText(containing: "Records your voice for the current dictation"), in: app, within: app.scrollViews["settings.form"], attempts: 16)
         XCTAssertTrue(formText(containing: "Records your voice for the current dictation").waitForExistence(timeout: 5))
         XCTAssertTrue(formText(containing: "Detects the global dictation shortcut").exists)

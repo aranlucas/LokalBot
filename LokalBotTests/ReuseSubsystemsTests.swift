@@ -37,7 +37,7 @@ final class ReuseSubsystemsTests: XCTestCase {
 
         let down = try XCTUnwrap(CGEvent(
             keyboardEventSource: nil,
-            virtualKey: DictationShortcut.handyDefault.keyCode,
+            virtualKey: try XCTUnwrap(DictationShortcut.handyDefault.keyCode),
             keyDown: true))
         down.flags = .maskAlternate
         XCTAssertTrue(monitor.handle(type: .keyDown, event: down))
@@ -46,7 +46,7 @@ final class ReuseSubsystemsTests: XCTestCase {
         shortcut = DictationShortcut(keyCode: 36, modifiers: .maskCommand)
         let up = try XCTUnwrap(CGEvent(
             keyboardEventSource: nil,
-            virtualKey: DictationShortcut.handyDefault.keyCode,
+            virtualKey: try XCTUnwrap(DictationShortcut.handyDefault.keyCode),
             keyDown: false))
         up.flags = .maskAlternate
         XCTAssertTrue(monitor.handle(type: .keyUp, event: up))

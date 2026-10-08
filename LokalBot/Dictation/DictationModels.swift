@@ -97,6 +97,17 @@ struct DictationDeliveryTarget: Equatable, Sendable {
     let processID: pid_t
     let bundleID: String?
     let focusIdentityKey: String?
+    /// Text the person selected before dictating. Pasting replaces exactly that
+    /// selection, the way typing would; any other selection blocks the paste.
+    var selection: DictationTextSelection?
+
+    init(processID: pid_t, bundleID: String?, focusIdentityKey: String?,
+         selection: DictationTextSelection? = nil) {
+        self.processID = processID
+        self.bundleID = bundleID
+        self.focusIdentityKey = focusIdentityKey
+        self.selection = selection
+    }
 
     func matches(processID currentProcessID: pid_t,
                  bundleID currentBundleID: String?,
@@ -112,12 +123,18 @@ struct DictationDeliveryTarget: Equatable, Sendable {
     /// A blocked snapshot always wins over the app-only fallback. In
     /// particular, a target captured before AX exposed a field must never
     /// become permission to paste into a same-app password field later.
-    func matches(_ snapshot: DictationFocusSnapshot) -> Bool {
-        guard !snapshot.isSecureOrBlocked else { return false }
-        return matches(
+    func check(_ snapshot: DictationFocusSnapshot) -> DictationDeliveryCheck {
+        guard !snapshot.isSecureOrBlocked else { return .secureField }
+        guard matches(
             processID: snapshot.processID,
             bundleID: snapshot.bundleID,
-            focusIdentityKey: snapshot.focusIdentityKey)
+            focusIdentityKey: snapshot.focusIdentityKey) else { return .focusMoved }
+        if let current = snapshot.selection, current != selection { return .selectionChanged }
+        return .deliverable
+    }
+
+    func matches(_ snapshot: DictationFocusSnapshot) -> Bool {
+        check(snapshot) == .deliverable
     }
 
     static func captured(from snapshot: DictationFocusSnapshot) -> Self? {
@@ -125,7 +142,46 @@ struct DictationDeliveryTarget: Equatable, Sendable {
         return Self(
             processID: snapshot.processID,
             bundleID: snapshot.bundleID,
-            focusIdentityKey: snapshot.focusIdentityKey)
+            focusIdentityKey: snapshot.focusIdentityKey,
+            selection: snapshot.selection)
+    }
+}
+
+/// Why a finished dictation may or may not be pasted where it began.
+enum DictationDeliveryCheck: Equatable, Sendable {
+    case deliverable
+    case focusMoved
+    case selectionChanged
+    case secureField
+    /// The field could not be read: Accessibility access is missing, or the
+    /// app did not answer in time.
+    case fieldUnreadable
+
+    var clipboardMessage: String? {
+        switch self {
+        case .deliverable:
+            nil
+        case .focusMoved:
+            "Dictation finished after focus moved, so the text was copied to the clipboard instead of being inserted into another app."
+        case .selectionChanged:
+            "The selected text changed while you were dictating, so the text was copied to the clipboard instead of replacing it."
+        case .secureField:
+            "Dictation does not type into password fields, so the text was copied to the clipboard."
+        case .fieldUnreadable:
+            "LokalBot could not confirm which field to paste into, so the text was copied to the clipboard. Check that LokalBot has Accessibility access."
+        }
+    }
+}
+
+/// A non-empty text selection, as UTF-16 offsets reported by Accessibility.
+struct DictationTextSelection: Equatable, Sendable {
+    let location: Int
+    let length: Int
+
+    init?(location: Int, length: Int) {
+        guard length > 0, location >= 0 else { return nil }
+        self.location = location
+        self.length = length
     }
 }
 
@@ -135,7 +191,23 @@ struct DictationFocusSnapshot: Equatable, Sendable {
     let processID: pid_t
     let bundleID: String?
     let focusIdentityKey: String?
+    /// A secure (password) field.
     let isSecureOrBlocked: Bool
+    /// The field's non-empty selection, if any.
+    var selection: DictationTextSelection?
+
+    init(processID: pid_t, bundleID: String?, focusIdentityKey: String?,
+         isSecureOrBlocked: Bool, selection: DictationTextSelection? = nil) {
+        self.processID = processID
+        self.bundleID = bundleID
+        self.focusIdentityKey = focusIdentityKey
+        self.isSecureOrBlocked = isSecureOrBlocked
+        self.selection = selection
+    }
+
+    /// Screen and nearby-text context are never read from a secure field or
+    /// while text is selected.
+    var blocksContextCapture: Bool { isSecureOrBlocked || selection != nil }
 }
 
 struct DictationFocusCaptureResult: Equatable, Sendable {
@@ -182,15 +254,18 @@ final class DictationFocusSnapshotExecutor: @unchecked Sendable {
         self.resolver = resolver
     }
 
-    func capture() async -> DictationFocusCaptureResult {
-        await withCheckedContinuation { continuation in
+    /// `deadlineMilliseconds` lengthens the wait for callers that are not on
+    /// the shortcut's critical path, such as the check before pasting.
+    func capture(deadlineMilliseconds deadlineOverride: Int? = nil) async -> DictationFocusCaptureResult {
+        let deadline = max(1, deadlineOverride ?? deadlineMilliseconds)
+        return await withCheckedContinuation { continuation in
             stateQueue.async { [self] in
                 nextIdentifier &+= 1
                 let waiterID = nextIdentifier
                 let waiter = Waiter(id: waiterID, continuation: continuation)
                 enqueue(waiter)
                 stateQueue.asyncAfter(
-                    deadline: .now() + .milliseconds(deadlineMilliseconds)
+                    deadline: .now() + .milliseconds(deadline)
                 ) { [weak self] in
                     self?.expire(waiterID: waiterID)
                 }
@@ -449,23 +524,129 @@ enum DictationPreviewTextStitcher {
     }
 }
 
+/// The global dictation shortcut: a key plus modifiers, or modifiers alone
+/// (⌃⌥, the way Wispr Flow and similar apps are often set up). The event tap
+/// consumes a key shortcut system-wide, so it must not be something people
+/// type; a modifier-only shortcut is observed without consuming anything.
 struct DictationShortcut: Equatable, Sendable {
-    var keyCode: CGKeyCode
+    /// Nil for a modifier-only shortcut.
+    var keyCode: CGKeyCode?
     var modifiers: CGEventFlags
 
+    init(keyCode: CGKeyCode?, modifiers: CGEventFlags) {
+        self.keyCode = keyCode
+        self.modifiers = modifiers.dictationRelevantModifiers
+    }
+
     static let handyDefault = DictationShortcut(keyCode: 49, modifiers: .maskAlternate)
-    static let label = "⌥ Space"
+
+    var isModifierOnly: Bool { keyCode == nil }
 
     func matches(_ event: CGEvent) -> Bool {
         matchesKeyCode(event) && event.flags.dictationRelevantModifiers == modifiers
     }
 
     func matchesKeyCode(_ event: CGEvent) -> Bool {
-        CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode)) == keyCode
+        guard let keyCode else { return false }
+        return CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode)) == keyCode
+    }
+
+    /// "⌥ Space", "⌃⇧ D", "F5", "⌃⌥".
+    var displayLabel: String {
+        let symbols = Self.modifierSymbols(modifiers)
+        guard let keyCode else { return symbols }
+        let key = DictationShortcutKeyNames.name(for: keyCode)
+        return symbols.isEmpty ? key : "\(symbols) \(key)"
+    }
+
+    enum Problem: Equatable {
+        case reservedForCancel
+        case needsModifier
+        case commandOnly
+        case needsTwoModifiers
+
+        var message: String {
+            switch self {
+            case .reservedForCancel:
+                "Esc cancels recording a shortcut. Choose another key."
+            case .needsModifier:
+                "Add ⌃, ⌥ or ⌘ so the shortcut does not block typing, or use a function key."
+            case .commandOnly:
+                "Apps use ⌘ with a single key. Add ⌃, ⌥ or ⇧."
+            case .needsTwoModifiers:
+                "Hold at least two modifier keys, like ⌃⌥, or add a key."
+            }
+        }
+    }
+
+    /// Why this combination cannot be the global shortcut, or nil.
+    var problem: Problem? {
+        guard let keyCode else {
+            // One modifier alone fires whenever it is used for anything else.
+            return Self.modifierCount(modifiers) >= 2 ? nil : .needsTwoModifiers
+        }
+        if keyCode == DictationShortcutKeyNames.escape { return .reservedForCancel }
+        if DictationShortcutKeyNames.isFunctionKey(keyCode) { return nil }
+        let typingSafe = modifiers.intersection([.maskControl, .maskAlternate, .maskCommand])
+        guard !typingSafe.isEmpty else { return .needsModifier }
+        if modifiers == .maskCommand, !DictationShortcutKeyNames.isNamedKey(keyCode) {
+            return .commandOnly
+        }
+        return nil
+    }
+
+    static func modifierCount(_ modifiers: CGEventFlags) -> Int {
+        [CGEventFlags.maskControl, .maskAlternate, .maskShift, .maskCommand]
+            .filter { modifiers.contains($0) }.count
+    }
+
+    private static func modifierSymbols(_ modifiers: CGEventFlags) -> String {
+        var symbols = ""
+        if modifiers.contains(.maskControl) { symbols += "⌃" }
+        if modifiers.contains(.maskAlternate) { symbols += "⌥" }
+        if modifiers.contains(.maskShift) { symbols += "⇧" }
+        if modifiers.contains(.maskCommand) { symbols += "⌘" }
+        return symbols
     }
 }
 
-private extension CGEventFlags {
+extension DictationShortcut: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case keyCode
+        case modifiers
+    }
+
+    private static let modifierNames: [(String, CGEventFlags)] = [
+        ("control", .maskControl),
+        ("option", .maskAlternate),
+        ("shift", .maskShift),
+        ("command", .maskCommand),
+    ]
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let keyCode = try c.decodeIfPresent(Int.self, forKey: .keyCode)
+        if let keyCode, !(0...Int(UInt16.max)).contains(keyCode) {
+            throw DecodingError.dataCorruptedError(
+                forKey: .keyCode, in: c, debugDescription: "Key code out of range")
+        }
+        let names = try c.decode([String].self, forKey: .modifiers)
+        var modifiers: CGEventFlags = []
+        for (name, flag) in Self.modifierNames where names.contains(name) {
+            modifiers.insert(flag)
+        }
+        self.init(keyCode: keyCode.map { CGKeyCode($0) }, modifiers: modifiers)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(keyCode.map { Int($0) }, forKey: .keyCode)
+        try c.encode(
+            Self.modifierNames.filter { modifiers.contains($0.1) }.map(\.0), forKey: .modifiers)
+    }
+}
+
+extension CGEventFlags {
     var dictationRelevantModifiers: CGEventFlags {
         intersection([.maskCommand, .maskControl, .maskAlternate, .maskShift])
     }

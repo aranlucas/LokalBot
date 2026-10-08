@@ -175,12 +175,15 @@ enum CotypingAXHelper {
             bundleID: bundleID,
             role: role,
             subrole: subrole)
-        let hasSelection = selectionRange(element).map { $0.length > 0 } ?? false
+        let selection = selectionRange(element).flatMap {
+            DictationTextSelection(location: $0.location, length: $0.length)
+        }
         return DictationFocusSnapshot(
             processID: processID,
             bundleID: bundleID,
             focusIdentityKey: focusIdentityKey,
-            isSecureOrBlocked: hasSelection)
+            isSecureOrBlocked: false,
+            selection: selection)
     }
 
     /// Captures only the focus identity, marked-text state, selection, and bounded

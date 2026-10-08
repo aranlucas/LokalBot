@@ -28,9 +28,11 @@ struct DictationView: View {
         statusSection
         if !embedded {
             Section("Shortcut and output") {
-                LabeledContent("Shortcut", value: app.settings.dictationEnabled ? DictationShortcut.label : "Off")
+                LabeledContent(
+                    "Shortcut",
+                    value: app.settings.dictationEnabled ? app.settings.dictationShortcut.displayLabel : "Off")
                 LabeledContent("Shortcut output", value: app.settings.dictationOutputMode.label)
-                Button("Writing settings…") { app.openSettings(tab: .writing) }
+                Button("Dictation settings…") { app.openSettings(tab: .dictation) }
             }
         }
         modelSection
@@ -162,13 +164,24 @@ struct DictationView: View {
         }
     }
 
+    static func readyText(triggerMode: DictationTriggerMode, shortcut: DictationShortcut) -> String {
+        switch triggerMode {
+        case .pushToTalk:
+            "Ready — hold \(shortcut.displayLabel) to dictate."
+        case .toggle:
+            "Ready — press \(shortcut.displayLabel) to start and again to finish."
+        }
+    }
+
     private var statusText: String {
         if app.dictation.isStarting { return "Starting the microphone…" }
         switch app.dictation.state {
         case .idle:
             if app.settings.dictationEnabled {
                 return app.dictation.isShortcutMonitoringActive
-                    ? "Ready — hold \(DictationShortcut.label) to dictate."
+                    ? Self.readyText(
+                        triggerMode: app.settings.dictationTriggerMode,
+                        shortcut: app.settings.dictationShortcut)
                     : "Shortcut inactive."
             }
             return "Ready from this screen. Turn on the shortcut for system-wide use."

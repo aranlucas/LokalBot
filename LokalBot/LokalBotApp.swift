@@ -64,6 +64,7 @@ enum LokalBotMain {
                         MicRecorder.defaultInputFactory = {
                             try FileMicrophoneInput(url: audio.appendingPathComponent("mic.wav"))
                         }
+                        MicRecorder.dictationInputFactory = MicRecorder.defaultInputFactory
                         SystemAudioRecorder.defaultTapFactory = {
                             if let tap = try? FileSystemAudioTap(url: audio.appendingPathComponent("system.wav")) {
                                 return tap
@@ -342,7 +343,7 @@ struct LokalBotApp: App {
             MenuBarView(dictation: app.dictation)
                 .environmentObject(app)
                 .brandTinted()
-                .appTextSizeRoot(app.settings.textSize)
+                .menuBarTextSizeRoot(app.settings.textSize)
                 .appLanguageRoot(app.settingsStore)
         } label: {
             MenuBarLabel(app: app, dictation: app.dictation)
