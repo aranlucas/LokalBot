@@ -52,6 +52,7 @@ final class DictationGroundingTests: XCTestCase {
             memoryContext: { _, _ in reads += 1; return .empty },
             makeEngine: { _ in reads += 1; return GroundingTestEngine() })
         XCTAssertEqual(result.text, "Do not send 42 files.")
+        XCTAssertNil(result.contextUse, "Transcribe reads no context, so Last result shows none")
         XCTAssertEqual(reads, 0)
     }
 
@@ -61,6 +62,8 @@ final class DictationGroundingTests: XCTestCase {
             settings: settings, screenContext: { nil }, visibleContext: { snapshot }, memoryContext: memory,
             validateVisibleContext: { $0 == snapshot }, makeEngine: { _ in engine })
         XCTAssertEqual(result.sourceTitles, ["Juniper"])
+        XCTAssertEqual(result.contextUse, DictationContextUse(
+            wasWritingRequest: true, focusedWindow: false, visibleText: true, savedFactSources: ["Juniper"]))
         XCTAssertTrue(engine.prompt.contains("Nadja"))
         XCTAssertTrue(engine.prompt.contains("Current visible text above the field"))
         XCTAssertEqual(engine.calls, 1)
@@ -83,11 +86,12 @@ final class DictationGroundingTests: XCTestCase {
         settings.dictationUseScreenContext = true
         let engine = GroundingTestEngine()
         var reads = 0
-        _ = try await DictationTextPreparation.prepare(speech: "I cannot approve the 42 items yet.", settings: settings,
+        let result = try await DictationTextPreparation.prepare(speech: "I cannot approve the 42 items yet.", settings: settings,
             screenContext: { reads += 1; return nil }, visibleContext: { reads += 1; return nil },
             memoryContext: { _, _ in reads += 1; return .empty }, makeEngine: { _ in engine })
         XCTAssertEqual(reads, 0)
         XCTAssertEqual(engine.calls, 1, "Compose still performs its normal cleanup")
+        XCTAssertEqual(result.contextUse?.wasWritingRequest, false)
         XCTAssertFalse(engine.prompt.contains("UNTRUSTED SAVED FACTS"))
     }
 

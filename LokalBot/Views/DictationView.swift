@@ -70,9 +70,12 @@ struct DictationView: View {
                 SettingsLabel("Intent", help: operation.dictationIntent.detail)
             }.pickerStyle(.segmented).tint(Brand.tealFill).disabled(app.dictation.state != .idle || app.dictation.isStarting)
             if operation.dictationIntent == .compose {
+                SettingsHelp("The sources below are read only when you start with a writing request, such as “reply…”, “write…” or “draft…”. Other dictation is only cleaned up.")
                 Toggle("Use the focused window as context", isOn: Binding(
                     get: { operation.dictationUseScreenContext }, set: { app.settings.dictationUseScreenContext = $0 }))
                     .disabled(app.dictation.state != .idle || app.dictation.isStarting)
+                    .settingTarget("settings.dictationUseScreenContext", selected: app.focusedSettingID)
+                SettingsHelp("Reads the focused window's text from a screenshot. Needs Screen Recording; the image and text are not saved.")
                 Toggle("Use visible text above the field", isOn: $app.settings.dictationUseVisibleContext)
                     .disabled(app.dictation.state != .idle || app.dictation.isStarting)
                     .settingTarget("settings.dictationUseVisibleContext", selected: app.focusedSettingID)
@@ -84,6 +87,7 @@ struct DictationView: View {
                     .disabled(app.dictation.state != .idle || app.dictation.isStarting)
                     .settingTarget("settings.dictationUseScreenMemory", selected: app.focusedSettingID)
                 SettingsHelp("Adds relevant saved facts when you ask Compose to draft or reply. Reads what is already saved; it does not start an overnight review.")
+                writingProfileRow
             }
             SettingsHelp("Trying here shows the result below. It never inserts into another app or changes your clipboard; the shortcut uses the output setting above.")
         } header: {
@@ -141,6 +145,37 @@ struct DictationView: View {
         }
     }
 
+    /// Compose takes tone, name and terminology from the writing profile,
+    /// which lives with Autocomplete on the Writing page.
+    private var writingProfileRow: some View {
+        LabeledContent {
+            HStack(spacing: 8) {
+                Text(verbatim: Self.writingProfileSummary(app.settings) { app.settings.appLanguage.localized($0) })
+                    .settingsSecondary()
+                    .lineLimit(1)
+                Button("Edit…") {
+                    app.openSettings(tab: .writing)
+                    app.focusedSettingID = "settings.cotypingUserName"
+                }
+                .accessibilityIdentifier("dictation.writingProfile.edit")
+            }
+        } label: {
+            SettingsLabel("Writing profile", help: "Compose uses it for tone, your name and terminology.")
+        }
+        .settingTarget("settings.dictationWritingProfile", selected: app.focusedSettingID)
+    }
+
+    static func writingProfileSummary(_ settings: AppSettings, localized: (String) -> String = { $0 }) -> String {
+        let profile = DictationComposeProfile(personalization: settings.cotypingPersonalization)
+        let parts = [
+            profile.userName.map { _ in localized("Name") },
+            profile.styleNote.map { _ in localized("Style") },
+            profile.languageHint.map { _ in localized("Languages") },
+            profile.glossary.map { _ in localized("Terminology") },
+        ].compactMap { $0 }
+        return parts.isEmpty ? localized("Not set") : parts.joined(separator: ", ")
+    }
+
     private func lastResultSection(_ result: String) -> some View {
         Section("Last result") {
             Text(result)
@@ -149,6 +184,15 @@ struct DictationView: View {
             if let spoken = app.dictation.lastTranscript {
                 SettingsHelp("Spoken request: \(spoken)")
                     .textSelection(.enabled)
+            }
+            if let contextUse = app.dictation.lastContextUse {
+                // Verbatim: saved-fact titles are user text, not markdown.
+                Text(verbatim: contextUse.summary { app.settings.appLanguage.localized($0) })
+                    .font(.scaled(.callout))
+                    .settingsSecondary()
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+                    .accessibilityIdentifier("dictation.lastContextUse")
             }
             if let engine = app.dictation.lastEngine {
                 SettingsHelp(engine)

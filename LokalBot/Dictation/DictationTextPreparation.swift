@@ -8,6 +8,8 @@ enum DictationTextPreparation {
         let compositionModel: String?
         var sourceTitles: [String] = []
         var contextIsCurrent: @MainActor () -> Bool = { true }
+        /// What Compose read for this request; nil for Transcribe.
+        var contextUse: DictationContextUse?
     }
 
     /// No thinking turn, a low temperature for faithful cleanup, and an output
@@ -70,7 +72,39 @@ enum DictationTextPreparation {
         try await validate()
         let text = DictationComposePrompt.normalizedOutput(output)
         guard !text.isEmpty else { throw DictationComposeError.emptyOutput }
+        let contextUse = DictationContextUse(
+            wasWritingRequest: usesContext,
+            focusedWindow: !(context?.visibleText.isEmpty ?? true),
+            visibleText: !(visible?.text?.isEmpty ?? true),
+            savedFactSources: memory.selection.sourceTitles)
         return Result(text: text, compositionModel: engine.displayName,
-                      sourceTitles: memory.selection.sourceTitles, contextIsCurrent: isCurrent)
+                      sourceTitles: memory.selection.sourceTitles, contextIsCurrent: isCurrent,
+                      contextUse: contextUse)
+    }
+}
+
+/// Which context a Compose request actually used, shown under Last result so
+/// the context settings can be judged by what they contributed.
+struct DictationContextUse: Equatable, Sendable {
+    /// Context is read only for writing requests ("reply…", "draft…").
+    var wasWritingRequest: Bool
+    var focusedWindow = false
+    var visibleText = false
+    var savedFactSources: [String] = []
+
+    /// The line under Last result, in the interface language.
+    func summary(localized: (String) -> String = { $0 }) -> String {
+        guard wasWritingRequest else {
+            return localized("Cleanup only. Context is read only for writing requests such as “reply…” or “draft…”.")
+        }
+        var used: [String] = []
+        if focusedWindow { used.append(localized("focused window")) }
+        if visibleText { used.append(localized("visible text")) }
+        if !savedFactSources.isEmpty {
+            used.append(String(format: localized("saved facts from %@"),
+                               savedFactSources.joined(separator: ", ")))
+        }
+        guard !used.isEmpty else { return localized("Writing request. No enabled context matched it.") }
+        return String(format: localized("Used: %@"), used.joined(separator: "; "))
     }
 }

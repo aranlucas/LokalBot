@@ -164,6 +164,7 @@
 "Choose the models behind Transcribe, Think, and Autocomplete." = "Choose the models behind Transcribe, Think, and Autocomplete.";
 "Cleanup" = "Cleanup";
 "Cleanup cannot be undone. The policy stays unchanged until you apply this review. Failed deletions remain visible and can be retried." = "Cleanup cannot be undone. The policy stays unchanged until you apply this review. Failed deletions remain visible and can be retried.";
+"Cleanup only. Context is read only for writing requests such as “reply…” or “draft…”." = "Cleanup only. Context is read only for writing requests such as “reply…” or “draft…”.";
 "Clear" = "Clear";
 "Clear History" = "Clear History";
 "Clear Work Memory" = "Clear Work Memory";
@@ -191,6 +192,7 @@
 "Command Palette…" = "Command Palette…";
 "Command palette input" = "Command palette input";
 "Compose" = "Compose";
+"Compose uses it for tone, your name and terminology." = "Compose uses it for tone, your name and terminology.";
 "Composing" = "Composing";
 "Configure Overnight Review" = "Configure Overnight Review";
 "Configure overnight review" = "Configure overnight review";
@@ -298,6 +300,7 @@
 "Earlier" = "Earlier";
 "Edit" = "Edit";
 "Edit as follow-up" = "Edit as follow-up";
+"Edit…" = "Edit…";
 "Email addresses stay in this meeting's local metadata and help distinguish guests." = "Email addresses stay in this meeting's local metadata and help distinguish guests.";
 "Emoji autocomplete" = "Emoji autocomplete";
 "Enable autocomplete" = "Enable autocomplete";
@@ -340,6 +343,7 @@
 "Find on this meeting page (⌘F)" = "Find on this meeting page (⌘F)";
 "Fit" = "Fit";
 "Focus Composer" = "Focus Composer";
+"focused window" = "focused window";
 "Folder" = "Folder";
 "Follow Live" = "Follow Live";
 "Follow OpenRouter Policy" = "Follow OpenRouter Policy";
@@ -422,6 +426,7 @@
 "Known date" = "Known date";
 "Language" = "Language";
 "Language & vocabulary…" = "Language & vocabulary…";
+"Languages" = "Languages";
 "Languages (optional)" = "Languages (optional)";
 "Large" = "Large";
 "Larger" = "Larger";
@@ -684,6 +689,7 @@
 "Question or search" = "Question or search";
 "Quit LokalBot" = "Quit LokalBot";
 "Read coding agent sessions" = "Read coding agent sessions";
+"Reads the focused window's text from a screenshot. Needs Screen Recording; the image and text are not saved." = "Reads the focused window's text from a screenshot. Needs Screen Recording; the image and text are not saved.";
 "Reads visible interface text through Accessibility; no screenshots are stored." = "Reads visible interface text through Accessibility; no screenshots are stored.";
 "Reads window titles and visible interface text for activity and text-context features." = "Reads window titles and visible interface text for activity and text-context features.";
 "Reads your Mac Calendar to confirm meetings and suggest attendee names for speakers. Attendee emails stay in local meeting metadata." = "Reads your Mac Calendar to confirm meetings and suggest attendee names for speakers. Attendee emails stay in local meeting metadata.";
@@ -796,6 +802,7 @@
 "Save correction" = "Save correction";
 "Save key" = "Save key";
 "Saved Agent sessions" = "Saved Agent sessions";
+"saved facts from %@" = "saved facts from %@";
 "Saved Moment Note" = "Saved Moment Note";
 "Saved Sessions" = "Saved Sessions";
 "Saved conversations" = "Saved conversations";
@@ -911,6 +918,7 @@
 "Stop recording" = "Stop recording";
 "Storage: this Mac" = "Storage: this Mac";
 "Stored in Keychain only when you choose Save key. Leave empty for a server that needs no key." = "Stored in Keychain only when you choose Save key. Leave empty for a server that needs no key.";
+"Style" = "Style";
 "Subject" = "Subject";
 "Suggest actions that look done" = "Suggest actions that look done";
 "Suggest in integrated terminals" = "Suggest in integrated terminals";
@@ -929,6 +937,7 @@
 "Task options" = "Task options";
 "Tasks" = "Tasks";
 "Technical details — select to copy" = "Technical details — select to copy";
+"Terminology" = "Terminology";
 "Text + visual context" = "Text + visual context";
 "Text Context" = "Text Context";
 "Text and images build on app activity. Images are encrypted on disk; captured text remains searchable under your retention policy." = "Text and images build on app activity. Images are encrypted on disk; captured text remains searchable under your retention policy.";
@@ -941,6 +950,7 @@
 "The model downloads when semantic search is first used. Meeting text and text captured from your screen are indexed locally." = "The model downloads when semantic search is first used. Meeting text and text captured from your screen are indexed locally.";
 "The opened source remains visible outside these filters." = "The opened source remains visible outside these filters.";
 "The original action, due phrase and citations stay available." = "The original action, due phrase and citations stay available.";
+"The sources below are read only when you start with a writing request, such as “reply…”, “write…” or “draft…”. Other dictation is only cleaned up." = "The sources below are read only when you start with a writing request, such as “reply…”, “write…” or “draft…”. Other dictation is only cleaned up.";
 "Theme" = "Theme";
 "These are captured window titles. Expand a title to inspect the activity behind it." = "These are captured window titles. Expand a title to inspect the activity behind it.";
 "These choices are applied on the final Review step." = "These choices are applied on the final Review step.";
@@ -1032,11 +1042,13 @@
 "Use the original playback timeline; for example, 2:30 is 150 seconds." = "Use the original playback timeline; for example, 2:30 is 150 seconds.";
 "Use up to two relevant facts from recent meeting notes, decisions, and work memory to help with names and details. Processed on this Mac." = "Use up to two relevant facts from recent meeting notes, decisions, and work memory to help with names and details. Processed on this Mac.";
 "Use visible text above the field" = "Use visible text above the field";
+"Used: %@" = "Used: %@";
 "Verify Agent runtime…" = "Verify Agent runtime…";
 "Verifying Agent runtime…" = "Verifying Agent runtime…";
 "View" = "View";
 "View Full Size" = "View Full Size";
 "View all" = "View all";
+"visible text" = "visible text";
 "Voice" = "Voice";
 "Wait before stopping" = "Wait before stopping";
 "Waiting for models" = "Waiting for models";
@@ -1064,6 +1076,8 @@
 "Writes the Timeline digest to your local journal at the chosen time, then finalizes yesterday after midnight so late activity is included." = "Writes the Timeline digest to your local journal at the chosen time, then finalizes yesterday after midnight so late activity is included.";
 "Writing" = "Writing";
 "Writing for the focused app" = "Writing for the focused app";
+"Writing profile" = "Writing profile";
+"Writing request. No enabled context matched it." = "Writing request. No enabled context matched it.";
 "Writing settings…" = "Writing settings…";
 "Writing style (optional)" = "Writing style (optional)";
 "Writing tool" = "Writing tool";
