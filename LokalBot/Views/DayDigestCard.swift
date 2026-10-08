@@ -59,7 +59,6 @@ struct DayDigestControls: View {
                 HStack(spacing: 8) { generate; actions }
             }
         }
-        .controlSize(.small)
     }
 
     private var ask: some View {
