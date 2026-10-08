@@ -7,10 +7,14 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-TAG=v0.6.0
+TAG=b11474
+# The source archive has no .git, so upstream's build-info would report build
+# 0. Pass the build tag's number explicitly so `llama-server --version`
+# identifies the pinned build.
+BUILD_NUMBER=11474
 DEPLOYMENT_TARGET=15.0
 SOURCE_URL="https://github.com/ggml-org/llama.cpp/archive/refs/tags/$TAG.tar.gz"
-SOURCE_SHA256=09b36dba235fcac180efff18514da7038e65d8e5b9e4aefa59238468abfdec12
+SOURCE_SHA256=ccbd56a50f965442b4cefdab5262b6d9b8e45a8041fb0cc6faa5d564d9b18b72
 SERVER_DIR=Vendor/llama-cpp
 BUILD_MARKER="$TAG-macos$DEPLOYMENT_TARGET-arm64-generic-loader-rpath"
 RUNTIME_MANIFEST=.lokalbot-runtime.sha256
@@ -172,6 +176,7 @@ cmake -S "$tmp/source" -B "$tmp/build" \
   -DGGML_NATIVE=OFF \
   -DGGML_CCACHE=OFF \
   -DLLAMA_BUILD_IS_DEV=OFF \
+  -DLLAMA_BUILD_NUMBER="$BUILD_NUMBER" \
   -DLLAMA_BUILD_COMMIT="$TAG" \
   -DLLAMA_BUILD_TESTS=OFF \
   -DLLAMA_BUILD_EXAMPLES=OFF \
