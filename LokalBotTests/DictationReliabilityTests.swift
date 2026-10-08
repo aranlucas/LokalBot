@@ -293,6 +293,71 @@ final class DictationReliabilityTests: XCTestCase {
             .unconfirmed, sessionIsCurrent: true, typeFallback: { true }), .unconfirmed)
     }
 
+    /// Review finding on b323141: a paste queued behind another ran even after
+    /// its dictation was cancelled, into whatever app had focus by then.
+    func testQueuedPasteIsDroppedWhenItsCallerIsCancelled() async throws {
+        let queue = SerialTaskQueue()
+        let gate = Gate()
+        var ran: [String] = []
+        let first = Task { await queue.run { await gate.wait(); ran.append("first"); return 1 } }
+        try await Task.sleep(for: .milliseconds(20))
+        let second = Task { await queue.run { ran.append("second"); return 2 } }
+        try await Task.sleep(for: .milliseconds(20))
+        second.cancel()
+        gate.open()
+        let firstResult = await first.value
+        let secondResult = await second.value
+        XCTAssertEqual(firstResult, 1)
+        XCTAssertNil(secondResult)
+        XCTAssertEqual(ran, ["first"])
+    }
+
+    func testQueuedPasteRechecksItsDestinationOnlyAfterWaiting() async throws {
+        let queue = SerialTaskQueue()
+        let gate = Gate()
+        var checks = 0
+        let unqueued = await queue.run(stillWanted: { checks += 1; return false }) { 1 }
+        XCTAssertEqual(unqueued, 1, "nothing to wait for, nothing to re-check")
+        XCTAssertEqual(checks, 0)
+
+        let first = Task { await queue.run { await gate.wait(); return 1 } }
+        try await Task.sleep(for: .milliseconds(20))
+        let moved = Task { await queue.run(stillWanted: { checks += 1; return false }) { 2 } }
+        try await Task.sleep(for: .milliseconds(20))
+        gate.open()
+        _ = await first.value
+        let movedResult = await moved.value
+        XCTAssertNil(movedResult, "focus moved while queued: do not paste")
+        XCTAssertEqual(checks, 1)
+
+        let next = await queue.run(stillWanted: { true }) { 3 }
+        XCTAssertEqual(next, 3)
+    }
+
+    func testSkippedPasteForACurrentDictationFallsBackToTheClipboard() {
+        XCTAssertEqual(DictationCoordinator.pasteDeliveryResult(
+            .skipped, sessionIsCurrent: true, typeFallback: { XCTFail("no typing"); return true }), .failed)
+        XCTAssertEqual(DictationCoordinator.pasteDeliveryResult(
+            .skipped, sessionIsCurrent: false, typeFallback: { true }), .cancelled)
+    }
+
+    /// Review finding on b323141: holding ⌃⌥ while an earlier dictation was
+    /// transcribing, then pressing another key, cancelled that transcription.
+    func testChordCancelsOnlyTheRecordingItStarted() {
+        XCTAssertFalse(DictationCoordinator.shouldCancelShortcutStart(
+            startedGeneration: nil, currentGeneration: 4, isStarting: false, isRecording: false),
+            "start was refused during transcription")
+        XCTAssertTrue(DictationCoordinator.shouldCancelShortcutStart(
+            startedGeneration: 5, currentGeneration: 5, isStarting: false, isRecording: true))
+        XCTAssertTrue(DictationCoordinator.shouldCancelShortcutStart(
+            startedGeneration: 5, currentGeneration: 5, isStarting: true, isRecording: false))
+        XCTAssertFalse(DictationCoordinator.shouldCancelShortcutStart(
+            startedGeneration: 5, currentGeneration: 6, isStarting: false, isRecording: true),
+            "a later recording is not this shortcut's")
+        XCTAssertFalse(DictationCoordinator.shouldCancelShortcutStart(
+            startedGeneration: 5, currentGeneration: 5, isStarting: false, isRecording: false))
+    }
+
     // MARK: - Paste
 
     func testPasteIsConfirmedByTheAppReadingTheText() async throws {
@@ -421,6 +486,24 @@ final class DictationReliabilityTests: XCTestCase {
             result, blockBufferAllocator: nil, blockBufferMemoryAllocator: nil, flags: 0,
             bufferList: buffer.audioBufferList), noErr)
         return result
+    }
+}
+
+/// Holds an operation open until the test releases it.
+@MainActor
+private final class Gate {
+    private var isOpen = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func wait() async {
+        guard !isOpen else { return }
+        await withCheckedContinuation { waiters.append($0) }
+    }
+
+    func open() {
+        isOpen = true
+        waiters.forEach { $0.resume() }
+        waiters = []
     }
 }
 

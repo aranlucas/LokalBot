@@ -101,6 +101,10 @@ final class DictationCoordinator: ObservableObject {
     private var contextTarget: DictationScreenTarget?
     private var pendingFinishSource: String?
     private var generation = 0
+    /// The session a push-to-talk shortcut actually started. The shortcut can
+    /// be held while an earlier dictation is still transcribing; `start` then
+    /// does nothing, and the shortcut must not cancel that earlier dictation.
+    private var shortcutStartedGeneration: Int?
 
     init(
         storageRoot: URL,
@@ -139,10 +143,10 @@ final class DictationCoordinator: ObservableObject {
         // Read on every key event, so go straight to the stored settings
         // rather than the dictation provider, which also builds vocabulary.
         inputMonitor.shortcutProvider = { [settingsStore] in settingsStore.current.dictationShortcut }
-        inputMonitor.onStart = { [weak self] in self?.start(source: "shortcut") }
+        inputMonitor.onStart = { [weak self] in self?.startFromShortcut() }
         inputMonitor.onStop = { [weak self] in self?.finishRecordingAndTranscribe(source: "shortcut") }
         inputMonitor.onToggle = { [weak self] in self?.toggle(source: "shortcut") }
-        inputMonitor.onCancel = { [weak self] in self?.cancel() }
+        inputMonitor.onCancel = { [weak self] in self?.cancelShortcutStart() }
         Self.sweepOrphanedPreviewFiles(storageRoot: storageRoot)
     }
 
@@ -319,6 +323,35 @@ final class DictationCoordinator: ObservableObject {
         case .ignore:
             lokalbotLog("dictation shortcut ignored while \(state.label.lowercased())")
         }
+    }
+
+    private func startFromShortcut() {
+        let before = generation
+        start(source: "shortcut")
+        shortcutStartedGeneration = generation != before ? generation : nil
+    }
+
+    /// A modifier chord turned out to be another shortcut (⌃⌥ then T).
+    private func cancelShortcutStart() {
+        guard Self.shouldCancelShortcutStart(
+            startedGeneration: shortcutStartedGeneration,
+            currentGeneration: generation,
+            isStarting: isStarting,
+            isRecording: state.isRecording) else { return }
+        shortcutStartedGeneration = nil
+        cancel()
+    }
+
+    /// Only the recording this shortcut started, and only before it has been
+    /// handed to transcription.
+    nonisolated static func shouldCancelShortcutStart(
+        startedGeneration: Int?,
+        currentGeneration: Int,
+        isStarting: Bool,
+        isRecording: Bool
+    ) -> Bool {
+        guard let startedGeneration, startedGeneration == currentGeneration else { return false }
+        return isStarting || isRecording
     }
 
     func start(source: String = "ui") {
@@ -743,6 +776,10 @@ final class DictationCoordinator: ObservableObject {
             return .unconfirmed
         case .failed:
             return typeFallback() ? .inserted : .failed
+        case .skipped:
+            // Not pasted while this dictation is still current: copy it so
+            // the session completes instead of waiting forever.
+            return .failed
         }
     }
 
@@ -777,10 +814,23 @@ final class DictationCoordinator: ObservableObject {
                     ? .notDelivered(check) : .failed
             }
             guard !Task.isCancelled, generation == session else { return .cancelled }
-            let outcome = await inserter.insertViaPaste(text)
+            var queuedCheck: DictationDeliveryCheck?
+            let outcome = await inserter.insertViaPaste(text) { [weak self] in
+                // An earlier paste held the queue; check the field again.
+                guard let self, self.generation == session else { return false }
+                let check = await self.deliveryTargetCheck()
+                queuedCheck = check
+                return check == .deliverable && self.generation == session
+            }
+            let sessionIsCurrent = !Task.isCancelled && generation == session
+            if outcome == .skipped, sessionIsCurrent, let queuedCheck, queuedCheck != .deliverable {
+                NSPasteboard.general.clearContents()
+                return NSPasteboard.general.setString(text, forType: .string)
+                    ? .notDelivered(queuedCheck) : .failed
+            }
             return Self.pasteDeliveryResult(
                 outcome,
-                sessionIsCurrent: !Task.isCancelled && generation == session,
+                sessionIsCurrent: sessionIsCurrent,
                 typeFallback: { inserter.typeInChunks(text) })
         case .copyToClipboard:
             guard !Task.isCancelled, generation == session else { return .cancelled }

@@ -66,9 +66,9 @@ final class CotypingInserter {
     private var savedClipboardForRestore: [[NSPasteboard.PasteboardType: Data]]?
     /// Kept alive while its promised text may still be read.
     private var activeHandoff: DictationPasteboardHandoff?
-    /// The paste in progress. A second paste waits for it; otherwise it would
-    /// snapshot the first one's dictated text as the user's clipboard.
-    private var pasteInProgress: Task<PasteOutcome, Never>?
+    /// Pastes run one at a time. A second paste waits for the first; otherwise
+    /// it would snapshot the first one's dictated text as the user's clipboard.
+    private let pasteQueue = SerialTaskQueue()
     private var cachedPasteMenuItems: [pid_t: AXUIElement] = [:]
     private let suppressionController: CotypingInputSuppressionController
 
@@ -227,6 +227,9 @@ final class CotypingInserter {
         /// The pasteboard or paste command could not be set up; the clipboard
         /// has been restored.
         case failed
+        /// Nothing was pasted: the caller was cancelled, or after waiting for
+        /// an earlier paste its destination was no longer valid.
+        case skipped
     }
 
     /// How long an app has to read the pasted text before LokalBot stops
@@ -239,17 +242,19 @@ final class CotypingInserter {
     /// fixed delay used to restore the old clipboard before a busy app read it,
     /// and that app pasted the previous clipboard instead. A trimmed port of
     /// Cotabby's `insertViaPaste`, used by dictation commits.
-    func insertViaPaste(_ text: String) async -> PasteOutcome {
-        let previous = pasteInProgress
-        let paste = Task { @MainActor [weak self] () -> PasteOutcome in
-            _ = await previous?.value
+    ///
+    /// `revalidateAfterWaiting` runs only when this paste had to wait for an
+    /// earlier one; focus may have moved meanwhile, so the caller re-checks
+    /// its destination. Cancelling the caller cancels a paste that has not
+    /// started.
+    func insertViaPaste(
+        _ text: String,
+        revalidateAfterWaiting: @escaping @MainActor () async -> Bool = { true }
+    ) async -> PasteOutcome {
+        await pasteQueue.run(stillWanted: revalidateAfterWaiting) { [weak self] in
             guard let self else { return .failed }
             return await self.pasteAndConfirm(text)
-        }
-        pasteInProgress = paste
-        let outcome = await paste.value
-        if pasteInProgress == paste { pasteInProgress = nil }
-        return outcome
+        } ?? .skipped
     }
 
     private func pasteAndConfirm(_ text: String) async -> PasteOutcome {
@@ -482,5 +487,35 @@ final class DictationPasteboardHandoff: NSObject, NSPasteboardItemDataProvider {
         guard let waiter else { return }
         self.waiter = nil
         waiter.resume(returning: read)
+    }
+}
+
+/// Runs main-actor operations one after another. An operation that had to
+/// wait is dropped when its caller was cancelled meanwhile or `stillWanted`
+/// says no, so queued work never acts on a decision that went stale.
+@MainActor
+final class SerialTaskQueue {
+    private var tail: Task<Void, Never>?
+
+    /// The operation's result, or nil when it did not run.
+    func run<T: Sendable>(
+        stillWanted: @escaping @MainActor () async -> Bool = { true },
+        operation: @escaping @MainActor () async -> T
+    ) async -> T? {
+        let previous = tail
+        let work = Task { @MainActor () -> T? in
+            if let previous {
+                await previous.value
+                guard !Task.isCancelled, await stillWanted() else { return nil }
+            }
+            guard !Task.isCancelled else { return nil }
+            return await operation()
+        }
+        tail = Task { @MainActor in _ = await work.value }
+        return await withTaskCancellationHandler {
+            await work.value
+        } onCancel: {
+            work.cancel()
+        }
     }
 }
