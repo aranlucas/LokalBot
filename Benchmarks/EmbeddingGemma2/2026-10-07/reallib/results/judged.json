@@ -1,0 +1,190 @@
+{
+ "meetings": {
+  "queries": 312,
+  "unjudged": 0,
+  "harrier": {
+   "all": {
+    "judged": 312,
+    "relevant_top1": 220
+   },
+   "en": {
+    "judged": 156,
+    "relevant_top1": 141
+   },
+   "bcs": {
+    "judged": 156,
+    "relevant_top1": 79
+   }
+  },
+  "gemma-768": {
+   "all": {
+    "judged": 312,
+    "relevant_top1": 242
+   },
+   "en": {
+    "judged": 156,
+    "relevant_top1": 138
+   },
+   "bcs": {
+    "judged": 156,
+    "relevant_top1": 104
+   }
+  },
+  "gemma-512": {
+   "all": {
+    "judged": 312,
+    "relevant_top1": 239
+   },
+   "en": {
+    "judged": 156,
+    "relevant_top1": 136
+   },
+   "bcs": {
+    "judged": 156,
+    "relevant_top1": 103
+   }
+  },
+  "gemma-768-vs-harrier:all": {
+   "delta_points": 7.051282051282051,
+   "bootstrap_95": [
+    2.453613646565914,
+    11.589403973509933
+   ],
+   "clusters": 95
+  },
+  "gemma-768-vs-harrier:en": {
+   "delta_points": -1.9230769230769231,
+   "bootstrap_95": [
+    -5.921052631578947,
+    1.8404907975460123
+   ],
+   "clusters": 95
+  },
+  "gemma-768-vs-harrier:bcs": {
+   "delta_points": 16.025641025641026,
+   "bootstrap_95": [
+    8.176100628930817,
+    23.92638036809816
+   ],
+   "clusters": 95
+  },
+  "gemma-512-vs-harrier:all": {
+   "delta_points": 6.089743589743589,
+   "bootstrap_95": [
+    1.3069773363891013,
+    10.802469135802468
+   ],
+   "clusters": 95
+  },
+  "gemma-512-vs-harrier:en": {
+   "delta_points": -3.205128205128205,
+   "bootstrap_95": [
+    -7.547169811320755,
+    0.6622516556291391
+   ],
+   "clusters": 95
+  },
+  "gemma-512-vs-harrier:bcs": {
+   "delta_points": 15.384615384615385,
+   "bootstrap_95": [
+    7.386268303843807,
+    23.31288343558282
+   ],
+   "clusters": 95
+  }
+ },
+ "screens": {
+  "queries": 200,
+  "unjudged": 0,
+  "harrier": {
+   "all": {
+    "judged": 200,
+    "relevant_top1": 115
+   },
+   "en": {
+    "judged": 100,
+    "relevant_top1": 75
+   },
+   "bcs": {
+    "judged": 100,
+    "relevant_top1": 40
+   }
+  },
+  "gemma-768": {
+   "all": {
+    "judged": 200,
+    "relevant_top1": 116
+   },
+   "en": {
+    "judged": 100,
+    "relevant_top1": 67
+   },
+   "bcs": {
+    "judged": 100,
+    "relevant_top1": 49
+   }
+  },
+  "gemma-512": {
+   "all": {
+    "judged": 200,
+    "relevant_top1": 114
+   },
+   "en": {
+    "judged": 100,
+    "relevant_top1": 67
+   },
+   "bcs": {
+    "judged": 100,
+    "relevant_top1": 47
+   }
+  },
+  "gemma-768-vs-harrier:all": {
+   "delta_points": 0.5,
+   "bootstrap_95": [
+    -7.000000000000001,
+    8.0
+   ],
+   "clusters": 100
+  },
+  "gemma-768-vs-harrier:en": {
+   "delta_points": -8.0,
+   "bootstrap_95": [
+    -17.0,
+    1.0
+   ],
+   "clusters": 100
+  },
+  "gemma-768-vs-harrier:bcs": {
+   "delta_points": 9.0,
+   "bootstrap_95": [
+    -2.0,
+    20.0
+   ],
+   "clusters": 100
+  },
+  "gemma-512-vs-harrier:all": {
+   "delta_points": -0.5,
+   "bootstrap_95": [
+    -8.0,
+    7.000000000000001
+   ],
+   "clusters": 100
+  },
+  "gemma-512-vs-harrier:en": {
+   "delta_points": -8.0,
+   "bootstrap_95": [
+    -18.0,
+    2.0
+   ],
+   "clusters": 100
+  },
+  "gemma-512-vs-harrier:bcs": {
+   "delta_points": 7.000000000000001,
+   "bootstrap_95": [
+    -4.0,
+    18.0
+   ],
+   "clusters": 100
+  }
+ }
+}

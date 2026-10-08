@@ -1,0 +1,12 @@
+{
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "python": "3.13.13",
+  "repository_head": "613101112cebb242fe8cb21b4616da1d8366febe",
+  "fixture_freeze_sha256": "d245c64f574d11ee22516ab1c327b04ea8c29e350b708df9d003f7811cebb7e5",
+  "runner_sha256": "b6f2ff933a63ba8ea39f884d8559cafff9b0478cf5764dcf96443286c5daa4dd",
+  "started_utc": "2026-10-06T18:56:10Z",
+  "hardware": {
+    "chip": "Apple M4 Max",
+    "ram_gib": 48
+  }
+}

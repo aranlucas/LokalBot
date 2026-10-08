@@ -49,9 +49,13 @@ actor LlamaServer {
         extraArgs: MainLLMRuntimePolicy.serverExtraArguments,
         runtimeAllowanceBytes: 3 * 1_073_741_824)
     /// Embeddings instance (semantic search) — small model, second port.
+    /// EmbeddingGemma's GGUF carries its own mean pooling and projection, so
+    /// no pooling flag is passed (one would override them). As a bidirectional
+    /// encoder it must see each input in a single micro-batch; real 1,500-
+    /// character OCR reaches about 950 tokens, so batch at the full context.
     static let embedder = LlamaServer(port: 17873, contextTokens: 2_048,
-                                      extraArgs: ["--embeddings", "--pooling", "last",
-                                                  "--parallel", "1", "--cache-ram", "256"],
+                                      extraArgs: ["--embeddings", "-b", "2048", "-ub", "2048",
+                                                  "--parallel", "1"],
                                       runtimeAllowanceBytes: 384 * 1_048_576)
     /// Cotyping instance — an optional separate (typically smaller/faster)
     /// model on a third port, so inline suggestions never contend with the

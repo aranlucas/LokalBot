@@ -1,0 +1,28 @@
+{
+  "runtime": "version: 0.6.0-dev (build 11469, commit ad2156533)\nbuilt with AppleClang 21.0.0.21000101 for Darwin arm64",
+  "startup_seconds": 0.5268361249472946,
+  "peak_rss_bytes": 1231257600,
+  "arguments": [
+    "/private/tmp/lokalbot-embeddinggemma2-20261007/bin/llama-b11469/llama-server",
+    "-m",
+    "/Users/0xmithrandir/Library/Application Support/me.dotenv.LokalBot/models/harrier-oss-v1-0.6b.Q8_0.gguf",
+    "-c",
+    "2048",
+    "--pooling",
+    "last",
+    "--cache-ram",
+    "256",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "18787",
+    "-ngl",
+    "99",
+    "--parallel",
+    "1",
+    "--no-webui",
+    "--embeddings",
+    "--api-key",
+    "<disposable token>"
+  ]
+}

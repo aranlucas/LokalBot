@@ -1,0 +1,127 @@
+[
+  {
+    "id" : "board-released",
+    "seconds" : 25.955142833,
+    "text" : "Work memory | Project Atlas\nRelease tasks\nTo do\nBuild\nIn progress\nDocs\nDone\nRelease"
+  },
+  {
+    "id" : "dense-05",
+    "seconds" : 0.081082125,
+    "text" : "LokalBot Preferences\nProfile: Local Mac\nGeneral\nCapture\nTranscription\nOCR\nStorage\nPrivacy\nOCR pipeline\nDefault engine\nRecognition level\nLanguage correction\nScreenshot interval\nMinimum confidence\nFallback engine\nApple Vision\nAccurate\nOff\n30 seconds\n0.55\nNone\nReliability guardrail\nDo not promote a new OCR engine unless p95 latency stays below 750 ms.\nQuality must improve on real screenshots, not only synthetic fixtures.\nRun a battery test before enabling continuous capture on battery power."
+  },
+  {
+    "id" : "diagram-cycle",
+    "seconds" : 0.054589791,
+    "text" : "Work memory | Project Atlas\nService architecture\nАРІ\nClient\nDatabase\nCache"
+  },
+  {
+    "id" : "board-pending",
+    "seconds" : 0.059668125,
+    "text" : "Work memory | Project Atlas\nRelease tasks\nTo do\nRelease\nIn progress\nDocs\nDone\nBuild"
+  },
+  {
+    "id" : "notes-fee",
+    "seconds" : 0.063228542,
+    "text" : "Work memory | Project Atlas\nProject notes\nCross-chain fee design: the sender should quote the\nbridge cost at execution and accept a configurable fee\ntoken. A fixed native-token allowance can become\ninsufficient as network prices change."
+  },
+  {
+    "id" : "chart-falling",
+    "seconds" : 0.046785709,
+    "text" : "Work memory | Project Atlas\nMonthly revenue\n100\n75\n50\n25\nJan\nFeb\nMar\nApr"
+  },
+  {
+    "id" : "dense-04",
+    "seconds" : 0.058990291,
+    "text" : "LokalBot Notes\nOCR benchmark\nPipeline review\nRelease checklist\nMeeting follow-up\nOCR benchmark\nUpdated 10:42 AM\nStevan\nCan we switch away from Vision if the model is better?\nCodex\nNot yet. PP-OCRV6 found more snippets but was about 90x slower.\nStevan\nWhat about PaddleOCR-VL on Ilama.cpp?\nCodex\nIt ran quickly enough for manual use, but missed too much screenshot text.\nDecision\nDefault OCR remains Apple Vision. Keep VLM parsing as an optional experiment.\nAction item: test five synthetic screenshots with ground truth labels."
+  },
+  {
+    "id" : "dense-03",
+    "seconds" : 0.06711025,
+    "text" : "Terminal - ocr-benchmark\n$ .\/scripts\/run_ocr_benchmark --limit 5 --engine ppocr-v6-medium\nLoaded 5 synthetic screenshots from Benchmarks\/OCR\/synthetic\/manifest.tsv\nsynth-01 CodeEditor infer_ms=21877 chars=1342 token_f1=0.812\nsynth-02 BrowserDashboard infer_ms=19433 chars=1038 token_f1=0.846\nsynth-03 Terminal infer_ms=17722 chars=1197 token_f1=0.927\nsynth-04 ChatNotes infer_ms=22491 chars=902 token_f1=0.781\nsynth-05 Preferences infer_ms=20814 chars=998 token_f1=0.833\nSUMMARY engine=ppocr-v6-medium mean_latency_ms=20467 mean_token_f1=0.840\n$ curl -s http:\/\/127.0.0.1:8097\/health\n{\"status\":\"ok\"}\n$ .\/scripts\/run_vlm_ocr =-engine paddleocr-vl-gguf --max-tokens 1024\nsynth-01 generated 892 characters in 2850 ms\nsynth-02 generated 764 characters in 2714 ms\nWARN output truncated before footer"
+  },
+  {
+    "id" : "diagram-chain",
+    "seconds" : 0.044687417,
+    "text" : "Work memory | Project Atlas\nService architecture\nАPІ\nClient\nDatabase\nCache"
+  },
+  {
+    "id" : "chart-rising",
+    "seconds" : 0.044460583,
+    "text" : "Work memory | Project Atlas\nMonthly revenue\n100\n75\n50\n25\nJan\nFeb\nMar\nApr"
+  },
+  {
+    "id" : "diagram-isolated",
+    "seconds" : 0.042916166,
+    "text" : "Work memory | Project Atlas\nService architecture\nАРІ\nClient\nDatabase\nCache"
+  },
+  {
+    "id" : "board-active",
+    "seconds" : 0.043347209,
+    "text" : "Work memory | Project Atlas\nRelease tasks\nTo do\nDocs\nIn progress\nRelease\nDone\nBuild"
+  },
+  {
+    "id" : "notes-privacy",
+    "seconds" : 0.0484495,
+    "text" : "Work memory | Project Atlas\nProject notes\nInference privacy decision: meeting audio and transcripts\nstay on the Mac. A remote provider receives context only\nafter the user selects connected inference and grants\nconsent. Installing local weights does not authorize\nuploading meetings."
+  },
+  {
+    "id" : "chart-spike",
+    "seconds" : 0.046215542,
+    "text" : "Work memory | Project Atlas\nMonthly revenue\n100\n75\n50\n25\nJan\nFeb\nMar\nApr"
+  },
+  {
+    "id" : "diagram-star",
+    "seconds" : 0.0429115,
+    "text" : "Work memory | Project Atlas\nService architecture\nАРІ\nClient\nDatabase\nCache"
+  },
+  {
+    "id" : "board-complete",
+    "seconds" : 0.043886583,
+    "text" : "Work memory | Project Atlas\nRelease tasks\nTo do\nIn progress\nDone\nBuild\nDocs\nRelease"
+  },
+  {
+    "id" : "chart-flat",
+    "seconds" : 0.04380025,
+    "text" : "Work memory | Project Atlas\nMonthly revenue\n100\n75\n50\n25\nJan\nFeb\nMar\nApr"
+  },
+  {
+    "id" : "notes-release",
+    "seconds" : 0.048971209,
+    "text" : "Work memory | Project Atlas\nProject notes\nRelease readiness: a successful build is insufficient.\nThe team must download the public installer, check its\nsignature and notarization, and launch that exact release\nartifact before calling the release complete."
+  },
+  {
+    "id" : "chart-dip",
+    "seconds" : 0.043277417,
+    "text" : "Work memory | Project Atlas\nMonthly revenue\n100\n75\n50\n25\nJan\nFeb\nMar\nApr"
+  },
+  {
+    "id" : "dense-02",
+    "seconds" : 0.061571041,
+    "text" : "localhost:3000\/reports\/ocr-latency\nOCR Benchmark Dashboard\nMean latency\n243 ms\nBaseline: Apple Vision\nToken F1\n0.96\nCandidate target 0.92\nModel comparison\nEngine\nApple Vision\nPP-OCRv6 medium\nPaddleOCR-VL GGUF\nDeepSeek-OCR GGUF\nImages\n15\n5\nMean latency\n243 ms\n22.43 s\n2.74 s\n1.64 s\nRecommendation: keep Apple Vision as default OCR pipeline.\nQueue depth\n12\nPending screenshots\nToken F1\n0.96\n0.21\n0.10\n0.00\nWindow: Last 7 days\nErrors\nLast run clean\nDecision\nCurrent default\nToo slow\nPartial output\nHallucinated"
+  },
+  {
+    "id" : "chart-rebound",
+    "seconds" : 0.0442225,
+    "text" : "Work memory | Project Atlas\nMonthly revenue\n100\n75\n50\n25\nJan\nFeb\nMar\nApr"
+  },
+  {
+    "id" : "notes-offline",
+    "seconds" : 0.048911375,
+    "text" : "Work memory | Project Atlas\nProject notes\nProduct planning: Week one is reserved for a reliable\noffline course-folder workflow, baseline measurements,\nand tests on actual student laptops. Week two covers\nconnected inference and skill routing. PDF support is not\nyet promised."
+  },
+  {
+    "id" : "notes-pooling",
+    "seconds" : 0.049863,
+    "text" : "Work memory | Project Atlas\nProject notes\nSemantic search investigation: Qwen embeddings must use\nthe last non-padding token, not the average of all\ntokens. Existing vectors need a new index version after\nchanging pooling. Oversized transcript segments must be\nsplit."
+  },
+  {
+    "id" : "notes-audio",
+    "seconds" : 0.048613833,
+    "text" : "Work memory | Project Atlas\nProject notes\nAudio regression: the percentile-based silence threshold\nwas treating sustained speech as background noise. The\nfix evaluates speech against an absolute floor so steady\nsentences remain in the live transcript."
+  },
+  {
+    "id" : "dense-01",
+    "seconds" : 0.160460042,
+    "text" : "LokalBot - ReviewOCR.swifReviewOCR.swift\nSearch files\nSources\nEngines\nOCRBenchmark.swift\nProcessingPipeline.swift\nTests\nScreenshotOCRTests.swift\n\/\/ OCR comparison fixture\nlet candidate = \"PP-OCRv6 medium\"\nlet baseline = \"Apple Vision\"\nLet LatencyBudgetMs = 750\nReview note\nKeep Vision as default unless the model is\nboth faster and more accurate.\nFailed checks: latency budget exceeded\nDecision: do not switch yet\nfunc shouldPromote(candidate: OCRResult) -> Bool {\nreturn candidate.f1 > 0.92 && candidate.latencyMs < latencyBudgetMs\n10\n11\nXCTAssertGreaterThan(candidate.tokenF1, baseline.tokenF1)\nXCTAssertLessThan(candidate.meanLatencyMs, 750)\nmain 2026-06-24 UTF-8 Swift"
+  }
+]

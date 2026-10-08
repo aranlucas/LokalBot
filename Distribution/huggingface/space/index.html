@@ -21,7 +21,7 @@
   <main><h1>LokalBot local-stack benchmarks — extracted numbers</h1>
 <p>Every number below is copied verbatim from a file in this repository; the <strong>Source</strong> column or line is the path to check. Nothing here is estimated or invented. All measurements to date were taken on a single machine: an <strong>Apple M4 Max, 48 GB</strong> of unified memory. These are engine-level benchmarks, not end-to-end UI timings. The repository index of every report is <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/README.md"><code>Benchmarks/README.md</code></a>.</p>
 <h2>Current default stack</h2>
-<p>The defaults on a fresh install total about <strong>6.8 GB</strong> of model files if every role is used (<a href="https://github.com/stevyhacker/lokalbot/blob/master/README.md"><code>README.md</code></a>, "Local AI, your choice").</p>
+<p>The defaults on a fresh install total about <strong>6.5 GB</strong> of model files if every role is used (<a href="https://github.com/stevyhacker/lokalbot/blob/master/README.md"><code>README.md</code></a>, "Local AI, your choice").</p>
 <table>
 <thead>
 <tr>
@@ -60,11 +60,11 @@
 </tr>
 <tr>
 <td>Semantic search</td>
-<td>Harrier OSS v1 0.6B</td>
+<td>EmbeddingGemma 2</td>
 <td><code>Q8_0</code></td>
-<td style="text-align: right;">0.64 GB</td>
-<td>Correct passage first for 40/48 queries vs 35/48 for Qwen3 Embedding 0.6B</td>
-<td><a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/ModelAlternatives/2026-09-07/REPORT.md"><code>Benchmarks/ModelAlternatives/2026-09-07/REPORT.md</code></a></td>
+<td style="text-align: right;">0.31 GB</td>
+<td>Correct passage first for 43/48 queries vs 40/48 for Harrier 0.6B</td>
+<td><a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/EmbeddingGemma2/2026-10-07/REPORT.md"><code>Benchmarks/EmbeddingGemma2/2026-10-07/REPORT.md</code></a></td>
 </tr>
 <tr>
 <td>Autocomplete</td>
@@ -173,50 +173,55 @@
 </table>
 <p>Decode speed across these runs was about 85 tokens/s (<a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/README.md"><code>Benchmarks/README.md</code></a>). These are timings, not a summary-quality score.</p>
 <p>In the 2026-09-07 pilot, MiniCPM5-2B <code>Q4_K_M</code> was smaller (1.561 GB vs 2.741 GB) and faster on long context (18.68 s vs 32.41 s), but it looped on one summary and misattributed action items, so Qwen3.5 4B remains the default (<a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/ModelAlternatives/2026-09-07/REPORT.md"><code>Benchmarks/ModelAlternatives/2026-09-07/REPORT.md</code></a>).</p>
-<h2>Semantic search — Harrier vs Qwen3 Embedding</h2>
-<p>48 authored queries (24 English, 24 Serbian/Montenegrin in Latin and Cyrillic) against a 110-document corpus; relevant passage IDs fixed before inference. Both models used Q8 weights, 1,024 dimensions, and the app's query/document prefixes. Source: <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/ModelAlternatives/2026-09-07/REPORT.md"><code>Benchmarks/ModelAlternatives/2026-09-07/REPORT.md</code></a>.</p>
+<h2>Semantic search — EmbeddingGemma 2 vs Harrier</h2>
+<p>48 authored queries (24 English, 24 Serbian/Montenegrin in Latin and Cyrillic) against a 60-passage synthetic corpus; relevant passage IDs fixed before inference. Both models used Q8 weights on the same llama.cpp build, each with its own prompts: Harrier returns 1,024 dimensions, EmbeddingGemma 2 returns 768. Source: <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/EmbeddingGemma2/2026-10-07/REPORT.md"><code>Benchmarks/EmbeddingGemma2/2026-10-07/REPORT.md</code></a>.</p>
 <table>
 <thead>
 <tr>
 <th>Measure</th>
-<th style="text-align: right;">Qwen3 Embedding 0.6B Q8 (previous default)</th>
-<th style="text-align: right;">Harrier 0.6B Q8 (current default)</th>
+<th style="text-align: right;">Harrier 0.6B Q8 (previous default)</th>
+<th style="text-align: right;">EmbeddingGemma 2 Q8 (current default)</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>Correct passage ranked first</td>
-<td style="text-align: right;">35/48 (72.9%)</td>
-<td style="text-align: right;"><strong>40/48 (83.3%)</strong></td>
+<td style="text-align: right;">40/48 (83.3%)</td>
+<td style="text-align: right;"><strong>43/48 (89.6%)</strong></td>
 </tr>
 <tr>
 <td>Correct passage in top five</td>
-<td style="text-align: right;">45/48 (93.8%)</td>
-<td style="text-align: right;"><strong>47/48 (97.9%)</strong></td>
+<td style="text-align: right;">47/48 (97.9%)</td>
+<td style="text-align: right;"><strong>48/48 (100%)</strong></td>
 </tr>
 <tr>
 <td>English top one</td>
 <td style="text-align: right;">22/24</td>
-<td style="text-align: right;">22/24</td>
+<td style="text-align: right;"><strong>23/24</strong></td>
 </tr>
 <tr>
 <td>Serbian/Montenegrin top one</td>
-<td style="text-align: right;">13/24</td>
-<td style="text-align: right;"><strong>18/24</strong></td>
+<td style="text-align: right;">18/24</td>
+<td style="text-align: right;"><strong>20/24</strong></td>
 </tr>
 <tr>
 <td>Mean reciprocal rank</td>
-<td style="text-align: right;">0.814</td>
-<td style="text-align: right;"><strong>0.903</strong></td>
+<td style="text-align: right;">0.903</td>
+<td style="text-align: right;"><strong>0.944</strong></td>
 </tr>
 <tr>
 <td>Repeated query latency, median</td>
-<td style="text-align: right;">11.85 ms</td>
-<td style="text-align: right;">11.97 ms</td>
+<td style="text-align: right;">13.1 ms</td>
+<td style="text-align: right;"><strong>9.0 ms</strong></td>
+</tr>
+<tr>
+<td>Model file</td>
+<td style="text-align: right;">0.64 GB</td>
+<td style="text-align: right;"><strong>0.31 GB</strong></td>
 </tr>
 </tbody>
 </table>
-<p>The gain came from the Serbian/Montenegrin queries; English tied. 48 correlated, authored queries make this a pilot, not a general retrieval benchmark.</p>
+<p>The 6-point gain is within noise on 48 correlated queries (95% interval −4 to +17 points); EmbeddingGemma 2 was adopted because it matched or beat Harrier at half the size, half the idle memory, and faster queries. Harrier had replaced Qwen3 Embedding 0.6B (35/48) in September (<a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/ModelAlternatives/2026-09-07/REPORT.md"><code>Benchmarks/ModelAlternatives/2026-09-07/REPORT.md</code></a>).</p>
 <h2>Speech recognition — Granite Speech 4.1 vs Granite Speech 5</h2>
 <p>44 public clips / 271.3 seconds (24 conversational AMI clips, 20 clean LibriSpeech clips), scored with the standard Whisper English normalizer. Source: <a href="https://github.com/stevyhacker/lokalbot/blob/master/Benchmarks/ModelAlternatives/2026-09-07/REPORT.md"><code>Benchmarks/ModelAlternatives/2026-09-07/REPORT.md</code></a>. <strong>Qwen3-ASR 1.7B, the current default, was not part of this run.</strong></p>
 <table>
@@ -510,7 +515,7 @@
 </tr>
 <tr>
 <td>Search pilot is 48 authored queries</td>
-<td>Validate Harrier with annotated queries over a larger real library.</td>
+<td>Validate EmbeddingGemma 2 with human-annotated queries over a larger real library.</td>
 </tr>
 <tr>
 <td>No summarization-quality evaluation for Qwen3.5 4B</td>

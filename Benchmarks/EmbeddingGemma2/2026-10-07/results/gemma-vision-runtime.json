@@ -1,0 +1,30 @@
+{
+  "runtime": "version: 0.6.0-dev (build 11469, commit ad2156533)\nbuilt with AppleClang 21.0.0.21000101 for Darwin arm64",
+  "startup_seconds": 1.0445225830189884,
+  "peak_rss_bytes": 2200977408,
+  "arguments": [
+    "/private/tmp/lokalbot-embeddinggemma2-20261007/bin/llama-b11469/llama-server",
+    "-m",
+    "/private/tmp/lokalbot-embeddinggemma2-20261007/models/embeddinggemma-2-Q8_0.gguf",
+    "--mmproj",
+    "/private/tmp/lokalbot-embeddinggemma2-20261007/models/mmproj-embeddinggemma-2-Q8_0.gguf",
+    "-c",
+    "8192",
+    "-b",
+    "8192",
+    "-ub",
+    "8192",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "18787",
+    "-ngl",
+    "99",
+    "--parallel",
+    "1",
+    "--no-webui",
+    "--embeddings",
+    "--api-key",
+    "<disposable token>"
+  ]
+}

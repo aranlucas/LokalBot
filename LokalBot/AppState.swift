@@ -1256,6 +1256,7 @@ final class AppState: ObservableObject {
             guard self.embeddingBackfillTask?.token == token else { return }
             self.embeddingBackfillTask = nil
             self.embeddingBackfill = nil
+            await self.embeddingIndex.rebuildScreenVectorsAfterModelChange()
         }
         embeddingBackfillTask = (token, task)
     }

@@ -161,7 +161,7 @@ struct ModelSearchSettingsSheet: View {
             ModelSheetHeading(title: "Search by meaning", subtitle: "Find related work even when the words are different.")
             VStack(alignment: .leading, spacing: 20) {
                 Toggle("Enable search by meaning", isOn: $app.settings.semanticSearchEnabled)
-                LabeledContent("Model") { Text("Harrier 0.6B · On this Mac").foregroundStyle(.secondary) }
+                LabeledContent("Model") { Text("EmbeddingGemma 2 · On this Mac").foregroundStyle(.secondary) }
                 Text("The model downloads when semantic search is first used. Meeting text and text captured from your screen are indexed locally.")
                 Text("LokalBot manages this model and rebuilds the local index when it changes.")
                     .foregroundStyle(.secondary)
