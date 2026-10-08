@@ -39,6 +39,24 @@ struct MeetingSpeakerSuggestion: Identifiable {
         return result
     }
 
+    /// Every query word must appear in the name or email address, ignoring
+    /// case and accents, so "petrovic ana" finds "Ana Petrović".
+    func matches(_ query: String) -> Bool {
+        let text = [name, calendar?.emailAddress].compactMap { $0 }.joined(separator: " ")
+        // "đ" has no accent-free decomposition; people type it as "d" or "dj".
+        return ["d", "dj"].contains { stroke in
+            let haystack = Self.searchKey(text, stroke: stroke)
+            return Self.searchKey(query, stroke: stroke).split(whereSeparator: \.isWhitespace)
+                .allSatisfy { haystack.contains($0) }
+        }
+    }
+
+    private static func searchKey(_ text: String, stroke: String) -> String {
+        text.folding(options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive],
+                     locale: Locale(identifier: "en_US_POSIX"))
+            .replacingOccurrences(of: "đ", with: stroke)
+    }
+
     static func nameKey(_ name: String) -> String {
         name.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)

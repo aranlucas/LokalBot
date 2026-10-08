@@ -45,6 +45,31 @@ final class MeetingSpeakerSuggestionTests: XCTestCase {
         XCTAssertNil(result[1].calendar)
     }
 
+    func testSearchMatchesEveryQueryWordInNameOrEmailIgnoringCaseAndAccents() throws {
+        let guests = try [
+            ("ana", "Ana Petrović", "ana@example.com"),
+            ("djordje", "Đorđe Ilić", "g.ilic@studio.example"),
+            ("room", nil, "room123@example.com"),
+        ].map { try XCTUnwrap(CalendarParticipantIdentity(id: $0.0, name: $0.1, emailAddress: $0.2)) }
+        let choices = MeetingSpeakerSuggestion.choices(calendar: guests, hints: ["Sam Lee"])
+        func search(_ query: String) -> [String] {
+            choices.filter { $0.matches(query) }.map(\.id)
+        }
+
+        XCTAssertEqual(search(""), choices.map(\.id))
+        XCTAssertEqual(search("   "), choices.map(\.id))
+        XCTAssertEqual(search("PETROVIC"), ["calendar:ana"])
+        XCTAssertEqual(search("petrovic ana"), ["calendar:ana"], "word order does not matter")
+        XCTAssertEqual(search("ana sam"), [], "every word must match the same suggestion")
+        XCTAssertEqual(search("dorde"), ["calendar:djordje"])
+        XCTAssertEqual(search("djordje"), ["calendar:djordje"])
+        XCTAssertEqual(search("Đorđe"), ["calendar:djordje"])
+        XCTAssertEqual(search("studio"), ["calendar:djordje"], "email addresses are searchable")
+        XCTAssertEqual(search("room123"), ["calendar:room"], "unnamed mailboxes stay findable")
+        XCTAssertEqual(search("lee"), ["hint:sam lee"])
+        XCTAssertEqual(search("zoe"), [])
+    }
+
     func testUnnamedMailboxRemainsSelectableAndOrderHasStableIDs() throws {
         let guest = try XCTUnwrap(CalendarParticipantIdentity(id: "room", name: nil, emailAddress: "room123@example.com"))
         let first = MeetingSpeakerSuggestion.choices(calendar: [guest], hints: [])

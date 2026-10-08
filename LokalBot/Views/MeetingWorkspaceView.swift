@@ -2142,7 +2142,9 @@ private struct WorkspaceSpeakerRenameSheet: View {
     @State private var profileID: UUID?
     @State private var name: String
     @State private var selectedCalendarIdentityID: String?
+    @State private var suggestionQuery = ""
     @FocusState private var nameFocused: Bool
+    @FocusState private var searchFocused: Bool
 
     init(
         draft: WorkspaceSpeakerRenameDraft,
@@ -2228,8 +2230,14 @@ private struct WorkspaceSpeakerRenameSheet: View {
                         Text("Listen, choose a name, then save. These sources suggest names; attendance does not identify a voice.")
                             .workspaceTextRole(.supporting)
                             .fixedSize(horizontal: false, vertical: true)
-                        ForEach(suggestions) { suggestion in
+                        if showsSuggestionSearch { suggestionSearchField }
+                        ForEach(visibleSuggestions) { suggestion in
                             suggestionRow(suggestion)
+                        }
+                        if visibleSuggestions.isEmpty {
+                            Text("No suggested names match this search.")
+                                .workspaceTextRole(.supporting)
+                                .accessibilityIdentifier("speaker.rename.noMatchingSuggestions")
                         }
                         if !calendarCandidates.isEmpty {
                             Text("Email addresses stay in this meeting's local metadata and help distinguish guests.")
@@ -2246,7 +2254,8 @@ private struct WorkspaceSpeakerRenameSheet: View {
                     if let notice { Text(notice).font(.scaled(.caption)).foregroundStyle(.secondary) }
                 }
             }
-            .frame(maxHeight: 280)
+            // Keep the sheet from resizing on every keystroke while filtering.
+            .frame(minHeight: showsSuggestionSearch ? 280 : nil, maxHeight: 280)
 
             Label("Names are saved with this meeting. Only confirmed microphone voices can be remembered on this Mac.",
                   systemImage: "lock.shield")
@@ -2262,7 +2271,8 @@ private struct WorkspaceSpeakerRenameSheet: View {
                 Button("Save") { onSave(name, selectedCalendarIdentityID, remember, profileID) }
                     .primaryActionButton()
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    .keyboardShortcut(.defaultAction)
+                    // Return in the search field picks a match instead of saving.
+                    .keyboardShortcut(searchFocused ? nil : .defaultAction)
                     .accessibilityIdentifier("speaker.rename.save")
             }
         }
@@ -2280,6 +2290,52 @@ private struct WorkspaceSpeakerRenameSheet: View {
         MeetingSpeakerSuggestion.choices(calendar: calendarCandidates, hints: hints)
     }
 
+    /// Short lists fit the scroll area without searching.
+    private var showsSuggestionSearch: Bool { suggestions.count > 3 }
+
+    private var visibleSuggestions: [MeetingSpeakerSuggestion] {
+        showsSuggestionSearch ? suggestions.filter { $0.matches(suggestionQuery) } : suggestions
+    }
+
+    private var suggestionSearchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            TextField("Search suggested names", text: $suggestionQuery)
+                .textFieldStyle(.plain)
+                .focused($searchFocused)
+                .onSubmit {
+                    guard let first = visibleSuggestions.first else { return }
+                    choose(first)
+                    nameFocused = true
+                }
+                .accessibilityIdentifier("speaker.rename.searchSuggestions")
+            if !suggestionQuery.isEmpty {
+                Button {
+                    suggestionQuery = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .help("Clear search")
+                .accessibilityLabel("Clear search")
+                .accessibilityIdentifier("speaker.rename.searchSuggestions.clear")
+            }
+        }
+        .font(AppFont.scaled(.body))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .workspaceControl()
+    }
+
+    private func choose(_ suggestion: MeetingSpeakerSuggestion) {
+        name = suggestion.name ?? ""
+        selectedCalendarIdentityID = suggestion.calendar?.id
+        profileID = nil
+    }
+
     private func suggestionRow(_ suggestion: MeetingSpeakerSuggestion) -> some View {
         let assignedElsewhere = suggestion.calendar.map {
             assignedCalendarIdentityIDs.contains($0.id) && $0.id != draft.currentCalendarIdentityID
@@ -2295,9 +2351,7 @@ private struct WorkspaceSpeakerRenameSheet: View {
                       assignedElsewhere ? "Also assigned to another voice" : nil].compactMap { $0 })
             .joined(separator: ", ")
         return Button {
-            name = suggestion.name ?? ""
-            selectedCalendarIdentityID = suggestion.calendar?.id
-            profileID = nil
+            choose(suggestion)
         } label: {
             VStack(alignment: .leading, spacing: 5) {
                 Label(title, systemImage: selected ? "checkmark.circle.fill" : "person.crop.circle")
