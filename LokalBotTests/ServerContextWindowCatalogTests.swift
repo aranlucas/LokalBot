@@ -160,4 +160,20 @@ final class ServerContextWindowCatalogTests: XCTestCase {
             for: config, catalog: openRouter, servers: catalog(reporting), apiKey: { "k" })
         XCTAssertEqual(reported, 131_072)
     }
+
+    func testAnthropicReportsTheSelectedModelsInputWindow() async {
+        let server = Server(["https://api.anthropic.com/v1/models/claude-sonnet-5-5": (200, json([
+            "type": "model", "id": "claude-sonnet-5-5", "max_input_tokens": 1_000_000, "max_tokens": 128_000,
+        ]))])
+        let tokens = await catalog(server).contextTokens(
+            model: "claude-sonnet-5-5", baseURL: URL(string: "https://api.anthropic.com")!,
+            approvedOrigins: ["https://api.anthropic.com"], apiKey: { "sk-ant-test" })
+        XCTAssertEqual(tokens, 1_000_000)
+        let request = await server.recorded().first
+        XCTAssertEqual(request?.value(forHTTPHeaderField: "x-api-key"), "sk-ant-test")
+        XCTAssertEqual(request?.value(forHTTPHeaderField: "anthropic-version"), "2023-06-01")
+        XCTAssertNil(request?.value(forHTTPHeaderField: "Authorization"))
+        XCTAssertNil(ServerContextWindowCatalog.anthropicModelURL(
+            baseURL: URL(string: "https://api.anthropic.com")!, model: "../organizations"))
+    }
 }

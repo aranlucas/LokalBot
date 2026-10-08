@@ -147,7 +147,9 @@ enum TextEngineError: LocalizedError, Sendable {
     static func fromHTTPResponse(_ response: HTTPURLResponse?, data: Data) -> TextEngineError {
         guard let response else { return .badResponse("missing HTTP response") }
         let detail = serverErrorDetail(data)
+        // Anthropic's API names the header `request-id`.
         let requestID = response.value(forHTTPHeaderField: "x-request-id")
+            ?? response.value(forHTTPHeaderField: "request-id")
         let diagnostic = requestID.map { "\(detail) (request ID: \($0))" } ?? detail
         let retryAfter = response.value(forHTTPHeaderField: "Retry-After")
             .flatMap { TimeInterval($0) }
@@ -264,7 +266,7 @@ enum OpenAIStrictSchemaValidator {
 }
 
 /// Generation can legitimately take minutes for a long meeting on a laptop.
-private let llmSession = InferenceURLSession.make(requestTimeout: 600, resourceTimeout: 900)
+let llmSession = InferenceURLSession.make(requestTimeout: 600, resourceTimeout: 900)
 
 /// Strips `<think>…</think>` reasoning blocks that models like Qwen 3 and
 /// DeepSeek R1 emit before the actual answer.
@@ -447,7 +449,7 @@ struct OllamaEngine: TextEngine {
                                     reasoningLevel, taskBudget: options?.reasoningBudgetTokens))
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await send(request, base: baseURL)
+        let (data, response) = try await sendInferenceRequest(request, base: baseURL)
         let httpResponse = response as? HTTPURLResponse
         guard let status = httpResponse?.statusCode, (200...299).contains(status) else {
             throw TextEngineError.fromHTTPResponse(httpResponse, data: data)
@@ -575,7 +577,7 @@ struct OpenAICompatibleEngine: TextEngine {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let apiKey { request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization") }
         request.httpBody = try JSONSerialization.data(withJSONObject: ["content": text, "add_special": false])
-        let (data, response) = try await send(request, base: baseURL)
+        let (data, response) = try await sendInferenceRequest(request, base: baseURL)
         guard let status = (response as? HTTPURLResponse)?.statusCode, (200...299).contains(status),
               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let tokens = object["tokens"] as? [Int] else {
@@ -750,7 +752,7 @@ struct OpenAICompatibleEngine: TextEngine {
         let started = ProcessInfo.processInfo.systemUptime
         var metric = GenerationCallTelemetry(stage: MeetingGenerationBudget.stage, outcome: "failed", wallSeconds: 0)
         do {
-            let (data, response) = try await send(request, base: baseURL)
+            let (data, response) = try await sendInferenceRequest(request, base: baseURL)
             let httpResponse = response as? HTTPURLResponse
             guard let status = httpResponse?.statusCode, (200...299).contains(status) else {
                 let error = TextEngineError.fromHTTPResponse(httpResponse, data: data)
@@ -1193,7 +1195,7 @@ struct OpenAICompatibleEngine: TextEngine {
     }
 }
 
-private func send(_ request: URLRequest, base: URL) async throws -> (Data, URLResponse) {
+func sendInferenceRequest(_ request: URLRequest, base: URL) async throws -> (Data, URLResponse) {
     do {
         return try await llmSession.data(for: request)
     } catch is CancellationError {

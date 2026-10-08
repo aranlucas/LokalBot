@@ -124,7 +124,7 @@ struct ReasoningSupport: Equatable, Sendable {
 
 extension ReasoningSupport {
     enum Provider: Equatable, Sendable {
-        case builtIn, ollama, openAI, openRouter, cerebras, generic
+        case builtIn, ollama, openAI, openRouter, cerebras, anthropic, generic
 
         init(dialect: ChatCompletionDialect, baseURL: URL) {
             switch dialect {
@@ -133,7 +133,11 @@ extension ReasoningSupport {
             case .openRouter: self = .openRouter
             case .generic:
                 let host = baseURL.host?.lowercased() ?? ""
-                self = host == "cerebras.ai" || host.hasSuffix(".cerebras.ai") ? .cerebras : .generic
+                if AnthropicAPI.isAnthropic(baseURL) {
+                    self = .anthropic
+                } else {
+                    self = host == "cerebras.ai" || host.hasSuffix(".cerebras.ai") ? .cerebras : .generic
+                }
             }
         }
     }
@@ -159,6 +163,8 @@ extension ReasoningSupport {
             return family(name) ?? .common
         case .cerebras:
             return cerebras(name)
+        case .anthropic:
+            return AnthropicModelTraits(model: name).reasoningSupport
         case .generic:
             return family(name) ?? .common
         }
