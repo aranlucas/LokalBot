@@ -17,8 +17,9 @@ import uuid
 
 VARIANTS = {'neither': (False, False, False), 'visible': (True, False, False),
             'memory': (False, True, False), 'both': (True, True, False), 'all': (True, True, True)}
-# The focused-window (OCR) option, with the production policy (first 12,000
-# characters) or the last 2,000 characters, alone and with every other grant.
+# The focused-window (OCR) option, with the first 12,000 characters (the policy
+# before 2026-10-08) or the last 2,000 (the policy since), alone and with every
+# other grant. Both are passed explicitly, so either build reproduces both.
 WINDOW_POLICIES = {'head': {'limit': 12000, 'keepsEnd': False}, 'tail': {'limit': 2000, 'keepsEnd': True}}
 WINDOW_VARIANTS = {'window': ((False, False, False), 'head'), 'window-tail': ((False, False, False), 'tail'),
                    'all-window': ((True, True, True), 'head'), 'all-window-tail': ((True, True, True), 'tail')}

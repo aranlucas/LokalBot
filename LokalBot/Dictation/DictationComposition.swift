@@ -338,13 +338,16 @@ struct DictationComposeProfile: Equatable, Sendable {
 
 /// How much of the focused window's OCR text a Compose prompt keeps, and from
 /// which end. The replay benchmark varies it; production uses `.production`.
+/// Keeping the first 12,000 characters dropped the newest message of a long
+/// window (it sits at the bottom, next to the input field) and Compose answered
+/// from a stale one; the last 2,000 answered every window case.
 struct DictationWindowTextPolicy: Equatable, Sendable, Codable {
     var limit: Int
     /// Keep the bottom of the window (the newest messages, next to the input
     /// field) instead of the top.
     var keepsEnd: Bool
 
-    static let production = DictationWindowTextPolicy(limit: 12_000, keepsEnd: false)
+    static let production = DictationWindowTextPolicy(limit: 2_000, keepsEnd: true)
 
     func apply(_ text: String) -> String {
         guard keepsEnd else { return PromptContextSanitizer.sanitize(text, maxCharacters: limit) }

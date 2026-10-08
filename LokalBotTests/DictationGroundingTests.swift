@@ -133,13 +133,24 @@ final class DictationGroundingTests: XCTestCase {
             "Hey, reply with the deadline.", routing: .referencedRelays), "commands need no pointer")
     }
 
-    func testProductionRoutingIsTheOriginalCommandList() {
-        for speech in ["Tell him the time from above.", "Hey, reply with the deadline.", "Please reply.",
-                       "Molim te napiši odgovor.", "Thank you for your help."] {
-            XCTAssertEqual(DictationGrounding.requestsContext(speech),
-                           DictationGrounding.requestsContext(speech, routing: .commands), speech)
-        }
-        XCTAssertFalse(DictationGrounding.requestsContext("Tell him the time from above."))
+    /// Benchmarks/Dictation/results/2026-10-08-routing-window: the relay rule
+    /// that needs a pointer to context answered new requests without ever
+    /// routing a self-contained relay ("Tell him I am running late").
+    func testProductionRoutingRequiresAPointerForRelays() {
+        XCTAssertEqual(DictationRequestRouting.production, .referencedRelays)
+        XCTAssertTrue(DictationGrounding.requestsContext("Tell him the time from the message above."))
+        XCTAssertTrue(DictationGrounding.requestsContext("Hey, reply with the deadline."))
+        XCTAssertFalse(DictationGrounding.requestsContext("Tell him I am running 10 minutes late."))
+        XCTAssertFalse(DictationGrounding.requestsContext("Tell me if 14:00 works for you."))
+    }
+
+    func testWindowTextKeepsTheNewestLinesNextToTheField() {
+        let lines = (1...400).map { "Message number \($0) in the channel." } + ["Latest: release at 18:40."]
+        let kept = DictationWindowTextPolicy.production.apply(lines.joined(separator: "\n"))
+        XCTAssertLessThanOrEqual(kept.count, 2_000)
+        XCTAssertTrue(kept.hasSuffix("Latest: release at 18:40."))
+        XCTAssertFalse(kept.contains("Message number 1 in"), "the oldest lines are dropped")
+        XCTAssertEqual(DictationWindowTextPolicy.production.apply("Short window."), "Short window.")
     }
 
     func testRevokedGrantDuringModelPreparationPreventsGeneration() async throws {
