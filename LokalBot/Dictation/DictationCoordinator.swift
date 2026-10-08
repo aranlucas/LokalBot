@@ -68,6 +68,7 @@ final class DictationCoordinator: ObservableObject {
         flapPolicy: .dictation)
     private let inputMonitor = DictationInputMonitor()
     private let overlay: DictationOverlayController
+    private let settingsStore: SettingsStore
     private lazy var inserter = CotypingInserter()
     private var tick: AnyCancellable?
     private var prewarmTask: Task<Void, Never>?
@@ -121,6 +122,7 @@ final class DictationCoordinator: ObservableObject {
         }
     ) {
         self.storageRoot = storageRoot
+        self.settingsStore = settingsStore
         self.overlay = DictationOverlayController(settingsStore: settingsStore)
         self.settingsProvider = settingsProvider
         self.makeTextEngine = makeTextEngine
@@ -134,7 +136,9 @@ final class DictationCoordinator: ObservableObject {
         inputMonitor.triggerModeProvider = { [weak self] in
             self?.settingsProvider().dictationTriggerMode ?? .pushToTalk
         }
-        inputMonitor.shortcutProvider = { .handyDefault }
+        // Read on every key event, so go straight to the stored settings
+        // rather than the dictation provider, which also builds vocabulary.
+        inputMonitor.shortcutProvider = { [settingsStore] in settingsStore.current.dictationShortcut }
         inputMonitor.onStart = { [weak self] in self?.start(source: "shortcut") }
         inputMonitor.onStop = { [weak self] in self?.finishRecordingAndTranscribe(source: "shortcut") }
         inputMonitor.onToggle = { [weak self] in self?.toggle(source: "shortcut") }
@@ -237,6 +241,11 @@ final class DictationCoordinator: ObservableObject {
             }
         }
         refreshOverlay()
+    }
+
+    /// Lets Settings record a shortcut without the global one firing.
+    func setShortcutRecording(_ recording: Bool) {
+        inputMonitor.isSuspended = recording
     }
 
     func stop() {
@@ -602,7 +611,8 @@ final class DictationCoordinator: ObservableObject {
             modelPreparationError = Self.modelPreparationFailureMessage
             onError(
                 "Dictation is paused while its speech model needs attention. "
-                    + "Choose Retry in the dictation panel or press \(DictationShortcut.label).")
+                    + "Choose Retry in the dictation panel or press "
+                    + "\(settingsStore.current.dictationShortcut.displayLabel).")
             lokalbotLog(
                 "dictation model preparation FAILED model=\(choice.rawValue): "
                     + error.localizedDescription)

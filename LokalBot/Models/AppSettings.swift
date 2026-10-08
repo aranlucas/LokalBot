@@ -181,6 +181,7 @@ struct AppSettings: Codable, Equatable {
     var dictationUseMeetingMemory = false
     var dictationUseScreenMemory = false
     var dictationTriggerMode: DictationTriggerMode = .pushToTalk
+    var dictationShortcut: DictationShortcut = .handyDefault
     var dictationOutputMode: DictationOutputMode = .pasteIntoFocusedApp
     var dictationShowOverlay: Bool = true
     var dictationLivePreview: Bool = true
@@ -736,6 +737,7 @@ struct AppSettings: Codable, Equatable {
         case dictationIntent, dictationUseScreenContext
         case dictationUseVisibleContext, dictationUseMeetingMemory, dictationUseScreenMemory
         case dictationTriggerMode
+        case dictationShortcut
         case dictationOutputMode
         case dictationShowOverlay
         case dictationLivePreview
@@ -912,6 +914,7 @@ struct AppSettings: Codable, Equatable {
         try c.encode(dictationUseMeetingMemory, forKey: .dictationUseMeetingMemory)
         try c.encode(dictationUseScreenMemory, forKey: .dictationUseScreenMemory)
         try c.encode(dictationTriggerMode, forKey: .dictationTriggerMode)
+        try c.encode(dictationShortcut, forKey: .dictationShortcut)
         try c.encode(dictationOutputMode, forKey: .dictationOutputMode)
         try c.encode(dictationShowOverlay, forKey: .dictationShowOverlay)
         try c.encode(dictationLivePreview, forKey: .dictationLivePreview)
@@ -1065,6 +1068,9 @@ struct AppSettings: Codable, Equatable {
         dictationUseMeetingMemory = decode(.dictationUseMeetingMemory, false)
         dictationUseScreenMemory = decode(.dictationUseScreenMemory, false)
         dictationTriggerMode = decode(.dictationTriggerMode, defaults.dictationTriggerMode)
+        // A stored shortcut that would now block typing falls back to ⌥ Space.
+        let storedShortcut = decode(.dictationShortcut, defaults.dictationShortcut)
+        dictationShortcut = storedShortcut.problem == nil ? storedShortcut : defaults.dictationShortcut
         dictationOutputMode = decode(.dictationOutputMode, defaults.dictationOutputMode)
         dictationShowOverlay = decode(.dictationShowOverlay, defaults.dictationShowOverlay)
         dictationLivePreview = decode(.dictationLivePreview, defaults.dictationLivePreview)

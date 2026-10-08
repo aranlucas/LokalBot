@@ -524,12 +524,18 @@ enum DictationPreviewTextStitcher {
     }
 }
 
+/// The global dictation shortcut: one key plus modifiers. The event tap
+/// consumes it system-wide, so it must not be something people type.
 struct DictationShortcut: Equatable, Sendable {
     var keyCode: CGKeyCode
     var modifiers: CGEventFlags
 
+    init(keyCode: CGKeyCode, modifiers: CGEventFlags) {
+        self.keyCode = keyCode
+        self.modifiers = modifiers.dictationRelevantModifiers
+    }
+
     static let handyDefault = DictationShortcut(keyCode: 49, modifiers: .maskAlternate)
-    static let label = "⌥ Space"
 
     func matches(_ event: CGEvent) -> Bool {
         matchesKeyCode(event) && event.flags.dictationRelevantModifiers == modifiers
@@ -538,9 +544,90 @@ struct DictationShortcut: Equatable, Sendable {
     func matchesKeyCode(_ event: CGEvent) -> Bool {
         CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode)) == keyCode
     }
+
+    /// "⌥ Space", "⌃⇧ D", "F5".
+    var displayLabel: String {
+        let symbols = Self.modifierSymbols(modifiers)
+        let key = DictationShortcutKeyNames.name(for: keyCode)
+        return symbols.isEmpty ? key : "\(symbols) \(key)"
+    }
+
+    enum Problem: Equatable {
+        case reservedForCancel
+        case needsModifier
+        case commandOnly
+
+        var message: String {
+            switch self {
+            case .reservedForCancel:
+                "Esc cancels recording a shortcut. Choose another key."
+            case .needsModifier:
+                "Add ⌃, ⌥ or ⌘ so the shortcut does not block typing, or use a function key."
+            case .commandOnly:
+                "Apps use ⌘ with a single key. Add ⌃, ⌥ or ⇧."
+            }
+        }
+    }
+
+    /// Why this combination cannot be the global shortcut, or nil.
+    var problem: Problem? {
+        if keyCode == DictationShortcutKeyNames.escape { return .reservedForCancel }
+        if DictationShortcutKeyNames.isFunctionKey(keyCode) { return nil }
+        let typingSafe = modifiers.intersection([.maskControl, .maskAlternate, .maskCommand])
+        guard !typingSafe.isEmpty else { return .needsModifier }
+        if modifiers == .maskCommand, !DictationShortcutKeyNames.isNamedKey(keyCode) {
+            return .commandOnly
+        }
+        return nil
+    }
+
+    private static func modifierSymbols(_ modifiers: CGEventFlags) -> String {
+        var symbols = ""
+        if modifiers.contains(.maskControl) { symbols += "⌃" }
+        if modifiers.contains(.maskAlternate) { symbols += "⌥" }
+        if modifiers.contains(.maskShift) { symbols += "⇧" }
+        if modifiers.contains(.maskCommand) { symbols += "⌘" }
+        return symbols
+    }
 }
 
-private extension CGEventFlags {
+extension DictationShortcut: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case keyCode
+        case modifiers
+    }
+
+    private static let modifierNames: [(String, CGEventFlags)] = [
+        ("control", .maskControl),
+        ("option", .maskAlternate),
+        ("shift", .maskShift),
+        ("command", .maskCommand),
+    ]
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let keyCode = try c.decode(Int.self, forKey: .keyCode)
+        guard (0...Int(UInt16.max)).contains(keyCode) else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .keyCode, in: c, debugDescription: "Key code out of range")
+        }
+        let names = try c.decode([String].self, forKey: .modifiers)
+        var modifiers: CGEventFlags = []
+        for (name, flag) in Self.modifierNames where names.contains(name) {
+            modifiers.insert(flag)
+        }
+        self.init(keyCode: CGKeyCode(keyCode), modifiers: modifiers)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(Int(keyCode), forKey: .keyCode)
+        try c.encode(
+            Self.modifierNames.filter { modifiers.contains($0.1) }.map(\.0), forKey: .modifiers)
+    }
+}
+
+extension CGEventFlags {
     var dictationRelevantModifiers: CGEventFlags {
         intersection([.maskCommand, .maskControl, .maskAlternate, .maskShift])
     }

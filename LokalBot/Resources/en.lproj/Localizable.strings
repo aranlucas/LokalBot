@@ -37,6 +37,7 @@
 "Add model" = "Add model";
 "Add names LokalBot already knows" = "Add names LokalBot already knows";
 "Add ~/.local/bin to PATH" = "Add ~/.local/bin to PATH";
+"Add ⌃, ⌥ or ⌘ so the shortcut does not block typing, or use a function key." = "Add ⌃, ⌥ or ⌘ so the shortcut does not block typing, or use a function key.";
 "Additional saved audio is outside the meeting boundaries." = "Additional saved audio is outside the meeting boundaries.";
 "Adds titles of documents and pages captured during the call, never their captured text. Requires screen context in Day Memory." = "Adds titles of documents and pages captured during the call, never their captured text. Requires screen context in Day Memory.";
 "Advanced" = "Advanced";
@@ -74,6 +75,7 @@
 "Apply Choices and Start" = "Apply Choices and Start";
 "Apply policy and cleanup" = "Apply policy and cleanup";
 "Apply…" = "Apply…";
+"Apps use ⌘ with a single key. Add ⌃, ⌥ or ⇧." = "Apps use ⌘ with a single key. Add ⌃, ⌥ or ⇧.";
 "Archived" = "Archived";
 "Arrived in the field" = "Arrived in the field";
 "Ask" = "Ask";
@@ -134,6 +136,7 @@
 "Captured" = "Captured";
 "Captured screen" = "Captured screen";
 "Captures encrypted visuals for day memory. Only used in Text + visual context mode; system-audio capture does not use this permission." = "Captures encrypted visuals for day memory. Only used in Text + visual context mode; system-audio capture does not use this permission.";
+"Change the dictation shortcut" = "Change the dictation shortcut";
 "Changes the interface immediately. Transcription and notes languages are set separately." = "Changes the interface immediately. Transcription and notes languages are set separately.";
 "Change…" = "Change…";
 "Check Setup…" = "Check Setup…";
@@ -306,6 +309,7 @@
 "Enabled" = "Enabled";
 "End (seconds)" = "End (seconds)";
 "English" = "English";
+"Esc cancels recording a shortcut. Choose another key." = "Esc cancels recording a shortcut. Choose another key.";
 "Escape on a suggestion" = "Escape on a suggestion";
 "Every app and window is tracked, including browsers and private windows. Add apps or sites here to keep them out. Password managers (Passwords, Keychain Access, 1Password, Bitwarden, KeePassXC), focused password fields, and detected credentials are never captured." = "Every app and window is tracked, including browsers and private windows. Add apps or sites here to keep them out. Password managers (Passwords, Keychain Access, 1Password, Bitwarden, KeePassXC), focused password fields, and detected credentials are never captured.";
 "Every source remains attached to its original meeting." = "Every source remains attached to its original meeting.";
@@ -649,7 +653,10 @@
 "Preparing…" = "Preparing…";
 "Preset" = "Preset";
 "Presets" = "Presets";
+"Press %@ again to compose" = "Press %@ again to compose";
+"Press a shortcut…" = "Press a shortcut…";
 "Press Delete or use the list menu to remove them." = "Press Delete or use the list menu to remove them.";
+"Press the new shortcut, or Esc to cancel." = "Press the new shortcut, or Esc to cancel.";
 "Preview attached source" = "Preview attached source";
 "Preview only. The session starts when you choose Open." = "Preview only. The session starts when you choose Open.";
 "Preview paused. Recording continues; resume picks up where you left off." = "Preview paused. Recording continues; resume picks up where you left off.";

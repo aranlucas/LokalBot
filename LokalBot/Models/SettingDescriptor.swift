@@ -142,6 +142,7 @@ struct SettingDescriptor: Identifiable {
         .init(id: "settings.cotypingExcludedDomains", title: "Never suggest on these sites", category: .writing, aliases: "exclude autocomplete websites"),
         .init(id: "settings.dayDigestCustomPrompt", title: "Digest instructions", category: .dayMemory, aliases: "prompt daily journal"),
         .init(id: "settings.dictationEnabled", title: "Enable dictation shortcut", category: .writing, aliases: "speech voice global"),
+        .init(id: "settings.dictationShortcut", title: "Dictation shortcut", category: .writing, aliases: "hotkey keyboard key combination change"),
         .init(id: "settings.dictationTriggerMode", title: "Dictation trigger", category: .writing, aliases: "push to talk toggle"),
         .init(id: "settings.dictationOutputMode", title: "Dictation output", category: .writing, aliases: "clipboard paste focused app"),
         .init(id: "settings.dictationShowOverlay", title: "Show floating dictation status", category: .writing, aliases: "overlay pill"),

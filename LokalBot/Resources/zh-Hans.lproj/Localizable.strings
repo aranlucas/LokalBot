@@ -37,6 +37,7 @@
 "Add model" = "添加模型";
 "Add names LokalBot already knows" = "添加 LokalBot 已知的姓名";
 "Add ~/.local/bin to PATH" = "将 ~/.local/bin 加入 PATH";
+"Add ⌃, ⌥ or ⌘ so the shortcut does not block typing, or use a function key." = "请加上 ⌃、⌥ 或 ⌘，以免快捷键妨碍打字；也可以使用功能键。";
 "Additional saved audio is outside the meeting boundaries." = "另有已保存的音频位于会议范围之外。";
 "Adds titles of documents and pages captured during the call, never their captured text. Requires screen context in Day Memory." = "添加通话期间采集的文档和页面标题，绝不添加其中采集的正文。需要在工作记忆中启用屏幕上下文。";
 "Advanced" = "高级";
@@ -74,6 +75,7 @@
 "Apply Choices and Start" = "应用选择并开始";
 "Apply policy and cleanup" = "应用策略并清理";
 "Apply…" = "应用…";
+"Apps use ⌘ with a single key. Add ⌃, ⌥ or ⇧." = "应用会将 ⌘ 与单个按键组合使用。请加上 ⌃、⌥ 或 ⇧。";
 "Archived" = "已归档";
 "Arrived in the field" = "已填入输入框";
 "Ask" = "问答";
@@ -134,6 +136,7 @@
 "Captured" = "已采集";
 "Captured screen" = "已采集的屏幕";
 "Captures encrypted visuals for day memory. Only used in Text + visual context mode; system-audio capture does not use this permission." = "为工作记忆采集加密图像。仅在“文字与视觉上下文”模式下使用；系统音频采集不使用此权限。";
+"Change the dictation shortcut" = "更改听写快捷键";
 "Changes the interface immediately. Transcription and notes languages are set separately." = "立即切换界面语言。转写和笔记的语言需单独设置。";
 "Change…" = "更改…";
 "Check Setup…" = "检查配置…";
@@ -306,6 +309,7 @@
 "Enabled" = "已启用";
 "End (seconds)" = "结束（秒）";
 "English" = "English";
+"Esc cancels recording a shortcut. Choose another key." = "Esc 用于取消录制快捷键。请选择其他按键。";
 "Escape on a suggestion" = "显示建议时按 Esc";
 "Every app and window is tracked, including browsers and private windows. Add apps or sites here to keep them out. Password managers (Passwords, Keychain Access, 1Password, Bitwarden, KeePassXC), focused password fields, and detected credentials are never captured." = "会追踪所有应用和窗口，包括浏览器和隐私窗口。在此添加不希望采集的应用或网站。密码管理器（密码、钥匙串访问、1Password、Bitwarden、KeePassXC）、当前聚焦的密码字段以及检测到的凭据始终不会被采集。";
 "Every source remains attached to its original meeting." = "每个来源仍关联其原始会议。";
@@ -649,7 +653,10 @@
 "Preparing…" = "正在准备…";
 "Preset" = "预设";
 "Presets" = "预设";
+"Press %@ again to compose" = "再次按 %@ 开始撰写";
+"Press a shortcut…" = "按下快捷键…";
 "Press Delete or use the list menu to remove them." = "按 Delete 或使用列表菜单移除。";
+"Press the new shortcut, or Esc to cancel." = "按下新的快捷键，或按 Esc 取消。";
 "Preview attached source" = "预览附加来源";
 "Preview only. The session starts when you choose Open." = "仅预览。选择“打开”后才会启动会话。";
 "Preview paused. Recording continues; resume picks up where you left off." = "预览已暂停，录制仍在继续。恢复后将从暂停处继续。";

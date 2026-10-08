@@ -144,9 +144,10 @@ final class DictationReliabilityTests: XCTestCase {
     }
 
     func testReadyTextMatchesTheTriggerMode() {
-        XCTAssertTrue(DictationView.readyText(triggerMode: .pushToTalk).contains("hold"))
-        XCTAssertFalse(DictationView.readyText(triggerMode: .toggle).contains("hold"))
-        XCTAssertTrue(DictationView.readyText(triggerMode: .toggle).contains("press"))
+        let shortcut = DictationShortcut.handyDefault
+        XCTAssertTrue(DictationView.readyText(triggerMode: .pushToTalk, shortcut: shortcut).contains("hold"))
+        XCTAssertFalse(DictationView.readyText(triggerMode: .toggle, shortcut: shortcut).contains("hold"))
+        XCTAssertTrue(DictationView.readyText(triggerMode: .toggle, shortcut: shortcut).contains("press"))
     }
 
     // MARK: - Delivery target

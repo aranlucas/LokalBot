@@ -246,7 +246,10 @@ struct MenuBarView: View {
         if app.dictation.isStarting { return Text("Connecting to the microphone") }
         switch app.dictation.state {
         case .recording:
-            return Text("Release \(DictationShortcut.label) to compose")
+            let shortcut = app.settings.dictationShortcut.displayLabel
+            return app.settings.dictationTriggerMode == .toggle
+                ? Text("Press \(shortcut) again to compose")
+                : Text("Release \(shortcut) to compose")
         case .transcribing:
             return Text("Turning speech into a writing request")
         case .composing:
@@ -445,7 +448,7 @@ struct MenuBarView: View {
                 .frame(width: 18)
             VStack(alignment: .leading, spacing: 1) {
                 Text("Dictation").font(.scaled(.callout).weight(.medium))
-                Text("Shortcut · \(DictationShortcut.label)")
+                Text("Shortcut · \(app.settings.dictationShortcut.displayLabel)")
                     .font(.scaled(.caption2))
                     .foregroundStyle(.secondary)
             }
@@ -454,7 +457,7 @@ struct MenuBarView: View {
                 .labelsHidden()
                 .toggleStyle(.switch)
                 .controlSize(.mini)
-                .help("Enable the \(DictationShortcut.label) dictation shortcut")
+                .help("Enable the \(app.settings.dictationShortcut.displayLabel) dictation shortcut")
             Button {
                 app.dictation.toggle(source: "menubar")
             } label: {

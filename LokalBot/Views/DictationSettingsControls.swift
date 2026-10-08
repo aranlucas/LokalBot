@@ -11,7 +11,12 @@ struct DictationSettingsControls: View {
                 .accessibilityLabel("Enable dictation shortcut")
                 .accessibilityIdentifier("settings.dictationEnabled")
                 .settingTarget("settings.dictationEnabled", selected: app.focusedSettingID)
-            LabeledContent("Shortcut", value: DictationShortcut.label)
+            LabeledContent("Shortcut") {
+                DictationShortcutRecorder(shortcut: $app.settings.dictationShortcut) { recording in
+                    app.dictation.setShortcutRecording(recording)
+                }
+            }
+            .settingTarget("settings.dictationShortcut", selected: app.focusedSettingID)
             Picker("Trigger", selection: $app.settings.dictationTriggerMode) {
                 ForEach(DictationTriggerMode.allCases) { Text(LocalizedStringKey($0.label)).tag($0) }
             }.settingTarget("settings.dictationTriggerMode", selected: app.focusedSettingID)

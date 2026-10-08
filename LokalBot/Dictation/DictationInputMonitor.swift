@@ -14,6 +14,9 @@ final class DictationInputMonitor {
     private var tap: CFMachPort?
     private var source: CFRunLoopSource?
     private(set) var isRunning = false
+    /// While Settings records a new shortcut, every key passes through so the
+    /// current shortcut can be pressed (and recorded) without starting dictation.
+    var isSuspended = false
     private var shortcutIsDown = false
     private var activeTriggerMode: DictationTriggerMode?
     private var activeShortcut: DictationShortcut?
@@ -76,7 +79,7 @@ final class DictationInputMonitor {
             if shouldStop { onStop?() }
             return false
         }
-        guard type == .keyDown || type == .keyUp else { return false }
+        guard type == .keyDown || type == .keyUp, !isSuspended else { return false }
 
         let shortcut = shortcutProvider()
         let isMatchingShortcut = shortcut.matches(event)
