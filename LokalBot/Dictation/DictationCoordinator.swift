@@ -61,7 +61,7 @@ final class DictationCoordinator: ObservableObject {
     private let focusSnapshotExecutor: DictationFocusSnapshotExecutor
     private let recorder = MicRecorder()
     private let inputMonitor = DictationInputMonitor()
-    private let overlay = DictationOverlayController()
+    private let overlay: DictationOverlayController
     private lazy var inserter = CotypingInserter()
     private var tick: AnyCancellable?
     private var prewarmTask: Task<Void, Never>?
@@ -94,6 +94,7 @@ final class DictationCoordinator: ObservableObject {
 
     init(
         storageRoot: URL,
+        settingsStore: SettingsStore,
         settingsProvider: @escaping () -> AppSettings,
         makeTextEngine: @escaping (AppSettings) async throws -> TextEngine,
         canStart: @escaping () -> Bool,
@@ -111,6 +112,7 @@ final class DictationCoordinator: ObservableObject {
         }
     ) {
         self.storageRoot = storageRoot
+        self.overlay = DictationOverlayController(settingsStore: settingsStore)
         self.settingsProvider = settingsProvider
         self.makeTextEngine = makeTextEngine
         self.screenContextProvider = screenContextProvider

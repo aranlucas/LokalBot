@@ -309,7 +309,7 @@ struct LokalBotApp: App {
             OnboardingView()
                 .environmentObject(app)
                 .appTextSizeRoot(app.settings.textSize)
-                .environment(\.locale, app.settings.appLanguage.locale)
+                .appLanguageRoot(app.settingsStore)
         }
         .windowResizability(.contentSize)
 
@@ -320,7 +320,7 @@ struct LokalBotApp: App {
                 .environmentObject(app)
                 .brandTinted()
                 .appTextSizeRoot(app.settings.textSize)
-                .environment(\.locale, app.settings.appLanguage.locale)
+                .appLanguageRoot(app.settingsStore)
         }
         .windowResizability(.contentSize)
         .windowStyle(.hiddenTitleBar)
@@ -331,7 +331,7 @@ struct LokalBotApp: App {
                 .environmentObject(app)
                 .brandTinted()
                 .appTextSizeRoot(app.settings.textSize)
-                .environment(\.locale, app.settings.appLanguage.locale)
+                .appLanguageRoot(app.settingsStore)
         }
         .windowResizability(.contentSize)
         .windowStyle(.hiddenTitleBar)
@@ -343,10 +343,10 @@ struct LokalBotApp: App {
                 .environmentObject(app)
                 .brandTinted()
                 .appTextSizeRoot(app.settings.textSize)
-                .environment(\.locale, app.settings.appLanguage.locale)
+                .appLanguageRoot(app.settingsStore)
         } label: {
             MenuBarLabel(app: app, dictation: app.dictation)
-                .environment(\.locale, app.settings.appLanguage.locale)
+                .appLanguageRoot(app.settingsStore)
         }
         .menuBarExtraStyle(.window)
 #endif
@@ -357,7 +357,7 @@ struct LokalBotApp: App {
             .environmentObject(app)
             .brandTinted()
             .appTextSizeRoot(app.settings.textSize)
-            .environment(\.locale, app.settings.appLanguage.locale)
+            .appLanguageRoot(app.settingsStore)
     }
 }
 

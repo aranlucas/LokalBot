@@ -210,11 +210,15 @@ System mode uses the first supported language in the macOS preference list,
 maps Chinese variants to Simplified Chinese, and falls back to English.
 
 Interface translations live in `LokalBot/Resources/{en,zh-Hans}.lproj/Localizable.strings`.
-SwiftUI window roots set the selected locale; app-owned dynamic labels explicitly
+SwiftUI and AppKit hosting roots use `appLanguageRoot(settingsStore)` to observe
+the selected locale, including already-open dictation overlays and the UI test
+host; app-owned dynamic labels explicitly
 use `LocalizedStringKey`, while native menus use `AppLanguage.localized`.
 Keep user content verbatim and add matching entries to both tables.
 `AppLanguageTests` covers preference migration, persistence, language resolution,
-bundled lookup, and translated settings search. Run
+bundled lookup, and translated settings search. `AppLanguageRootTests` verifies
+live locale propagation and preserved content identity in offscreen hosting
+views. Hosted Settings and Onboarding UI tests cover switching and relaunch. Run
 `python3 -m unittest discover -s Scripts/tests -p test_localization.py` to check
 translation key parity and format arguments without building the app.
 

@@ -3,8 +3,13 @@ import SwiftUI
 
 @MainActor
 final class DictationOverlayController {
+    private let settingsStore: SettingsStore
     private var panel: NSPanel?
-    private var hostingView: NSHostingView<DictationOverlayView>?
+    private var hostingView: NSHostingView<AppLanguageRoot<DictationOverlayView>>?
+
+    init(settingsStore: SettingsStore) {
+        self.settingsStore = settingsStore
+    }
 
     func update(for dictation: DictationCoordinator, visible: Bool) {
         guard visible, dictation.state.isWorking || dictation.isStarting else {
@@ -25,13 +30,15 @@ final class DictationOverlayController {
             panel.level = .floating
             panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
 
-            let hosting = NSHostingView(rootView: DictationOverlayView(dictation: dictation))
+            let hosting = NSHostingView(rootView: DictationOverlayView(dictation: dictation)
+                .appLanguageRoot(settingsStore))
             hosting.frame = NSRect(origin: .zero, size: size)
             panel.contentView = hosting
             self.panel = panel
             self.hostingView = hosting
         }
         hostingView?.rootView = DictationOverlayView(dictation: dictation)
+            .appLanguageRoot(settingsStore)
         hostingView?.frame = NSRect(origin: .zero, size: size)
         positionPanel(size: size)
         panel?.orderFrontRegardless()

@@ -40,6 +40,17 @@ final class OnboardingUITests: XCTestCase {
         UITestHarness.cleanUp(defaultsSuiteName: defaultsSuiteName)
     }
 
+    func testLanguageSwitchKeepsTheOpenWizardOnItsCurrentStep() {
+        UITestHarness.selectSegment("English", pickerIdentifier: "onboarding.appLanguage", in: app)
+        app.buttons["Continue"].click()
+        XCTAssertTrue(text(containing: "Enable the Access You Need").waitForExistence(timeout: 6))
+        UITestHarness.selectSegment("简体中文", pickerIdentifier: "onboarding.appLanguage", in: app)
+        XCTAssertTrue(text(containing: "启用所需权限").waitForExistence(timeout: 6),
+                      "The existing onboarding host must update its locale")
+        UITestHarness.selectSegment("English", pickerIdentifier: "onboarding.appLanguage", in: app)
+        assertPage(title: "Enable the Access You Need", step: 2)
+    }
+
     func testWizardExplainsDayMemoryDefaultsAndPermissionGates() {
         let before = UserDefaults(suiteName: defaultsSuiteName!)?.data(forKey: "lokalbotv3.settings")
         assertPage(title: "Choose what to remember", step: 1)

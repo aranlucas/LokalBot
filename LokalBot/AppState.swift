@@ -701,6 +701,7 @@ final class AppState: ObservableObject {
     /// delivery inserts it.
     private(set) lazy var dictation = DictationCoordinator(
         storageRoot: storage.rootURL,
+        settingsStore: settingsStore,
         settingsProvider: { [weak self, store = settingsStore] in
             self?.dictationTranscriptionSettings(store.current) ?? store.current
         },
