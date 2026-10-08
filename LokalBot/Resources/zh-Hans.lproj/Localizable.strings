@@ -556,6 +556,7 @@
 "No projects or goals have been identified yet." = "尚未识别到项目或目标。";
 "No remote servers approved" = "尚未授权远程服务器";
 "No speech detected. Saved audio remains available for playback and export." = "未检测到语音。已保存的音频仍可回放和导出。";
+"No suggested names match this search." = "没有与此搜索匹配的建议姓名。";
 "No supporting passage was stored." = "未保存支持此内容的片段。";
 "No transcript speakers are available yet." = "转写中暂时没有可用的说话人。";
 "None yet" = "暂无";
@@ -816,6 +817,7 @@
 "Search results" = "搜索结果";
 "Search settings" = "搜索设置";
 "Search settings…" = "搜索设置…";
+"Search suggested names" = "搜索建议姓名";
 "Search tasks" = "搜索任务";
 "Search this meeting" = "搜索此会议";
 "Search vectors to remove" = "将删除的搜索向量";

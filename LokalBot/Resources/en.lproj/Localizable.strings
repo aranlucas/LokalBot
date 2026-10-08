@@ -556,6 +556,7 @@
 "No projects or goals have been identified yet." = "No projects or goals have been identified yet.";
 "No remote servers approved" = "No remote servers approved";
 "No speech detected. Saved audio remains available for playback and export." = "No speech detected. Saved audio remains available for playback and export.";
+"No suggested names match this search." = "No suggested names match this search.";
 "No supporting passage was stored." = "No supporting passage was stored.";
 "No transcript speakers are available yet." = "No transcript speakers are available yet.";
 "None yet" = "None yet";
@@ -816,6 +817,7 @@
 "Search results" = "Search results";
 "Search settings" = "Search settings";
 "Search settings…" = "Search settings…";
+"Search suggested names" = "Search suggested names";
 "Search tasks" = "Search tasks";
 "Search this meeting" = "Search this meeting";
 "Search vectors to remove" = "Search vectors to remove";
