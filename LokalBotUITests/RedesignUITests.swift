@@ -604,10 +604,13 @@ final class RedesignUITests: XCTestCase {
         XCTAssertEqual(UserDefaults(suiteName: suite!)?.data(forKey: "lokalbotv3.settings"), before)
     }
 
-    func testFourHundredActionsStaySearchableAndCompletionCanBeUndone() throws {
+    func testActionSearchPreservesSelectionAndCompletionCanBeUndone() throws {
         let folder = fixture.folder(for: fixture.designReview)
-        let actions: [[String: Any]] = (0..<400).map { index in
-            ["id": "large-action-\(index)", "schemaVersion": 2, "text": "Synthetic commitment \(index)",
+        // Large-list persistence and undo belong to RedesignContractTests, which
+        // covers 0, 40 and 400 actions without an accessibility snapshot of every row.
+        // Two distinct actions exercise filtering and hidden selection here.
+        let actions: [[String: Any]] = (0..<2).map { index in
+            ["id": "search-action-\(index)", "schemaVersion": 2, "text": "Synthetic commitment \(index)",
              "owner": "Me", "isForUser": true, "due": "Friday", "citations": []]
         }
         let data = try JSONSerialization.data(withJSONObject: ["schemaVersion": 2, "actionItems": actions])
@@ -616,30 +619,30 @@ final class RedesignUITests: XCTestCase {
         app.buttons["outcomes.review"].click()
         let search = app.textFields["actions.search"]
         XCTAssertTrue(search.waitForExistence(timeout: 5))
-        search.click(); search.typeText("Synthetic commitment 399")
+        search.click(); search.typeText("Synthetic commitment 1")
         // Failure messages repeat the action title; inspect only its list row.
         let action = element("actions.list").staticTexts.matching(
             NSPredicate(format: "label == %@ OR value == %@",
-                        "Synthetic commitment 399", "Synthetic commitment 399")).firstMatch
+                        "Synthetic commitment 1", "Synthetic commitment 1")).firstMatch
         XCTAssertTrue(action.waitForExistence(timeout: 5))
         action.click()
         search.click(); search.typeKey("a", modifierFlags: .command)
-        search.typeText("Synthetic commitment 398")
+        search.typeText("Synthetic commitment 0")
         XCTAssertTrue(element("actions.selection.hidden").waitForExistence(timeout: 5),
                       "Filtering should preserve the selected action while excluding it from the batch")
         XCTAssertFalse(element("actions.batch").exists, "The batch menu appears only for visible selections")
         search.click(); search.typeKey("a", modifierFlags: .command)
-        search.typeText("Synthetic commitment 399")
+        search.typeText("Synthetic commitment 1")
         XCTAssertTrue(action.waitForExistence(timeout: 5))
         XCTAssertTrue(element("actions.batch").waitForExistence(timeout: 3), "Returning to the action should restore its selection")
         XCTAssertFalse(element("actions.selection.hidden").exists)
-        let complete = app.buttons["outcome.action.toggle.\(fixture.designReview.id.uuidString):large-action-399"]
+        let complete = app.buttons["outcome.action.toggle.\(fixture.designReview.id.uuidString):search-action-1"]
         XCTAssertTrue(complete.waitForExistence(timeout: 4))
         complete.click()
         XCTAssertTrue(UITestHarness.waitUntil { !action.exists })
         app.buttons["outcomes.undo"].click()
         XCTAssertTrue(action.waitForExistence(timeout: 5))
-        snapshot("four-hundred-actions-search-and-undo")
+        snapshot("actions-search-and-undo")
         let stateFile = folder.appendingPathComponent("outcome-state.json")
         try withBlockedStateFile(stateFile) {
             complete.click()
