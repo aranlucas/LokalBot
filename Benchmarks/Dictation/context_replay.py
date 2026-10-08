@@ -17,6 +17,20 @@ import uuid
 
 VARIANTS = {'neither': (False, False, False), 'visible': (True, False, False),
             'memory': (False, True, False), 'both': (True, True, False), 'all': (True, True, True)}
+# The focused-window (OCR) option, with the production policy (first 12,000
+# characters) or the last 2,000 characters, alone and with every other grant.
+WINDOW_POLICIES = {'head': {'limit': 12000, 'keepsEnd': False}, 'tail': {'limit': 2000, 'keepsEnd': True}}
+WINDOW_VARIANTS = {'window': ((False, False, False), 'head'), 'window-tail': ((False, False, False), 'tail'),
+                   'all-window': ((True, True, True), 'head'), 'all-window-tail': ((True, True, True), 'tail')}
+VARIANT_SETS = {'context': list(VARIANTS), 'full': list(VARIANTS) + list(WINDOW_VARIANTS)}
+
+
+def flags(variant):
+    """(visible, meetings, screens, window policy name or None) for a variant."""
+    if variant in WINDOW_VARIANTS:
+        grants, policy = WINDOW_VARIANTS[variant]
+        return (*grants, policy)
+    return (*VARIANTS[variant], None)
 
 
 def digest(path):
@@ -37,21 +51,26 @@ def contains(text, phrase):
 
 
 def replay_input(corpus, cases, variant):
-    visible, meetings, screens = VARIANTS[variant]
-    allowed = {'id', 'speech', 'visible', 'transcribe'}
-    return {'cases': [{k: v for k, v in case.items() if k in allowed} for case in cases],
+    visible, meetings, screens, window = flags(variant)
+    allowed = {'id', 'speech', 'visible', 'transcribe', 'screen'}
+    data = {'cases': [{k: v for k, v in case.items() if k in allowed} for case in cases],
             'memoryItems': corpus['memoryItems'], 'now': corpus['now'],
             'useVisibleContext': visible, 'useMeetingMemory': meetings, 'useScreenMemory': screens}
+    if window:
+        data.update(useScreenContext=True, windowTextPolicy=WINDOW_POLICIES[window])
+    return data
 
 
-def score(cases, runs):
+def score(cases, runs, variants=None):
+    variants = list(VARIANTS) if variants is None else variants
     ids = [case['id'] for case in cases]
     if any(type(case.get('contextEligible')) is not bool for case in cases):
         raise ValueError('Every case needs an external context-eligibility reference label')
-    if set(runs) != set(VARIANTS):
+    if set(runs) != set(variants):
         raise ValueError('All context conditions are required')
     rows = []
-    for variant, (visible, meetings, screens) in VARIANTS.items():
+    for variant in variants:
+        visible, meetings, screens, window = flags(variant)
         if [row['id'] for row in runs[variant]] != ids:
             raise ValueError('Missing, reordered, duplicate or unexpected observations')
         for case, output in zip(cases, runs[variant]):
@@ -72,6 +91,7 @@ def score(cases, runs):
                          'visibleSelectionCorrect': output['visibleIDs'] == expected_visible,
                          'forbiddenReads': sorted(set(output['textReadIDs']) - set(allowed_reads)),
                          'modelCallsCorrect': output['modelCalls'] == (0 if transcribe else 1),
+                         'screenReadsCorrect': output.get('screenReads', 0) == (1 if window and eligible else 0),
                          'error': output.get('error'), 'latencyMs': output['latencyMs']})
     controls = []
     for i, case in enumerate(cases):
@@ -82,12 +102,13 @@ def score(cases, runs):
             (run[i]['text'], run[i]['prompt'], run[i]['system']) == (base['text'], base['prompt'], base['system'])
             for run in runs.values())})
     summary = {}
-    for variant in VARIANTS:
+    for variant in variants:
         own = [r for r in rows if r['variant'] == variant]
         summary[variant] = {'cases': len(own), 'errors': sum(bool(r['error']) for r in own),
                             'selectionFailures': sum(not r['memorySelectionCorrect'] or not r['visibleSelectionCorrect'] for r in own),
                             'forbiddenReads': sum(bool(r['forbiddenReads']) for r in own),
                             'modelCallFailures': sum(not r['modelCallsCorrect'] for r in own),
+                            'screenReadFailures': sum(not r['screenReadsCorrect'] for r in own),
                             'medianMs': statistics.median(r['latencyMs'] for r in own if r['kind'] != 'transcribe'),
                             'byKind': {kind: {'correct': sum(r['correct'] for r in own if r['kind'] == kind),
                                              'cases': sum(r['kind'] == kind for r in own)}
@@ -103,7 +124,10 @@ def main():
     parser.add_argument('--split', choices=['development', 'heldout'], required=True)
     parser.add_argument('--corpus', type=Path, default=Path(__file__).with_name('context-cases.json'))
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--variant-set', choices=sorted(VARIANT_SETS), default='context',
+                        help='context: the five grant conditions; full: also the focused-window option')
     args = parser.parse_args()
+    variants = VARIANT_SETS[args.variant_set]
     args.output.mkdir(parents=True, exist_ok=False)
     corpus = json.loads(args.corpus.read_text())
     cases = [c for c in corpus['cases'] if c['split'] == args.split]
@@ -118,6 +142,7 @@ def main():
     manifest = {'appSHA256': digest(args.app), 'serverSHA256': digest(args.server), 'modelSHA256': digest(args.model),
                 'modelFile': args.model.name, 'corpusSHA256': digest(args.corpus), 'scriptSHA256': digest(__file__),
                 'split': args.split, 'caseIDs': [c['id'] for c in cases], 'serverArguments': command,
+                'variants': variants, 'windowPolicies': WINDOW_POLICIES,
                 'settings': 'Production Compose: temperature 0.2, max 4096 output tokens, reasoning disabled; fixed server seed',
                 'scope': 'Synthetic recognized speech, AX trees and saved facts. No microphone, live screen or user library.'}
     (args.output / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
@@ -139,7 +164,7 @@ def main():
                 if time.monotonic() > deadline:
                     raise TimeoutError('Local model did not become ready')
                 time.sleep(0.2)
-            for variant in VARIANTS:
+            for variant in variants:
                 fixture = args.output / f'{variant}-input.json'
                 fixture.write_text(json.dumps(replay_input(corpus, cases, variant), ensure_ascii=False) + '\n')
                 with tempfile.TemporaryDirectory(prefix='lokalbot-dictation-eval-') as temporary:
@@ -161,12 +186,13 @@ def main():
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait()
-    report = score(cases, runs)
+    report = score(cases, runs, variants)
     report['manifest'] = manifest
     (args.output / 'report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2) + '\n')
     print(json.dumps(report['summary'], indent=2), flush=True)
     if any(r['error'] or r['forbiddenReads'] or not r['memorySelectionCorrect'] or not r['visibleSelectionCorrect']
-           or not r['modelCallsCorrect'] for r in report['cases']) or not all(c['unchanged'] for c in report['controls']):
+           or not r['modelCallsCorrect'] or not r['screenReadsCorrect'] for r in report['cases']) \
+            or not all(c['unchanged'] for c in report['controls']):
         raise SystemExit(1)
 
 

@@ -26,6 +26,7 @@ enum DictationTextPreparation {
         currentSettings: @escaping () -> AppSettings? = { nil },
         validateVisibleContext: (CotypingVisibleContext.Snapshot) async -> Bool = { _ in false },
         validateScreenContext: (DictationScreenContext) async -> Bool = { _ in false },
+        windowTextPolicy: DictationWindowTextPolicy = .production,
         makeEngine: (AppSettings) async throws -> TextEngine
     ) async throws -> Result {
         try Task.checkCancellation()
@@ -64,7 +65,8 @@ enum DictationTextPreparation {
         let prompt = DictationComposePrompt.userPrompt(
             spokenText: speech, context: context,
             profile: DictationComposeProfile(personalization: settings.cotypingPersonalization),
-            visibleContext: visible?.text, memoryContext: memory.selection.text)
+            visibleContext: visible?.text, memoryContext: memory.selection.text,
+            windowTextPolicy: windowTextPolicy)
         // Someone is waiting to insert this text. Without options the built-in
         // server would allow an 8K-token thinking turn before any visible text.
         let output = try await engine.generate(system: DictationComposePrompt.system, prompt: prompt, context: [],

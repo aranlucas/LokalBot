@@ -336,6 +336,29 @@ struct DictationComposeProfile: Equatable, Sendable {
     static let none = Self(personalization: .none)
 }
 
+/// How much of the focused window's OCR text a Compose prompt keeps, and from
+/// which end. The replay benchmark varies it; production uses `.production`.
+struct DictationWindowTextPolicy: Equatable, Sendable, Codable {
+    var limit: Int
+    /// Keep the bottom of the window (the newest messages, next to the input
+    /// field) instead of the top.
+    var keepsEnd: Bool
+
+    static let production = DictationWindowTextPolicy(limit: 12_000, keepsEnd: false)
+
+    func apply(_ text: String) -> String {
+        guard keepsEnd else { return PromptContextSanitizer.sanitize(text, maxCharacters: limit) }
+        let clean = PromptContextSanitizer.sanitize(text)
+        guard limit > 1, clean.count > limit else { return limit > 0 ? clean : "" }
+        var tail = clean.suffix(limit - 1)
+        // Start at a line boundary so the first kept line is whole.
+        if let newline = tail.firstIndex(of: "\n"), tail.distance(from: tail.startIndex, to: newline) < 200 {
+            tail = tail[tail.index(after: newline)...]
+        }
+        return "…" + tail
+    }
+}
+
 /// Pure prompt construction for the single dictation behavior: spoken input is
 /// either lightly cleaned as direct text or executed as a writing instruction.
 enum DictationComposePrompt {
@@ -368,7 +391,8 @@ enum DictationComposePrompt {
         context: DictationScreenContext?,
         profile: DictationComposeProfile,
         visibleContext: String? = nil,
-        memoryContext: String? = nil
+        memoryContext: String? = nil,
+        windowTextPolicy: DictationWindowTextPolicy = .production
     ) -> String {
         let spoken = safeBlock(
             PromptContextSanitizer.sanitize(spokenText, maxCharacters: 12_000),
@@ -381,8 +405,7 @@ enum DictationComposePrompt {
                 context.bundleID ?? "", maxCharacters: 200)
             let title = PromptContextSanitizer.sanitize(
                 ScreenContextPrivacy.redact(context.windowTitle).text, maxCharacters: 500)
-            let visibleText = PromptContextSanitizer.sanitize(
-                ScreenContextPrivacy.redact(context.visibleText).text, maxCharacters: 12_000)
+            let visibleText = windowTextPolicy.apply(ScreenContextPrivacy.redact(context.visibleText).text)
             var contextLines = ["Application: \(app)"]
             if !bundleID.isEmpty { contextLines.append("Bundle ID: \(bundleID)") }
             if !title.isEmpty { contextLines.append("Window: \(title)") }

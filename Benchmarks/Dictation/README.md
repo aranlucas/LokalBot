@@ -27,6 +27,14 @@ uv run --no-project python -S Benchmarks/Dictation/context_replay.py \
   --output /private/tmp/dictation-context-fresh-run
 ```
 
+`--variant-set full` adds four focused-window conditions to the five grant conditions: the window alone and with every other grant, each with the production policy (the first 12,000 OCR characters) and with only the last 2,000 characters. Cases can carry a synthetic `screen` OCR fixture; the window is never read for direct speech or Transcribe, and the scorer checks that. `context-routing-v2.json` is the routing and focused-window supplement:
+
+```sh
+uv run --no-project python -S Benchmarks/Dictation/context_replay.py \
+  --app … --server … --model … --split heldout --variant-set full \
+  --corpus Benchmarks/Dictation/context-routing-v2.json --output /private/tmp/dictation-routing-v2-run
+```
+
 The runner owns an ephemeral loopback-only server, isolates defaults/home/storage, runs conditions serially, and shuts down only its own process. The headless app dispatches `--dictation-replay` before AppState, migration or capture startup and rejects non-loopback destinations. Use a new output directory for every run; existing results are never overwritten. The binary hashes, model hash, corpus/scorer hashes and generation options are recorded. The server seed is fixed, but the production sampling temperature is 0.2, so do not assume bitwise model reproducibility.
 
 Five conditions share the same speech and sources: neither, visible only, meeting memory only, both visible and meeting memory, and all (also screen-derived memory). Each case's reference labels specify required/forbidden whole words or phrases, permitted reads, expected source IDs and context eligibility. Reference labels are stripped from model/runtime input, including `contextEligible`; the Swift routing decision operates only on the speech. Privacy/source-selection/model-call failures exit nonzero. Semantic quality is reported as a score, not silently promoted into a passing test.
