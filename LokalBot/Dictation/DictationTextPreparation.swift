@@ -28,6 +28,7 @@ enum DictationTextPreparation {
         validateScreenContext: (DictationScreenContext) async -> Bool = { _ in false },
         windowTextPolicy: DictationWindowTextPolicy = .production,
         routing: DictationRequestRouting = .production,
+        cleanupPrompt: DictationCleanupPrompt = .production,
         makeEngine: (AppSettings) async throws -> TextEngine
     ) async throws -> Result {
         try Task.checkCancellation()
@@ -63,17 +64,25 @@ enum DictationTextPreparation {
         try await validate()
         let engine = try await makeEngine(settings)
         try await validate()
-        let prompt = DictationComposePrompt.userPrompt(
-            spokenText: speech, context: context,
-            profile: DictationComposeProfile(personalization: settings.cotypingPersonalization),
-            visibleContext: visible?.text, memoryContext: memory.selection.text,
-            windowTextPolicy: windowTextPolicy)
+        let profile = DictationComposeProfile(personalization: settings.cotypingPersonalization)
+        // Direct speech is text to insert, so it goes to a cleanup prompt as
+        // data rather than to a prompt that may treat it as an instruction.
+        let cleansAsData = !usesContext && cleanupPrompt == .transcriptAsData
+        let system = cleansAsData ? DictationCleanupPromptText.system(profile: profile) : DictationComposePrompt.system
+        let prompt = cleansAsData
+            ? DictationCleanupPromptText.userPrompt(spokenText: speech)
+            : DictationComposePrompt.userPrompt(
+                spokenText: speech, context: context, profile: profile,
+                visibleContext: visible?.text, memoryContext: memory.selection.text,
+                windowTextPolicy: windowTextPolicy)
         // Someone is waiting to insert this text. Without options the built-in
         // server would allow an 8K-token thinking turn before any visible text.
-        let output = try await engine.generate(system: DictationComposePrompt.system, prompt: prompt, context: [],
+        let output = try await engine.generate(system: system, prompt: prompt, context: [],
                                                options: Self.composeOptions)
         try await validate()
-        let text = DictationComposePrompt.normalizedOutput(output)
+        let text = cleansAsData
+            ? DictationCleanupPromptText.normalizedOutput(output, spokenText: speech)
+            : DictationComposePrompt.normalizedOutput(output)
         guard !text.isEmpty else { throw DictationComposeError.emptyOutput }
         let contextUse = DictationContextUse(
             wasWritingRequest: usesContext,

@@ -51,7 +51,7 @@ def contains(text, phrase):
     return bool(expected) and any(actual[i:i + len(expected)] == expected for i in range(len(actual)))
 
 
-def replay_input(corpus, cases, variant, routing=None):
+def replay_input(corpus, cases, variant, routing=None, cleanup=None):
     visible, meetings, screens, window = flags(variant)
     allowed = {'id', 'speech', 'visible', 'transcribe', 'screen'}
     data = {'cases': [{k: v for k, v in case.items() if k in allowed} for case in cases],
@@ -61,6 +61,8 @@ def replay_input(corpus, cases, variant, routing=None):
         data.update(useScreenContext=True, windowTextPolicy=WINDOW_POLICIES[window])
     if routing:
         data['routing'] = routing
+    if cleanup:
+        data['cleanupPrompt'] = cleanup
     return data
 
 
@@ -135,6 +137,8 @@ def main():
                         help='context: the five grant conditions; full: also the focused-window option')
     parser.add_argument('--routing', choices=['commands', 'relays', 'referencedRelays'],
                         help='writing-request rule to evaluate (default: the build\'s production rule)')
+    parser.add_argument('--cleanup-prompt', choices=['composeDecides', 'transcriptAsData'],
+                        help='cleanup prompt for direct speech (default: the build\'s production prompt)')
     args = parser.parse_args()
     variants = VARIANT_SETS[args.variant_set]
     args.output.mkdir(parents=True, exist_ok=False)
@@ -152,6 +156,7 @@ def main():
                 'modelFile': args.model.name, 'corpusSHA256': digest(args.corpus), 'scriptSHA256': digest(__file__),
                 'split': args.split, 'caseIDs': [c['id'] for c in cases], 'serverArguments': command,
                 'variants': variants, 'windowPolicies': WINDOW_POLICIES, 'routing': args.routing or 'production',
+                'cleanupPrompt': args.cleanup_prompt or 'production',
                 'settings': 'Production Compose: temperature 0.2, max 4096 output tokens, reasoning disabled; fixed server seed',
                 'scope': 'Synthetic recognized speech, AX trees and saved facts. No microphone, live screen or user library.'}
     (args.output / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
@@ -175,7 +180,7 @@ def main():
                 time.sleep(0.2)
             for variant in variants:
                 fixture = args.output / f'{variant}-input.json'
-                fixture.write_text(json.dumps(replay_input(corpus, cases, variant, args.routing), ensure_ascii=False) + '\n')
+                fixture.write_text(json.dumps(replay_input(corpus, cases, variant, args.routing, args.cleanup_prompt), ensure_ascii=False) + '\n')
                 with tempfile.TemporaryDirectory(prefix='lokalbot-dictation-eval-') as temporary:
                     root = Path(temporary)
                     (root / 'home').mkdir()
