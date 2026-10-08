@@ -8,26 +8,33 @@ import Foundation
 /// is silent or reconnecting.
 final class AudioLevelMeter: @unchecked Sendable {
     static let historyLength = 32
+    /// A level older than this reads as silence, so a microphone that stops
+    /// delivering (a stall, a reconnect) flattens the bars instead of
+    /// freezing them at the last loudness.
+    static let maximumAgeNanoseconds: UInt64 = 500_000_000
     private let lock = NSLock()
-    private var levels: [Float] = []
+    private var samples: [(level: Float, at: UInt64)] = []
 
     func reset() {
         lock.lock()
-        levels.removeAll(keepingCapacity: true)
+        samples.removeAll(keepingCapacity: true)
         lock.unlock()
     }
 
-    func record(_ level: Float) {
+    func record(_ level: Float, at time: UInt64 = DispatchTime.now().uptimeNanoseconds) {
         lock.lock()
-        levels.append(min(max(level, 0), 1))
-        if levels.count > Self.historyLength { levels.removeFirst(levels.count - Self.historyLength) }
+        samples.append((min(max(level, 0), 1), time))
+        if samples.count > Self.historyLength { samples.removeFirst(samples.count - Self.historyLength) }
         lock.unlock()
     }
 
-    /// The newest `count` levels, oldest first, padded with silence.
-    func recent(_ count: Int) -> [Float] {
+    /// The newest `count` levels, oldest first, padded with silence; levels
+    /// older than `maximumAgeNanoseconds` read as silence.
+    func recent(_ count: Int, now: UInt64 = DispatchTime.now().uptimeNanoseconds) -> [Float] {
         lock.lock()
-        let tail = Array(levels.suffix(count))
+        let tail = samples.suffix(count).map {
+            (now > $0.at ? now - $0.at : 0) <= Self.maximumAgeNanoseconds ? $0.level : 0
+        }
         lock.unlock()
         return Array(repeating: 0, count: max(0, count - tail.count)) + tail
     }

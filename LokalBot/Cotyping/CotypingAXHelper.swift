@@ -191,21 +191,27 @@ enum CotypingAXHelper {
     /// the field cannot be read; the caller then makes no claim either way.
     /// The value is compared and dropped, never stored.
     static func dictationTextBeforeCaret(processID: pid_t, focusIdentityKey: String?) -> String? {
-        guard isTrusted, processID > 0, processID != ProcessInfo.processInfo.processIdentifier else { return nil }
+        guard isTrusted, processID > 0, processID != ProcessInfo.processInfo.processIdentifier,
+              let focusIdentityKey, !focusIdentityKey.isEmpty else { return nil }
         let deadline = DispatchTime.now().uptimeNanoseconds &+ 250 * 1_000_000
         func withinDeadline() -> Bool { DispatchTime.now().uptimeNanoseconds <= deadline }
         guard let frontmost = NSWorkspace.shared.frontmostApplication,
               frontmost.processIdentifier == processID,
               let element = focusedElementForAcceptance(processID: processID), withinDeadline(),
               self.processID(of: element) == processID else { return nil }
-        if let focusIdentityKey, !focusIdentityKey.isEmpty {
-            let role = stringAttribute(element, kAXRoleAttribute as String) ?? ""
-            let subrole = stringAttribute(element, kAXSubroleAttribute as String)
-            guard withinDeadline(), self.focusIdentityKey(
-                for: element, processID: processID, bundleID: frontmost.bundleIdentifier,
-                role: role, subrole: subrole) == focusIdentityKey else { return nil }
-        }
-        guard withinDeadline() else { return nil }
+        let role = stringAttribute(element, kAXRoleAttribute as String) ?? ""
+        let subrole = stringAttribute(element, kAXSubroleAttribute as String)
+        let isSecure = CotypingSecureFieldDetector.isSecure(
+            role: role,
+            subrole: subrole,
+            roleDescription: stringAttribute(element, kAXRoleDescriptionAttribute as String),
+            title: stringAttribute(element, kAXTitleAttribute as String),
+            descriptionLabel: stringAttribute(element, kAXDescriptionAttribute as String))
+        let liveIdentity = self.focusIdentityKey(
+            for: element, processID: processID, bundleID: frontmost.bundleIdentifier,
+            role: role, subrole: subrole)
+        guard withinDeadline(), DictationInsertionCheck.allowsReadBack(
+            boundIdentity: focusIdentityKey, liveIdentity: liveIdentity, isSecure: isSecure) else { return nil }
         return boundedAcceptanceContent(on: element, withinDeadline: withinDeadline)?.precedingText
     }
 

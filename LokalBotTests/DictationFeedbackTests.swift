@@ -62,7 +62,83 @@ final class DictationFeedbackTests: XCTestCase {
         XCTAssertEqual(DictationInsertionCheck.verdict(textBeforeCaret: "x", inserted: "  …  "), .unknown)
     }
 
+    /// Review finding on 719b3dc: Chinese has no spaces between words, so a
+    /// correct continuation looked like a failed paste.
+    func testInsertionCheckMatchesScriptsWithoutWordSpaces() {
+        XCTAssertEqual(DictationInsertionCheck.verdict(textBeforeCaret: "我们明天开会。", inserted: "开会。"), .landed)
+        XCTAssertEqual(DictationInsertionCheck.verdict(
+            textBeforeCaret: "明日は会議です。資料を送ります", inserted: "資料を送ります"), .landed)
+        XCTAssertEqual(DictationInsertionCheck.verdict(textBeforeCaret: "我们明天", inserted: "开会。"), .missing)
+    }
+
+    /// Review finding on 719b3dc: an app-only target (no field identity) let
+    /// the read-back inspect whatever field had focus, including a secure one.
+    func testReadBackRequiresTheBoundFieldAndNeverASecureOne() {
+        XCTAssertFalse(DictationInsertionCheck.allowsReadBack(boundIdentity: nil, liveIdentity: "field", isSecure: false))
+        XCTAssertFalse(DictationInsertionCheck.allowsReadBack(boundIdentity: "", liveIdentity: "", isSecure: false))
+        XCTAssertFalse(DictationInsertionCheck.allowsReadBack(boundIdentity: "field", liveIdentity: "other", isSecure: false))
+        XCTAssertFalse(DictationInsertionCheck.allowsReadBack(boundIdentity: "field", liveIdentity: "field", isSecure: true))
+        XCTAssertTrue(DictationInsertionCheck.allowsReadBack(boundIdentity: "field", liveIdentity: "field", isSecure: false))
+    }
+
+    /// Review finding on 719b3dc: levels never expired, so a stalled
+    /// microphone froze the bars at its last loudness.
+    func testStaleLevelsReadAsSilence() {
+        let meter = AudioLevelMeter()
+        meter.record(0.8, at: 1_000_000_000)
+        XCTAssertEqual(meter.recent(1, now: 1_100_000_000), [0.8])
+        XCTAssertEqual(meter.recent(1, now: 1_700_000_000), [0], "older than half a second")
+    }
+
     // MARK: - Esc
+
+    /// Review finding on 719b3dc: Esc pressed while holding ⌥ Space carries
+    /// ⌥, was not recognized, and releasing the shortcut then transcribed.
+    func testEscWhileHoldingThePushToTalkShortcutCancelsWithoutFinishing() throws {
+        let monitor = DictationInputMonitor()
+        var active = false
+        var starts = 0, stops = 0, escapes = 0
+        monitor.triggerModeProvider = { .pushToTalk }
+        monitor.shortcutProvider = { .handyDefault }
+        monitor.isDictationActive = { active }
+        monitor.onStart = { starts += 1; active = true }
+        monitor.onStop = { stops += 1 }
+        monitor.onEscape = { escapes += 1; active = false }
+        let space = CGKeyCode(kVK_Space)
+        XCTAssertTrue(monitor.handle(type: .keyDown, event: try key(space, .maskAlternate)))
+        XCTAssertFalse(monitor.handle(type: .keyDown, event: try key(CGKeyCode(kVK_Escape), [.maskAlternate, .maskCommand])),
+                       "⌥⌘Esc adds a modifier the shortcut does not hold")
+        XCTAssertTrue(monitor.handle(type: .keyDown, event: try key(CGKeyCode(kVK_Escape), .maskAlternate)))
+        XCTAssertTrue(monitor.handle(type: .keyUp, event: try key(space, .maskAlternate, down: false)))
+        XCTAssertEqual(starts, 1)
+        XCTAssertEqual(escapes, 1)
+        XCTAssertEqual(stops, 0, "the release after Esc must not transcribe")
+
+        XCTAssertTrue(monitor.handle(type: .keyDown, event: try key(space, .maskAlternate)))
+        XCTAssertTrue(monitor.handle(type: .keyUp, event: try key(space, .maskAlternate, down: false)))
+        XCTAssertEqual(stops, 1, "the next hold works normally")
+    }
+
+    func testEscWhileHoldingAChordCancelsWithoutFinishing() async throws {
+        let monitor = DictationInputMonitor()
+        var active = false
+        var stops = 0, escapes = 0, cancels = 0
+        monitor.triggerModeProvider = { .pushToTalk }
+        monitor.shortcutProvider = { DictationShortcut(keyCode: nil, modifiers: [.maskControl, .maskAlternate]) }
+        monitor.chordHoldDelay = 0.02
+        monitor.isDictationActive = { active }
+        monitor.onStart = { active = true }
+        monitor.onStop = { stops += 1 }
+        monitor.onCancel = { cancels += 1 }
+        monitor.onEscape = { escapes += 1; active = false }
+        _ = monitor.handle(type: .flagsChanged, event: try flags([.maskControl, .maskAlternate]))
+        try await Task.sleep(for: .milliseconds(80))
+        XCTAssertTrue(monitor.handle(type: .keyDown, event: try key(CGKeyCode(kVK_Escape), [.maskControl, .maskAlternate])))
+        _ = monitor.handle(type: .flagsChanged, event: try flags([]))
+        XCTAssertEqual(escapes, 1)
+        XCTAssertEqual(stops, 0)
+        XCTAssertEqual(cancels, 0, "Esc already cancelled; the chord does not cancel again")
+    }
 
     func testEscCancelsOnlyWhileDictating() throws {
         let monitor = DictationInputMonitor()

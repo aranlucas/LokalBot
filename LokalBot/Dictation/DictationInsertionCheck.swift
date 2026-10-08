@@ -14,24 +14,33 @@ enum DictationInsertionCheck {
     /// When to read the field after the paste, in milliseconds. An app can
     /// take a moment to publish the change.
     static let readDelaysMilliseconds = [250, 650, 1_200]
+    /// Letters and digits from the end of the insertion that must appear.
+    static let probeLength = 24
 
-    static func verdict(textBeforeCaret: String?, inserted: String) -> DictationInsertionVerdict {
-        guard let textBeforeCaret else { return .unknown }
-        let sent = words(in: inserted)
-        guard !sent.isEmpty else { return .unknown }
-        let probe = Array(sent.suffix(6))
-        let field = words(in: String(textBeforeCaret.suffix(inserted.count + 400)))
-        guard field.count >= probe.count else { return .missing }
-        for start in 0...(field.count - probe.count) where Array(field[start..<start + probe.count]) == probe {
-            return .landed
-        }
-        return .missing
+    /// The field is read back only when it is the exact field the text was
+    /// pasted into and not a secure one. An app-only target (no field
+    /// identity) is never read: focus may have moved to another field.
+    static func allowsReadBack(boundIdentity: String?, liveIdentity: String?, isSecure: Bool) -> Bool {
+        guard let boundIdentity, !boundIdentity.isEmpty, !isSecure else { return false }
+        return liveIdentity == boundIdentity
     }
 
-    static func words(in text: String) -> [String] {
-        text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
-            .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
-            .map(String.init)
+    /// Compares letters and digits only, so spacing, punctuation, emoji and
+    /// Markdown changes do not matter, and scripts without spaces between
+    /// words (Chinese, Japanese, Thai) match inside a longer run.
+    static func verdict(textBeforeCaret: String?, inserted: String) -> DictationInsertionVerdict {
+        guard let textBeforeCaret else { return .unknown }
+        let sent = significant(inserted)
+        guard !sent.isEmpty else { return .unknown }
+        let probe = String(sent.suffix(probeLength))
+        let field = significant(String(textBeforeCaret.suffix(inserted.count + 400)))
+        return field.contains(probe) ? .landed : .missing
+    }
+
+    static func significant(_ text: String) -> String {
+        String(text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
+            .unicodeScalars.filter { CharacterSet.alphanumerics.contains($0) }
+            .map(Character.init))
     }
 }
 

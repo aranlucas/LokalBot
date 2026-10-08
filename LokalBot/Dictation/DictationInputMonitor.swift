@@ -39,6 +39,8 @@ final class DictationInputMonitor {
     /// Tap or hold: when the current press began, or nil when that press
     /// finished a running dictation and its release must do nothing.
     private var tapHoldPressedAt: Date?
+    /// Esc cancelled while the key shortcut was held; its release is swallowed.
+    private var heldShortcutCancelledByEscape = false
 
     /// Modifier-only chord state.
     private var chordModifiers: CGEventFlags?
@@ -92,6 +94,7 @@ final class DictationInputMonitor {
         shortcutIsDown = false
         activeTriggerMode = nil
         activeShortcut = nil
+        heldShortcutCancelledByEscape = false
         resetChord(stoppingPushToTalk: releasingHeldShortcut)
         isRunning = false
         if shouldStop { onStop?() }
@@ -108,14 +111,18 @@ final class DictationInputMonitor {
             shortcutIsDown = false
             activeTriggerMode = nil
             activeShortcut = nil
+            heldShortcutCancelledByEscape = false
             resetChord(stoppingPushToTalk: true)
             if let tap { CGEvent.tapEnable(tap: tap, enable: true) }
             if shouldStop { onStop?() }
             return false
         }
         guard !isSuspended else { return false }
-        if type == .keyDown, Self.isPlainEscape(event), isDictationActive() {
-            if event.getIntegerValueField(.keyboardEventAutorepeat) == 0 { onEscape?() }
+        if type == .keyDown, Self.isEscape(event, allowing: heldShortcutModifiers), isDictationActive() {
+            if event.getIntegerValueField(.keyboardEventAutorepeat) == 0 {
+                releaseHeldShortcutAfterEscape()
+                onEscape?()
+            }
             return true
         }
         if type == .flagsChanged {
@@ -134,6 +141,13 @@ final class DictationInputMonitor {
             && type == .keyUp
             && (activeShortcut ?? shortcut).matchesKeyCode(event)
         guard isMatchingShortcut || isHeldShortcutRelease else { return false }
+        if heldShortcutCancelledByEscape, isHeldShortcutRelease {
+            heldShortcutCancelledByEscape = false
+            shortcutIsDown = false
+            activeTriggerMode = nil
+            activeShortcut = nil
+            return true
+        }
 
         let triggerMode = type == .keyUp
             ? (activeTriggerMode ?? triggerModeProvider())
@@ -198,9 +212,33 @@ final class DictationInputMonitor {
         return true
     }
 
-    static func isPlainEscape(_ event: CGEvent) -> Bool {
+    /// Esc alone, or with only the modifiers of the shortcut being held: Esc
+    /// pressed while holding ⌥ Space arrives with ⌥ set.
+    static func isEscape(_ event: CGEvent, allowing held: CGEventFlags) -> Bool {
         CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode)) == DictationShortcutKeyNames.escape
-            && event.flags.dictationRelevantModifiers.isEmpty
+            && held.isSuperset(of: event.flags.dictationRelevantModifiers)
+    }
+
+    /// Modifiers of the shortcut or chord currently held down.
+    private var heldShortcutModifiers: CGEventFlags {
+        if let chordModifiers { return chordModifiers }
+        if shortcutIsDown, let activeShortcut { return activeShortcut.modifiers }
+        return []
+    }
+
+    /// Esc cancelled the dictation; the shortcut's release must not finish it.
+    private func releaseHeldShortcutAfterEscape() {
+        if shortcutIsDown {
+            heldShortcutCancelledByEscape = true
+            tapHoldPressedAt = nil
+        }
+        if chordModifiers != nil {
+            pendingChordStart?.cancel()
+            pendingChordStart = nil
+            chordInterrupted = true
+            chordStarted = false
+            chordFinishesOnRelease = false
+        }
     }
 
     // MARK: - Modifier-only chords

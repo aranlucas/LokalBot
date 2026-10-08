@@ -890,6 +890,9 @@ final class DictationCoordinator: ObservableObject {
         of text: String, into target: DictationDeliveryTarget, excludedApps: [String]
     ) {
         insertionCheckTask?.cancel()
+        // Without a field identity the paste went to "the app"; reading
+        // whatever field is focused now could be another (or a secure) one.
+        guard target.focusIdentityKey?.isEmpty == false else { return }
         let appName = NSRunningApplication(processIdentifier: target.processID)?.localizedName ?? ""
         guard !DictationScreenPrivacy.isExcluded(
             target: DictationScreenTarget(processID: target.processID, appName: appName, bundleID: target.bundleID),
