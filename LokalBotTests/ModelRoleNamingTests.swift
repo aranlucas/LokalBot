@@ -37,6 +37,7 @@ final class ModelStorageCopyTests: XCTestCase {
             snapshots.flatMap(\.files).reduce(0) { $0 + $1.bytes }
         }
         let downloads: [(TranscriptionModelChoice, Int64)] = try [
+            (.parakeetUltra, total([.catalog("parakeetUltra")])),
             (.parakeetV3, total([.catalog("parakeetV3")])),
             (.parakeetV2, total([.catalog("parakeetV2")])),
             (.qwenASR17B, total([.qwenAccuracy])),
