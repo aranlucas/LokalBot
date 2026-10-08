@@ -21,9 +21,9 @@ struct PermissionRow: View {
                 .foregroundStyle(granted ? .green : .orange)
                 .contentTransition(.symbolEffect(.replace))
             VStack(alignment: .leading, spacing: 2) {
-                Text(permission.title)
+                Text(LocalizedStringKey(permission.title))
                 if prominentRationale {
-                    Text(why ?? permission.why)
+                    Text(LocalizedStringKey(why ?? permission.why))
                         .workspaceTextRole(.supporting)
                 } else {
                     SettingsHelp(why ?? permission.why)
@@ -37,7 +37,7 @@ struct PermissionRow: View {
                         sourceFrameInScreen: actionButtonFrame)
                 }
                 .background(PermissionScreenFrameReader(frameInScreen: $actionButtonFrame))
-                .help(permission.guidanceHint)
+                .help(Text(LocalizedStringKey(permission.guidanceHint)))
             }
         }
         // Grants arrive from polling while the user is in System Settings.

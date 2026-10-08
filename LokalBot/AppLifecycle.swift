@@ -267,6 +267,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     .brandTinted()
             }
         }
+        .appLanguageRoot(app.settingsStore)
     }
 
 #if LOKALBOT_UI_TEST_HOST

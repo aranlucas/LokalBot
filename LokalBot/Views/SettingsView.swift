@@ -87,13 +87,13 @@ struct SettingsView: View {
                 }
             }.frame(minWidth: 400, maxWidth: .infinity, maxHeight: .infinity)
                 .accessibilityElement(children: .contain)
-                .accessibilityLabel(queryIsEmpty ? app.settingsTab.displayName : "Search settings")
+                .accessibilityLabel(Text(LocalizedStringKey(queryIsEmpty ? app.settingsTab.displayName : "Search settings")))
                 .splitPaneAccessibilityLabel(queryIsEmpty ? app.settingsTab.displayName : "Search settings")
         }
         .frame(minWidth: 700)
         .workspaceMinimumHeight(600)
         .tint(Brand.teal)
-        .navigationTitle(queryIsEmpty ? app.settingsTab.displayName : "Search settings")
+        .navigationTitle(Text(LocalizedStringKey(queryIsEmpty ? app.settingsTab.displayName : "Search settings")))
         .onChange(of: app.focusedSettingID, initial: true) {
             if let id = app.focusedSettingID, app.settingsTab == .writing {
                 writingSection = id.hasPrefix("settings.dictation") ? .dictation : .autocomplete
@@ -121,9 +121,9 @@ struct SettingsView: View {
     private var settingsHeaderTitle: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(queryIsEmpty ? app.settingsTab.displayName : "Search settings")
+                Text(LocalizedStringKey(queryIsEmpty ? app.settingsTab.displayName : "Search settings"))
                     .font(AppFont.scaled(.largeTitle).bold())
-                Text(queryIsEmpty ? settingsTabSubtitle : "Results across all categories. Choose a setting to edit its value.")
+                Text(LocalizedStringKey(queryIsEmpty ? settingsTabSubtitle : "Results across all categories. Choose a setting to edit its value."))
                     .font(AppFont.scaled(.callout))
                     .settingsSecondary()
                     .fixedSize(horizontal: false, vertical: true)
@@ -186,7 +186,7 @@ struct SettingsView: View {
         case .writing:
             Section {
                 Picker("Writing tool", selection: $writingSection) {
-                    ForEach(WritingSection.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                    ForEach(WritingSection.allCases, id: \.self) { Text(LocalizedStringKey($0.rawValue)).tag($0) }
                 }
                 .pickerStyle(.segmented).tint(Brand.tealFill)
                 .accessibilityIdentifier("settings.writing.sections")
@@ -211,7 +211,7 @@ struct SettingsView: View {
     /// query shows every matching section regardless of the selected tab,
     /// plus a jump row into the Models tab when its keywords match.
     private var searchResults: some View {
-        let results = SettingDescriptor.search(settingsQuery)
+        let results = SettingDescriptor.search(settingsQuery, language: app.settings.appLanguage)
         return List(results) { result in
             Button {
                 app.settingsTab = result.category
@@ -221,11 +221,11 @@ struct SettingsView: View {
                 settingsQuery = ""
             } label: {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(result.title).font(AppFont.scaled(.body).weight(.semibold))
-                    Text(result.currentValue(in: app.settings) + " · " + result.category.displayName)
+                    Text(LocalizedStringKey(result.title)).font(AppFont.scaled(.body).weight(.semibold))
+                    Text("\(result.currentValue(in: app.settings, language: app.settings.appLanguage)) · \(app.settings.appLanguage.localized(result.category.displayName))")
                         .font(AppFont.scaled(.callout)).settingsSecondary()
                     if let prerequisite = result.prerequisite(in: app.settings) {
-                        Text(prerequisite).font(AppFont.scaled(.callout)).settingsSecondary()
+                        Text(LocalizedStringKey(prerequisite)).font(AppFont.scaled(.callout)).settingsSecondary()
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading).contentShape(Rectangle())
             }.buttonStyle(.plain)
@@ -292,15 +292,24 @@ struct SettingsView: View {
                         }
                 }
                 Section("Appearance") {
+                    Picker(selection: $app.settings.appLanguage) {
+                        ForEach(AppLanguage.allCases) { language in
+                            Text(LocalizedStringKey(language.displayName)).tag(language)
+                        }
+                    } label: {
+                        SettingsLabel("App language", help: "Changes the interface immediately. Transcription and notes languages are set separately.")
+                    }
+                    .accessibilityIdentifier("settings.appLanguage")
+                    .settingTarget("settings.appLanguage", selected: app.focusedSettingID)
                     Picker(selection: $app.settings.appTheme) {
-                        ForEach(AppTheme.allCases) { Text($0.displayName).tag($0) }
+                        ForEach(AppTheme.allCases) { Text(LocalizedStringKey($0.displayName)).tag($0) }
                     } label: {
                         SettingsLabel("Theme", help: "Use light or dark windows regardless of the system setting, or follow it.")
                     }
                     .pickerStyle(.segmented)
                     .settingTarget("settings.appTheme", selected: app.focusedSettingID)
                     Picker(selection: $app.settings.textSize) {
-                        ForEach(AppTextSize.allCases) { Text($0.displayName).tag($0) }
+                        ForEach(AppTextSize.allCases) { Text(LocalizedStringKey($0.displayName)).tag($0) }
                     } label: {
                         SettingsLabel("Text size", help: "Scales text across LokalBot's windows. Agent keeps its own size (⌘+ and ⌘−).")
                     }
@@ -353,11 +362,11 @@ struct SettingsView: View {
                 }
                 .settingTarget("settings.cotypingDebounceMs", selected: app.focusedSettingID)
                 Picker("Accept next", selection: $app.settings.cotypingAcceptKey) {
-                    ForEach(CotypingAcceptKey.allCases) { Text($0.label).tag($0) }
+                    ForEach(CotypingAcceptKey.allCases) { Text(LocalizedStringKey($0.label)).tag($0) }
                 }
                     .settingTarget("settings.cotypingAcceptKey", selected: app.focusedSettingID)
                 Picker("Each accept takes", selection: $app.settings.cotypingAcceptGranularity) {
-                    ForEach(CotypingAcceptGranularity.allCases) { Text($0.label).tag($0) }
+                    ForEach(CotypingAcceptGranularity.allCases) { Text(LocalizedStringKey($0.label)).tag($0) }
                 }
                     .settingTarget("settings.cotypingAcceptGranularity", selected: app.focusedSettingID)
                 Toggle(isOn: $app.settings.cotypingAutoAcceptTrailingPunctuation) {
@@ -366,7 +375,7 @@ struct SettingsView: View {
                 }
                     .settingTarget("settings.cotypingAutoAcceptTrailingPunctuation", selected: app.focusedSettingID)
                 Picker(selection: $app.settings.cotypingEscapeBehavior) {
-                    ForEach(CotypingEscapeBehavior.allCases) { Text($0.label).tag($0) }
+                    ForEach(CotypingEscapeBehavior.allCases) { Text(LocalizedStringKey($0.label)).tag($0) }
                 } label: {
                     SettingsLabel("Escape on a suggestion",
                                   help: "Pausing keeps Escape from also reaching the app and holds suggestions in that field for a few seconds. Escape is never touched when no suggestion is showing.")
@@ -415,7 +424,7 @@ struct SettingsView: View {
                                   help: "Kept for 30 days and reused only in the same identified document. Mail, chat, unknown documents, and preview runs are excluded.")
                 }
                     .settingTarget("settings.cotypingUseLocalLearning", selected: app.focusedSettingID)
-                Button(forgettingCotypingLearning ? "Forgetting…" : "Forget learned text") {
+                Button(LocalizedStringKey(forgettingCotypingLearning ? "Forgetting…" : "Forget learned text")) {
                     forgettingCotypingLearning = true
                     cotypingLearningMessage = nil
                     Task {
@@ -515,7 +524,7 @@ struct SettingsView: View {
                 Section("Meetings") {
                     Picker(selection: $app.settings.autoRecordMode) {
                         ForEach(AppSettings.AutoRecordMode.allCases) { mode in
-                            Text(mode.rawValue).tag(mode)
+                            Text(LocalizedStringKey(mode.rawValue)).tag(mode)
                         }
                     } label: {
                         SettingsLabel("When a meeting is detected",
@@ -615,7 +624,7 @@ struct SettingsView: View {
                         Text("Match transcript (auto)").tag(SummaryLanguage.matchTranscript)
                         Divider()
                         ForEach(SummaryLanguage.presets, id: \.rawValue) { lang in
-                            Text(lang.displayName).tag(lang)
+                            Text(LocalizedStringKey(lang.displayName)).tag(lang)
                         }
                     }
                     .settingTarget("settings.summaryLanguage", selected: app.focusedSettingID)
@@ -637,7 +646,7 @@ struct SettingsView: View {
                         .accessibilityIdentifier("settings.multiSpeakerDiarization")
                     Picker(selection: $app.settings.diarizationModel) {
                         ForEach(DiarizationModel.allCases) { model in
-                            Text(model.displayName).tag(model)
+                            Text(LocalizedStringKey(model.displayName)).tag(model)
                         }
                     } label: {
                         SettingsLabel("Speaker model", help: app.settings.diarizationModel.description)
@@ -705,7 +714,7 @@ struct SettingsView: View {
                             }
                         })) {
                         ForEach(AppSettings.ScreenContextCaptureMode.allCases) { mode in
-                            Text(mode.rawValue).tag(mode)
+                            Text(LocalizedStringKey(mode.rawValue)).tag(mode)
                         }
                     } label: {
                         SettingsLabel("Screen context",
@@ -778,7 +787,7 @@ struct SettingsView: View {
                     if app.settings.dailyMemoryExportEnabled {
                         Picker("Format", selection: $app.settings.dailyMemoryExportFormat) {
                             ForEach(AppSettings.DailyMemoryExportFormat.allCases) { format in
-                                Text(format.rawValue).tag(format)
+                                Text(LocalizedStringKey(format.rawValue)).tag(format)
                             }
                         }
                     .settingTarget("settings.dailyMemoryExportFormat", selected: app.focusedSettingID)
@@ -1166,7 +1175,7 @@ struct SettingsView: View {
                             }
                         }
                         HStack {
-                            Button(installer.isInstalled ? "Reinstall…" : "Install for your coding agent…") {
+                            Button(LocalizedStringKey(installer.isInstalled ? "Reinstall…" : "Install for your coding agent…")) {
                                 cliMessage = nil
                                 do {
                                     try installer.install()
@@ -1252,8 +1261,8 @@ struct SettingsView: View {
 
     private func chooseDailyExportFolder() {
         let panel = NSOpenPanel()
-        panel.title = "Choose daily memory export folder"
-        panel.prompt = "Choose"
+        panel.title = app.settings.appLanguage.localized("Choose daily memory export folder")
+        panel.prompt = app.settings.appLanguage.localized("Choose")
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
@@ -1273,8 +1282,8 @@ struct SettingsView: View {
 
     private func chooseMemoryRoutineFolder() {
         let panel = NSOpenPanel()
-        panel.title = "Choose routine output folder"
-        panel.prompt = "Choose"
+        panel.title = app.settings.appLanguage.localized("Choose routine output folder")
+        panel.prompt = app.settings.appLanguage.localized("Choose")
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
@@ -1319,7 +1328,7 @@ private struct SettingsCategoryLabel: View {
 
     var body: some View {
         Label {
-            Text(category.displayName)
+            Text(LocalizedStringKey(category.displayName))
         } icon: {
             Image(systemName: category.icon)
                 .foregroundStyle(prominence == .increased ? AnyShapeStyle(.primary) : AnyShapeStyle(Brand.teal))
@@ -1361,7 +1370,7 @@ private struct ScreenMemoryAccessToggleRow: View {
                     get: { manager.profile.scope },
                     set: { manager.setScope($0) })) {
                     ForEach(ScreenMemoryAccessProfile.Scope.allCases) { scope in
-                        Text(scope.displayName).tag(scope)
+                        Text(LocalizedStringKey(scope.displayName)).tag(scope)
                     }
                 } label: {
                     SettingsLabel("Granted history", help: manager.profile.scope.detail)

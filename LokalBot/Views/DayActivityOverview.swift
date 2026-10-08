@@ -14,7 +14,7 @@ struct DayActivityOverview: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.scaled(.headline))
+            Text(LocalizedStringKey(title)).font(.scaled(.headline))
             ViewThatFits(in: .horizontal) {
                 DayStatRow(trackedSeconds: perApp.reduce(0) { $0 + $1.seconds }, appCount: perApp.count,
                            momentCount: model.shots.count, meetingCount: model.meetings(in: app).count)

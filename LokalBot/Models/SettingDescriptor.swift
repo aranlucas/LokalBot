@@ -6,23 +6,25 @@ struct SettingDescriptor: Identifiable {
     let category: AppState.SettingsTab
     let aliases: String
 
-    func currentValue(in settings: AppSettings) -> String {
+    func currentValue(in settings: AppSettings, language: AppLanguage = .english) -> String {
         if id == "settings.models" { return InferencePresentation(settings: settings).label }
         if id == "settings.effectiveScreenContextCaptureMode" { return settings.effectiveScreenContextCaptureMode.rawValue }
         if id == "settings.generationBudgetPreset" { return settings.generationBudgetPreset.displayName }
         if id == "settings.thinkReasoningLevel" { return settings.thinkReasoningLevel.displayName }
-        if id == "settings.appTheme" { return settings.appTheme.displayName }
-        if id == "settings.textSize" { return settings.textSize.displayName }
+        if id == "settings.appTheme" { return language.localized(settings.appTheme.displayName) }
+        if id == "settings.appLanguage" { return language.localized(settings.appLanguage.displayName) }
+        if id == "settings.textSize" { return language.localized(settings.textSize.displayName) }
         guard let data = try? JSONEncoder().encode(settings),
               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let value = object[String(id.dropFirst("settings.".count))] else { return "Open details" }
+              let value = object[String(id.dropFirst("settings.".count))] else { return language.localized("Open details") }
         if let number = value as? NSNumber {
-            if CFGetTypeID(number) == CFBooleanGetTypeID() { return number.boolValue ? "On" : "Off" }
+            if CFGetTypeID(number) == CFBooleanGetTypeID() { return language.localized(number.boolValue ? "On" : "Off") }
             return number.stringValue
         }
-        if let string = value as? String { return string.isEmpty ? "Not set" : String(string.prefix(70)) }
-        if let array = value as? [Any] { return "\(array.count) selected" }
-        return "Configured"
+        // User-entered names, prompts, URLs and paths must never be translated.
+        if let string = value as? String { return string.isEmpty ? language.localized("Not set") : String(string.prefix(70)) }
+        if let array = value as? [Any] { return String(format: language.localized("%lld selected"), array.count) }
+        return language.localized("Configured")
     }
 
     func focusTarget(in settings: AppSettings) -> String {
@@ -46,9 +48,14 @@ struct SettingDescriptor: Identifiable {
     }
 
     @MainActor
-    static func search(_ query: String) -> [Self] {
+    static func search(_ query: String, language: AppLanguage = .system) -> [Self] {
         let normalized = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return all.filter { SettingsSearchRanker.matches(query: query, haystack: [$0.title, $0.aliases, $0.category.displayName]) }
+        return all.filter {
+            SettingsSearchRanker.matches(query: query, haystack: [
+                $0.title, $0.aliases, $0.category.displayName,
+                language.localized($0.title), language.localized($0.category.displayName)
+            ])
+        }
             .sorted { lhs, rhs in
                 func score(_ entry: Self) -> Int {
                     if entry.title.lowercased() == normalized { return 3 }
@@ -79,6 +86,7 @@ struct SettingDescriptor: Identifiable {
         .init(id: "settings.cotypingBuiltInModelID", title: "Autocomplete model", category: .models, aliases: "writing code suggestions weights"),
         .init(id: "settings.menuBarOnly", title: "Menu bar only (hide Dock icon)", category: .general, aliases: "menuBarOnly"),
         .init(id: "settings.appTheme", title: "Theme", category: .general, aliases: "appearance dark mode light mode color scheme"),
+        .init(id: "settings.appLanguage", title: "App language", category: .general, aliases: "interface language English Chinese 中文 简体中文 语言 界面"),
         .init(id: "settings.textSize", title: "Text size", category: .general, aliases: "font size larger text smaller text zoom readability"),
         .init(id: "settings.quickRecallEnabled", title: "Enable the system-wide Ask shortcut", category: .general, aliases: "quickRecallEnabled"),
         .init(id: "settings.cotypingEnabled", title: "Enable autocomplete", category: .writing, aliases: "cotypingEnabled"),

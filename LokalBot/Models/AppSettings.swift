@@ -123,6 +123,7 @@ struct AppSettings: Codable, Equatable {
     var menuBarOnly: Bool = true
     /// Light, dark, or the system appearance for LokalBot's windows.
     var appTheme: AppTheme = .system
+    var appLanguage: AppLanguage = .system
     /// App-wide text size for LokalBot's windows.
     var textSize: AppTextSize = .standard
 
@@ -715,6 +716,7 @@ struct AppSettings: Codable, Equatable {
         case requireCalendarForBrowser
         case menuBarOnly
         case appTheme
+        case appLanguage
         case textSize
         case transcriptionModel
         case graniteSpeechModel
@@ -888,6 +890,7 @@ struct AppSettings: Codable, Equatable {
         try c.encode(requireCalendarForBrowser, forKey: .requireCalendarForBrowser)
         try c.encode(menuBarOnly, forKey: .menuBarOnly)
         try c.encode(appTheme, forKey: .appTheme)
+        try c.encode(appLanguage, forKey: .appLanguage)
         try c.encode(textSize, forKey: .textSize)
         try c.encode(transcriptionModel, forKey: .transcriptionModel)
         try c.encode(graniteSpeechModel, forKey: .graniteSpeechModel)
@@ -1033,6 +1036,7 @@ struct AppSettings: Codable, Equatable {
         requireCalendarForBrowser = decode(.requireCalendarForBrowser, defaults.requireCalendarForBrowser)
         menuBarOnly = decode(.menuBarOnly, defaults.menuBarOnly)
         appTheme = decode(.appTheme, defaults.appTheme)
+        appLanguage = decode(.appLanguage, defaults.appLanguage)
         textSize = decode(.textSize, defaults.textSize)
         transcriptionModel = decode(.transcriptionModel, defaults.transcriptionModel)
         graniteSpeechModel = decode(.graniteSpeechModel, defaults.graniteSpeechModel)

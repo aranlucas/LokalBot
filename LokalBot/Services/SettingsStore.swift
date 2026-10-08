@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 /// The single, always-alive owner of the persisted `AppSettings` value.
 ///
@@ -11,10 +12,10 @@ import Foundation
 /// `AppState.settings` remains the UI-facing binding surface; its `didSet`
 /// writes through here, so the store is always current.
 @MainActor
-final class SettingsStore {
+final class SettingsStore: ObservableObject {
     private var persistTask: Task<Void, Never>?
 
-    var current: AppSettings {
+    @Published var current: AppSettings {
         didSet {
             guard current != oldValue else { return }
             SpeakerAttribution.microphoneIsUser = current.microphoneIsUser

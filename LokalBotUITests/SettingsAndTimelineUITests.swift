@@ -23,6 +23,32 @@ final class SettingsUITests: XCTestCase {
         UITestHarness.cleanUp(defaultsSuiteName: defaultsSuiteName)
     }
 
+    func testInterfaceLanguageUpdatesOpenHostAndPersistsAfterRelaunch() throws {
+        UITestHarness.clickSidebar("sidebar.settings", in: app)
+        let picker = app.popUpButtons["settings.appLanguage"]
+        UITestHarness.scrollTo(picker, in: app)
+        UITestHarness.selectSegment("English", pickerIdentifier: "settings.appLanguage", in: app)
+        XCTAssertTrue(UITestHarness.staticText(containing: "Theme", in: app).waitForExistence(timeout: 6))
+        UITestHarness.selectSegment("简体中文", pickerIdentifier: "settings.appLanguage", in: app)
+        XCTAssertTrue(UITestHarness.staticText(containing: "主题", in: app)
+            .waitForExistence(timeout: 6), "An open AppKit host must adopt the selected Chinese locale")
+        let screenshot = XCTAttachment(screenshot: app.windows.firstMatch.screenshot())
+        screenshot.name = "settings-interface-simplified-chinese"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+
+        app.terminate()
+        app = try UITestHarness.relaunch(
+            storageRoot: fixture.root, defaultsSuiteName: XCTUnwrap(defaultsSuiteName))
+        UITestHarness.clickSidebar("sidebar.settings", in: app)
+        XCTAssertTrue(UITestHarness.staticText(containing: "主题", in: app)
+            .waitForExistence(timeout: 6), "The interface language must survive relaunch")
+        UITestHarness.scrollTo(app.popUpButtons["settings.appLanguage"], in: app)
+        UITestHarness.selectSegment("English", pickerIdentifier: "settings.appLanguage", in: app)
+        XCTAssertTrue(UITestHarness.staticText(containing: "Theme", in: app)
+            .waitForExistence(timeout: 6), "The same host must switch back to English without relaunch")
+    }
+
     func testPermissionRepairPaneRendersCorePermissions() {
         UITestHarness.clickSidebar("sidebar.settings", in: app)
 

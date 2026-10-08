@@ -199,8 +199,25 @@ enum AppAppearance {
 }
 
 extension View {
+    /// Every hosting root observes the same preference, including AppKit panels
+    /// whose content is created only once. Preserve child identity on changes.
+    @MainActor
+    func appLanguageRoot(_ settingsStore: SettingsStore) -> AppLanguageRoot<Self> {
+        AppLanguageRoot(content: self, settingsStore: settingsStore)
+    }
+
     /// Window roots publish the text size; only text redraws when it changes.
     func appTextSizeRoot(_ textSize: AppTextSize) -> some View {
         environment(\.appTextScale, textSize.scale)
+    }
+}
+
+@MainActor
+struct AppLanguageRoot<Content: View>: View {
+    let content: Content
+    @ObservedObject var settingsStore: SettingsStore
+
+    var body: some View {
+        content.environment(\.locale, settingsStore.current.appLanguage.locale)
     }
 }

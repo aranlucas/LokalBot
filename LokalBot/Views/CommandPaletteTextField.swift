@@ -6,6 +6,7 @@ import SwiftUI
 /// SwiftUI's text-field bridge with ancestor `onKeyPress` handlers can deliver
 /// the same printable key through two input paths on macOS.
 struct CommandPaletteTextField: NSViewRepresentable {
+    @Environment(\.locale) private var locale
     @Binding var text: String
     let focusRequest: Int
     let onSubmit: () -> Void
@@ -21,7 +22,7 @@ struct CommandPaletteTextField: NSViewRepresentable {
         let field = FocusOwningTextField()
         field.delegate = context.coordinator
         field.stringValue = text
-        field.placeholderString = "Type a command or search meetings…"
+        field.placeholderString = AppLanguage.matching(locale).localized("Type a command or search meetings…")
         field.isBordered = false
         field.drawsBackground = false
         field.focusRingType = .none
@@ -30,13 +31,15 @@ struct CommandPaletteTextField: NSViewRepresentable {
         field.cell?.usesSingleLineMode = true
         field.identifier = NSUserInterfaceItemIdentifier("palette.input")
         field.setAccessibilityIdentifier("palette.input")
-        field.setAccessibilityLabel("Command palette input")
+        field.setAccessibilityLabel(AppLanguage.matching(locale).localized("Command palette input"))
         field.requestFocus()
         return field
     }
 
     func updateNSView(_ field: FocusOwningTextField, context: Context) {
         context.coordinator.update(parent: self)
+        field.placeholderString = AppLanguage.matching(locale).localized("Type a command or search meetings…")
+        field.setAccessibilityLabel(AppLanguage.matching(locale).localized("Command palette input"))
         if field.stringValue != text {
             field.stringValue = text
         }
