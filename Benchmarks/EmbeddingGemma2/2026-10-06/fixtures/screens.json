@@ -1,0 +1,632 @@
+{
+  "documents": [
+    {
+      "id": "board-released",
+      "category": "text_layout",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/board-released.png"
+    },
+    {
+      "id": "dense-05",
+      "category": "dense_ui",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/dense-05.png"
+    },
+    {
+      "id": "diagram-cycle",
+      "category": "visual_diagram",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/diagram-cycle.png"
+    },
+    {
+      "id": "board-pending",
+      "category": "text_layout",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/board-pending.png"
+    },
+    {
+      "id": "notes-fee",
+      "category": "readable_text",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/notes-fee.png"
+    },
+    {
+      "id": "chart-falling",
+      "category": "visual_chart",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/chart-falling.png"
+    },
+    {
+      "id": "dense-04",
+      "category": "dense_ui",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/dense-04.png"
+    },
+    {
+      "id": "dense-03",
+      "category": "dense_ui",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/dense-03.png"
+    },
+    {
+      "id": "diagram-chain",
+      "category": "visual_diagram",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/diagram-chain.png"
+    },
+    {
+      "id": "chart-rising",
+      "category": "visual_chart",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/chart-rising.png"
+    },
+    {
+      "id": "diagram-isolated",
+      "category": "visual_diagram",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/diagram-isolated.png"
+    },
+    {
+      "id": "board-active",
+      "category": "text_layout",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/board-active.png"
+    },
+    {
+      "id": "notes-privacy",
+      "category": "readable_text",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/notes-privacy.png"
+    },
+    {
+      "id": "chart-spike",
+      "category": "visual_chart",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/chart-spike.png"
+    },
+    {
+      "id": "diagram-star",
+      "category": "visual_diagram",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/diagram-star.png"
+    },
+    {
+      "id": "board-complete",
+      "category": "text_layout",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/board-complete.png"
+    },
+    {
+      "id": "chart-flat",
+      "category": "visual_chart",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/chart-flat.png"
+    },
+    {
+      "id": "notes-release",
+      "category": "readable_text",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/notes-release.png"
+    },
+    {
+      "id": "chart-dip",
+      "category": "visual_chart",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/chart-dip.png"
+    },
+    {
+      "id": "dense-02",
+      "category": "dense_ui",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/dense-02.png"
+    },
+    {
+      "id": "chart-rebound",
+      "category": "visual_chart",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/chart-rebound.png"
+    },
+    {
+      "id": "notes-offline",
+      "category": "readable_text",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/notes-offline.png"
+    },
+    {
+      "id": "notes-pooling",
+      "category": "readable_text",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/notes-pooling.png"
+    },
+    {
+      "id": "notes-audio",
+      "category": "readable_text",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/notes-audio.png"
+    },
+    {
+      "id": "dense-01",
+      "category": "dense_ui",
+      "image": "/private/tmp/lokalbot-embeddinggemma2-20261006/fixtures/images/dense-01.png"
+    }
+  ],
+  "queries": [
+    {
+      "id": "chart-rising-en",
+      "query": "Find the revenue chart with steady growth every month.",
+      "relevant": [
+        "chart-rising"
+      ],
+      "language": "en",
+      "category": "visual_chart",
+      "group": "chart-rising"
+    },
+    {
+      "id": "chart-rising-bcs",
+      "query": "Pronađi grafikon prihoda koji stalno raste svakog mjeseca.",
+      "relevant": [
+        "chart-rising"
+      ],
+      "language": "bcs",
+      "category": "visual_chart",
+      "group": "chart-rising"
+    },
+    {
+      "id": "chart-falling-en",
+      "query": "Find the revenue chart that declines continuously.",
+      "relevant": [
+        "chart-falling"
+      ],
+      "language": "en",
+      "category": "visual_chart",
+      "group": "chart-falling"
+    },
+    {
+      "id": "chart-falling-bcs",
+      "query": "Pronađi grafikon prihoda koji neprekidno opada.",
+      "relevant": [
+        "chart-falling"
+      ],
+      "language": "bcs",
+      "category": "visual_chart",
+      "group": "chart-falling"
+    },
+    {
+      "id": "chart-flat-en",
+      "query": "Find the chart where monthly revenue stays flat.",
+      "relevant": [
+        "chart-flat"
+      ],
+      "language": "en",
+      "category": "visual_chart",
+      "group": "chart-flat"
+    },
+    {
+      "id": "chart-flat-bcs",
+      "query": "Pronađi grafikon na kojem mjesečni prihod ostaje isti.",
+      "relevant": [
+        "chart-flat"
+      ],
+      "language": "bcs",
+      "category": "visual_chart",
+      "group": "chart-flat"
+    },
+    {
+      "id": "chart-spike-en",
+      "query": "Find the revenue chart with a sharp peak in March.",
+      "relevant": [
+        "chart-spike"
+      ],
+      "language": "en",
+      "category": "visual_chart",
+      "group": "chart-spike"
+    },
+    {
+      "id": "chart-spike-bcs",
+      "query": "Pronađi grafikon prihoda sa naglim vrhuncem u martu.",
+      "relevant": [
+        "chart-spike"
+      ],
+      "language": "bcs",
+      "category": "visual_chart",
+      "group": "chart-spike"
+    },
+    {
+      "id": "chart-dip-en",
+      "query": "Find the revenue chart with a sharp dip in March followed by recovery.",
+      "relevant": [
+        "chart-dip"
+      ],
+      "language": "en",
+      "category": "visual_chart",
+      "group": "chart-dip"
+    },
+    {
+      "id": "chart-dip-bcs",
+      "query": "Pronađi grafikon prihoda sa naglim padom u martu i oporavkom poslije toga.",
+      "relevant": [
+        "chart-dip"
+      ],
+      "language": "bcs",
+      "category": "visual_chart",
+      "group": "chart-dip"
+    },
+    {
+      "id": "chart-rebound-en",
+      "query": "Find the U-shaped revenue chart: high, low, low, high.",
+      "relevant": [
+        "chart-rebound"
+      ],
+      "language": "en",
+      "category": "visual_chart",
+      "group": "chart-rebound"
+    },
+    {
+      "id": "chart-rebound-bcs",
+      "query": "Pronađi grafikon prihoda u obliku slova U: visoko, nisko, nisko, visoko.",
+      "relevant": [
+        "chart-rebound"
+      ],
+      "language": "bcs",
+      "category": "visual_chart",
+      "group": "chart-rebound"
+    },
+    {
+      "id": "diagram-chain-en",
+      "query": "Find the service diagram that routes Client to API to Cache to Database in a chain.",
+      "relevant": [
+        "diagram-chain"
+      ],
+      "language": "en",
+      "category": "visual_diagram",
+      "group": "diagram-chain"
+    },
+    {
+      "id": "diagram-chain-bcs",
+      "query": "Pronađi dijagram servisa sa lancem Klijent, API, Keš, Baza podataka.",
+      "relevant": [
+        "diagram-chain"
+      ],
+      "language": "bcs",
+      "category": "visual_diagram",
+      "group": "diagram-chain"
+    },
+    {
+      "id": "diagram-star-en",
+      "query": "Find the service diagram where API connects separately to both Cache and Database.",
+      "relevant": [
+        "diagram-star"
+      ],
+      "language": "en",
+      "category": "visual_diagram",
+      "group": "diagram-star"
+    },
+    {
+      "id": "diagram-star-bcs",
+      "query": "Pronađi dijagram gdje API ima odvojene veze prema kešu i bazi podataka.",
+      "relevant": [
+        "diagram-star"
+      ],
+      "language": "bcs",
+      "category": "visual_diagram",
+      "group": "diagram-star"
+    },
+    {
+      "id": "diagram-cycle-en",
+      "query": "Find the service diagram with a closed loop through all four components.",
+      "relevant": [
+        "diagram-cycle"
+      ],
+      "language": "en",
+      "category": "visual_diagram",
+      "group": "diagram-cycle"
+    },
+    {
+      "id": "diagram-cycle-bcs",
+      "query": "Pronađi dijagram servisa sa zatvorenom petljom kroz sve četiri komponente.",
+      "relevant": [
+        "diagram-cycle"
+      ],
+      "language": "bcs",
+      "category": "visual_diagram",
+      "group": "diagram-cycle"
+    },
+    {
+      "id": "diagram-isolated-en",
+      "query": "Find the service diagram where Cache is disconnected from every other component.",
+      "relevant": [
+        "diagram-isolated"
+      ],
+      "language": "en",
+      "category": "visual_diagram",
+      "group": "diagram-isolated"
+    },
+    {
+      "id": "diagram-isolated-bcs",
+      "query": "Pronađi dijagram servisa gdje je keš nepovezan sa svim ostalim komponentama.",
+      "relevant": [
+        "diagram-isolated"
+      ],
+      "language": "bcs",
+      "category": "visual_diagram",
+      "group": "diagram-isolated"
+    },
+    {
+      "id": "board-pending-en",
+      "query": "Find the task board where Build is done and Release has not started.",
+      "relevant": [
+        "board-pending"
+      ],
+      "language": "en",
+      "category": "text_layout",
+      "group": "board-pending"
+    },
+    {
+      "id": "board-pending-bcs",
+      "query": "Pronađi tablu gdje je Build završen, a Release još nije počeo.",
+      "relevant": [
+        "board-pending"
+      ],
+      "language": "bcs",
+      "category": "text_layout",
+      "group": "board-pending"
+    },
+    {
+      "id": "board-active-en",
+      "query": "Find the task board where Release is in progress and Docs is still waiting.",
+      "relevant": [
+        "board-active"
+      ],
+      "language": "en",
+      "category": "text_layout",
+      "group": "board-active"
+    },
+    {
+      "id": "board-active-bcs",
+      "query": "Pronađi tablu gdje je Release u toku, a Docs još čeka.",
+      "relevant": [
+        "board-active"
+      ],
+      "language": "bcs",
+      "category": "text_layout",
+      "group": "board-active"
+    },
+    {
+      "id": "board-released-en",
+      "query": "Find the task board where Release is complete but Build has not started.",
+      "relevant": [
+        "board-released"
+      ],
+      "language": "en",
+      "category": "text_layout",
+      "group": "board-released"
+    },
+    {
+      "id": "board-released-bcs",
+      "query": "Pronađi tablu gdje je Release završen, ali Build još nije počeo.",
+      "relevant": [
+        "board-released"
+      ],
+      "language": "bcs",
+      "category": "text_layout",
+      "group": "board-released"
+    },
+    {
+      "id": "board-complete-en",
+      "query": "Find the task board where Build, Docs, and Release are all complete.",
+      "relevant": [
+        "board-complete"
+      ],
+      "language": "en",
+      "category": "text_layout",
+      "group": "board-complete"
+    },
+    {
+      "id": "board-complete-bcs",
+      "query": "Pronađi tablu gdje su Build, Docs i Release svi završeni.",
+      "relevant": [
+        "board-complete"
+      ],
+      "language": "bcs",
+      "category": "text_layout",
+      "group": "board-complete"
+    },
+    {
+      "id": "notes-offline-en",
+      "query": "What should engineering prove before adding connected inference?",
+      "relevant": [
+        "notes-offline"
+      ],
+      "language": "en",
+      "category": "readable_text",
+      "group": "notes-offline"
+    },
+    {
+      "id": "notes-offline-bcs",
+      "query": "Šta inženjeri treba da provjere prije uvođenja povezane inferencije?",
+      "relevant": [
+        "notes-offline"
+      ],
+      "language": "bcs",
+      "category": "readable_text",
+      "group": "notes-offline"
+    },
+    {
+      "id": "notes-release-en",
+      "query": "What verification is required after the release workflow succeeds?",
+      "relevant": [
+        "notes-release"
+      ],
+      "language": "en",
+      "category": "readable_text",
+      "group": "notes-release"
+    },
+    {
+      "id": "notes-release-bcs",
+      "query": "Šta treba provjeriti nakon uspješnog procesa objavljivanja verzije?",
+      "relevant": [
+        "notes-release"
+      ],
+      "language": "bcs",
+      "category": "readable_text",
+      "group": "notes-release"
+    },
+    {
+      "id": "notes-audio-en",
+      "query": "Why did continuous speech disappear from the live preview?",
+      "relevant": [
+        "notes-audio"
+      ],
+      "language": "en",
+      "category": "readable_text",
+      "group": "notes-audio"
+    },
+    {
+      "id": "notes-audio-bcs",
+      "query": "Zašto je neprekidan govor nestajao iz transkripta uživo?",
+      "relevant": [
+        "notes-audio"
+      ],
+      "language": "bcs",
+      "category": "readable_text",
+      "group": "notes-audio"
+    },
+    {
+      "id": "notes-pooling-en",
+      "query": "What caused the embedding retrieval regression and how is the index repaired?",
+      "relevant": [
+        "notes-pooling"
+      ],
+      "language": "en",
+      "category": "readable_text",
+      "group": "notes-pooling"
+    },
+    {
+      "id": "notes-pooling-bcs",
+      "query": "Шта је изазвало грешку семантичке претраге и како се поправља индекс?",
+      "relevant": [
+        "notes-pooling"
+      ],
+      "language": "bcs",
+      "category": "readable_text",
+      "group": "notes-pooling"
+    },
+    {
+      "id": "notes-privacy-en",
+      "query": "When may meeting content leave the computer for inference?",
+      "relevant": [
+        "notes-privacy"
+      ],
+      "language": "en",
+      "category": "readable_text",
+      "group": "notes-privacy"
+    },
+    {
+      "id": "notes-privacy-bcs",
+      "query": "Kada sadržaj sastanka smije da se pošalje sa računara radi inferencije?",
+      "relevant": [
+        "notes-privacy"
+      ],
+      "language": "bcs",
+      "category": "readable_text",
+      "group": "notes-privacy"
+    },
+    {
+      "id": "notes-fee-en",
+      "query": "How should the cross-chain transfer fee be determined?",
+      "relevant": [
+        "notes-fee"
+      ],
+      "language": "en",
+      "category": "readable_text",
+      "group": "notes-fee"
+    },
+    {
+      "id": "notes-fee-bcs",
+      "query": "Kako treba izračunati naknadu za prenos između lanaca?",
+      "relevant": [
+        "notes-fee"
+      ],
+      "language": "bcs",
+      "category": "readable_text",
+      "group": "notes-fee"
+    },
+    {
+      "id": "dense-01-en",
+      "query": "Find the code editor defining a latency budget of 750 milliseconds.",
+      "relevant": [
+        "dense-01"
+      ],
+      "language": "en",
+      "category": "dense_ui",
+      "group": "dense-01"
+    },
+    {
+      "id": "dense-01-bcs",
+      "query": "Pronađi uređivač koda koji definiše budžet kašnjenja od 750 milisekundi.",
+      "relevant": [
+        "dense-01"
+      ],
+      "language": "bcs",
+      "category": "dense_ui",
+      "group": "dense-01"
+    },
+    {
+      "id": "dense-02-en",
+      "query": "Find the OCR dashboard comparing model latency and token F1.",
+      "relevant": [
+        "dense-02"
+      ],
+      "language": "en",
+      "category": "dense_ui",
+      "group": "dense-02"
+    },
+    {
+      "id": "dense-02-bcs",
+      "query": "Pronađi OCR kontrolnu tablu koja poredi kašnjenje modela i token F1.",
+      "relevant": [
+        "dense-02"
+      ],
+      "language": "bcs",
+      "category": "dense_ui",
+      "group": "dense-02"
+    },
+    {
+      "id": "dense-03-en",
+      "query": "Find the terminal running the OCR benchmark and printing screenshot results.",
+      "relevant": [
+        "dense-03"
+      ],
+      "language": "en",
+      "category": "dense_ui",
+      "group": "dense-03"
+    },
+    {
+      "id": "dense-03-bcs",
+      "query": "Pronađi terminal koji izvršava OCR test i ispisuje rezultate snimaka ekrana.",
+      "relevant": [
+        "dense-03"
+      ],
+      "language": "bcs",
+      "category": "dense_ui",
+      "group": "dense-03"
+    },
+    {
+      "id": "dense-04-en",
+      "query": "Find the meeting notes about an OCR comparison and its follow-up actions.",
+      "relevant": [
+        "dense-04"
+      ],
+      "language": "en",
+      "category": "dense_ui",
+      "group": "dense-04"
+    },
+    {
+      "id": "dense-04-bcs",
+      "query": "Pronađi bilješke sa sastanka o OCR poređenju i narednim zadacima.",
+      "relevant": [
+        "dense-04"
+      ],
+      "language": "bcs",
+      "category": "dense_ui",
+      "group": "dense-04"
+    },
+    {
+      "id": "dense-05-en",
+      "query": "Find the OCR settings showing Apple Vision, language correction off, and a 750 ms latency guardrail.",
+      "relevant": [
+        "dense-05"
+      ],
+      "language": "en",
+      "category": "dense_ui",
+      "group": "dense-05"
+    },
+    {
+      "id": "dense-05-bcs",
+      "query": "Pronađi OCR podešavanja sa Apple Vision modelom, isključenom korekcijom jezika i granicom kašnjenja 750 ms.",
+      "relevant": [
+        "dense-05"
+      ],
+      "language": "bcs",
+      "category": "dense_ui",
+      "group": "dense-05"
+    }
+  ],
+  "provenance": "20 newly rendered synthetic screens, plus five existing synthetic OCR fixtures. Visual pairs deliberately share words; report each category separately."
+}

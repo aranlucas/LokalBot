@@ -6,7 +6,7 @@ import SQLite3
 final class EmbeddingIndexIntegrationTests: XCTestCase {
     /// Opt-in, non-UI proof using a copied library and already downloaded model.
     /// No fixture path means no downloads, server launches, or library reads.
-    func testHarrierRebuildAndRetrievalWhenFixtureProvided() async throws {
+    func testEmbeddingRebuildAndRetrievalWhenFixtureProvided() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard let path = environment["LOKALBOT_EMBEDDING_FIXTURE"] else {
             throw XCTSkip("Set LOKALBOT_EMBEDDING_FIXTURE to an isolated library manifest.")
@@ -38,7 +38,7 @@ final class EmbeddingIndexIntegrationTests: XCTestCase {
         let storage = StorageManager(rootURL: root)
         let meetings = storage.loadMeetings()
         XCTAssertEqual(meetings.count, fixture.meetingCount)
-        let databaseURL = root.appendingPathComponent("harrier-validation.sqlite")
+        let databaseURL = root.appendingPathComponent("embedding-validation.sqlite")
         let index = EmbeddingIndex(databaseURL: databaseURL, storage: storage)
         let database = try XCTUnwrap(SQLiteDatabase(url: databaseURL))
         do {

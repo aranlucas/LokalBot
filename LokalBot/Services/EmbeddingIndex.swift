@@ -141,7 +141,7 @@ enum ScreenSearchRanker {
 }
 
 /// M6 semantic layer (design §4.1): transcript/summary chunks embedded with
-/// Harrier 0.6B GGUF, served by the second llama-server instance.
+/// EmbeddingGemma 2 GGUF, served by the second llama-server instance.
 /// Vectors live in SQLite; query = brute-force cosine (normalized dot) —
 /// instant at personal-library scale, no extra dependency.
 @MainActor
@@ -165,31 +165,37 @@ final class EmbeddingIndex {
         var id: Int64 { snapshotID }
     }
 
-    private static let modelID = "harrier-oss-v1-0.6b-q8"
+    nonisolated static let modelID = "embeddinggemma-2-q8"
     /// Persisted separately from the server-facing model name. Any change to
     /// pooling, prompting, or chunking must advance this value so vectors made
     /// under incompatible contracts are discarded before search resumes.
-    nonisolated static let indexVersion = "harrier-oss-v1-0.6b-q8-last-chunks-v1"
-    nonisolated private static let modelFile = "harrier-oss-v1-0.6b.Q8_0.gguf"
-    nonisolated private static let modelBytes: Int64 = 639_448_320
-    nonisolated private static let modelSHA256 = "ba2c9408f82cfdb73aaf70aaea9f125f3fb24c5e76ce0efb469e1530e5ec53e4"
+    nonisolated static let indexVersion = "embeddinggemma-2-q8-mean-768-v1"
+    nonisolated static let modelFile = "embeddinggemma-2-Q8_0.gguf"
+    nonisolated private static let modelBytes: Int64 = 309_855_456
+    nonisolated private static let modelSHA256 = "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135"
     nonisolated private static let modelURL =
-        "https://huggingface.co/mradermacher/harrier-oss-v1-0.6b-GGUF/resolve/d79decec1ab9442e969e79804515b9c31683d30e/harrier-oss-v1-0.6b.Q8_0.gguf"
-    private static let documentPrefix = "Document for meeting search: "
-    private static let queryPrefix = """
-        Instruct: Retrieve relevant meeting transcript and summary chunks for the user's query.
-        Query:
-        """
-    private static let screenDocumentPrefix = "Document from screen memory: "
-    private static let screenQueryPrefix = """
-        Instruct: Retrieve relevant OCR text captured from the user's screen.
-        Query:
-        """
-    /// Harrier scores unrelated OCR at about 0.44 (0.49 with window chrome),
-    /// so the 0.35 floor set for Qwen3 Embedding admitted nearly every
-    /// capture. 0.45 still keeps every relevant English and BCS fixture
-    /// passage. Recalibrate whenever the embedding model changes.
-    nonisolated static let screenSimilarityFloor: Float = 0.45
+        "https://huggingface.co/ggml-org/embeddinggemma-2-GGUF/resolve/bfcd298762cc34d0357ece5ebdd31791a3a374d8/embeddinggemma-2-Q8_0.gguf"
+    /// Embedders this app shipped before. Their files are deleted, by exact
+    /// name, once the current model has been verified.
+    nonisolated static let obsoleteModelFiles = [
+        "harrier-oss-v1-0.6b.Q8_0.gguf",
+        "Qwen3-Embedding-0.6B-Q8_0.gguf",
+        "nomic-embed-text-v1.5.Q8_0.gguf",
+    ]
+    /// The checkpoint's own retrieval prompts (`SearchQuery` and `Document`).
+    /// Meetings and screens share them; the stored text says which it is.
+    nonisolated static let documentPrefix = "title: none | text: "
+    nonisolated static let queryPrefix = "task: search result | query: "
+    private static let screenDocumentPrefix = documentPrefix
+    private static let screenQueryPrefix = queryPrefix
+    /// EmbeddingGemma 2 scores unrelated text higher than Harrier did: on a
+    /// real library, unrelated meeting chunks had a median of 0.59 and
+    /// unrelated screens 0.61. These floors pass the same share of unrelated
+    /// pairs as Harrier's 0.45 (32% of meeting chunks, 76% of screens) while
+    /// keeping 99.7% and 100% of the passages the queries were written from.
+    /// Recalibrate whenever the embedding model changes.
+    nonisolated static let meetingSimilarityFloor: Float = 0.61
+    nonisolated static let screenSimilarityFloor: Float = 0.58
     nonisolated static let transcriptChunkTargetCharacters = 500
     /// Preserve the existing chunk shape for normal ASR output while keeping a
     /// single pathological segment safely below the embedder's 2K context.
@@ -200,6 +206,10 @@ final class EmbeddingIndex {
     private let storage: StorageManager
     private var locallyDeletedMeetingIDs: Set<UUID> = []
     private var screenReindexFlight: (id: UUID, task: Task<Void, Never>)?
+    /// Startup discarded screen vectors an earlier model made. Screen backfill
+    /// is otherwise lazy, but this library already used semantic screen search,
+    /// so it is rebuilt after the meetings instead of waiting for a search.
+    private(set) var screenVectorsNeedRebuild = false
 
     private let databaseURL: URL
 
@@ -256,6 +266,9 @@ final class EmbeddingIndex {
                 SELECT 1 FROM sqlite_master
                 WHERE type = 'table' AND name = 'screenshots'
                 """) {
+                screenVectorsNeedRebuild = database.hasRow(
+                    "SELECT 1 FROM screen_embeddings WHERE model_id != ?1 LIMIT 1",
+                    bind: [Self.indexVersion])
                 database.run(
                     "DELETE FROM screen_embeddings WHERE model_id != ?1",
                     bind: [Self.indexVersion])
@@ -574,6 +587,13 @@ final class EmbeddingIndex {
             """, bind: [Self.indexVersion])
     }
 
+    /// Rebuilds screen vectors once after a model change discarded them.
+    func rebuildScreenVectorsAfterModelChange() async {
+        guard screenVectorsNeedRebuild else { return }
+        screenVectorsNeedRebuild = false
+        await reindexScreenText()
+    }
+
     /// Backfills immutable OCR rows that do not yet have a vector. This is
     /// invoked lazily by semantic screen search, so users who never enable that
     /// feature do not download a model or spend background inference time.
@@ -833,7 +853,7 @@ final class EmbeddingIndex {
         hits.filter { !isDeleted($0.meetingID) }
     }
 
-    private struct Candidate: Sendable {
+    struct Candidate: Sendable {
         let meetingID: UUID
         let start: TimeInterval
         let text: String
@@ -858,7 +878,7 @@ final class EmbeddingIndex {
     /// Cosine scoring is the expensive part of brute-force retrieval. Keep it
     /// off the main actor and retain only the best `limit` rows instead of
     /// allocating and sorting a hit for every embedding in the library.
-    nonisolated private static func rank(
+    nonisolated static func rank(
         _ candidates: [Candidate],
         against queryVector: [Float],
         limit: Int
@@ -877,7 +897,7 @@ final class EmbeddingIndex {
                 }
                 return total
             }
-            guard score > 0.45 else { continue }
+            guard score > meetingSimilarityFloor else { continue }
             let hit = Hit(meetingID: candidate.meetingID, start: candidate.start,
                           text: candidate.text, score: score)
             if best.count < limit {
@@ -962,21 +982,44 @@ final class EmbeddingIndex {
             let authenticationToken = await LlamaServer.embedder.authenticationToken()
             request.setValue("Bearer \(authenticationToken)", forHTTPHeaderField: "Authorization")
             request.timeoutInterval = 120
-            request.httpBody = try JSONSerialization.data(withJSONObject: [
-                "input": texts.map { prefix + $0 },
-                "model": Self.modelID,
-            ])
+            request.httpBody = try JSONSerialization.data(
+                withJSONObject: embeddingRequestBody(texts, prefix: prefix))
             let (data, _) = try await URLSession.shared.data(for: request)
-            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let rows = json["data"] as? [[String: Any]] else {
-                throw TextEngineError.badResponse("unexpected /v1/embeddings payload")
-            }
-            return rows.compactMap { row -> [Float]? in
-                guard let values = row["embedding"] as? [Double] else { return nil }
-                let vector = values.map(Float.init)
-                let norm = sqrt(vector.reduce(0) { $0 + $1 * $1 })
-                return norm > 0 ? vector.map { $0 / norm } : vector
-            }
+            return try embeddingVectors(fromResponse: data)
+        }
+    }
+
+    /// EmbeddingGemma is a bidirectional encoder: every token attends to the
+    /// whole input, so reusing another input's cached prompt prefix would be
+    /// wrong. The bundled llama.cpp already re-encodes each input (vectors were
+    /// identical with caching on); turning it off keeps that independent of
+    /// server defaults.
+    nonisolated static func embeddingRequestBody(_ texts: [String], prefix: String) -> [String: Any] {
+        [
+            "input": texts.map { prefix + $0 },
+            "model": modelID,
+            "cache_prompt": false,
+        ]
+    }
+
+    /// Returns one L2-normalized vector per input, in input order. Rows are
+    /// ordered by their `index` rather than trusting the response order.
+    nonisolated static func embeddingVectors(fromResponse data: Data) throws -> [[Float]] {
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let rows = json["data"] as? [[String: Any]] else {
+            throw TextEngineError.badResponse("unexpected /v1/embeddings payload")
+        }
+        var ordered: [(index: Int, row: [String: Any])] = []
+        for (offset, row) in rows.enumerated() {
+            let index = row["index"] as? Int ?? offset
+            ordered.append((index, row))
+        }
+        ordered.sort { $0.index < $1.index }
+        return ordered.compactMap { entry -> [Float]? in
+            guard let values = entry.row["embedding"] as? [Double] else { return nil }
+            let vector = values.map(Float.init)
+            let norm = sqrt(vector.reduce(0) { $0 + $1 * $1 })
+            return norm > 0 ? vector.map { $0 / norm } : vector
         }
     }
 
@@ -995,6 +1038,7 @@ final class EmbeddingIndex {
         if ModelFileValidator.looksLikeGGUF(path),
            await DownloadIntegrity.verifiedExisting(
                at: path, expectedBytes: modelBytes, expectedSHA256: modelSHA256) {
+            removeObsoleteModels(in: folder)
             return path
         }
         DownloadIntegrity.removeFileAndMarker(at: path)
@@ -1014,7 +1058,17 @@ final class EmbeddingIndex {
         DownloadIntegrity.removeFileAndMarker(at: stashed)
         try DownloadIntegrity.markInstalled(
             at: path, expectedBytes: modelBytes, expectedSHA256: modelSHA256)
+        removeObsoleteModels(in: folder)
         return path
+    }
+
+    /// Previous embedders are never loaded again, and nothing else references
+    /// their files. Delete only those exact names, and only after the current
+    /// model verified, so a failed download never leaves search without one.
+    nonisolated static func removeObsoleteModels(in folder: URL) {
+        for name in obsoleteModelFiles where name != modelFile {
+            DownloadIntegrity.removeFileAndMarker(at: folder.appendingPathComponent(name))
+        }
     }
 
     // MARK: - Plumbing

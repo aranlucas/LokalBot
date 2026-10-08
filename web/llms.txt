@@ -8,7 +8,7 @@ Key facts:
 - Price and license: free, GNU GPL v3. Source: https://github.com/stevyhacker/lokalbot
 - Install: download LokalBot.dmg from https://github.com/stevyhacker/lokalbot/releases/latest or run `brew install --cask stevyhacker/tap/lokalbot`.
 - Meetings: records the microphone and the meeting app's audio on separate tracks without joining the call. On a fresh install it asks through a notification before recording a detected meeting.
-- Local models: Qwen3-ASR 1.7B is the default speech model (since 0.8.1); Parakeet, IBM Granite Speech, and Whisper large-v3 turbo are alternatives. Summaries use Qwen3.5 4B on a bundled llama.cpp runtime. Search uses Harrier 0.6B embeddings.
+- Local models: Qwen3-ASR 1.7B is the default speech model (since 0.8.1); Parakeet, IBM Granite Speech, and Whisper large-v3 turbo are alternatives. Summaries use Qwen3.5 4B on a bundled llama.cpp runtime. Search uses EmbeddingGemma 2 embeddings.
 - Optional backends: Apple Intelligence (macOS 26+), Ollama, and OpenAI-compatible servers. A non-local server must be explicitly approved before it receives meeting or workday context.
 - Workday memory: day tracking starts with app names and window titles only. Saved screen text and encrypted screenshots are opt-in; screenshots are deleted after 14 days by default.
 - Also includes: hold-to-talk dictation (⌥ Space), optional local autocomplete, Markdown/Obsidian/Logseq export, and a read-only CLI and MCP server that stay off until Agent Access is enabled.

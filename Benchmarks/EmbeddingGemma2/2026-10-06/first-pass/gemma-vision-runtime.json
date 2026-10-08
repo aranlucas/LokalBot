@@ -1,0 +1,43 @@
+{
+  "runtime": "SentenceTransformers / PyTorch MPS",
+  "precision": "BF16",
+  "parameters": 438760448,
+  "startup_seconds": 1.2178448749473318,
+  "peak_rss_bytes": 1160904704,
+  "mps_allocated_bytes": 883171072,
+  "mps_driver_bytes": 2642100224,
+  "config_overrides": {
+    "audio_config": null
+  },
+  "attention": "eager",
+  "device": "mps",
+  "packages": {
+    "torch": "2.14.1",
+    "transformers": "5.19.0",
+    "sentence-transformers": "6.1.0",
+    "numpy": "2.5.3"
+  },
+  "prompts": {
+    "query": "task: search result | query: ",
+    "document": "title: none | text: ",
+    "BitextMining": "task: search result | query: ",
+    "Classification": "task: classification | query: ",
+    "Clustering": "task: clustering | query: ",
+    "CodeRetrieval": "task: code retrieval | query: ",
+    "Document": "title: none | text: ",
+    "FactChecking": "task: fact checking | query: ",
+    "InstructionRetrieval": "task: code retrieval | query: ",
+    "MultilabelClassification": "task: classification | query: ",
+    "PairClassification": "task: sentence similarity | query: ",
+    "QuestionAnswering": "task: question answering | query: ",
+    "Reranking": "task: search result | query: ",
+    "Retrieval": "task: search result | query: ",
+    "Retrieval-document": "title: none | text: ",
+    "Retrieval-query": "task: search result | query: ",
+    "STS": "task: sentence similarity | query: ",
+    "SearchQuery": "task: search result | query: ",
+    "SentenceSimilarity": "task: sentence similarity | query: ",
+    "Summarization": "task: sentence similarity | query: "
+  },
+  "maximum_sequence_length": 1000000000000000019884624838656
+}
