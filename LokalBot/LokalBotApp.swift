@@ -343,7 +343,7 @@ struct LokalBotApp: App {
             MenuBarView(dictation: app.dictation)
                 .environmentObject(app)
                 .brandTinted()
-                .appTextSizeRoot(app.settings.textSize)
+                .menuBarTextSizeRoot(app.settings.textSize)
                 .appLanguageRoot(app.settingsStore)
         } label: {
             MenuBarLabel(app: app, dictation: app.dictation)

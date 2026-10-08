@@ -51,6 +51,14 @@ enum AppTextSize: String, Codable, CaseIterable, Identifiable, Sendable {
         case .largest: 1.45
         }
     }
+
+    /// The menu bar panel is a compact surface beside the system's own menu
+    /// bar extras, which use the macOS sizes. Default and Small keep those
+    /// sizes; larger settings grow relative to Default, so the panel no longer
+    /// reads a point larger than every other menu bar item.
+    var menuBarScale: CGFloat {
+        max(1, scale / AppTextSize.standard.scale)
+    }
 }
 
 /// The current scale for AppKit-drawn text and code that has no SwiftUI
@@ -209,6 +217,10 @@ extension View {
     /// Window roots publish the text size; only text redraws when it changes.
     func appTextSizeRoot(_ textSize: AppTextSize) -> some View {
         environment(\.appTextScale, textSize.scale)
+    }
+
+    func menuBarTextSizeRoot(_ textSize: AppTextSize) -> some View {
+        environment(\.appTextScale, textSize.menuBarScale)
     }
 }
 
