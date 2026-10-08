@@ -63,14 +63,7 @@ final class DictationOverlayController {
         if dictation.shouldShowLiveTranscriptPanel {
             return CGSize(width: 520, height: 156)
         }
-        switch dictation.state {
-        case .idle where dictation.isStarting:
-            return CGSize(width: 216, height: 40)
-        case .idle, .recording:
-            return CGSize(width: 172, height: 40)
-        case .transcribing, .composing:
-            return CGSize(width: 216, height: 40)
-        }
+        return CGSize(width: DictationOverlayView.compactWidth(for: dictation), height: 40)
     }
 }
 
@@ -145,7 +138,7 @@ struct DictationOverlayView: View {
                 }
                 Spacer(minLength: 10)
                 if dictation.state.isRecording {
-                    LiveWaveform().padding(.trailing, 8)
+                    LiveWaveform(animated: dictation.isReceivingAudio).padding(.trailing, 8)
                 }
                 cancelButton
             }
@@ -225,12 +218,24 @@ struct DictationOverlayView: View {
         return "\(status) \(dictation.timerLabel)"
     }
 
+    /// The waveform moves only while audio arrives, and a microphone problem
+    /// replaces it with words: the compact HUD used to animate a fixed wave
+    /// while the microphone reconnected, so recording looked fine when it was not.
     private var recordingRow: some View {
         HStack(spacing: 0) {
             PulsingDictationDot()
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading, 15)
-            LiveWaveform().padding(.trailing, 8)
+            if dictation.captureStatus.isEmpty {
+                LiveWaveform(animated: dictation.isReceivingAudio).padding(.trailing, 8)
+            } else {
+                Text(dictation.captureStatus)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .padding(.horizontal, 8)
+            }
             cancelButton
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.trailing, 10)
@@ -273,11 +278,18 @@ struct DictationOverlayView: View {
     private var width: CGFloat {
         if dictation.shouldShowModelPreparation { return 360 }
         if dictation.shouldShowLiveTranscriptPanel { return 520 }
+        return Self.compactWidth(for: dictation)
+    }
+
+    @MainActor
+    static func compactWidth(for dictation: DictationCoordinator) -> CGFloat {
         switch dictation.state {
         case .idle where dictation.isStarting:
             return 216
-        case .idle, .recording:
+        case .idle:
             return 172
+        case .recording:
+            return dictation.captureStatus.isEmpty ? 172 : 300
         case .transcribing, .composing:
             return 216
         }

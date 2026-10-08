@@ -97,6 +97,17 @@ struct DictationDeliveryTarget: Equatable, Sendable {
     let processID: pid_t
     let bundleID: String?
     let focusIdentityKey: String?
+    /// Text the person selected before dictating. Pasting replaces exactly that
+    /// selection, the way typing would; any other selection blocks the paste.
+    var selection: DictationTextSelection?
+
+    init(processID: pid_t, bundleID: String?, focusIdentityKey: String?,
+         selection: DictationTextSelection? = nil) {
+        self.processID = processID
+        self.bundleID = bundleID
+        self.focusIdentityKey = focusIdentityKey
+        self.selection = selection
+    }
 
     func matches(processID currentProcessID: pid_t,
                  bundleID currentBundleID: String?,
@@ -112,12 +123,18 @@ struct DictationDeliveryTarget: Equatable, Sendable {
     /// A blocked snapshot always wins over the app-only fallback. In
     /// particular, a target captured before AX exposed a field must never
     /// become permission to paste into a same-app password field later.
-    func matches(_ snapshot: DictationFocusSnapshot) -> Bool {
-        guard !snapshot.isSecureOrBlocked else { return false }
-        return matches(
+    func check(_ snapshot: DictationFocusSnapshot) -> DictationDeliveryCheck {
+        guard !snapshot.isSecureOrBlocked else { return .secureField }
+        guard matches(
             processID: snapshot.processID,
             bundleID: snapshot.bundleID,
-            focusIdentityKey: snapshot.focusIdentityKey)
+            focusIdentityKey: snapshot.focusIdentityKey) else { return .focusMoved }
+        if let current = snapshot.selection, current != selection { return .selectionChanged }
+        return .deliverable
+    }
+
+    func matches(_ snapshot: DictationFocusSnapshot) -> Bool {
+        check(snapshot) == .deliverable
     }
 
     static func captured(from snapshot: DictationFocusSnapshot) -> Self? {
@@ -125,7 +142,46 @@ struct DictationDeliveryTarget: Equatable, Sendable {
         return Self(
             processID: snapshot.processID,
             bundleID: snapshot.bundleID,
-            focusIdentityKey: snapshot.focusIdentityKey)
+            focusIdentityKey: snapshot.focusIdentityKey,
+            selection: snapshot.selection)
+    }
+}
+
+/// Why a finished dictation may or may not be pasted where it began.
+enum DictationDeliveryCheck: Equatable, Sendable {
+    case deliverable
+    case focusMoved
+    case selectionChanged
+    case secureField
+    /// The field could not be read: Accessibility access is missing, or the
+    /// app did not answer in time.
+    case fieldUnreadable
+
+    var clipboardMessage: String? {
+        switch self {
+        case .deliverable:
+            nil
+        case .focusMoved:
+            "Dictation finished after focus moved, so the text was copied to the clipboard instead of being inserted into another app."
+        case .selectionChanged:
+            "The selected text changed while you were dictating, so the text was copied to the clipboard instead of replacing it."
+        case .secureField:
+            "Dictation does not type into password fields, so the text was copied to the clipboard."
+        case .fieldUnreadable:
+            "LokalBot could not confirm which field to paste into, so the text was copied to the clipboard. Check that LokalBot has Accessibility access."
+        }
+    }
+}
+
+/// A non-empty text selection, as UTF-16 offsets reported by Accessibility.
+struct DictationTextSelection: Equatable, Sendable {
+    let location: Int
+    let length: Int
+
+    init?(location: Int, length: Int) {
+        guard length > 0, location >= 0 else { return nil }
+        self.location = location
+        self.length = length
     }
 }
 
@@ -135,7 +191,23 @@ struct DictationFocusSnapshot: Equatable, Sendable {
     let processID: pid_t
     let bundleID: String?
     let focusIdentityKey: String?
+    /// A secure (password) field.
     let isSecureOrBlocked: Bool
+    /// The field's non-empty selection, if any.
+    var selection: DictationTextSelection?
+
+    init(processID: pid_t, bundleID: String?, focusIdentityKey: String?,
+         isSecureOrBlocked: Bool, selection: DictationTextSelection? = nil) {
+        self.processID = processID
+        self.bundleID = bundleID
+        self.focusIdentityKey = focusIdentityKey
+        self.isSecureOrBlocked = isSecureOrBlocked
+        self.selection = selection
+    }
+
+    /// Screen and nearby-text context are never read from a secure field or
+    /// while text is selected.
+    var blocksContextCapture: Bool { isSecureOrBlocked || selection != nil }
 }
 
 struct DictationFocusCaptureResult: Equatable, Sendable {
@@ -182,15 +254,18 @@ final class DictationFocusSnapshotExecutor: @unchecked Sendable {
         self.resolver = resolver
     }
 
-    func capture() async -> DictationFocusCaptureResult {
-        await withCheckedContinuation { continuation in
+    /// `deadlineMilliseconds` lengthens the wait for callers that are not on
+    /// the shortcut's critical path, such as the check before pasting.
+    func capture(deadlineMilliseconds deadlineOverride: Int? = nil) async -> DictationFocusCaptureResult {
+        let deadline = max(1, deadlineOverride ?? deadlineMilliseconds)
+        return await withCheckedContinuation { continuation in
             stateQueue.async { [self] in
                 nextIdentifier &+= 1
                 let waiterID = nextIdentifier
                 let waiter = Waiter(id: waiterID, continuation: continuation)
                 enqueue(waiter)
                 stateQueue.asyncAfter(
-                    deadline: .now() + .milliseconds(deadlineMilliseconds)
+                    deadline: .now() + .milliseconds(deadline)
                 ) { [weak self] in
                     self?.expire(waiterID: waiterID)
                 }

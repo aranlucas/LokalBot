@@ -162,13 +162,22 @@ struct DictationView: View {
         }
     }
 
+    static func readyText(triggerMode: DictationTriggerMode) -> String {
+        switch triggerMode {
+        case .pushToTalk:
+            "Ready — hold \(DictationShortcut.label) to dictate."
+        case .toggle:
+            "Ready — press \(DictationShortcut.label) to start and again to finish."
+        }
+    }
+
     private var statusText: String {
         if app.dictation.isStarting { return "Starting the microphone…" }
         switch app.dictation.state {
         case .idle:
             if app.settings.dictationEnabled {
                 return app.dictation.isShortcutMonitoringActive
-                    ? "Ready — hold \(DictationShortcut.label) to dictate."
+                    ? Self.readyText(triggerMode: app.settings.dictationTriggerMode)
                     : "Shortcut inactive."
             }
             return "Ready from this screen. Turn on the shortcut for system-wide use."

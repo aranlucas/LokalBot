@@ -52,7 +52,7 @@ final class DictationVisibleContextCapture: @unchecked Sendable {
         -> CotypingVisibleContext.Snapshot? {
         guard policy.enabled, let identity = target.focusIdentityKey,
               let before = CotypingAXHelper.resolveDictationFocusSnapshot(),
-              !before.isSecureOrBlocked, before.processID == target.processID,
+              !before.blocksContextCapture, before.processID == target.processID,
               before.focusIdentityKey == identity, let element = CotypingAXHelper.focusedElement() else { return nil }
         let source = CotypingVisibleContextAXSource(
             field: element, processID: target.processID, appName: target.appName, bundleID: target.bundleID,

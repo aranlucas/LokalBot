@@ -64,6 +64,7 @@ enum LokalBotMain {
                         MicRecorder.defaultInputFactory = {
                             try FileMicrophoneInput(url: audio.appendingPathComponent("mic.wav"))
                         }
+                        MicRecorder.dictationInputFactory = MicRecorder.defaultInputFactory
                         SystemAudioRecorder.defaultTapFactory = {
                             if let tap = try? FileSystemAudioTap(url: audio.appendingPathComponent("system.wav")) {
                                 return tap

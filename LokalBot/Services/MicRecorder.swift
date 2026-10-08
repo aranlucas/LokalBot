@@ -171,6 +171,30 @@ final class MicAudioBufferPoolBroker: @unchecked Sendable {
     }
 }
 
+/// Counts microphone recoveries in a sliding window. A recovery that "succeeds"
+/// and is followed by another configuration change a moment later is not
+/// recovered: each rebuild used to reset the retry budget, so a flapping device
+/// cycled forever while the recording kept only fragments. Opt-in, because a
+/// meeting would rather keep fragments than stop.
+struct MicRecoveryFlapDetector: Equatable {
+    let limit: Int
+    let window: TimeInterval
+    private(set) var recoveries: [Date] = []
+
+    init(limit: Int, window: TimeInterval) {
+        self.limit = max(1, limit)
+        self.window = window
+    }
+
+    static let dictation = MicRecoveryFlapDetector(limit: 3, window: 20)
+
+    /// Records one recovery; true once more than `limit` began within `window`.
+    mutating func recordRecovery(at now: Date) -> Bool {
+        recoveries = recoveries.filter { now.timeIntervalSince($0) < window } + [now]
+        return recoveries.count > limit
+    }
+}
+
 final class MicRealtimeDropCounter: @unchecked Sendable {
     private let lock: NSLock
     private var count = 0
@@ -208,7 +232,16 @@ final class MicRealtimeDropCounter: @unchecked Sendable {
 final class MicRecorder {
 
     static var defaultInputFactory: () throws -> MicrophoneInput = { EngineMicrophoneInput() }
+    /// Dictation records through a capture session, which keeps a Bluetooth
+    /// headset's microphone open while it switches to headset mode. Meetings
+    /// keep the engine input (and its speaker-clock anchoring) above.
+    static var dictationInputFactory: () throws -> MicrophoneInput = {
+        try CaptureSessionMicrophoneInput()
+    }
     private let makeInput: () throws -> MicrophoneInput
+    /// Nil keeps retrying for as long as the device keeps changing.
+    private let flapPolicy: MicRecoveryFlapDetector?
+    private var flapDetector: MicRecoveryFlapDetector?
     // Recreated per session — a reused engine can hold a stale graph after
     // device changes and then fails with kAudioDeviceUnsupportedFormat ('!dev').
     private var input: MicrophoneInput
@@ -245,10 +278,14 @@ final class MicRecorder {
     private let ioQueue: DispatchQueue
 
     init(writerQueue: DispatchQueue = DispatchQueue(label: "lokalbot.microphone.write", qos: .userInitiated),
-         makeInput: @escaping () throws -> MicrophoneInput = MicRecorder.defaultInputFactory) {
+         makeInput: @escaping () throws -> MicrophoneInput = MicRecorder.defaultInputFactory,
+         flapPolicy: MicRecoveryFlapDetector? = nil) {
         ioQueue = writerQueue
         self.makeInput = makeInput
-        self.input = (try? makeInput()) ?? EngineMicrophoneInput()
+        self.flapPolicy = flapPolicy
+        // Nothing is opened until `start`: dictation's capture-session input
+        // would otherwise touch the microphone when the app launches.
+        self.input = IdleMicrophoneInput()
     }
     private static let bufferPoolSize = 16
     private static let pooledBufferFrameCapacity: AVAudioFrameCount = 32_768
@@ -364,6 +401,7 @@ final class MicRecorder {
         }
         updateRecoveryState(.healthy)
         resetCaptureHealth(sampleRate: recordingFormat.sampleRate)
+        flapDetector = flapPolicy
 
         isRecording = true
         observeDeviceReconnections()
@@ -463,6 +501,13 @@ final class MicRecorder {
             scheduleReconfigurationRetry(lastError: error.localizedDescription)
             throw error
         }
+    }
+
+    /// Rebuilds the input after the backoff delay instead of on the caller's
+    /// thread. A stopped input is usually mid-reconfiguration, and reopening a
+    /// device synchronously blocks the main thread for as long as it takes.
+    func recoverCapture(reason: String) {
+        scheduleReconfigurationRetry(lastError: reason)
     }
 
     // MARK: - Engine setup
@@ -743,6 +788,7 @@ final class MicRecorder {
     /// AVAudioEngine's transient "config change pending" state.
     private func handleConfigurationChange(for changedEngine: AVAudioEngine) {
         guard isRecording, (input as? EngineMicrophoneInput)?.engine === changedEngine else { return }
+        lokalbotLog("microphone configuration changed; rebuilding capture")
         removeConfigurationChangeObserver()
         changedEngine.inputNode.removeTap(onBus: 0)
         changedEngine.stop()
@@ -760,6 +806,15 @@ final class MicRecorder {
     private func scheduleReconfigurationRetry(lastError initialError: String) {
         guard isRecording else { return }
         guard reconfigurationTask == nil else { return }
+        if flapDetector?.recordRecovery(at: Date()) == true {
+            let window = Int(flapDetector?.window ?? 0)
+            lokalbotLog("microphone recovery stopped: input reconnected repeatedly within \(window)s")
+            updateRecoveryState(.degraded(errorDescription:
+                "The microphone kept disconnecting. If you use a Bluetooth headset, "
+                    + "choose another input in System Settings → Sound."))
+            return
+        }
+        lokalbotLog("microphone recovery started: \(initialError)")
         updateRecoveryState(.recovering(attempt: 0))
         reconfigurationTask = Task { [weak self] in
             var lastError = initialError
@@ -781,12 +836,13 @@ final class MicRecorder {
                     }
                     do {
                         try self.rebuildCaptureGraph(recordingFormat: recordingFormat)
-                        NSLog("MicRecorder reconfig retry succeeded")
+                        lokalbotLog("microphone recovery succeeded on attempt \(attempt)")
                         self.reconfigurationTask = nil
                         self.updateRecoveryState(.healthy)
                         return ReconfigurationAttemptResult.recovered
                     } catch {
-                        NSLog("MicRecorder reconfig retry failed: \(error.localizedDescription)")
+                        lokalbotLog(
+                            "microphone recovery attempt \(attempt) failed: \(error.localizedDescription)")
                         return ReconfigurationAttemptResult.retry(error.localizedDescription)
                     }
                 }
@@ -803,8 +859,8 @@ final class MicRecorder {
                 guard let self, self.isRecording else { return }
                 self.reconfigurationTask = nil
                 self.updateRecoveryState(.degraded(errorDescription: terminalError))
-                NSLog(
-                    "MicRecorder recovery exhausted after \(Self.maximumReconfigurationAttempts) attempts: \(terminalError)")
+                lokalbotLog(
+                    "microphone recovery exhausted after \(Self.maximumReconfigurationAttempts) attempts: \(terminalError)")
             }
         }
     }
@@ -1030,4 +1086,14 @@ final class MicRecorder {
         speakerAudioClock?.record(hostTime: hostTime, valid: hostValid, startFrame: startFrame,
             frames: Int64(buffer.frameLength), sampleRate: buffer.format.sampleRate)
     }
+}
+
+/// The recorder's input before its first `start`.
+private final class IdleMicrophoneInput: MicrophoneInput {
+    let inputFormat = AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 1)!
+    var isRunning: Bool { false }
+    func installTap(bufferSize: AVAudioFrameCount, block: @escaping AVAudioNodeTapBlock) {}
+    func removeTap() {}
+    func start() throws { throw MicRecorder.RecorderError.inputUnavailable }
+    func stop() {}
 }

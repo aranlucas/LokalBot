@@ -44,6 +44,10 @@ final class DictationCoordinator: ObservableObject {
     @Published private(set) var isLivePreviewWorking = false
     @Published private(set) var isLivePreviewEnabled = false
     @Published private(set) var captureStatus = ""
+    /// Whether the microphone delivered audio within the last second. The HUD
+    /// waveform moves only while this is true, so it cannot look healthy while
+    /// the microphone is reconnecting.
+    @Published private(set) var isReceivingAudio = false
     @Published private(set) var modelPreparationStatus: String?
     @Published private(set) var modelPreparationProgress: Double?
     @Published private(set) var modelPreparationError: String?
@@ -59,7 +63,9 @@ final class DictationCoordinator: ObservableObject {
     private let onError: (String) -> Void
     private let onMicPermissionDenied: () -> Void
     private let focusSnapshotExecutor: DictationFocusSnapshotExecutor
-    private let recorder = MicRecorder()
+    private let recorder = MicRecorder(
+        makeInput: { try MicRecorder.dictationInputFactory() },
+        flapPolicy: .dictation)
     private let inputMonitor = DictationInputMonitor()
     private let overlay: DictationOverlayController
     private lazy var inserter = CotypingInserter()
@@ -88,6 +94,9 @@ final class DictationCoordinator: ObservableObject {
     private var activeAudioURL: URL?
     private var pausedMediaSession: MediaPlaybackController.PauseSession?
     private var deliveryTarget: DictationDeliveryTarget?
+    /// Why no delivery target exists, when paste mode could not bind one.
+    private var deliveryTargetIssue: DictationDeliveryCheck?
+    private var deliveryTargetRetryTask: Task<Void, Never>?
     private var contextTarget: DictationScreenTarget?
     private var pendingFinishSource: String?
     private var generation = 0
@@ -247,23 +256,63 @@ final class DictationCoordinator: ObservableObject {
         return settingsProvider()
     }
 
-    func toggle(source: String = "ui") {
-        if isStarting {
-            invalidateStartingSession()
-            return
-        }
+    enum ToggleAction: Equatable {
+        case start
+        case finish
+        case cancelStart
+        case cancel
+        case retryModelPreparation
+        case ignore
+    }
+
+    /// The shortcut never cancels finished speech: in Toggle mode a second
+    /// press while the text is being prepared (to start the next dictation, or
+    /// because the HUD looked slow) used to delete the recording and the
+    /// transcript. Push-to-talk already ignored it. While the speech model
+    /// needs attention, the shortcut retries instead. Menu and on-screen
+    /// controls keep their explicit Cancel.
+    static func toggleAction(
+        state: State,
+        isStarting: Bool,
+        hasPendingModelRetry: Bool,
+        fromShortcut: Bool
+    ) -> ToggleAction {
+        if isStarting { return .cancelStart }
         switch state {
         case .idle:
-            start(source: source)
+            return .start
         case .recording:
-            finishRecordingAndTranscribe(source: source)
+            return .finish
         case .transcribing, .composing:
+            guard fromShortcut else { return .cancel }
+            return hasPendingModelRetry ? .retryModelPreparation : .ignore
+        }
+    }
+
+    func toggle(source: String = "ui") {
+        switch Self.toggleAction(
+            state: state,
+            isStarting: isStarting,
+            hasPendingModelRetry: pendingTranscriptionRetry != nil,
+            fromShortcut: source == "shortcut"
+        ) {
+        case .start:
+            start(source: source)
+        case .finish:
+            finishRecordingAndTranscribe(source: source)
+        case .cancelStart:
+            invalidateStartingSession()
+        case .cancel:
             cancel()
+        case .retryModelPreparation:
+            retryModelPreparation()
+        case .ignore:
+            lokalbotLog("dictation shortcut ignored while \(state.label.lowercased())")
         }
     }
 
     func start(source: String = "ui") {
-        guard case .idle = state, startTask == nil else { return }
+        guard case .idle = state, !isStarting else { return }
         guard canStart() else {
             onBusy()
             return
@@ -297,9 +346,13 @@ final class DictationCoordinator: ObservableObject {
             }
         }
         deliveryTarget = nil
+        deliveryTargetIssue = nil
+        deliveryTargetRetryTask?.cancel()
+        deliveryTargetRetryTask = nil
         contextTarget = nil
         pendingFinishSource = nil
         captureStatus = ""
+        isReceivingAudio = false
         lastTranscript = nil
         lastComposedText = nil
         lastEngine = nil
@@ -307,12 +360,18 @@ final class DictationCoordinator: ObservableObject {
         resetLivePreview()
         refreshOverlay()
         let pendingMediaCleanup = mediaCleanupTask
+        // A cancelled start keeps its task until its media pause and resume
+        // finish. Queue behind it instead of ignoring the press: the shortcut
+        // used to do nothing at all until that cleanup ended.
+        let cancelledStartTask = startTask
         startTask = Task { [weak self] in
+            if let cancelledStartTask { await cancelledStartTask.value }
             guard let self else { return }
             var keepScreenContext = false
             defer {
                 focusCaptureTask.cancel()
-                if !keepScreenContext {
+                // A newer start owns the screen-context task once it begins.
+                if !keepScreenContext, self.startTaskGeneration == session {
                     self.discardScreenContext()
                 }
                 if self.startTaskGeneration == session {
@@ -332,12 +391,15 @@ final class DictationCoordinator: ObservableObject {
             let focusCapture = await focusCaptureTask.value
             let capturedDeliveryTarget = Self.deliveryTarget(
                 for: outputMode, capture: focusCapture)
+            let capturedDeliveryIssue = outputMode == .pasteIntoFocusedApp
+                ? Self.deliveryTargetIssue(for: focusCapture) : nil
             // An earlier cancel may still be restoring the exact players it
             // paused. Finish that bounded transition before taking a new media
             // snapshot, otherwise its late resume could interrupt this capture.
             if let pendingMediaCleanup { await pendingMediaCleanup.value }
             guard self.generation == session, !Task.isCancelled else { return }
             self.deliveryTarget = capturedDeliveryTarget
+            self.deliveryTargetIssue = capturedDeliveryIssue
             if let screenTarget, DictationScreenPrivacy.allowsCapture(focus: focusCapture, target: screenTarget) {
                 self.contextTarget = screenTarget
                 self.contextTarget?.focusIdentityKey = focusCapture.snapshot?.focusIdentityKey
@@ -372,13 +434,16 @@ final class DictationCoordinator: ObservableObject {
                 self.refreshOverlay()
                 self.prewarmSelectedModel(reason: source)
                 self.startLivePreviewIfNeeded(audioURL: audioURL, config: config, generation: session)
+                if focusCapture.timedOut, outputMode == .pasteIntoFocusedApp {
+                    self.retryDeliveryTargetCapture(generation: session)
+                }
                 lokalbotLog("dictation recording started source=\(source)")
                 if let pendingFinishSource = self.pendingFinishSource {
                     self.pendingFinishSource = nil
                     self.isStarting = false
                     self.finishRecordingAndTranscribe(source: pendingFinishSource)
                 }
-            } catch is CancellationError {
+            } catch where error is CancellationError || self.generation != session {
                 if let localMediaSession {
                     await MediaPlaybackController.resume(
                         localMediaSession, reason: "cancelled dictation start")
@@ -485,7 +550,7 @@ final class DictationCoordinator: ObservableObject {
         activeAudioURL = nil
         state = .idle
         stopTick()
-        deliveryTarget = nil
+        clearDeliveryTarget()
         pendingFinishSource = nil
         captureStatus = ""
         let mediaSession = pausedMediaSession
@@ -535,7 +600,9 @@ final class DictationCoordinator: ObservableObject {
             modelPreparationStatus = nil
             modelPreparationProgress = nil
             modelPreparationError = Self.modelPreparationFailureMessage
-            onError("Dictation is paused while its speech model needs attention. Choose Retry in the dictation panel.")
+            onError(
+                "Dictation is paused while its speech model needs attention. "
+                    + "Choose Retry in the dictation panel or press \(DictationShortcut.label).")
             lokalbotLog(
                 "dictation model preparation FAILED model=\(choice.rawValue): "
                     + error.localizedDescription)
@@ -543,7 +610,8 @@ final class DictationCoordinator: ObservableObject {
             return
         }
         do {
-            let transcript = try await transcribeSerialized(audioURL, config: config)
+            let transcript = try await transcribeSerialized(
+                audioURL, config: config, retriesWithoutVocabulary: true)
             try Task.checkCancellation()
             guard generation == session else { return }
 
@@ -597,8 +665,10 @@ final class DictationCoordinator: ObservableObject {
             ) {
             case .inserted, .copied, .displayed:
                 break
-            case .focusChanged:
-                onError("Dictation finished after focus moved, so the text was copied to the clipboard instead of being inserted into another app.")
+            case .notDelivered(let check):
+                onError(check.clipboardMessage ?? "")
+            case .unconfirmed:
+                onError("LokalBot could not confirm that the app accepted the paste, so the text was left on the clipboard.")
             case .failed:
                 onError("Dictation finished, but LokalBot could not insert the text. It was copied to the clipboard.")
                 NSPasteboard.general.clearContents()
@@ -633,7 +703,10 @@ final class DictationCoordinator: ObservableObject {
         case displayed
         case inserted
         case copied
-        case focusChanged
+        /// Copied to the clipboard instead of pasted, for this reason.
+        case notDelivered(DictationDeliveryCheck)
+        /// Pasted, but no app read the text; it stays on the clipboard.
+        case unconfirmed
         case failed
         case cancelled
     }
@@ -649,15 +722,22 @@ final class DictationCoordinator: ObservableObject {
         case .showInLokalBot:
             return .displayed
         case .pasteIntoFocusedApp:
-            let targetMatches = await deliveryTargetMatchesCurrentFocus()
+            let check = await deliveryTargetCheck()
             guard !Task.isCancelled, generation == session, contextIsCurrent() else { return .cancelled }
-            guard targetMatches else {
+            guard check == .deliverable else {
                 NSPasteboard.general.clearContents()
                 return NSPasteboard.general.setString(text, forType: .string)
-                    ? .focusChanged : .failed
+                    ? .notDelivered(check) : .failed
             }
             guard !Task.isCancelled, generation == session else { return .cancelled }
-            return inserter.insertViaPaste(text) || inserter.insert(text) ? .inserted : .failed
+            switch await inserter.insertViaPaste(text) {
+            case .pasted:
+                return .inserted
+            case .unconfirmed:
+                return .unconfirmed
+            case .failed:
+                return inserter.typeInChunks(text) ? .inserted : .failed
+            }
         case .copyToClipboard:
             guard !Task.isCancelled, generation == session else { return .cancelled }
             NSPasteboard.general.clearContents()
@@ -673,8 +753,15 @@ final class DictationCoordinator: ObservableObject {
         stopTick()
         resetLivePreview()
         captureStatus = ""
-        deliveryTarget = nil
+        clearDeliveryTarget()
         refreshOverlay()
+    }
+
+    private func clearDeliveryTarget() {
+        deliveryTarget = nil
+        deliveryTargetIssue = nil
+        deliveryTargetRetryTask?.cancel()
+        deliveryTargetRetryTask = nil
     }
 
     nonisolated private static func deliveryTarget(
@@ -686,11 +773,40 @@ final class DictationCoordinator: ObservableObject {
         return DictationDeliveryTarget.captured(from: snapshot)
     }
 
-    private func deliveryTargetMatchesCurrentFocus() async -> Bool {
-        guard let deliveryTarget else { return false }
-        let capture = await focusSnapshotExecutor.capture()
-        guard !capture.timedOut, let snapshot = capture.snapshot else { return false }
-        return deliveryTarget.matches(snapshot)
+    /// Why paste mode has no target, from the snapshot taken at the shortcut.
+    nonisolated static func deliveryTargetIssue(
+        for capture: DictationFocusCaptureResult
+    ) -> DictationDeliveryCheck? {
+        guard !capture.timedOut, let snapshot = capture.snapshot else { return .fieldUnreadable }
+        return snapshot.isSecureOrBlocked ? .secureField : nil
+    }
+
+    /// The paste check is not on the shortcut's critical path, so slow apps
+    /// (Electron, Chromium) get longer to answer than the start snapshot.
+    nonisolated static let deliveryCheckDeadlineMilliseconds = 600
+
+    private func deliveryTargetCheck() async -> DictationDeliveryCheck {
+        guard let deliveryTarget else { return deliveryTargetIssue ?? .fieldUnreadable }
+        let capture = await focusSnapshotExecutor.capture(
+            deadlineMilliseconds: Self.deliveryCheckDeadlineMilliseconds)
+        guard !capture.timedOut, let snapshot = capture.snapshot else { return .fieldUnreadable }
+        return deliveryTarget.check(snapshot)
+    }
+
+    /// The start snapshot has a short deadline so the microphone opens without
+    /// delay. When it times out, read the field again while the person speaks
+    /// instead of copying every dictation into a slow app to the clipboard.
+    private func retryDeliveryTargetCapture(generation session: Int) {
+        deliveryTargetRetryTask?.cancel()
+        deliveryTargetRetryTask = Task { [weak self, focusSnapshotExecutor] in
+            let capture = await focusSnapshotExecutor.capture(
+                deadlineMilliseconds: Self.deliveryCheckDeadlineMilliseconds)
+            guard let self, !Task.isCancelled, self.generation == session,
+                  self.state.isRecording, self.deliveryTarget == nil else { return }
+            self.deliveryTarget = Self.deliveryTarget(for: .pasteIntoFocusedApp, capture: capture)
+            self.deliveryTargetIssue = Self.deliveryTargetIssue(for: capture)
+            self.deliveryTargetRetryTask = nil
+        }
     }
 
     private func invalidateStartingSession() {
@@ -703,7 +819,7 @@ final class DictationCoordinator: ObservableObject {
         isStarting = false
         state = .idle
         stopTick()
-        deliveryTarget = nil
+        clearDeliveryTarget()
         pendingFinishSource = nil
         captureStatus = ""
         discardScreenContext()
@@ -766,23 +882,52 @@ final class DictationCoordinator: ObservableObject {
         refreshOverlay()
     }
 
-    private static func transcribe(_ audioURL: URL, config: AppSettings) async throws -> Transcript {
+    private static func transcribe(
+        _ audioURL: URL,
+        config: AppSettings,
+        retriesWithoutVocabulary: Bool
+    ) async throws -> Transcript {
         guard let duration = AudioFileInspector.duration(at: audioURL),
               duration >= AudioFileInspector.minimumTranscribableDuration else {
             throw DictationError.noAudio
         }
-        if let speech = await SpeechActivity.shared.speechSeconds(in: audioURL), speech < 0.5 {
+        let speech = await SpeechActivity.shared.speechSeconds(in: audioURL)
+        if let speech, speech < 0.5 {
             throw DictationError.noSpeech
         }
-        return try await config.transcriptionEngine().transcribe(
-            audio: audioURL,
-            language: config.transcriptionLanguage.code,
-            prompt: config.transcriptionPrompt)
+        let engine = config.transcriptionEngine()
+        let language = config.transcriptionLanguage.code
+        let transcript = try await engine.transcribe(
+            audio: audioURL, language: language, prompt: config.transcriptionPrompt)
+        guard retriesWithoutVocabulary,
+              shouldRetryWithoutVocabulary(
+                transcript: transcript, prompt: config.transcriptionPrompt, speechSeconds: speech)
+        else { return transcript }
+        try Task.checkCancellation()
+        lokalbotLog("dictation transcript was empty with a vocabulary hint; retrying without it")
+        return try await engine.transcribe(audio: audioURL, language: language, prompt: nil)
+    }
+
+    /// The engines drop rows made only of vocabulary-hint terms, because a
+    /// near-silent span decodes to the hint itself. A dictation can genuinely
+    /// be only those words ("Mila Novak, Orion Launch"), and it then ended as
+    /// "No speech detected". With clear speech, decode once more without the
+    /// hint, which cannot echo anything.
+    static func shouldRetryWithoutVocabulary(
+        transcript: Transcript,
+        prompt: String?,
+        speechSeconds: TimeInterval?
+    ) -> Bool {
+        guard TranscriptionPrompt.normalized(prompt) != nil,
+              let speechSeconds, speechSeconds >= 1 else { return false }
+        return Transcript.normalizedText(
+            transcript.segments.map(\.displayText).joined(separator: " ")).isEmpty
     }
 
     private func transcribeSerialized(
         _ audioURL: URL,
-        config: AppSettings
+        config: AppSettings,
+        retriesWithoutVocabulary: Bool = false
     ) async throws -> Transcript {
         let precedingTask = asrHandoffTask
         let result = DictationASRResultBox()
@@ -790,7 +935,8 @@ final class DictationCoordinator: ObservableObject {
             if let precedingTask { await precedingTask.value }
             do {
                 try Task.checkCancellation()
-                result.store(.success(try await Self.transcribe(audioURL, config: config)))
+                result.store(.success(try await Self.transcribe(
+                    audioURL, config: config, retriesWithoutVocabulary: retriesWithoutVocabulary)))
             } catch {
                 result.store(.failure(error))
             }
@@ -1134,7 +1280,9 @@ final class DictationCoordinator: ObservableObject {
 
     private func startTick() {
         now = Date()
-        tick = Timer.publish(every: 1, on: .main, in: .common)
+        isReceivingAudio = false
+        // Twice a second so the waveform follows the microphone closely.
+        tick = Timer.publish(every: 0.5, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] date in
                 self?.now = date
@@ -1145,27 +1293,34 @@ final class DictationCoordinator: ObservableObject {
     private func stopTick() {
         tick?.cancel()
         tick = nil
+        isReceivingAudio = false
     }
 
     private func refreshCaptureHealth() {
-        guard case .recording = state else {
+        guard case .recording(let startedAt) = state else {
             captureStatus = ""
+            isReceivingAudio = false
             return
         }
         let health = recorder.captureHealth()
+        let current = Date()
+        isReceivingAudio = Self.isReceivingAudio(lastAudioWriteAt: health.lastAudioWriteAt, now: current)
+        let previousStatus = captureStatus
+        defer {
+            // The compact HUD widens to fit a status, so resize the panel.
+            if captureStatus != previousStatus, state.isRecording { refreshOverlay() }
+        }
         switch health.recoveryState {
         case .healthy:
             if health.isEngineRunning {
-                captureStatus = ""
+                captureStatus = Self.idleMicrophoneStatus(
+                    lastAudioWriteAt: health.lastAudioWriteAt, startedAt: startedAt, now: current)
             } else {
+                // Recover after the recorder's settle delay. Rebuilding here
+                // ran on the main thread, raced the reconfiguration notice,
+                // and blocked the keyboard shortcut while a device reopened.
                 captureStatus = "Reconnecting microphone"
-                do {
-                    try recorder.restartCapture()
-                } catch {
-                    lokalbotLog(
-                        "dictation microphone restart retrying after: "
-                            + error.localizedDescription)
-                }
+                recorder.recoverCapture(reason: "The microphone stopped.")
             }
         case .recovering(let attempt):
             captureStatus = attempt == 0
@@ -1174,13 +1329,43 @@ final class DictationCoordinator: ObservableObject {
         case .degraded(let errorDescription):
             captureStatus = ""
             lokalbotLog("dictation microphone recovery FAILED: \(errorDescription)")
-            cancel()
-            onError("Dictation stopped because the microphone could not recover: \(errorDescription)")
+            if Self.shouldTranscribeAfterMicrophoneFailure(capturedDuration: health.duration) {
+                // Keep what was said before the microphone failed.
+                onError("The microphone stopped, so dictation ended early. \(errorDescription)")
+                finishRecordingAndTranscribe(source: "microphone-failure")
+            } else {
+                cancel()
+                onError("Dictation stopped because the microphone could not recover: \(errorDescription)")
+            }
         }
     }
 
+    nonisolated static func isReceivingAudio(lastAudioWriteAt: Date?, now: Date) -> Bool {
+        guard let lastAudioWriteAt else { return false }
+        return now.timeIntervalSince(lastAudioWriteAt) < 1
+    }
+
+    /// Status for a running microphone that is not delivering audio. A
+    /// Bluetooth headset takes a moment to switch into headset mode.
+    nonisolated static func idleMicrophoneStatus(
+        lastAudioWriteAt: Date?, startedAt: Date, now: Date
+    ) -> String {
+        if let lastAudioWriteAt {
+            return now.timeIntervalSince(lastAudioWriteAt) >= 2 ? "No audio from the microphone" : ""
+        }
+        return now.timeIntervalSince(startedAt) >= 2 ? "Waiting for the microphone" : ""
+    }
+
+    nonisolated static func shouldTranscribeAfterMicrophoneFailure(capturedDuration: TimeInterval) -> Bool {
+        capturedDuration >= 1
+    }
+
     private func refreshOverlay() {
-        overlay.update(for: self, visible: settingsProvider().dictationShowOverlay)
+        // The preparation-error panel holds the only Retry button, so it shows
+        // even when the floating status is turned off.
+        overlay.update(
+            for: self,
+            visible: settingsProvider().dictationShowOverlay || modelPreparationError != nil)
     }
 }
 
