@@ -452,6 +452,16 @@ request and any enabled screen context or saved facts included in the prompt.
 Dictation displays that disclosure. Text already inserted into another app is
 not removed by later source deletion.
 
+After pasting, dictation reads up to the bounded text before the caret in the
+same focused field once or a few times within about a second, to confirm the text
+arrived. It reads only the exact field the text was pasted into, identified when
+dictation started, and never a secure field; when that field could not be
+identified, nothing is read back. The read is compared in memory and discarded; nothing from it is saved,
+logged or sent anywhere. Apps on the shared exclusion list are not read, and a
+field that cannot be read is left unchecked. When the text is missing, the
+dictation overlay offers to copy it. The chosen dictation microphone is stored as
+a device identifier in Settings.
+
 Optional media pause uses macOS
 Automation for audible supported players and browsers. It pauses finite
 prerecorded media, excludes live MediaStream/infinite streams and supported

@@ -12,7 +12,7 @@ final class DictationOverlayController {
     }
 
     func update(for dictation: DictationCoordinator, visible: Bool) {
-        guard visible, dictation.state.isWorking || dictation.isStarting else {
+        guard visible, dictation.state.isWorking || dictation.isStarting || dictation.deliveryNotice != nil else {
             close()
             return
         }
@@ -109,7 +109,7 @@ struct DictationOverlayView: View {
             } else {
                 switch dictation.state {
                 case .idle:
-                    EmptyView()
+                    if let notice = dictation.deliveryNotice { noticeRow(notice) }
                 case .recording:
                     recordingRow
                 case .transcribing, .composing:
@@ -124,7 +124,7 @@ struct DictationOverlayView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 10) {
                 if dictation.state.isRecording {
-                    PulsingDictationDot()
+                    PulsingDictationDot(live: dictation.hasMicrophoneAudio)
                 } else {
                     ProgressView()
                         .controlSize(.small)
@@ -138,7 +138,7 @@ struct DictationOverlayView: View {
                 }
                 Spacer(minLength: 10)
                 if dictation.state.isRecording {
-                    LiveWaveform(animated: dictation.isReceivingAudio).padding(.trailing, 8)
+                    AudioLevelBars(meter: dictation.audioLevelMeter).padding(.trailing, 8)
                 }
                 cancelButton
             }
@@ -223,11 +223,11 @@ struct DictationOverlayView: View {
     /// while the microphone reconnected, so recording looked fine when it was not.
     private var recordingRow: some View {
         HStack(spacing: 0) {
-            PulsingDictationDot()
+            PulsingDictationDot(live: dictation.hasMicrophoneAudio)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading, 15)
             if dictation.captureStatus.isEmpty {
-                LiveWaveform(animated: dictation.isReceivingAudio).padding(.trailing, 8)
+                AudioLevelBars(meter: dictation.audioLevelMeter).padding(.trailing, 8)
             } else {
                 Text(dictation.captureStatus)
                     .font(.system(size: 12))
@@ -239,6 +239,37 @@ struct DictationOverlayView: View {
             cancelButton
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.trailing, 10)
+        }
+        .frame(height: 40)
+    }
+
+    /// Pasted text the field did not show: offer it again instead of losing it.
+    private func noticeRow(_ notice: DictationDeliveryNotice) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+                .padding(.leading, 14)
+            Text(notice.copied ? "Copied to the clipboard" : "The text may not have been inserted")
+                .font(.system(size: 12))
+                .lineLimit(1)
+            Spacer(minLength: 4)
+            if !notice.copied {
+                Button("Copy") { dictation.copyDeliveryNoticeText() }
+                    .controlSize(.small)
+                    .accessibilityIdentifier("dictation.notice.copy")
+            }
+            Button {
+                dictation.dismissDeliveryNotice()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .semibold))
+                    .frame(width: 22, height: 22)
+                    .background(Color.primary.opacity(0.08), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .help("Dismiss")
+            .padding(.trailing, 10)
         }
         .frame(height: 40)
     }
@@ -287,7 +318,7 @@ struct DictationOverlayView: View {
         case .idle where dictation.isStarting:
             return 216
         case .idle:
-            return 172
+            return dictation.deliveryNotice == nil ? 172 : 360
         case .recording:
             return dictation.captureStatus.isEmpty ? 172 : 300
         case .transcribing, .composing:
@@ -314,8 +345,42 @@ struct DictationOverlayView: View {
     }
 }
 
+/// Grey and still until the microphone delivers audio (a Bluetooth headset
+/// can take a second to switch), then the pulsing recording dot.
 private struct PulsingDictationDot: View {
+    var live: Bool
+
     var body: some View {
-        StatusDot(color: Brand.recording, size: 7, pulses: true)
+        StatusDot(color: live ? Brand.recording : Color.secondary, size: 7, pulses: live)
+            .accessibilityLabel(Text(live ? "Recording" : "Starting the microphone"))
+    }
+}
+
+/// Bars drawn from the microphone's measured loudness, newest on the right.
+/// Flat while nothing arrives, so a silent or reconnecting microphone is
+/// visible instead of hidden behind a decorative animation.
+struct AudioLevelBars: View {
+    let meter: AudioLevelMeter
+    var barCount = 9
+    var barWidth: CGFloat = 4
+    var maxHeight: CGFloat = 18
+
+    var body: some View {
+        SwiftUI.TimelineView(.animation(minimumInterval: 1.0 / 15.0)) { _ in
+            let levels = meter.recent(barCount)
+            HStack(alignment: .center, spacing: 3) {
+                ForEach(Array(levels.enumerated()), id: \.offset) { _, level in
+                    RoundedRectangle(cornerRadius: barWidth / 2)
+                        .fill(.tint)
+                        .frame(width: barWidth, height: Self.height(for: level, maxHeight: maxHeight))
+                }
+            }
+            .frame(height: maxHeight)
+        }
+        .accessibilityHidden(true)
+    }
+
+    static func height(for level: Float, maxHeight: CGFloat, minHeight: CGFloat = 3) -> CGFloat {
+        minHeight + CGFloat(min(max(level, 0), 1)) * (maxHeight - minHeight)
     }
 }

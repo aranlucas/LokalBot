@@ -247,9 +247,11 @@ struct MenuBarView: View {
         switch app.dictation.state {
         case .recording:
             let shortcut = app.settings.dictationShortcut.displayLabel
-            return app.settings.dictationTriggerMode == .toggle
-                ? Text("Press \(shortcut) again to compose")
-                : Text("Release \(shortcut) to compose")
+            switch app.settings.dictationTriggerMode {
+            case .toggle: return Text("Press \(shortcut) again to compose")
+            case .pushToTalk: return Text("Release \(shortcut) to compose")
+            case .tapOrHold: return Text("Release or tap \(shortcut) to compose")
+            }
         case .transcribing:
             return Text("Turning speech into a writing request")
         case .composing:
@@ -448,9 +450,17 @@ struct MenuBarView: View {
                 .frame(width: 18)
             VStack(alignment: .leading, spacing: 1) {
                 Text("Dictation").font(.scaled(.callout).weight(.medium))
-                Text("Shortcut · \(app.settings.dictationShortcut.displayLabel)")
-                    .font(.scaled(.caption2))
-                    .foregroundStyle(.secondary)
+                if app.settings.dictationEnabled, DictationSecureInput.holder() != nil {
+                    Text("Shortcut blocked by Secure Input")
+                        .font(.scaled(.caption2))
+                        .foregroundStyle(.orange)
+                        .help(Text(verbatim: DictationSecureInput.message(
+                            appName: DictationSecureInput.holder() ?? nil) { app.settings.appLanguage.localized($0) }))
+                } else {
+                    Text("Shortcut · \(app.settings.dictationShortcut.displayLabel)")
+                        .font(.scaled(.caption2))
+                        .foregroundStyle(.secondary)
+                }
             }
             Spacer()
             Toggle("Dictation shortcut", isOn: $app.settings.dictationEnabled)

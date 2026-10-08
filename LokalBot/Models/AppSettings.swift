@@ -184,6 +184,10 @@ struct AppSettings: Codable, Equatable {
     var dictationShortcut: DictationShortcut = .handyDefault
     var dictationOutputMode: DictationOutputMode = .pasteIntoFocusedApp
     var dictationShowOverlay: Bool = true
+    /// A short sound once the microphone delivers audio.
+    var dictationPlaysStartSound: Bool = true
+    /// Capture-device unique ID; empty follows the macOS default input.
+    var dictationMicrophoneID: String = ""
     var dictationLivePreview: Bool = true
     var dictationRetainAudio: Bool = false
     /// Optional built-in model used only for dictation composition/rewrite.
@@ -740,6 +744,8 @@ struct AppSettings: Codable, Equatable {
         case dictationShortcut
         case dictationOutputMode
         case dictationShowOverlay
+        case dictationPlaysStartSound
+        case dictationMicrophoneID
         case dictationLivePreview
         case dictationRetainAudio
         case dictationCompositionBuiltInModelID
@@ -917,6 +923,8 @@ struct AppSettings: Codable, Equatable {
         try c.encode(dictationShortcut, forKey: .dictationShortcut)
         try c.encode(dictationOutputMode, forKey: .dictationOutputMode)
         try c.encode(dictationShowOverlay, forKey: .dictationShowOverlay)
+        try c.encode(dictationPlaysStartSound, forKey: .dictationPlaysStartSound)
+        try c.encode(dictationMicrophoneID, forKey: .dictationMicrophoneID)
         try c.encode(dictationLivePreview, forKey: .dictationLivePreview)
         try c.encode(dictationRetainAudio, forKey: .dictationRetainAudio)
         try c.encode(
@@ -1073,6 +1081,8 @@ struct AppSettings: Codable, Equatable {
         dictationShortcut = storedShortcut.problem == nil ? storedShortcut : defaults.dictationShortcut
         dictationOutputMode = decode(.dictationOutputMode, defaults.dictationOutputMode)
         dictationShowOverlay = decode(.dictationShowOverlay, defaults.dictationShowOverlay)
+        dictationPlaysStartSound = decode(.dictationPlaysStartSound, defaults.dictationPlaysStartSound)
+        dictationMicrophoneID = decode(.dictationMicrophoneID, defaults.dictationMicrophoneID)
         dictationLivePreview = decode(.dictationLivePreview, defaults.dictationLivePreview)
         dictationRetainAudio = decode(.dictationRetainAudio, defaults.dictationRetainAudio)
         dictationCompositionBuiltInModelID = decode(

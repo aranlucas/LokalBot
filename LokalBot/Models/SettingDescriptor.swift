@@ -145,6 +145,8 @@ struct SettingDescriptor: Identifiable {
         .init(id: "settings.dictationShortcut", title: "Dictation shortcut", category: .dictation, aliases: "hotkey keyboard key combination change"),
         .init(id: "settings.dictationTriggerMode", title: "Dictation trigger", category: .dictation, aliases: "push to talk toggle"),
         .init(id: "settings.dictationOutputMode", title: "Dictation output", category: .dictation, aliases: "clipboard paste focused app"),
+        .init(id: "settings.dictationMicrophoneID", title: "Microphone", category: .dictation, aliases: "dictation input device airpods headset bluetooth built-in macbook mic"),
+        .init(id: "settings.dictationPlaysStartSound", title: "Play a sound when the microphone is ready", category: .dictation, aliases: "dictation start cue chime beep tone"),
         .init(id: "settings.dictationShowOverlay", title: "Show floating dictation status", category: .dictation, aliases: "overlay pill"),
         .init(id: "settings.dictationLivePreview", title: "Show live transcript", category: .dictation, aliases: "speech preview"),
         .init(id: "settings.dictationRetainAudio", title: "Keep dictation audio files", category: .dictation, aliases: "speech recording retention"),

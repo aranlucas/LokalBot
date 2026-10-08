@@ -40,6 +40,10 @@ final class DictationCoordinator: ObservableObject {
     @Published private(set) var lastComposedText: String?
     @Published private(set) var lastEngine: String?
     @Published private(set) var lastContextUse: DictationContextUse?
+    /// Pasted text that the target field did not show afterwards.
+    @Published private(set) var deliveryNotice: DictationDeliveryNotice?
+    private var insertionCheckTask: Task<Void, Never>?
+    private var noticeDismissTask: Task<Void, Never>?
     @Published private(set) var liveTranscript = DictationLiveTranscript()
     @Published private(set) var livePreviewStatus = ""
     @Published private(set) var isLivePreviewWorking = false
@@ -49,6 +53,10 @@ final class DictationCoordinator: ObservableObject {
     /// waveform moves only while this is true, so it cannot look healthy while
     /// the microphone is reconnecting.
     @Published private(set) var isReceivingAudio = false
+    /// The microphone has delivered audio in this recording. Until then the
+    /// HUD shows that the microphone is still starting.
+    @Published private(set) var hasMicrophoneAudio = false
+    var audioLevelMeter: AudioLevelMeter { recorder.levelMeter }
     @Published private(set) var modelPreparationStatus: String?
     @Published private(set) var modelPreparationProgress: Double?
     @Published private(set) var modelPreparationError: String?
@@ -64,9 +72,7 @@ final class DictationCoordinator: ObservableObject {
     private let onError: (String) -> Void
     private let onMicPermissionDenied: () -> Void
     private let focusSnapshotExecutor: DictationFocusSnapshotExecutor
-    private let recorder = MicRecorder(
-        makeInput: { try MicRecorder.dictationInputFactory() },
-        flapPolicy: .dictation)
+    private let recorder: MicRecorder
     private let inputMonitor = DictationInputMonitor()
     private let overlay: DictationOverlayController
     private let settingsStore: SettingsStore
@@ -128,6 +134,11 @@ final class DictationCoordinator: ObservableObject {
     ) {
         self.storageRoot = storageRoot
         self.settingsStore = settingsStore
+        self.recorder = MicRecorder(
+            makeInput: { [settingsStore] in
+                try MicRecorder.dictationInputFactory(settingsStore.current.dictationMicrophoneID)
+            },
+            flapPolicy: .dictation)
         self.overlay = DictationOverlayController(settingsStore: settingsStore)
         self.settingsProvider = settingsProvider
         self.makeTextEngine = makeTextEngine
@@ -148,6 +159,14 @@ final class DictationCoordinator: ObservableObject {
         inputMonitor.onStop = { [weak self] in self?.finishRecordingAndTranscribe(source: "shortcut") }
         inputMonitor.onToggle = { [weak self] in self?.toggle(source: "shortcut") }
         inputMonitor.onCancel = { [weak self] in self?.cancelShortcutStart() }
+        inputMonitor.onEscape = { [weak self] in
+            lokalbotLog("dictation cancelled with Esc")
+            self?.cancel()
+        }
+        inputMonitor.isDictationActive = { [weak self] in
+            guard let self else { return false }
+            return self.isStarting || self.state.isRecording
+        }
         Self.sweepOrphanedPreviewFiles(storageRoot: storageRoot)
     }
 
@@ -361,6 +380,9 @@ final class DictationCoordinator: ObservableObject {
             onBusy()
             return
         }
+        insertionCheckTask?.cancel()
+        insertionCheckTask = nil
+        dismissDeliveryNotice()
         let startedAt = Date()
         generation += 1
         let session = generation
@@ -407,6 +429,7 @@ final class DictationCoordinator: ObservableObject {
         pendingFinishSource = nil
         captureStatus = ""
         isReceivingAudio = false
+        hasMicrophoneAudio = false
         lastTranscript = nil
         lastComposedText = nil
         lastEngine = nil
@@ -473,6 +496,9 @@ final class DictationCoordinator: ObservableObject {
                 guard self.generation == session, !Task.isCancelled else {
                     await MediaPlaybackController.resume(pausedMedia, reason: "cancelled dictation start")
                     return
+                }
+                self.recorder.onFirstAudio = { [weak self] in
+                    self?.microphoneDidDeliverFirstAudio(generation: session)
                 }
                 try await self.startRecorder(writingTo: audioURL)
                 try Task.checkCancellation()
@@ -725,8 +751,11 @@ final class DictationCoordinator: ObservableObject {
             // Delivery can wait for the target app; a newer session may own
             // the coordinator by the time it returns.
             guard generation == session else { return }
+            let insertedInto = deliveryTarget
             switch delivery {
-            case .inserted, .copied, .displayed:
+            case .inserted:
+                if let insertedInto { checkInsertion(of: text, into: insertedInto, excludedApps: config.excludedAppList) }
+            case .copied, .displayed:
                 break
             case .notDelivered(let check):
                 onError(check.clipboardMessage ?? "")
@@ -852,6 +881,81 @@ final class DictationCoordinator: ObservableObject {
         captureStatus = ""
         clearDeliveryTarget()
         refreshOverlay()
+    }
+
+    /// Reads the field back after a paste. Only a field that can be read and
+    /// still lacks the text raises the notice; an unreadable field (many
+    /// Electron and web editors) is left alone rather than guessed at.
+    private func checkInsertion(
+        of text: String, into target: DictationDeliveryTarget, excludedApps: [String]
+    ) {
+        insertionCheckTask?.cancel()
+        // Without a field identity the paste went to "the app"; reading
+        // whatever field is focused now could be another (or a secure) one.
+        guard target.focusIdentityKey?.isEmpty == false else { return }
+        let appName = NSRunningApplication(processIdentifier: target.processID)?.localizedName ?? ""
+        guard !DictationScreenPrivacy.isExcluded(
+            target: DictationScreenTarget(processID: target.processID, appName: appName, bundleID: target.bundleID),
+            excludedApps: excludedApps) else { return }
+        insertionCheckTask = Task { [weak self] in
+            var waited = 0
+            for delay in DictationInsertionCheck.readDelaysMilliseconds {
+                try? await Task.sleep(for: .milliseconds(delay - waited))
+                waited = delay
+                guard !Task.isCancelled else { return }
+                let before = await Self.readTextBeforeCaret(in: target)
+                switch DictationInsertionCheck.verdict(textBeforeCaret: before, inserted: text) {
+                case .landed, .unknown:
+                    return
+                case .missing:
+                    continue
+                }
+            }
+            guard !Task.isCancelled, let self else { return }
+            lokalbotLog("dictation paste was not found in the target field")
+            self.showDeliveryNotice(text)
+        }
+    }
+
+    nonisolated private static func readTextBeforeCaret(in target: DictationDeliveryTarget) async -> String? {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                continuation.resume(returning: CotypingAXHelper.dictationTextBeforeCaret(
+                    processID: target.processID, focusIdentityKey: target.focusIdentityKey))
+            }
+        }
+    }
+
+    private func showDeliveryNotice(_ text: String) {
+        guard !state.isWorking, !isStarting else { return }
+        deliveryNotice = DictationDeliveryNotice(text: text)
+        refreshOverlay()
+        scheduleNoticeDismissal(after: .seconds(12))
+    }
+
+    func copyDeliveryNoticeText() {
+        guard let notice = deliveryNotice else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(notice.text, forType: .string)
+        deliveryNotice?.copied = true
+        scheduleNoticeDismissal(after: .seconds(2))
+    }
+
+    func dismissDeliveryNotice() {
+        noticeDismissTask?.cancel()
+        noticeDismissTask = nil
+        guard deliveryNotice != nil else { return }
+        deliveryNotice = nil
+        refreshOverlay()
+    }
+
+    private func scheduleNoticeDismissal(after delay: Duration) {
+        noticeDismissTask?.cancel()
+        noticeDismissTask = Task { [weak self] in
+            try? await Task.sleep(for: delay)
+            guard !Task.isCancelled else { return }
+            self?.dismissDeliveryNotice()
+        }
     }
 
     private func clearDeliveryTarget() {
@@ -1426,6 +1530,7 @@ final class DictationCoordinator: ObservableObject {
         tick?.cancel()
         tick = nil
         isReceivingAudio = false
+        hasMicrophoneAudio = false
     }
 
     private func refreshCaptureHealth() {
@@ -1472,6 +1577,25 @@ final class DictationCoordinator: ObservableObject {
         }
     }
 
+    /// The HUD switches from "starting" to recording, and the optional cue
+    /// plays, only once audio actually arrives: pressing the shortcut does not
+    /// mean the microphone is listening yet.
+    private func microphoneDidDeliverFirstAudio(generation session: Int) {
+        guard generation == session, state.isRecording || isStarting, !hasMicrophoneAudio else { return }
+        hasMicrophoneAudio = true
+        isReceivingAudio = true
+        if settingsProvider().dictationPlaysStartSound {
+            Self.startSound?.play()
+        }
+        lokalbotLog("dictation microphone delivered first audio")
+    }
+
+    private static let startSound: NSSound? = {
+        let sound = NSSound(named: "Tink")
+        sound?.volume = 0.35
+        return sound
+    }()
+
     nonisolated static func isReceivingAudio(lastAudioWriteAt: Date?, now: Date) -> Bool {
         guard let lastAudioWriteAt else { return false }
         return now.timeIntervalSince(lastAudioWriteAt) < 1
@@ -1497,7 +1621,8 @@ final class DictationCoordinator: ObservableObject {
         // even when the floating status is turned off.
         overlay.update(
             for: self,
-            visible: settingsProvider().dictationShowOverlay || modelPreparationError != nil)
+            visible: settingsProvider().dictationShowOverlay || modelPreparationError != nil
+                || deliveryNotice != nil)
     }
 }
 
