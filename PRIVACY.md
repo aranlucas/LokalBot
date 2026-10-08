@@ -175,12 +175,21 @@ The app may make these outbound connections:
   origin; Agent inference rejects redirects entirely. Configure the final
   endpoint URL when a server redirects. The operator of that server controls
   its privacy terms.
+  When the URL is Anthropic's API (`api.anthropic.com`), Think uses its
+  Messages API and marks the system prompt and supplied context for prompt
+  caching, so Anthropic keeps those prompt prefixes for about five minutes to
+  answer a repeated request at its cache rate. For Claude models that support
+  it, LokalBot also opts into Anthropic's server-side fallback: a request the
+  selected model declines under Anthropic's safety policies may be answered by
+  another Claude model that Anthropic chooses. Agent Mode reaches the same
+  origin through Anthropic's OpenAI-compatible endpoint.
   Before writing meeting notes with an approved OpenRouter origin, LokalBot
   also reads the selected model's published endpoint list from that origin to
   learn its context window. That request carries only the model id, with no
   API key or content, and the answer is kept in local preferences. With any
   other OpenAI-compatible server allowed for inference, LokalBot reads that
-  server's model list for the same purpose, at most once a day; for a server
+  server's model list for the same purpose, at most once a day (from
+  Anthropic's API, only the selected model's entry); for a server
   on this Mac it may also read llama-server's settings or LM Studio's details
   for the selected model. These requests carry the API key you configured,
   which the server already receives with every inference request, and no

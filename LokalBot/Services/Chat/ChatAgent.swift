@@ -201,6 +201,7 @@ enum ChatPrompt {
         if let gated = engine as? GatedTextEngine { return inferencePrivacy(for: gated.base) }
         if engine is AppleIntelligenceEngine { return "This response uses an on-device model." }
         let url = (engine as? OpenAICompatibleEngine)?.baseURL ?? (engine as? OllamaEngine)?.baseURL
+            ?? (engine as? AnthropicEngine)?.baseURL
         guard let url else { return "The inference location is unspecified; do not claim that all processing stays on this Mac." }
         if InferenceEndpointPolicy.isLoopback(url) {
             return "This response uses a server on this Mac. Its operator controls any onward processing."

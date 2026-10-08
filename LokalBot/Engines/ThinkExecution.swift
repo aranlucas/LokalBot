@@ -116,6 +116,19 @@ final class ThinkExecution {
             try InferenceEndpointPolicy.validate(
                 url,
                 approvedOrigins: settings.approvedRemoteInferenceOrigins)
+            if AnthropicAPI.isAnthropic(url) {
+                // Claude's native Messages API: structured output within its
+                // schema subset, effort, refusals, and prompt caching.
+                return GatedTextEngine(
+                    base: AnthropicEngine(
+                        baseURL: url,
+                        model: settings.openAIModel,
+                        apiKey: includingCredentials ? settings.openAIAPIKey : nil,
+                        reasoningLevel: settings.thinkReasoningLevel),
+                    origin: RemoteInferenceGate.origin(for: url),
+                    priority: priority,
+                    purpose: purpose)
+            }
             let engine = OpenAICompatibleEngine(
                 baseURL: url,
                 model: settings.openAIModel,
@@ -275,8 +288,10 @@ final class ThinkExecution {
             // Presentation can validate the same destination without reading
             // Keychain on every view update. Launch resolution keeps credentials.
             let key = includingCredentials ? settings.openAIAPIKey : ""
+            // Agent Mode's runtime speaks chat completions, which Anthropic
+            // serves under /v1 whichever form of its URL was entered.
             return .ready(AgentLLMEndpoint(
-                baseURL: base,
+                baseURL: AnthropicAPI.isAnthropic(base) ? AnthropicAPI.versionedRoot(base) : base,
                 model: settings.openAIModel,
                 contextTokens: AgentLLMEndpoint.defaultContextTokens,
                 apiKey: key.isEmpty ? nil : key,

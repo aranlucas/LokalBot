@@ -49,6 +49,7 @@ enum MeetingSummaryGenerator {
                 ?? (model.lowercased().hasPrefix("openai/") ? openAIContextTokens(model: String(model.dropFirst(7))) : nil)
         case .cerebras: verifiedCerebrasContextTokens[model.lowercased()]
         case .openAI: openAIContextTokens(model: model)
+        case .anthropic: AnthropicModelTraits(model: model).contextTokens
         case .builtIn, .ollama, .generic: nil
         }
     }

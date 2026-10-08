@@ -5,7 +5,8 @@ import Foundation
 /// (Groq), `context_length` (Together, DeepInfra, Fireworks), or
 /// `max_context_length` (Mistral). Servers on this Mac report the window they
 /// run with outside that list: llama-server's `/props` and LM Studio's
-/// `/api/v0/models/<id>`. OpenAI and Cerebras report none, so their
+/// `/api/v0/models/<id>`. Anthropic's API reports `max_input_tokens` for one
+/// model at `/v1/models/<id>`. OpenAI and Cerebras report none, so their
 /// documented windows apply; OpenRouter has its own lookup
 /// (`OpenRouterModelCatalog`).
 ///
@@ -67,6 +68,10 @@ actor ServerContextWindowCatalog {
     }
 
     private func lookUp(model: String, baseURL: URL, apiKey: String?) async -> Int? {
+        if AnthropicAPI.isAnthropic(baseURL) {
+            guard let url = Self.anthropicModelURL(baseURL: baseURL, model: model) else { return nil }
+            return await read(url, apiKey: apiKey, anthropic: true, parse: Self.window(inAnthropicModel:))
+        }
         if let tokens = await read(baseURL.appendingPathComponent("models"), apiKey: apiKey, parse: {
             Self.window(inModelList: $0, model: model)
         }) { return tokens }
@@ -80,10 +85,13 @@ actor ServerContextWindowCatalog {
         return await read(lmStudio, apiKey: apiKey, parse: Self.window(inLMStudioModel:))
     }
 
-    private func read(_ url: URL, apiKey: String?, parse: (Data) -> Int?) async -> Int? {
+    private func read(_ url: URL, apiKey: String?, anthropic: Bool = false,
+                      parse: (Data) -> Int?) async -> Int? {
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        if let apiKey, !apiKey.isEmpty {
+        if anthropic {
+            AnthropicAPI.authorize(&request, apiKey: apiKey)
+        } else if let apiKey, !apiKey.isEmpty {
             request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         }
         guard let (data, response) = try? await fetch(request),
@@ -120,6 +128,20 @@ actor ServerContextWindowCatalog {
     static func window(inLMStudioModel data: Data) -> Int? {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         return positive(object["loaded_context_length"])
+    }
+
+    /// Anthropic's model object: `{"id": …, "max_input_tokens": …}`.
+    static func window(inAnthropicModel data: Data) -> Int? {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        return positive(object["max_input_tokens"])
+    }
+
+    /// `<origin>/v1/models/<id>`. Ids with other characters are never sent.
+    static func anthropicModelURL(baseURL: URL, model: String) -> URL? {
+        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.@")
+        guard !model.isEmpty, model != ".", model != "..",
+              model.unicodeScalars.allSatisfy(allowed.contains) else { return nil }
+        return AnthropicAPI.modelURL(baseURL, model: model)
     }
 
     /// The server root for a base URL that ends in `/v1`.

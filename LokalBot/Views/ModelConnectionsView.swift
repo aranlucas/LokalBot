@@ -297,6 +297,10 @@ struct ModelConnectionsView: View {
                         Divider()
                         openRouterDataPolicyControl
                     }
+                    if connection == .openAICompatible && isAnthropicEndpoint {
+                        Divider()
+                        anthropicConnectionNote
+                    }
                 }
                 .padding(14)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -329,6 +333,24 @@ struct ModelConnectionsView: View {
     private var isOpenRouterEndpoint: Bool {
         guard let url = URL(string: draft.openAIBaseURL) else { return false }
         return ChatCompletionDialect.inferred(from: url) == .openRouter
+    }
+
+    private var isAnthropicEndpoint: Bool {
+        guard let url = URL(string: draft.openAIBaseURL) else { return false }
+        return AnthropicAPI.isAnthropic(url)
+    }
+
+    private var anthropicConnectionNote: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Anthropic API")
+                .font(AppFont.scaled(.body))
+            Text("Think uses Anthropic's Messages API with prompt caching: Anthropic keeps the "
+                + "system prompt and shared context for about five minutes so repeated requests "
+                + "cost less. Agent Mode uses Anthropic's OpenAI-compatible endpoint.")
+                .workspaceTextRole(.supporting)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityIdentifier("models.anthropicNote")
     }
 
     private var openRouterDataPolicyControl: some View {
