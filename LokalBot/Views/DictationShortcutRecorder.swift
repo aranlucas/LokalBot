@@ -1,8 +1,10 @@
 import AppKit
 import SwiftUI
 
-/// Click, then press the new dictation shortcut. Esc cancels. While recording,
-/// the global shortcut is suspended so the current one can be pressed too.
+/// Click, then press the new dictation shortcut: a key with modifiers, or two
+/// or more modifiers pressed together and released (⌃⌥). Esc cancels. While
+/// recording, the global shortcut is suspended so the current one can be
+/// pressed too.
 struct DictationShortcutRecorder: View {
     @Binding var shortcut: DictationShortcut
     /// Suspends or resumes the global shortcut while recording.
@@ -11,6 +13,10 @@ struct DictationShortcutRecorder: View {
     @State private var isRecording = false
     @State private var monitor: Any?
     @State private var problem: DictationShortcut.Problem?
+    /// Every modifier held since the last release, so ⌃⌥ is recorded as one
+    /// chord even though its keys go down and up one at a time.
+    @State private var chordModifiers: CGEventFlags = []
+    @State private var heldModifiers: CGEventFlags = []
 
     var body: some View {
         VStack(alignment: .trailing, spacing: 4) {
@@ -24,7 +30,9 @@ struct DictationShortcutRecorder: View {
                     isRecording ? stopRecording() : startRecording()
                 } label: {
                     Group {
-                        if isRecording {
+                        if isRecording, !heldModifiers.isEmpty {
+                            Text(verbatim: DictationShortcut(keyCode: nil, modifiers: heldModifiers).displayLabel + "…")
+                        } else if isRecording {
                             Text("Press a shortcut…")
                         } else {
                             Text(verbatim: shortcut.displayLabel)
@@ -50,12 +58,30 @@ struct DictationShortcutRecorder: View {
 
     private func startRecording() {
         problem = nil
+        chordModifiers = []
+        heldModifiers = []
         isRecording = true
         onRecordingChanged(true)
-        monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+        monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .flagsChanged]) { event in
+            if event.type == .flagsChanged {
+                handleModifiers(Self.eventFlags(from: event.modifierFlags))
+                return event
+            }
             handle(event)
             return nil
         }
+    }
+
+    private func handleModifiers(_ modifiers: CGEventFlags) {
+        heldModifiers = modifiers
+        guard modifiers.isEmpty else {
+            chordModifiers.formUnion(modifiers)
+            return
+        }
+        let chord = chordModifiers
+        chordModifiers = []
+        guard !chord.isEmpty else { return }
+        accept(DictationShortcut(keyCode: nil, modifiers: chord))
     }
 
     private func stopRecording() {
@@ -75,11 +101,18 @@ struct DictationShortcutRecorder: View {
             stopRecording()
             return
         }
+        // A key ends the chord: ⌃⌥ then D records ⌃⌥ D, not ⌃⌥.
+        chordModifiers = []
+        accept(candidate)
+    }
+
+    private func accept(_ candidate: DictationShortcut) {
         if let issue = candidate.problem {
             problem = issue
             return
         }
         problem = nil
+        heldModifiers = []
         shortcut = candidate
         stopRecording()
     }

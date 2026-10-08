@@ -386,6 +386,7 @@
 "Harrier 0.6B · On this Mac" = "Harrier 0.6B · 在这台 Mac 上";
 "Helps spell names and relate the discussion to the meeting. Names only; email addresses are never included. The transcript stays the only evidence for decisions and actions." = "帮助正确拼写姓名，并将讨论与会议关联。仅包含姓名，绝不包含电子邮件地址。决策和行动项仍仅以转写为证据。";
 "Highlights" = "重点";
+"Hold at least two modifier keys, like ⌃⌥, or add a key." = "请同时按住至少两个修饰键（如 ⌃⌥），或加上一个按键。";
 "Home" = "主页";
 "How routines run" = "例行任务的运行方式";
 "How screen context is captured" = "屏幕上下文的采集方式";

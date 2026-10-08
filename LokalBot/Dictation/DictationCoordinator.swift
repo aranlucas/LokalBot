@@ -142,6 +142,7 @@ final class DictationCoordinator: ObservableObject {
         inputMonitor.onStart = { [weak self] in self?.start(source: "shortcut") }
         inputMonitor.onStop = { [weak self] in self?.finishRecordingAndTranscribe(source: "shortcut") }
         inputMonitor.onToggle = { [weak self] in self?.toggle(source: "shortcut") }
+        inputMonitor.onCancel = { [weak self] in self?.cancel() }
         Self.sweepOrphanedPreviewFiles(storageRoot: storageRoot)
     }
 

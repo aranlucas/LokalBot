@@ -524,30 +524,37 @@ enum DictationPreviewTextStitcher {
     }
 }
 
-/// The global dictation shortcut: one key plus modifiers. The event tap
-/// consumes it system-wide, so it must not be something people type.
+/// The global dictation shortcut: a key plus modifiers, or modifiers alone
+/// (⌃⌥, the way Wispr Flow and similar apps are often set up). The event tap
+/// consumes a key shortcut system-wide, so it must not be something people
+/// type; a modifier-only shortcut is observed without consuming anything.
 struct DictationShortcut: Equatable, Sendable {
-    var keyCode: CGKeyCode
+    /// Nil for a modifier-only shortcut.
+    var keyCode: CGKeyCode?
     var modifiers: CGEventFlags
 
-    init(keyCode: CGKeyCode, modifiers: CGEventFlags) {
+    init(keyCode: CGKeyCode?, modifiers: CGEventFlags) {
         self.keyCode = keyCode
         self.modifiers = modifiers.dictationRelevantModifiers
     }
 
     static let handyDefault = DictationShortcut(keyCode: 49, modifiers: .maskAlternate)
 
+    var isModifierOnly: Bool { keyCode == nil }
+
     func matches(_ event: CGEvent) -> Bool {
         matchesKeyCode(event) && event.flags.dictationRelevantModifiers == modifiers
     }
 
     func matchesKeyCode(_ event: CGEvent) -> Bool {
-        CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode)) == keyCode
+        guard let keyCode else { return false }
+        return CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode)) == keyCode
     }
 
-    /// "⌥ Space", "⌃⇧ D", "F5".
+    /// "⌥ Space", "⌃⇧ D", "F5", "⌃⌥".
     var displayLabel: String {
         let symbols = Self.modifierSymbols(modifiers)
+        guard let keyCode else { return symbols }
         let key = DictationShortcutKeyNames.name(for: keyCode)
         return symbols.isEmpty ? key : "\(symbols) \(key)"
     }
@@ -556,6 +563,7 @@ struct DictationShortcut: Equatable, Sendable {
         case reservedForCancel
         case needsModifier
         case commandOnly
+        case needsTwoModifiers
 
         var message: String {
             switch self {
@@ -565,12 +573,18 @@ struct DictationShortcut: Equatable, Sendable {
                 "Add ⌃, ⌥ or ⌘ so the shortcut does not block typing, or use a function key."
             case .commandOnly:
                 "Apps use ⌘ with a single key. Add ⌃, ⌥ or ⇧."
+            case .needsTwoModifiers:
+                "Hold at least two modifier keys, like ⌃⌥, or add a key."
             }
         }
     }
 
     /// Why this combination cannot be the global shortcut, or nil.
     var problem: Problem? {
+        guard let keyCode else {
+            // One modifier alone fires whenever it is used for anything else.
+            return Self.modifierCount(modifiers) >= 2 ? nil : .needsTwoModifiers
+        }
         if keyCode == DictationShortcutKeyNames.escape { return .reservedForCancel }
         if DictationShortcutKeyNames.isFunctionKey(keyCode) { return nil }
         let typingSafe = modifiers.intersection([.maskControl, .maskAlternate, .maskCommand])
@@ -579,6 +593,11 @@ struct DictationShortcut: Equatable, Sendable {
             return .commandOnly
         }
         return nil
+    }
+
+    static func modifierCount(_ modifiers: CGEventFlags) -> Int {
+        [CGEventFlags.maskControl, .maskAlternate, .maskShift, .maskCommand]
+            .filter { modifiers.contains($0) }.count
     }
 
     private static func modifierSymbols(_ modifiers: CGEventFlags) -> String {
@@ -606,8 +625,8 @@ extension DictationShortcut: Codable {
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        let keyCode = try c.decode(Int.self, forKey: .keyCode)
-        guard (0...Int(UInt16.max)).contains(keyCode) else {
+        let keyCode = try c.decodeIfPresent(Int.self, forKey: .keyCode)
+        if let keyCode, !(0...Int(UInt16.max)).contains(keyCode) {
             throw DecodingError.dataCorruptedError(
                 forKey: .keyCode, in: c, debugDescription: "Key code out of range")
         }
@@ -616,12 +635,12 @@ extension DictationShortcut: Codable {
         for (name, flag) in Self.modifierNames where names.contains(name) {
             modifiers.insert(flag)
         }
-        self.init(keyCode: CGKeyCode(keyCode), modifiers: modifiers)
+        self.init(keyCode: keyCode.map { CGKeyCode($0) }, modifiers: modifiers)
     }
 
     func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
-        try c.encode(Int(keyCode), forKey: .keyCode)
+        try c.encodeIfPresent(keyCode.map { Int($0) }, forKey: .keyCode)
         try c.encode(
             Self.modifierNames.filter { modifiers.contains($0.1) }.map(\.0), forKey: .modifiers)
     }
