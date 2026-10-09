@@ -7,15 +7,16 @@ lets browsers apply heuristic caching and silently serve a stale styles.css
 against freshly edited markup — the page then renders with old CSS and looks
 broken in ways the source doesn't explain.
 
-Usage: Scripts/serve-web.py [port]   (default 8791)
+Usage: Scripts/serve-web.py [port]   (default: PORT environment variable or 8791)
 """
 import functools
 import http.server
+import os
 import pathlib
 import socketserver
 import sys
 
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8791
+PORT = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", "8791"))
 ROOT = pathlib.Path(__file__).resolve().parent.parent / "web"
 
 

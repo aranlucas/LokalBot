@@ -235,6 +235,33 @@ project.yml      # XcodeGen source of truth
 
 <a id="contributing--security"></a>
 
+
+## Local URLs with Portless
+
+This previews the existing static `web/` site using its no-cache Python server.
+The native macOS app and video/render projects retain their own workflows.
+
+The standard development command uses [Portless](https://github.com/vercel-labs/portless).
+Install its pinned CLI once with Node.js 24 or newer, then run this repository's command after the
+normal dependency and environment setup:
+
+```sh
+npm install -g portless@0.15.7
+make dev
+```
+
+The main checkout uses `https://lokalbot.localhost` with the default proxy settings.
+Use the URL printed by Portless if you have changed its proxy port, TLS, or TLD.
+Linked Git worktrees get a branch prefix, so each checkout has its own origin.
+The first HTTPS run can request local administrator permission to bind port 443,
+trust its development certificate, and synchronize local hostnames. Ctrl+C stops
+the child server and removes its route. The direct fallback below starts the
+server without the proxy.
+
+Run from the repository root. Use `make dev-direct` (or `python3 Scripts/serve-web.py`) for direct access on port 8791
+when `PORT` is unset, and an explicit positional port keeps precedence. The server
+continues to serve only `web/` and bind `127.0.0.1`.
+
 ## Contributing
 
 Bug reports, documentation improvements, and code contributions are welcome. [Report an issue](https://github.com/stevyhacker/lokalbot/issues/new/choose) with steps to reproduce, expected and actual behavior, app/macOS versions, Mac chip/RAM, and selected models. Keep private recordings and transcripts out of reports.
