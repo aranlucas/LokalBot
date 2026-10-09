@@ -8,21 +8,21 @@ Review date: **2026-10-08**. Validated and corrected: **2026-10-09**. This repor
 | LokalBot, validated | master `1ade074`; no file under `LokalBot/Cotyping` changed between the two revisions |
 | cotabby | [`8cdbea2d2619b0f89a73d46eb0bb856504d07343`](https://github.com/FuJacob/cotabby/tree/8cdbea2d2619b0f89a73d46eb0bb856504d07343) |
 | Review scope | Saved-memory lookup, writing-session identity, context freshness, caret capture, generation and presentation, continuation state, and selected native-cache behavior |
-| Fixes | F04 and F05 are fixed in the change that added this report. F01, F02 and F03 remain open. |
+| Fixes | F04 and F05 are fixed in the change that added this report, and F02's surface-metadata cache is now bounded to 1 s. F01 and F03 remain open, as does F02's writing-session identity. |
 | Executed validation | Review: 112 focused non-UI tests and isolated Swift probes for four of the five findings. Validation: every cited range re-read, an independent F04 timing reproduction, new regression tests confirmed to fail with each fix undone, and 733 Cotyping unit tests on the fixed branch |
 
-Implementation conclusions are tied to these revisions. Source links are immutable GitHub permalinks to the reviewed commit, so they show the code before the F04 and F05 fixes. Recommendations and proposed regression cases for F01–F03 are future work.
+Implementation conclusions are tied to these revisions. Source links are immutable GitHub permalinks to the reviewed commit, so they show the code before the F04 and F05 fixes. Recommendations and proposed regression cases for F01–F03 are future work, apart from F02's partial fix.
 
 ## Summary
 
-Five actionable findings emerged. Two concern using context from the wrong topic or conversation, and one concerns capturing pixels outside the window that passed the privacy check. Two further defects affected latency and continuation behavior; both are now fixed.
+Five actionable findings emerged. Two concern using context from the wrong topic or conversation, and one concerns capturing pixels outside the window that passed the privacy check. Two further defects affected latency and continuation behavior; both are now fixed. F02 is partly fixed: the window title no longer outlives a conversation by more than a second.
 
 Priority indicates remediation urgency for this review: **P1** findings should be addressed first because they affect context correctness or a privacy boundary; **P2** findings affect response time, expected writing behavior, or a narrow and short-lived context error. These are not CVSS scores or claims of observed exploitation.
 
 | ID | Priority | Status | Finding | Trigger and effect | Evidence |
 | --- | --- | --- | --- | --- | --- |
 | F01 | P2 (corrected from P1) | Open | Saved facts survive a query change | A new topic in the same field can receive the previous topic's facts for one suggestion while replacement retrieval runs | Isolated lookup probe plus production prompt-path inspection |
-| F02 | P1 | Open | Conversation navigation can preserve an old writing session | A reused composer keeps the old window title indefinitely, nearby text for about 3 s, and cached suggestions for up to 180 s; with identical text an in-flight suggestion also survives | Identity, reconciliation, and cache probes plus coordinator inspection |
+| F02 | P1 | Partly fixed | Conversation navigation can preserve an old writing session | A reused composer kept the old window title indefinitely (now at most 1 s), nearby text for about 3 s, and cached suggestions for up to 180 s; with identical text an in-flight suggestion also survives | Identity, reconciliation, and cache probes plus coordinator inspection |
 | F03 | P1 | Open | Caret OCR capture is not bound to the authorized window | An app switch or overlapping window can put another app's pixels into in-memory OCR | Source-path analysis; no live screen-capture reproduction |
 | F04 | P2 | Fixed | Caret timeout did not bound the wait | A slow capture/OCR task delayed presentation beyond the intended 150 ms budget | Extracted production wait method, reproduced twice; regression tests added |
 | F05 | P2 | Fixed | Typing through dropped continuation state | Matching typed characters reset `isOpenEnded`, preventing the expected proactive top-up | Direct-typing and published-typing state probes; regression tests added |
@@ -138,12 +138,12 @@ Stable identity while ordinary typing is desirable. It needs to coexist with a s
 ### How narrow each path is
 
 - **In-flight or visible suggestion.** Generation validation compares a [content signature][lb-content-signature] made of the selection length and the full text before and after the caret. A focus change clears the session unless the new text still extends it. An old suggestion survives navigation only when the new composer holds exactly the same text, as in the probe below. This is the narrowest path.
-- **Surface metadata.** The title/placeholder entry is replaced only when another field's surface is read under a different key. While the user stays in a composer whose AX identity and frame survive navigation, every request carries the old title. It feeds the [prompt preface][lb-engine-surface] when app context is on, and the saved-memory query.
+- **Surface metadata.** At the reviewed revision, the title/placeholder entry was replaced only when another field's surface was read under a different key. While the user stayed in a composer whose AX identity and frame survive navigation, every request carried the old title. It feeds the [prompt preface][lb-engine-surface] when app context is on, and the saved-memory query. The entry is now read again once it is a second old (see Partial fix).
 - **Visible reply context.** Nearby text is cached per focus identity for 3 s and returned stale while a background refresh runs ([field context cache][lb-field-context-cache]). The first suggestions after navigation can therefore use the previous conversation's messages.
-- **Suggestion cache.** Cached suggestions are restored by field identity and a request fingerprint that includes the rendered preface, for up to 180 s ([anchor cache][lb-anchor-cache]). With a stale title, and visible context unchanged or off, typing the same opening words in the new conversation can restore the old conversation's suggestion without a model call. This was inferred from source and not reproduced.
-- **Interaction with F01.** The stale title is part of the saved-memory query, so an identical draft in the new conversation does not start a new lookup at all.
+- **Suggestion cache.** Cached suggestions are restored by field identity and a request fingerprint that includes the rendered preface, for up to 180 s ([anchor cache][lb-anchor-cache]). With a stale title, and visible context unchanged or off, typing the same opening words in the new conversation can restore the old conversation's suggestion without a model call. This was inferred from source and not reproduced. With the title now re-read after a second, this path is limited to the title's 1 s window and the visible context's roughly 3 s window.
+- **Interaction with F01.** The stale title is part of the saved-memory query, so an identical draft in the new conversation did not start a new lookup at all. This now lasts at most a second.
 
-The P1 priority rests mainly on the unbounded metadata cache and the suggestion cache, not on the identical-text path.
+The P1 priority rested mainly on the unbounded metadata cache and the suggestion cache, not on the identical-text path. After the partial fix, the remaining exposure is seconds long: the title for up to 1 s, nearby text for about 3 s, and the identical-text path. Reassess whether the session-identity work stays P1 once it has been observed in a real chat app.
 
 ### Reproduction evidence
 
@@ -179,9 +179,17 @@ These are useful design references for a writing-session boundary. They do not p
 
 ### Recommended fix and regression coverage
 
-Separate geometry/prewarm identity from writing-session identity. Use refreshed navigation metadata and a monotonic session generation to invalidate pending predictions, active suggestions, saved-memory selections, visible context, and related caches when the conversation changes. Give surface metadata a bounded freshness policy; a stronger identity cannot help if its inputs remain indefinitely cached. A quick partial step is to pass a maximum age to the surface capture, as the URL path already does.
+Separate geometry/prewarm identity from writing-session identity. Use refreshed navigation metadata and a monotonic session generation to invalidate pending predictions, active suggestions, saved-memory selections, visible context, and related caches when the conversation changes. Give surface metadata a bounded freshness policy; a stronger identity cannot help if its inputs remain indefinitely cached. The surface capture now has a maximum age, as the URL path already had (see Partial fix).
 
 Test navigation with unchanged AX identity, unchanged frame, and identical prefix/trailing text. Vary title, placeholder, and URL independently. Verify that delayed model results, already-visible suggestions and suggestion-cache restorations are rejected. Retain controls for ordinary typing and a composer growing as text wraps, so the fix does not discard valid suggestions on every edit.
+
+### Partial fix
+
+`CotypingAXHelper.cachedSurfaceCapture` now reads the window title and placeholder again once the cached pair is older than `surfaceCaptureMaximumAgeSeconds` (1 s). A second covers one suggestion: the prediction read and the validation read after the model returns usually share one capture, so the validation snapshot stays within its deadline. A reused composer picks up the new conversation's title on the next suggestion. The read is three Accessibility attribute calls (window, title, placeholder).
+
+`CotypingSurfaceContextTests/testAComposerReusedAcrossConversationsReadsTheNewTitle` changes the title behind a reused composer key. It checks that a read 0.3 s later reuses the capture and a read 2.3 s later returns the new title. With the age limit removed it failed, still returning `Atlas conversation` after one read.
+
+This does not give LokalBot a navigation signal. The identical-text path, the visible-context window and the session identity remain open.
 
 ## F03 — P1: Caret OCR captures a display crop rather than the authorized window
 
@@ -340,7 +348,7 @@ Both projects already contain in-process inference, token healing, adaptive debo
 | --- | --- | --- | --- |
 | Live partial presentation | Live coordinator awaits `engine.generate(request)` and presents the normalized result as a whole | Collects partials for typing prediction and can display partials when enabled | Internal progress collection can support reuse even if visible streaming stays off |
 | Input arriving during generation | Without a matching visible session, new input schedules replacement work and cancels pending generation | Retains compatible in-flight predictions, records typed appends, and validates their exact AX publication before rebasing output | Potential to reduce repeated decoding while the user types along the prediction |
-| Navigation identity | Suggestion and prewarm anchors share AX/frame-first identity; title/placeholder surface cache has no age bound on this path | Separate polling/session values include fresh navigation metadata and a focus-change sequence | Useful reference for F02 and context invalidation |
+| Navigation identity | Suggestion and prewarm anchors share AX/frame-first identity; title/placeholder surface cache had no age bound on this path (now 1 s) | Separate polling/session values include fresh navigation metadata and a focus-change sequence | Useful reference for F02 and context invalidation |
 | OCR context capture | Visual-caret recovery crops a display rectangle after an initial field policy check | OCR context screenshot service captures a window of the focused process and checks cancellation; its pixel-caret paths crop the display | Useful capture-scope reference for F03, with the caveats above |
 | Native cache restoration | Partial reuse is disabled for recurrent/hybrid models; unavailable reuse falls back to a full prefill | The app trims to the shared prefix; native code in a pending upstream patch keeps one bounded checkpoint for recurrent/hybrid or sliding-window state; misses fall back cold | Potential performance improvement that requires runtime compatibility and correctness validation |
 
@@ -368,13 +376,13 @@ There is no evidence from this review that replacing LokalBot's model is necessa
 | --- | --- | --- |
 | 1 | Done: make the caret wait return at its deadline (F04) | Slow-work and cancellation tests establish the deadline |
 | 2 | Done: preserve extension state across typing, host publication and cache restoration (F05) | Equivalent typing/acceptance sequences retain equivalent extension behavior |
-| 3 | Bound surface-metadata freshness (quick partial F02) | A cached title older than the bound is re-read |
+| 3 | Done: bound surface-metadata freshness (partial F02) | A cached title older than a second is read again; one suggestion's reads share a capture |
 | 4 | Introduce navigation-aware writing-session identity (F02) | Identical-text navigation invalidates pending, visible, and cached results while ordinary typing remains stable |
 | 5 | Bind caret capture to the authorized window/session; close cancellation and policy races (F03) | Synthetic capture-boundary tests reject unauthorized work; hosted/remote host interaction check |
 | 6 | Re-filter saved-memory selections against the current query and session (F01) | Delayed-provider test proves an old topic cannot enter a new topic's request, while a growing draft keeps its facts |
 | 7 | Evaluate compatible in-flight prediction reuse and native checkpoint support | Controlled latency/quality results and native-state parity checks |
 
-F04 and F05 went first because each was a small change that unit tests could cover fully. F01–F03 address different boundaries and should all be completed. A stronger session identity will not by itself fix a topic change within the same session, or bind a display crop to an authorized window.
+F04, F05 and the surface-metadata bound went first because each was a small change that unit tests could cover fully. F01–F03 address different boundaries and should all be completed. A stronger session identity will not by itself fix a topic change within the same session, or bind a display crop to an authorized window.
 
 ### Regression matrix
 
@@ -383,6 +391,7 @@ F04 and F05 went first because each was a small change that unit tests could cov
 | F01 | Proposed | Lookup/coordinator non-UI test | Atlas completed; Borealis pending under the same anchor | Next prompt contains no Atlas-only facts |
 | F01 | Proposed | Lookup/coordinator non-UI test | Draft grows from one topic to two | Still-relevant facts are kept |
 | F01 | Proposed | Lookup/coordinator non-UI test | Older lookup finishes after a newer one; new query is empty/no-match | Older selection cannot become current; irrelevant facts stay absent |
+| F02 | Added | Surface-cache non-UI test | Same composer key, title changed behind it | Read again after the bound; one suggestion's reads share a capture |
 | F02 | Proposed | Identity/coordinator non-UI test | Same AX key/frame/text, changed title, placeholder, or URL | Old generation, active context, suggestion, and cache entry are invalidated |
 | F02 | Proposed | Identity control test | Same conversation; normal typing or line-wrap resize | Valid session is retained |
 | F02 | Proposed | Hosted/remote UI test | Navigate two synthetic conversations that reuse a composer | Old ghost cannot appear or be accepted in the second conversation |
@@ -425,6 +434,7 @@ The tests built from a temporary source copy with a freshly generated Xcode proj
 - With the fixes undone behind the new entry points, the new regression tests failed as listed under F04 and F05, and their controls passed.
 - With the fixes, the seven directly affected test classes ran 121 tests, 0 failures. All 89 Cotyping and local-runtime test classes then ran 733 tests: 731 passed, 2 skipped, 0 failed. `CotypingMemoryRelevanceTests`, `LlamaCotypingRuntimeTests` and `LocalLlamaCotypingEngineTests` were excluded locally because they read repository fixtures or models and hang in local worktree runs; hosted CI runs the full suite.
 - `swiftlint lint --strict` on the changed files reported nothing.
+- After the F02 partial fix, its new test failed with the age limit removed. All 89 classes then ran 734 tests: 732 passed, 2 skipped, 0 failed.
 
 ### Probe output
 
@@ -454,7 +464,7 @@ A synthetic 53-UTF-16-unit insertion string survived both `CGEvent` and `NSEvent
 - No local UI tests were run. The hosted UI suite runs when the pull request is marked ready for review.
 - The F04 and F05 fixes have not been exercised in the installed app. The coordinator's typing path is covered only through the functions it calls.
 - No controlled comparative benchmark, installation, or release was performed.
-- F01, F02 and F03 remain unimplemented.
+- F01 and F03 remain unimplemented, and F02 is only partly addressed.
 
 ## Source references
 
