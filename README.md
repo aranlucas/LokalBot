@@ -238,6 +238,9 @@ Scripts/         # Build, verification, capture, and release tooling
 project.yml      # XcodeGen source of truth
 ```
 
+`make dev` previews the static `web/` site at `https://lokalbot.localhost` through
+[Portless](https://github.com/vercel-labs/portless) (`npm install -g portless`); its first run may ask for `sudo` to bind port 443 and trust a local certificate.
+
 </details>
 
 <a id="contributing--security"></a>
