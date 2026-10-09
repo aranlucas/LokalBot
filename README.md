@@ -255,12 +255,10 @@ Use the URL printed by Portless if you have changed its proxy port, TLS, or TLD.
 Linked Git worktrees get a branch prefix, so each checkout has its own origin.
 The first HTTPS run can request local administrator permission to bind port 443,
 trust its development certificate, and synchronize local hostnames. Ctrl+C stops
-the child server and removes its route. The direct fallback below starts the
-server without the proxy.
+the child server and removes its route.
 
-Run from the repository root. Use `make dev-direct` (or `python3 Scripts/serve-web.py`) for direct access on port 8791
-when `PORT` is unset, and an explicit positional port keeps precedence. The server
-continues to serve only `web/` and bind `127.0.0.1`.
+Run from the repository root. The server continues to serve only `web/` and bind
+`127.0.0.1` on the port assigned by Portless.
 
 ## Contributing
 
