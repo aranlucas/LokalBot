@@ -96,6 +96,22 @@ final class CotypingSuggestionAnchorCacheTests: XCTestCase {
         cache.removeAll()
         XCTAssertNil(cache.remainder(identityKey: "field", requestFingerprint: requestFingerprint, precedingText: "Hello"))
     }
+
+    /// A tail shown again from the cache can still be topped up when the
+    /// suggestion it came from could.
+    func testARestoredTailKeepsWhetherItMayBeToppedUp() throws {
+        var cache = makeCache()
+        cache.record(identityKey: "field", requestFingerprint: requestFingerprint, precedingText: "Hello",
+                     fullText: " world again and", isOpenEnded: true)
+        cache.record(identityKey: "other", requestFingerprint: requestFingerprint, precedingText: "Hello",
+                     fullText: " there.")
+        let open = try XCTUnwrap(cache.restoration(
+            identityKey: "field", requestFingerprint: requestFingerprint, precedingText: "Hello wo"))
+        XCTAssertEqual(open, .init(text: "rld again and", isOpenEnded: true))
+        let closed = try XCTUnwrap(cache.restoration(
+            identityKey: "other", requestFingerprint: requestFingerprint, precedingText: "Hello"))
+        XCTAssertEqual(closed, .init(text: " there.", isOpenEnded: false))
+    }
 }
 
 final class CotypingSuggestionCacheFingerprintTests: XCTestCase {

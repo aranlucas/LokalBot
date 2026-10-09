@@ -80,7 +80,8 @@ extension CotypingCoordinator {
             identityKey: CotypingFieldIdentity.suggestionAnchor(for: extended.field),
             requestFingerprint: activeSuggestionRequestFingerprint ?? "",
             precedingText: extended.field.precedingText,
-            fullText: extended.fullText)
+            fullText: extended.fullText,
+            isOpenEnded: extended.isOpenEnded)
         markReady(extended.remainingText)
     }
 

@@ -125,7 +125,8 @@ enum CotypingSessionReconciler {
     /// Advances a continuation against the original field baseline. Handles
     /// both plain typing that matches the suggestion tail (advancing the
     /// consumed prefix) and the host catching up to an already-optimistically-
-    /// advanced session (typed is empty).
+    /// advanced session (typed is empty). Typing through keeps the rest of the
+    /// session, including whether it may be topped up, exactly as an accept does.
     static func sessionReconciledByPublishedTyping(
         _ session: CotypingSession,
         liveField: CotypingField?
@@ -137,19 +138,9 @@ enum CotypingSessionReconciler {
         let expectedPrefix = session.field.precedingText + session.acceptedText
         guard liveField.precedingText.hasPrefix(expectedPrefix) else { return nil }
         let typed = String(liveField.precedingText.dropFirst(expectedPrefix.count))
-        if typed.isEmpty {
-            return CotypingSession(
-                field: session.field,
-                fullText: session.fullText,
-                consumedCount: session.consumedCount,
-                kind: session.kind)
-        }
+        if typed.isEmpty { return session }
         guard session.remainingText.hasPrefix(typed) else { return nil }
-        return CotypingSession(
-            field: session.field,
-            fullText: session.fullText,
-            consumedCount: min(session.fullText.count, session.consumedCount + typed.count),
-            kind: session.kind)
+        return session.advanced(by: typed.count)
     }
 
     static func shouldAwaitPostInsertionSync(
@@ -183,11 +174,7 @@ enum CotypingSessionReconciler {
               session.remainingText.hasPrefix(typedCharacters) else {
             return nil
         }
-        return CotypingSession(
-            field: session.field,
-            fullText: session.fullText,
-            consumedCount: min(session.fullText.count, session.consumedCount + typedCharacters.count),
-            kind: session.kind)
+        return session.advanced(by: typedCharacters.count)
     }
 
     /// A regenerated suggestion that merely re-suggests the chunk the user just

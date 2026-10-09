@@ -20,12 +20,21 @@ nonisolated struct CotypingSuggestionAnchorCache {
     private struct Entry {
         let anchor: Anchor
         let recordedAt: Date
+        let isOpenEnded: Bool
+    }
+
+    /// A still-valid tail, and whether the suggestion it came from may be
+    /// topped up as it is accepted or typed through.
+    struct Restoration: Equatable {
+        let text: String
+        let isOpenEnded: Bool
     }
 
     private struct Match {
         let remainder: String
         let consumed: Int
         let recordedAt: Date
+        let isOpenEnded: Bool
 
         func beats(_ other: Match?) -> Bool {
             guard let other else { return true }
@@ -45,7 +54,8 @@ nonisolated struct CotypingSuggestionAnchorCache {
         identityKey: String,
         requestFingerprint: String,
         precedingText: String,
-        fullText: String
+        fullText: String,
+        isOpenEnded: Bool = false
     ) {
         guard !identityKey.isEmpty,
               !requestFingerprint.isEmpty,
@@ -56,7 +66,7 @@ nonisolated struct CotypingSuggestionAnchorCache {
             prefixTail: Self.tail(of: precedingText),
             fullText: fullText)
         entries.removeAll { $0.anchor == anchor }
-        entries.append(Entry(anchor: anchor, recordedAt: now()))
+        entries.append(Entry(anchor: anchor, recordedAt: now(), isOpenEnded: isOpenEnded))
         if entries.count > Self.capacity {
             entries.removeFirst(entries.count - Self.capacity)
         }
@@ -67,6 +77,15 @@ nonisolated struct CotypingSuggestionAnchorCache {
         requestFingerprint: String,
         precedingText: String
     ) -> String? {
+        restoration(identityKey: identityKey, requestFingerprint: requestFingerprint,
+                    precedingText: precedingText)?.text
+    }
+
+    mutating func restoration(
+        identityKey: String,
+        requestFingerprint: String,
+        precedingText: String
+    ) -> Restoration? {
         pruneExpired()
         let liveTail = Self.tail(of: precedingText)
         var best: Match?
@@ -81,12 +100,14 @@ nonisolated struct CotypingSuggestionAnchorCache {
             let match = Match(
                 remainder: String(entry.anchor.fullText.dropFirst(consumed)),
                 consumed: consumed,
-                recordedAt: entry.recordedAt)
+                recordedAt: entry.recordedAt,
+                isOpenEnded: entry.isOpenEnded)
             if match.beats(best) {
                 best = match
             }
         }
-        return best?.remainder
+        guard let best else { return nil }
+        return Restoration(text: best.remainder, isOpenEnded: best.isOpenEnded)
     }
 
     mutating func removeAll() {
