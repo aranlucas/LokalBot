@@ -20,6 +20,13 @@ Free and open source. No account. Nothing joins your calls.
 
 [Features](#features) · [Compare](#how-it-compares) · [Privacy](#privacy) · [Get started](#get-started) · [Models](#local-ai-your-choice) · [Agents & CLI](#for-developers--agents) · [Website](https://www.lokalbot.com/)
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="Assets/hero/lokalbot-hero-dark.png" />
+  <img src="Assets/hero/lokalbot-hero-light.png" width="920" alt="A LokalBot meeting summary behind Quick Recall, where one search returns screen text you saw and meeting transcripts of what was said" />
+</picture>
+
+<sub>Real app captures with fictional demo data.</sub>
+
 </div>
 
 <a id="see-it-in-action"></a>

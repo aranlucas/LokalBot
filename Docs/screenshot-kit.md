@@ -21,6 +21,11 @@ without `--stills-only` only when you intentionally want to rebuild the GIF
 sequences too; that path also requires `ffmpeg`. Narrated website video is a
 separate reviewed workflow described in `Docs/demo-film-kit.md`.
 
+Don't click or type while a capture window is up. Input reaches the host, and
+its Record button or ⌘⇧R records real microphone audio into the temporary
+library (seen on October 9, 2026). After a run, search the library's
+`debug.log` for `startRecording` and delete any `*-manual-recording` folder.
+
 ## Reproducible frame
 
 - **Window:** 1400×880 pt, rendered at 2× (2800×1760 content plus title bar).
@@ -71,6 +76,30 @@ third-party app must use the real Dev build with Accessibility and Input
 Monitoring grants and should never replace this reproducible documentation
 frame.
 
+## Website set
+
+The homepage screenshots in `web/assets/screens/` use the studio library
+(`Scripts/seed_demo_library.py --profile studio`): Apple-app, non-coding
+examples with a different topic in each frame. No script captures this set
+yet. Seed the library into a temporary directory, then run the host once per
+frame in each appearance with the environment from `capture()` in
+`Scripts/capture-screenshots.sh`, plus `LOKALBOT_DISMISS_ONBOARDING=1` and
+`LOKALBOT_CAPTURE_APPEARANCE=light` or `dark`:
+
+| Files | Settings |
+| --- | --- |
+| `quick-recall.png`, `quick-recall-light.png` | `LOKALBOT_UI_TEST_WINDOW=quick-recall LOKALBOT_QUICK_RECALL_QUERY=MacBook LOKALBOT_CAPTURE_SIZE=660x512 LOKALBOT_CAPTURE_SCALE=4` |
+| `screen-search.png`, `screen-search-light.png` | the same with `LOKALBOT_QUICK_RECALL_QUERY=captions` |
+| `meetings-summary.png`, `meetings-summary-light.png` | `LOKALBOT_INITIAL_SECTION=meetings LOKALBOT_SELECT_INDEX=0 LOKALBOT_DETAIL_TAB=summary LOKALBOT_CAPTURE_SIZE=1400x932` |
+| `today.png`, `today-light.png` | `LOKALBOT_INITIAL_SECTION=today LOKALBOT_CAPTURE_SIZE=1400x932` |
+
+Cut each `*-phone*.png` from its 4× Quick Recall capture with
+`sips -c 1370 1600 --cropOffset 120 0`. Capture the whole set from one seeded
+library during the day: today's meetings and screen moments are placed
+relative to the current time, so a run soon after midnight files them under
+Yesterday. Update the homepage alt text and captions when a frame's content
+changes.
+
 ## Review before commit
 
 1. Open every changed PNG at full resolution and at its README display width.
@@ -89,7 +118,8 @@ a live window. Accent text contrast in both appearances is covered by
 `BrandContrastTests`; rerun it after changing `Brand.teal` or a workspace
 surface color.
 
-The README uses `today.png`, `meetings-summary.png`, `quick-recall.png`,
+The README opens with a composite hero; [its notes](../Assets/hero/README.md)
+cover the captures and `Scripts/render_readme_hero.py`. It then uses `today.png`, `meetings-summary.png`, `quick-recall.png`,
 `timeline.png`, and `cotyping.png`, plus the separately produced real-app video. [Capture notes](../Assets/screenshots/README.md) and
 [the source manifest](../Assets/screenshots/readme.source.json) record the
 release revision, date, dimensions, and hashes for the published set. Update
