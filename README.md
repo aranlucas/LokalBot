@@ -231,34 +231,12 @@ Scripts/         # Build, verification, capture, and release tooling
 project.yml      # XcodeGen source of truth
 ```
 
+`make dev` previews the static `web/` site at `https://lokalbot.localhost` through
+[Portless](https://github.com/vercel-labs/portless) (`npm install -g portless`); its first run may ask for `sudo` to bind port 443 and trust a local certificate.
+
 </details>
 
 <a id="contributing--security"></a>
-
-
-## Local URLs with Portless
-
-This previews the existing static `web/` site using its no-cache Python server.
-The native macOS app and video/render projects retain their own workflows.
-
-The standard development command uses [Portless](https://github.com/vercel-labs/portless).
-Install its pinned CLI once with Node.js 24 or newer, then run this repository's command after the
-normal dependency and environment setup:
-
-```sh
-npm install -g portless@0.15.7
-make dev
-```
-
-The main checkout uses `https://lokalbot.localhost` with the default proxy settings.
-Use the URL printed by Portless if you have changed its proxy port, TLS, or TLD.
-Linked Git worktrees get a branch prefix, so each checkout has its own origin.
-The first HTTPS run can request local administrator permission to bind port 443,
-trust its development certificate, and synchronize local hostnames. Ctrl+C stops
-the child server and removes its route.
-
-Run from the repository root. The server continues to serve only `web/` and bind
-`127.0.0.1` on the port assigned by Portless.
 
 ## Contributing
 
