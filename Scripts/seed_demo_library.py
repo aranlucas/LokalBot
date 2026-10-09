@@ -36,8 +36,11 @@ DESIGN_REVIEW = "11111111-1111-4111-8111-111111111111"
 STANDUP = "22222222-2222-4222-8222-222222222222"
 ROADMAP = "33333333-3333-4333-8333-333333333333"
 NORTHWIND = "44444444-4444-4444-8444-444444444444"
-# The studio profile's featured meeting, the one with playable audio.
+# The studio profile's featured meetings, the ones with playable audio: the
+# holiday shoot (website and README hero) and the podcast trailer review
+# (README meeting section).
 STUDIO_SHOOT = "55555555-5555-4555-8555-555555555555"
+STUDIO_PODCAST = "66666666-6666-4666-8666-666666666666"
 
 
 def mid(n):
@@ -745,9 +748,10 @@ def seed_large(root):
 def build_studio(now):
     """A small video studio's meetings: FaceTime calls and Apple apps instead of
     engineering work. Each captured surface gets its own topic: the holiday
-    shoot (meeting window), the Mac refresh ("MacBook" search) and delivery
-    captions ("captions" search). Keep "MacBook" and "captions" out of other
-    meetings so those searches return the intended rows."""
+    shoot (website meeting and README hero), the podcast trailer (README
+    meeting section), the Mac refresh ("MacBook" search) and delivery captions
+    ("captions" search). Keep "MacBook" and "captions" out of other meetings so
+    those searches return the intended rows."""
     def ago(days, hour, minute=0):
         base = now - timedelta(days=days)
         return base.replace(hour=hour, minute=minute, second=0, microsecond=0)
@@ -802,15 +806,25 @@ def build_studio(now):
           "## Action items\n- [ ] Finish the Northwind holiday cut — Me\n- [ ] Price two laptop configs for the edit suite — Me"),
 
         # ---- Yesterday ----
-        m(mid(23), "Podcast trailer review", "Google Meet", ago(1, 9, 57), 30, False,
+        m(STUDIO_PODCAST, "Podcast trailer review", "Google Meet", ago(1, 9, 57), 30, True,
           [
-              seg(0, 20, "me", "The podcast trailer is two weeks late. Let's fix the cut today."),
-              seg(20, 42, "them", "The intro music fights the voiceover. I'd duck it in Logic."),
-              seg(42, 60, "me", "Agreed. The trailer ships Friday."),
+              seg(0, 12, "me", "The podcast trailer is two weeks late. Let's fix the cut today."),
+              seg(12, 26, "them", "Agreed on a sixty-second cut. Open question: lead with the guest or the host?"),
+              seg(26, 38, "me", "I'll re-cut the intro in Logic by Friday."),
+              seg(38, 52, "them", "Please duck the music under the voiceover; it fights the first line."),
+              seg(52, 66, "me", "Fair. I'll check the mix on AirPods and on the studio monitors."),
+              seg(66, 82, "them", "While we're here: artwork. Does the square cover work as the trailer art?"),
+              seg(82, 96, "me", "It works. We reuse the episode art instead of designing a new one."),
+              seg(96, 110, "them", "Okay. Subtitles too? Half of the clips get watched on mute."),
+              seg(110, 124, "me", "Then we burn subtitles into the social clips and ship the trailer Friday."),
+              seg(124, 138, "them", "Ship it. Let's publish the trailer with Monday's episode."),
           ],
-          "## TL;DR\nThe podcast trailer ships Friday after ducking the intro music in Logic.\n\n"
-          "## Decisions\n- Duck the intro music under the voiceover.\n\n"
-          "## Action items\n- [ ] Re-export the trailer from Logic — Them"),
+          "## TL;DR\nThe podcast trailer becomes a sixty-second cut and ships Friday with the music under the voiceover.\n\n"
+          "## Decisions\n- A sixty-second trailer cut that reuses the episode artwork.\n"
+          "- Duck the music under the voiceover and check the mix on AirPods and studio monitors.\n\n"
+          "## Action items\n- [ ] Re-cut the trailer intro in Logic by Friday — Me\n"
+          "- [ ] Publish the trailer with Monday's episode — Them\n\n"
+          "## Open questions\n- Lead with the guest or the host?"),
 
         # ---- Earlier this week ----
         m(mid(24), "Client call - Northwind", "Microsoft Teams", ago(2, 9, 47), 40, True,
@@ -1120,21 +1134,85 @@ def seed_studio_activity(root):
     return len(shots)
 
 
+def seed_studio_chats(root, now):
+    """Two answered Ask conversations that cite the studio meetings."""
+    chats = os.path.join(root, "chats")
+    os.makedirs(chats, exist_ok=True)
+
+    def msg(mid_, role, text, activity=None):
+        out = {"id": mid_, "role": role, "text": text}
+        if activity:
+            out["activity"] = activity
+        return out
+
+    def act(aid, tool, icon, text):
+        return {"id": aid, "tool": tool, "icon": icon, "text": text, "done": True}
+
+    northwind = mid(24)
+    shoot = {
+        "id": "bbbbbbb1-0000-4000-8000-000000000001",
+        "title": "Holiday shoot plan",
+        "createdAt": iso(now - timedelta(minutes=9)),
+        "updatedAt": iso(now - timedelta(minutes=2)),
+        "messages": [
+            msg("bbbbbbb1-0000-4000-8000-000000000101", "user",
+                "What did we decide for the holiday shoot?"),
+            msg("bbbbbbb1-0000-4000-8000-000000000102", "assistant",
+                "Everything is shot on iPhone, stills and video, for one consistent look "
+                f"[meeting:{STUDIO_SHOOT}@0:12]. Footage moves by AirDrop for selects and on the shared SSD "
+                f"for full shoot days [meeting:{STUDIO_SHOOT}@1:22].\n\n"
+                f"You're booking the photo studio for Thursday morning [meeting:{STUDIO_SHOOT}@0:26], "
+                f"and Maya is sending the Freeform shot list to the crew tonight [meeting:{STUDIO_SHOOT}@0:38].",
+                activity=[
+                    act("bbbbbbb1-0000-4000-8000-000000000201", "search_meetings",
+                        "magnifyingglass", "searched meetings for “holiday shoot”"),
+                    act("bbbbbbb1-0000-4000-8000-000000000202", "get_meeting",
+                        "doc.text", "read “Holiday shoot planning”"),
+                ]),
+        ],
+    }
+    captions = {
+        "id": "bbbbbbb2-0000-4000-8000-000000000002",
+        "title": "Northwind captions",
+        "createdAt": iso(now - timedelta(days=1, hours=2)),
+        "updatedAt": iso(now - timedelta(days=1, hours=2)),
+        "messages": [
+            msg("bbbbbbb2-0000-4000-8000-000000000101", "user",
+                "What does Northwind need before the cut goes live?"),
+            msg("bbbbbbb2-0000-4000-8000-000000000102", "assistant",
+                "Captions. Their legal team won't put the cut on the site without them "
+                f"[meeting:{northwind}@0:00]. You promised a subtitled version this week "
+                f"[meeting:{northwind}@0:15], and they asked for a quote on three social cut-downs "
+                f"[meeting:{northwind}@0:30].",
+                activity=[
+                    act("bbbbbbb2-0000-4000-8000-000000000201", "search_meetings",
+                        "magnifyingglass", "searched meetings for “Northwind”"),
+                    act("bbbbbbb2-0000-4000-8000-000000000202", "get_meeting",
+                        "doc.text", "read “Client call - Northwind”"),
+                ]),
+        ],
+    }
+    for convo in (shoot, captions):
+        with open(os.path.join(chats, f"{convo['id']}.json"), "w") as f:
+            json.dump(convo, f, indent=2)
+
+
 def seed_studio(root):
     now = datetime.now(timezone.utc)
     meetings = build_studio(now)
+    speakers = {STUDIO_SHOOT: "Maya", STUDIO_PODCAST: "Leo"}
     for mm in meetings:
         folder = write_meeting(root, mm)
-        if mm["id"] != STUDIO_SHOOT:
+        if mm["id"] not in speakers:
             continue
         write_demo_audio(folder)
         write_demo_audio(folder, track="system", tone=247, beat=2.7, level=1_400)
         # A named speaker keeps the "speaker needs a name" prompt out of the
-        # featured meeting's summary.
+        # featured meetings' summaries.
         path = os.path.join(folder, "transcript.json")
         with open(path) as f:
             transcript = json.load(f)
-        transcript["speakerAliases"] = {"them": "Maya"}
+        transcript["speakerAliases"] = {"them": speakers[mm["id"]]}
         with open(path, "w") as f:
             json.dump(transcript, f, indent=2)
     journal = os.path.join(root, "journal")
@@ -1150,6 +1228,7 @@ The holiday shoot is all iPhone on Thursday, and the editors move to MacBook Pro
 - Request the business quote from Apple.
 - Deliver the captioned Northwind cut.
 """)
+    seed_studio_chats(root, now)
     moments = seed_studio_activity(root)
     return len(meetings), moments
 
@@ -1190,7 +1269,7 @@ def main():
         return
     if args.profile == "studio":
         meetings, moments = seed_studio(root)
-        print(f"Seeded studio library at {root} ({meetings} meetings, {moments} screen moments)")
+        print(f"Seeded studio library at {root} ({meetings} meetings, 2 chats, {moments} screen moments)")
         return
     now = datetime.now(timezone.utc)
     for mm in build(now):

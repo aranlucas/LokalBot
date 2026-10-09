@@ -16,15 +16,16 @@ not used, and no UI tests were run.
 
 | Image | Meeting window | Quick Recall |
 | --- | --- | --- |
-| light | "Holiday shoot planning" from `Scripts/seed_demo_library.py --profile studio` | "MacBook" in the same library |
-| dark | "Customer call - Northwind" from the default demo library (`LOKALBOT_SELECT_INDEX=4`), with the Design review's demo audio copied in as its `mic.m4a` and `system.m4a` and `"speakerAliases": {"them": "Dana"}` added to its `transcript.json` | "Redis" in the same library |
+| light | "Holiday shoot planning" from `Scripts/seed_demo_library.py --profile studio` | a "MacBook" search, same profile |
+| dark | "Customer call - Northwind" from the default demo library (`LOKALBOT_SELECT_INDEX=4`), with the Design review's demo audio copied in as its `mic.m4a` and `system.m4a` and `"speakerAliases": {"them": "Dana"}` added to its `transcript.json` | a "Redis" search, default library |
 
 Meeting windows used `LOKALBOT_CAPTURE_SIZE=1400x880` at 2×; Quick Recall used
-`660x512` with `LOKALBOT_CAPTURE_SCALE=4`. The light pair came from a working
-copy of the studio profile that pinned today's meetings to fixed clock times.
-The committed profile anchors them to the current time, so a fresh capture
-differs only in the times shown. In each image the meeting and search
-captures came from one library, so their times agree.
+`660x512` with `LOKALBOT_CAPTURE_SCALE=4`. Within each image, the two
+captures came from separately seeded libraries; the second pinned today's
+meetings to the clock times the first showed, so the times agree. The light
+pair predates the committed studio profile, which anchors today's meetings to
+the current time and later gained a fuller podcast trailer review with audio,
+so a fresh capture differs in the times shown and in that meeting's list entry.
 
 Compose a hero from two captures (requires Google Chrome):
 

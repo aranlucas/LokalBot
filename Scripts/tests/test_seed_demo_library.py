@@ -7,6 +7,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import sqlite3
 import subprocess
 import sys
@@ -141,11 +142,26 @@ class SeedProfileTests(unittest.TestCase):
             folders.setdefault(meta["title"], []).append(os.path.dirname(path))
         self.assertEqual(sum(map(len, folders.values())), 19)
 
+        ids = set()
+        for paths in folders.values():
+            for folder in paths:
+                with open(os.path.join(folder, "meta.json")) as f:
+                    ids.add(json.load(f)["id"])
+        chats = glob.glob(os.path.join(self.root, "chats/*.json"))
+        self.assertEqual(len(chats), 2)
+        for path in chats:
+            with open(path) as f:
+                cited = {match for message in json.load(f)["messages"]
+                         for match in re.findall(r"\[meeting:([0-9a-f-]+)@", message["text"])}
+            self.assertTrue(cited and cited <= ids, path)
+
         featured = folders["Holiday shoot planning"][0]
-        for track in ("mic.m4a", "system.m4a"):
-            self.assertTrue(os.path.exists(os.path.join(featured, track)), track)
-        with open(os.path.join(featured, "transcript.json")) as f:
-            self.assertEqual(json.load(f)["speakerAliases"], {"them": "Maya"})
+        for title, speaker in (("Holiday shoot planning", "Maya"), ("Podcast trailer review", "Leo")):
+            folder = folders[title][0]
+            for track in ("mic.m4a", "system.m4a"):
+                self.assertTrue(os.path.exists(os.path.join(folder, track)), (title, track))
+            with open(os.path.join(folder, "transcript.json")) as f:
+                self.assertEqual(json.load(f)["speakerAliases"], {"them": speaker})
 
         def meetings_saying(word):
             titles = set()
