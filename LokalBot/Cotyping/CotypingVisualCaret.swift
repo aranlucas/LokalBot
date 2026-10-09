@@ -271,15 +271,11 @@ final class CotypingVisualCaret {
         entry = Entry(key: key, frame: frame, calibration: calibration)
     }
 
-    /// Waits for a find in progress, for at most `milliseconds`.
+    /// Waits for a find in progress, for at most `milliseconds`. A find that
+    /// takes longer keeps running and is kept for the next suggestion.
     func waitForPending(milliseconds: Int) async {
         guard let task = pending?.task else { return }
-        await withTaskGroup(of: Void.self) { group in
-            group.addTask { await task.value }
-            group.addTask { try? await Task.sleep(for: .milliseconds(milliseconds)) }
-            await group.next()
-            group.cancelAll()
-        }
+        await CotypingBoundedWait.wait(for: task, milliseconds: milliseconds)
     }
 
     func reset() {
@@ -378,6 +374,60 @@ final class CotypingVisualCaret {
                 text: text, minX: firstBox.minX, maxX: lastBox.maxX,
                 baseline: bottoms.isEmpty ? nil : bottoms[bottoms.count / 2],
                 box: point(observation.boundingBox))
+        }
+    }
+}
+
+/// Waits for a task to finish, for at most a deadline. A task group cannot do
+/// this: leaving one waits for every child, and a child awaiting another task's
+/// value is not stopped by cancellation, so the wait lasted as long as the
+/// slowest find (a 150 ms budget waited for a 400 ms capture). The task is
+/// never cancelled here; only the wait ends.
+nonisolated enum CotypingBoundedWait {
+    static func wait(for task: Task<Void, Never>, milliseconds: Int) async {
+        let signal = FirstSignal()
+        await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                signal.install(continuation)
+                let deadline = Task {
+                    try? await Task.sleep(for: .milliseconds(milliseconds))
+                    signal.fire()
+                }
+                Task {
+                    await task.value
+                    deadline.cancel()
+                    signal.fire()
+                }
+            }
+        } onCancel: {
+            signal.fire()
+        }
+    }
+
+    /// Resumes the waiter once, for whichever of the task, the deadline or
+    /// the waiter's cancellation comes first. A cancellation can arrive
+    /// before the waiter is installed.
+    private final class FirstSignal: @unchecked Sendable {
+        private let lock = NSLock()
+        private var waiter: CheckedContinuation<Void, Never>?
+        private var fired = false
+
+        func install(_ continuation: CheckedContinuation<Void, Never>) {
+            let resumeNow = lock.withLock {
+                if fired { return true }
+                waiter = continuation
+                return false
+            }
+            if resumeNow { continuation.resume() }
+        }
+
+        func fire() {
+            let pending: CheckedContinuation<Void, Never>? = lock.withLock {
+                fired = true
+                defer { waiter = nil }
+                return waiter
+            }
+            pending?.resume()
         }
     }
 }
