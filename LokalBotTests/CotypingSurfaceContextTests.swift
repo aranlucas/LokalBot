@@ -222,4 +222,29 @@ final class CotypingSurfaceContextTests: XCTestCase {
         XCTAssertEqual(resolveCount, 2)
         XCTAssertEqual(withURL.urlString, "https://mail.google.com/mail/u/0/#inbox")
     }
+
+    /// Chat apps keep one composer across conversations. The window title the
+    /// prompt and the saved-fact lookup use must follow the conversation, not
+    /// stay as long as the field keeps focus; one suggestion's reads still
+    /// share a capture.
+    func testAComposerReusedAcrossConversationsReadsTheNewTitle() {
+        let store = CotypingSurfaceCaptureSingleFlight()
+        var now: TimeInterval = 100
+        var title = "Atlas conversation"
+        var reads = 0
+        func surfaceTitle() -> String? {
+            CotypingAXHelper.cachedSurfaceCapture(in: store, forKey: "composer", clock: { now }) {
+                reads += 1
+                return CotypingSurfaceCapture(windowTitle: title, fieldPlaceholder: nil, urlString: nil)
+            }.windowTitle
+        }
+
+        XCTAssertEqual(surfaceTitle(), "Atlas conversation")
+        title = "Borealis conversation"
+        now += 0.3
+        XCTAssertEqual(surfaceTitle(), "Atlas conversation", "a suggestion's validation reuses its prediction read")
+        now += 2
+        XCTAssertEqual(surfaceTitle(), "Borealis conversation")
+        XCTAssertEqual(reads, 2)
+    }
 }
