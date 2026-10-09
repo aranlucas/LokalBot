@@ -175,6 +175,7 @@ class SeedProfileTests(unittest.TestCase):
         self.assertEqual(meetings_saying("macbook"), {"Mac refresh planning", "Studio check-in"})
         self.assertEqual(meetings_saying("captions"),
                          {"Client call - Northwind", "Weekly production sync", "Accessibility review"})
+        self.assertEqual(meetings_saying("demo presentation"), {"Studio check-in", "Brand refresh sync"})
 
         con = sqlite3.connect(os.path.join(self.root, "lokalbotv3.sqlite"))
         self.addCleanup(con.close)
@@ -185,7 +186,10 @@ class SeedProfileTests(unittest.TestCase):
 
         self.assertEqual(screens_showing("macbook"), {"Compare Mac models", "Studio budget 2026"})
         self.assertEqual(screens_showing("captions"), {"Delivery checklist"})
-        self.assertEqual(con.execute("SELECT note FROM screen_bookmarks").fetchall(), [("Mac refresh budget",)])
+        self.assertEqual(screens_showing('"demo presentation"'),
+                         {"Globex demo presentation", "Re: Globex demo presentation"})
+        self.assertEqual({note for (note,) in con.execute("SELECT note FROM screen_bookmarks")},
+                         {"Mac refresh budget", "Final demo presentation"})
         self.assertLess(con.execute("SELECT MAX(ts) FROM screenshots").fetchone()[0], now)
         self.assertLess(con.execute("SELECT MAX(end) FROM activity_blocks").fetchone()[0], now)
         for (path,) in con.execute("SELECT path FROM screenshots"):
@@ -200,6 +204,15 @@ class SeedProfileTests(unittest.TestCase):
                       for key in ("startedAt", "endedAt"))
         (photos,) = con.execute("SELECT ts FROM screenshots WHERE app = 'Photos'").fetchone()
         self.assertTrue(start < photos < end)
+
+        # Nothing was on screen during the podcast call, which the README shows
+        # without an "On Screen During the Meeting" section.
+        with open(os.path.join(folders["Podcast trailer review"][0], "meta.json")) as f:
+            meta = json.load(f)
+        start, end = (datetime.fromisoformat(meta[key].replace("Z", "+00:00")).timestamp()
+                      for key in ("startedAt", "endedAt"))
+        self.assertEqual(con.execute("SELECT COUNT(*) FROM screenshots WHERE ts BETWEEN ? AND ?",
+                                     (start, end)).fetchone()[0], 0)
 
 if __name__ == "__main__":
     unittest.main()

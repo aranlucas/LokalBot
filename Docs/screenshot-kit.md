@@ -91,7 +91,7 @@ frame in each appearance with the environment from `capture()` in
 
 | Files | Settings |
 | --- | --- |
-| `quick-recall.png`, `quick-recall-light.png` | `LOKALBOT_UI_TEST_WINDOW=quick-recall LOKALBOT_QUICK_RECALL_QUERY=MacBook LOKALBOT_CAPTURE_SIZE=660x512 LOKALBOT_CAPTURE_SCALE=4` |
+| `quick-recall.png`, `quick-recall-light.png` | `LOKALBOT_UI_TEST_WINDOW=quick-recall LOKALBOT_QUICK_RECALL_QUERY="demo presentation" LOKALBOT_CAPTURE_SIZE=660x512 LOKALBOT_CAPTURE_SCALE=4` |
 | `screen-search.png`, `screen-search-light.png` | the same with `LOKALBOT_QUICK_RECALL_QUERY=captions` |
 | `meetings-summary.png`, `meetings-summary-light.png` | `LOKALBOT_INITIAL_SECTION=meetings LOKALBOT_SELECT_INDEX=0 LOKALBOT_DETAIL_TAB=summary LOKALBOT_CAPTURE_SIZE=1400x932` |
 | `today.png`, `today-light.png` | `LOKALBOT_INITIAL_SECTION=today LOKALBOT_CAPTURE_SIZE=1400x932` |

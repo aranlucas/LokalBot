@@ -749,9 +749,11 @@ def build_studio(now):
     """A small video studio's meetings: FaceTime calls and Apple apps instead of
     engineering work. Each captured surface gets its own topic: the holiday
     shoot (website meeting and README hero), the podcast trailer (README
-    meeting section), the Mac refresh ("MacBook" search) and delivery captions
-    ("captions" search). Keep "MacBook" and "captions" out of other meetings so
-    those searches return the intended rows."""
+    meeting section), the Globex demo presentation (the website's "demo
+    presentation" search), the Mac refresh ("MacBook" search) and delivery
+    captions ("captions" search). Keep "MacBook", "captions" and "demo
+    presentation" out of other meetings so those searches return the intended
+    rows."""
     def ago(days, hour, minute=0):
         base = now - timedelta(days=days)
         return base.replace(hour=hour, minute=minute, second=0, microsecond=0)
@@ -801,6 +803,7 @@ def build_studio(now):
               seg(0, 9, "me", "Quick check-in. I'm finishing the Northwind holiday cut today."),
               seg(9, 20, "me", "Blocker: 4K exports still crawl on the old laptops."),
               seg(20, 32, "me", "Also pricing two MacBook Pro configs for the edit suite before the call."),
+              seg(32, 44, "me", "And I'm sending Globex the demo presentation slides this morning."),
           ],
           "## TL;DR\nThe Northwind holiday cut wraps today; slow exports on the old laptops are the blocker.\n\n"
           "## Action items\n- [ ] Finish the Northwind holiday cut — Me\n- [ ] Price two laptop configs for the edit suite — Me"),
@@ -842,6 +845,7 @@ def build_studio(now):
               seg(0, 16, "me", "The new logo lockups shipped. The remaining gap is the motion version."),
               seg(16, 34, "them", "I'll deliver the animated logo in Keynote and as a ProRes file by Friday."),
               seg(34, 50, "me", "Then we can close the brand refresh next week."),
+              seg(50, 64, "them", "Put the animated logo on the first slide of the Globex demo presentation."),
           ],
           "## TL;DR\nThe brand refresh is nearly done; the animated logo lands Friday.\n\n"
           "## Action items\n- [ ] Animated logo in Keynote and ProRes — Them"),
@@ -1067,7 +1071,9 @@ def seed_studio_activity(root):
             ("Google Meet", "Podcast trailer review", 10 * 60 + 15, 10 * 60 + 45),
             ("Keynote", "Holiday campaign deck", 11 * 60, 12 * 60 + 30),
             ("Safari", "AppleCare for business", 13 * 60 + 30, 14 * 60 + 45),
-            ("Messages", "Studio team", 14 * 60 + 45, 15 * 60 + 10)],
+            ("Messages", "Studio team", 14 * 60 + 45, 15 * 60 + 10),
+            ("Keynote", "Globex demo presentation", 15 * 60 + 15, 15 * 60 + 35),
+            ("Mail", "Re: Globex demo presentation", 16 * 60, 16 * 60 + 15)],
         2: [("Microsoft Teams", "Client call - Northwind", 9 * 60 + 45, 10 * 60 + 25),
             ("Pages", "Delivery checklist", 10 * 60 + 30, 12 * 60),
             ("FaceTime", "Brand refresh sync", 14 * 60, 14 * 60 + 30),
@@ -1086,33 +1092,42 @@ def seed_studio_activity(root):
             cur.execute("INSERT INTO activity_blocks (app,title,start,end) VALUES (?,?,?,?)",
                         (app, title, midnight + a * 60, midnight + b * 60))
 
-    shot_dir = os.path.join(root, "activity", datetime.now().strftime("%Y-%m-%d"), "demo")
-    os.makedirs(shot_dir, exist_ok=True)
+    yesterday = time.mktime((datetime.now() - timedelta(days=1))
+                            .replace(hour=0, minute=0, second=0, microsecond=0).timetuple())
+    # (app, window title, time, screen text, thumbnail, accent, bookmark note).
+    # Yesterday's demo presentation moments stay outside the podcast call, so
+    # its meeting window has no "On Screen During the Meeting" section.
     shots = [
-        ("Keynote", "Northwind pitch deck", 236,
+        ("Keynote", "Northwind pitch deck", now - 236 * 60,
          "Northwind holiday campaign: three hero shots, one story, all shot on iPhone.",
-         "slide", (255, 159, 10)),
-        ("Safari", "Compare Mac models", 147,
+         "slide", (255, 159, 10), None),
+        ("Safari", "Compare Mac models", now - 147 * 60,
          "MacBook Air vs MacBook Pro: displays, battery life, ports and price, side by side.",
-         "web", (0, 122, 255)),
-        ("Numbers", "Studio budget 2026", 118,
+         "web", (0, 122, 255), None),
+        ("Numbers", "Studio budget 2026", now - 118 * 60,
          "Two MacBook Pro for editors, three MacBook Air for sales, AppleCare+ on all.",
-         "sheet", (52, 199, 89)),
-        ("Pages", "Delivery checklist", 74,
+         "sheet", (52, 199, 89), "Mac refresh budget"),
+        ("Pages", "Delivery checklist", now - 74 * 60,
          "Every client video ships with captions, an audio description track, and a vertical cut.",
-         "doc", (255, 149, 0)),
-        ("Mail", "Trade-in estimate", 64,
+         "doc", (255, 149, 0), None),
+        ("Mail", "Trade-in estimate", now - 64 * 60,
          "Your trade-in estimate for five laptops is ready and valid for 14 days.",
-         "mail", (0, 122, 255)),
-        ("Photos", "Northwind selects", 49,
+         "mail", (0, 122, 255), None),
+        ("Photos", "Northwind selects", now - 49 * 60,
          "Northwind selects: 42 photos, 6 favorites, shared with the studio.",
-         "photos", (255, 149, 0)),
+         "photos", (255, 149, 0), None),
+        ("Keynote", "Globex demo presentation", yesterday + (15 * 60 + 24) * 60,
+         "Globex demo presentation: case studies and the launch timeline.",
+         "slide", (0, 122, 255), "Final demo presentation"),
+        ("Mail", "Re: Globex demo presentation", yesterday + (16 * 60 + 5) * 60,
+         "Great demo presentation. Could you share the slides with our team?",
+         "mail", (0, 122, 255), None),
     ]
-    snapshot_ids = []
-    for index, (app, title, minutes_ago, text, kind, accent) in enumerate(shots, start=1):
+    for index, (app, title, timestamp, text, kind, accent, note) in enumerate(shots, start=1):
+        shot_dir = os.path.join(root, "activity", datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d"), "demo")
+        os.makedirs(shot_dir, exist_ok=True)
         path = os.path.join(shot_dir, f"scene-{index}.png")
         write_light_window_png(path, kind, accent)
-        timestamp = now - minutes_ago * 60
         cur.execute("""
             INSERT INTO screenshots (
                 ts, path, app, window_title, capture_trigger, perceptual_hash,
@@ -1121,14 +1136,14 @@ def seed_studio_activity(root):
             VALUES (?, ?, ?, ?, ?, '', ?, '', ?, '', 0)
             """, (timestamp, path, app, title, "window_change", index, title))
         snapshot_id = cur.lastrowid
-        snapshot_ids.append(snapshot_id)
         cur.execute("""
             INSERT INTO ocr_fts (
                 text, window_title, ts, app, text_source, snapshot_id)
             VALUES (?, ?, ?, ?, 'accessibility', ?)
             """, (text, title, timestamp, app, snapshot_id))
-    cur.execute("INSERT INTO screen_bookmarks (snapshot_id, note, created_at) VALUES (?, ?, ?)",
-                (snapshot_ids[2], "Mac refresh budget", now - 110 * 60))
+        if note:
+            cur.execute("INSERT INTO screen_bookmarks (snapshot_id, note, created_at) VALUES (?, ?, ?)",
+                        (snapshot_id, note, timestamp + 8 * 60))
     con.commit()
     con.close()
     return len(shots)
