@@ -245,6 +245,7 @@ enum ModelSettingsPresentation {
         switch choice {
         case .qwenASR17B: 3_200_000_000
         case .qwenASR06B: 700_000_000
+        case .parakeetUltra: 630_000_000
         case .parakeetV2, .parakeetV3: 600_000_000
         case .graniteTurbo: 950_000_000
         case .whisperLarge: 1_600_000_000

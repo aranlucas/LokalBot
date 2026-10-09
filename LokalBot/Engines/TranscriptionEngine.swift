@@ -41,6 +41,7 @@ private func downloadProgressHandler(
 /// those cover poorly — SenseVoice (CJK) and GigaAM (Russian) — via the bundled
 /// sherpa-onnx engine.
 enum TranscriptionModelChoice: String, Codable, CaseIterable, Identifiable {
+    case parakeetUltra = "parakeet-ultra"
     case parakeetV3 = "parakeet-v3"
     case parakeetV2 = "parakeet-v2"
     case qwenASR17B = "qwen3-asr-1.7b"
@@ -62,6 +63,7 @@ enum TranscriptionModelChoice: String, Codable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
+        case .parakeetUltra: "Parakeet Ultra 0.6B (multilingual)"
         case .parakeetV3: "Parakeet TDT 0.6B v3 (multilingual)"
         case .parakeetV2: "Parakeet TDT 0.6B v2 (English)"
         case .qwenASR17B: "Qwen3-ASR 1.7B"
@@ -107,6 +109,7 @@ enum TranscriptionModelChoice: String, Codable, CaseIterable, Identifiable {
 
     var blurb: String {
         switch self {
+        case .parakeetUltra: "0.63 GB · 25 European languages, fast multilingual transcription"
         case .parakeetV3: "0.6 GB · 25 European languages, ~190× realtime"
         case .parakeetV2: "0.46 GB · English only, slightly higher recall"
         case .qwenASR17B: "2.47 GB · MLX, 52 languages/dialects, best Qwen accuracy tier"
@@ -122,6 +125,7 @@ enum TranscriptionModelChoice: String, Codable, CaseIterable, Identifiable {
 
     var engine: TranscriptionEngine {
         switch self {
+        case .parakeetUltra: ParakeetEngine.ultra
         case .parakeetV3: ParakeetEngine.v3
         case .parakeetV2: ParakeetEngine.v2
         case .qwenASR17B: QwenASREngine.accuracy
@@ -282,22 +286,75 @@ actor AsyncSingleFlight {
 
 
 /// Parakeet TDT 0.6B via FluidAudio — CoreML, in-process, runs on the
-/// Neural Engine (~190x realtime on M4). v3 = 25 European languages,
-/// v2 = English-only with higher recall. The model (~600 MB) is fetched
+/// Neural Engine. Ultra and v3 cover 25 European languages;
+/// v2 is English-only. The model is fetched
 /// from Hugging Face on first use and cached; the only network access.
 actor ParakeetEngine: TranscriptionEngine {
 
-    enum Variant: Sendable {
-        case v3, v2
-        var modelVersion: AsrModelVersion { self == .v3 ? .v3 : .v2 }
+    enum Variant: CaseIterable, Sendable {
+        case ultra, v3, v2
+
+        var modelVersion: AsrModelVersion {
+            switch self {
+            case .ultra: .ultra
+            case .v3: .v3
+            case .v2: .v2
+            }
+        }
+
+        var encoderPrecision: ParakeetEncoderPrecision {
+            // The pinned v3 snapshot uses the corrected Encoder_v2 weights.
+            self == .v3 ? .int8V2 : .int8
+        }
+
+        var repository: Repo {
+            switch self {
+            case .ultra: .parakeetUltra
+            case .v3: .parakeetV3
+            case .v2: .parakeetV2
+            }
+        }
+
+        var snapshotName: String {
+            switch self {
+            case .ultra: "parakeetUltra"
+            case .v3: "parakeetV3"
+            case .v2: "parakeetV2"
+            }
+        }
+
+        var runtimeID: String {
+            switch self {
+            case .ultra: "transcription:parakeet-ultra"
+            case .v3: "transcription:parakeet-v3"
+            case .v2: "transcription:parakeet-v2"
+            }
+        }
+
+        var displayName: String {
+            switch self {
+            case .ultra: "Parakeet Ultra 0.6B"
+            case .v3: "Parakeet TDT 0.6B v3"
+            case .v2: "Parakeet TDT 0.6B v2"
+            }
+        }
+
+        var transcriptEngine: String {
+            switch self {
+            case .ultra: "parakeet-ultra (FluidAudio)"
+            case .v3: "parakeet-tdt-0.6b-v3 (FluidAudio)"
+            case .v2: "parakeet-tdt-0.6b-v2 (FluidAudio)"
+            }
+        }
     }
 
     /// One instance per variant so the pipeline, dictation prewarm, and the
     /// Models UI can each target a variant without racing over shared state.
+    static let ultra = ParakeetEngine(variant: .ultra)
     static let v3 = ParakeetEngine(variant: .v3)
     static let v2 = ParakeetEngine(variant: .v2)
 
-    nonisolated let displayName = "Parakeet TDT 0.6B"
+    nonisolated let displayName: String
     nonisolated let supportsStreaming = false
 
     private let variant: Variant
@@ -306,7 +363,10 @@ actor ParakeetEngine: TranscriptionEngine {
     private var activeUses = 0
     private lazy var idle = IdleTimer(seconds: 120) { [weak self] in await self?.unload() }
 
-    private init(variant: Variant) { self.variant = variant }
+    private init(variant: Variant) {
+        self.variant = variant
+        self.displayName = variant.displayName
+    }
 
     /// Downloads (first run) and loads the CoreML model. Idempotent.
     func prepare(progress: ModelPreparationProgressHandler? = nil) async throws {
@@ -323,10 +383,8 @@ actor ParakeetEngine: TranscriptionEngine {
 
     private func performPreparation(progress: ModelPreparationProgressHandler?) async throws {
         guard manager == nil else { return }
-        let runtimeID = variant == .v3
-            ? "transcription:parakeet-v3" : "transcription:parakeet-v2"
-        let runtimeLabel = variant == .v3
-            ? "Parakeet TDT 0.6B v3" : "Parakeet TDT 0.6B v2"
+        let runtimeID = variant.runtimeID
+        let runtimeLabel = variant.displayName
         let estimatedBytes = ModelRuntimeRegistry.gibibytes(0.6)
         await ModelRuntimeRegistry.shared.reserve(
             id: runtimeID, role: "Transcribe", label: runtimeLabel,
@@ -334,13 +392,14 @@ actor ParakeetEngine: TranscriptionEngine {
         do {
             try Task.checkCancellation()
             let modelDirectory = TranscriptionModelStore.Environment.live.fluidAudioModelsRoot
-                .appendingPathComponent(variant == .v3 ? Repo.parakeetV3.folderName : Repo.parakeetV2.folderName)
-            let snapshot = try PinnedModelSnapshot.catalog(variant == .v3 ? "parakeetV3" : "parakeetV2")
+                .appendingPathComponent(variant.repository.folderName)
+            let snapshot = try PinnedModelSnapshot.catalog(variant.snapshotName)
             try await snapshot.prepare(in: modelDirectory, progress: progress)
             guard !FileManager.default.fileExists(atPath: modelDirectory.appendingPathComponent(ModelNames.ASR.ctcHeadFile).path) else {
                 throw PinnedModelSnapshot.SnapshotError.unexpectedWeights
             }
-            let models = try AsrModels.loadLocal(from: modelDirectory, version: variant.modelVersion)
+            let models = try AsrModels.loadLocal(from: modelDirectory, version: variant.modelVersion,
+                                                encoderPrecision: variant.encoderPrecision)
             reportPreparationUpdate(.init(fractionCompleted: nil, status: "Loading..."),
                                     to: progress)
             let m = AsrManager(config: .default)
@@ -360,9 +419,7 @@ actor ParakeetEngine: TranscriptionEngine {
     private func unload() async {
         guard activeUses == 0, !(await preparation.isRunning) else { return }
         manager = nil
-        await ModelRuntimeRegistry.shared.unregister(
-            id: variant == .v3 ? "transcription:parakeet-v3" : "transcription:parakeet-v2"
-        )
+        await ModelRuntimeRegistry.shared.unregister(id: variant.runtimeID)
     }
 
     func transcribe(audio url: URL, language: String?) async throws -> Transcript {
@@ -374,7 +431,7 @@ actor ParakeetEngine: TranscriptionEngine {
         let hint = language.flatMap { Language(rawValue: $0) }
         let result = try await manager.transcribe(url, decoderState: &state, language: hint)
         let transcript = Transcript(segments: Self.segments(from: result, speaker: "speaker"),
-                                    engine: "\(variant == .v2 ? "parakeet-tdt-0.6b-v2" : "parakeet-tdt-0.6b-v3") (FluidAudio)")
+                                    engine: variant.transcriptEngine)
         return transcript
     }
 

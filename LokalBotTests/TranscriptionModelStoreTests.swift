@@ -41,6 +41,27 @@ final class TranscriptionModelStoreTests: XCTestCase {
         XCTAssertTrue(TranscriptionModelStore.isDownloaded(.qwenASR17B, environment: environment))
     }
 
+    func testUltraRequiresItsOwnCompleteCacheAndDeletionPreservesV3() throws {
+        let (root, environment) = try makeEnvironment()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try writeFluidAudioParakeetV3(in: environment)
+        XCTAssertFalse(TranscriptionModelStore.isDownloaded(.parakeetUltra, environment: environment))
+
+        let directory = environment.fluidAudioModelsRoot.appendingPathComponent(Repo.parakeetUltra.folderName)
+        for fileName in ModelNames.ASR.requiredModelsV3().union([ModelNames.ASR.vocabularyFile])
+        where fileName != ModelNames.ASR.encoderFile {
+            try writeEmptyFile(directory.appendingPathComponent(fileName))
+        }
+        XCTAssertFalse(TranscriptionModelStore.isDownloaded(.parakeetUltra, environment: environment))
+        try writeEmptyFile(directory.appendingPathComponent(ModelNames.ASR.encoderFile))
+        XCTAssertTrue(TranscriptionModelStore.downloadedChoices(environment: environment).contains("parakeet-ultra"))
+
+        try TranscriptionModelStore.delete(.parakeetUltra, environment: environment)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+        XCTAssertFalse(TranscriptionModelStore.isDownloaded(.parakeetUltra, environment: environment))
+        XCTAssertTrue(TranscriptionModelStore.isDownloaded(.parakeetV3, environment: environment))
+    }
+
     func testLegacyWhisperCacheIsRecognizedAndMigratedToApplicationSupport() throws {
         let (root, environment) = try makeEnvironment()
         defer { try? FileManager.default.removeItem(at: root) }
@@ -150,7 +171,7 @@ final class TranscriptionModelStoreTests: XCTestCase {
 
     private func writeFluidAudioParakeetV3(in environment: TranscriptionModelStore.Environment) throws {
         let directory = environment.fluidAudioModelsRoot.appendingPathComponent(Repo.parakeetV3.folderName)
-        for fileName in ModelNames.ASR.requiredModelsV3().union([ModelNames.ASR.vocabularyFile]) {
+        for fileName in ModelNames.ASR.requiredModelsV3(precision: .int8V2).union([ModelNames.ASR.vocabularyFile]) {
             try writeEmptyFile(directory.appendingPathComponent(fileName))
         }
     }

@@ -28,6 +28,7 @@ the vendor fetch scripts, and `AgentRuntimeManifest`.
 | Bun (optional Agent Mode runtime) | MIT | https://github.com/oven-sh/bun |
 | pi agent packages (optional, installed on request) | MIT | https://github.com/earendil-works/pi |
 | LFM models (downloaded on request) | LFM Open License v1.0 | https://docs.liquid.ai/lfm/help/model-license |
+| Parakeet Ultra (downloaded on request; moondream post-training of NVIDIA Parakeet v3, Core ML conversion by FluidInference) | CC-BY-4.0 | https://huggingface.co/moondream/parakeet-ultra / https://huggingface.co/FluidInference/parakeet-ultra-coreml |
 
 Downloaded AI models are not bundled with LokalBot. Each model remains subject
 to the license shown by its publisher; review that license before downloading

@@ -1,9 +1,11 @@
 import XCTest
+import FluidAudio
 @testable import LokalBot
 
 final class PinnedSpeechCatalogTests: XCTestCase {
     func testBundledManifestsCoverEverySelectedLoaderComponent() throws {
         let required: [String: Set<String>] = [
+            "parakeetUltra": ["Encoder.mlmodelc", "Decoder.mlmodelc", "JointDecisionv3.mlmodelc", "Preprocessor.mlmodelc", "parakeet_vocab.json"],
             "parakeetV3": ["Encoder_v2.mlmodelc", "Decoder.mlmodelc", "JointDecisionv3.mlmodelc", "Preprocessor.mlmodelc", "parakeet_vocab.json"],
             "parakeetV2": ["Encoder.mlmodelc", "Decoder.mlmodelc", "JointDecision.mlmodelc", "Preprocessor.mlmodelc", "parakeet_vocab.json"],
             "sileroVAD": ["silero-vad-unified-256ms-v6.2.1.mlmodelc"],
@@ -24,5 +26,29 @@ final class PinnedSpeechCatalogTests: XCTestCase {
         }
         let cohere = try PinnedModelSnapshot.catalog("cohere")
         XCTAssertEqual(cohere.files.first { $0.path == "vocab.json" }?.remotePath, "vocab.json")
+    }
+
+    func testParakeetSnapshotsMatchTheirLocalLoaderAndUseSeparateIdentities() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        var runtimeIDs: Set<String> = []
+        var transcriptEngines: Set<String> = []
+        var directories: Set<URL> = []
+        for variant in ParakeetEngine.Variant.allCases {
+            let snapshot = try PinnedModelSnapshot.catalog(variant.snapshotName)
+            XCTAssertEqual(snapshot.repository, variant.repository.rawValue)
+            let directory = root.appendingPathComponent(variant.repository.folderName)
+            for file in snapshot.files {
+                let destination = directory.appendingPathComponent(file.path)
+                try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(),
+                                                        withIntermediateDirectories: true)
+                try Data().write(to: destination)
+            }
+            XCTAssertTrue(AsrModels.modelsExist(at: directory, version: variant.modelVersion,
+                                               encoderPrecision: variant.encoderPrecision), variant.snapshotName)
+            XCTAssertTrue(runtimeIDs.insert(variant.runtimeID).inserted)
+            XCTAssertTrue(transcriptEngines.insert(variant.transcriptEngine).inserted)
+            XCTAssertTrue(directories.insert(directory).inserted)
+        }
     }
 }

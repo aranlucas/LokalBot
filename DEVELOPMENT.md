@@ -52,10 +52,11 @@ Engines (Settings → Models; CoreML/MLX, in-process, Neural Engine/Metal):
 
 | Engine | Coverage | Notes |
 | --- | --- | --- |
-| **IBM Granite Speech 4.1** | high-accuracy local ASR | **recommended** |
+| **IBM Granite Speech 4.1** | high-accuracy local ASR | optional |
+| **Parakeet Ultra 0.6B** (CoreML, ~0.63 GB) | 25 European languages | fast multilingual option; separate from existing v2/v3 selections |
 | **Parakeet TDT 0.6B v3** | 25 languages, up to ~190× realtime in local benchmarks | fastest local option |
 | **Parakeet TDT 0.6B v2** | English only | slightly higher recall |
-| **Qwen3-ASR 1.7B** (MLX, ~3.2 GB) | 52 languages/dialects | best Qwen accuracy tier for harder recordings |
+| **Qwen3-ASR 1.7B** (MLX, ~2.47 GB) | 52 languages/dialects | **recommended**; best Qwen accuracy tier for harder recordings |
 | **Qwen3-ASR 0.6B** (MLX, ~0.7 GB) | global coverage | compact tier |
 | **Whisper large-v3 turbo** (WhisperKit, ~1.6 GB) | 99 languages | word timestamps; wide-language fallback |
 | **SenseVoice / GigaAM** (ONNX) | CJK/Cantonese/English, Russian | specialist coverage |

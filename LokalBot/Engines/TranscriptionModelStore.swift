@@ -57,10 +57,14 @@ struct TranscriptionModelStore {
                              environment: Environment = .live,
                              graniteConfiguration: GraniteSpeechModelConfiguration = .defaultModel) -> Bool {
         switch choice {
+        case .parakeetUltra:
+            return AsrModels.modelsExist(
+                at: parakeetDirectory(.parakeetUltra, environment: environment),
+                version: .ultra)
         case .parakeetV3:
             return AsrModels.modelsExist(
                 at: parakeetDirectory(.parakeetV3, environment: environment),
-                version: .v3)
+                version: .v3, encoderPrecision: ParakeetEngine.Variant.v3.encoderPrecision)
         case .parakeetV2:
             return AsrModels.modelsExist(
                 at: parakeetDirectory(.parakeetV2, environment: environment),
@@ -115,6 +119,8 @@ struct TranscriptionModelStore {
                                          environment: Environment,
                                          graniteConfiguration: GraniteSpeechModelConfiguration) -> [URL] {
         switch choice {
+        case .parakeetUltra:
+            [parakeetDirectory(.parakeetUltra, environment: environment)]
         case .parakeetV3:
             [parakeetDirectory(.parakeetV3, environment: environment)]
         case .parakeetV2:

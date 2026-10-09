@@ -115,6 +115,27 @@ final class ModelCatalogTests: XCTestCase {
         XCTAssertEqual(ModelStackPreset.recommended.patch.transcription, .qwenASR17B)
     }
 
+    func testParakeetUltraIsSelectableAndPersistsWithoutReplacingExistingChoices() throws {
+        let choice = TranscriptionModelChoice.parakeetUltra
+        XCTAssertTrue(TranscriptionModelChoice.allCases.contains(choice))
+        XCTAssertFalse(choice.isLegacy)
+        XCTAssertTrue((choice.engine as? ParakeetEngine) === ParakeetEngine.ultra)
+        XCTAssertEqual(choice.engine.displayName, "Parakeet Ultra 0.6B")
+        XCTAssertFalse(choice.acceptsVocabularyPrompt)
+        XCTAssertFalse(choice.engine.supportsStreaming)
+        XCTAssertEqual(choice.engine.speakerAttribution, .regions)
+
+        let decoder = JSONDecoder()
+        for (rawValue, expected) in [("parakeet-ultra", choice), ("parakeet-v3", .parakeetV3), ("parakeet-v2", .parakeetV2)] {
+            let decoded = try decoder.decode(TranscriptionModelChoice.self, from: JSONEncoder().encode(rawValue))
+            XCTAssertEqual(decoded, expected)
+        }
+        var settings = AppSettings()
+        settings.transcriptionModel = choice
+        let restored = try decoder.decode(AppSettings.self, from: JSONEncoder().encode(settings))
+        XCTAssertEqual(restored.transcriptionModel, choice)
+    }
+
     func testPresetModelSummaryNamesEveryRoleModel() {
         XCTAssertEqual(ModelStackPreset.recommended.modelSummary,
                        "Transcribe: Qwen3-ASR 1.7B, Think: Qwen3.5 4B, Autocomplete: Gemma 4 E2B Base (Autocomplete)")
