@@ -60,6 +60,12 @@ final class DictationCoordinator: ObservableObject {
     @Published private(set) var modelPreparationStatus: String?
     @Published private(set) var modelPreparationProgress: Double?
     @Published private(set) var modelPreparationError: String?
+    /// A status-only preparation reaches the HUD once it outlasts a short
+    /// grace period. A warm model's check ends at once and used to flash the
+    /// preparation panel at the start of every transcription.
+    private var modelPreparationOutlastedGrace = false
+    private var modelPreparationGraceTask: Task<Void, Never>?
+    private static let modelPreparationGracePeriod: Duration = .milliseconds(600)
 
     private let storageRoot: URL
     private let settingsProvider: () -> AppSettings
@@ -193,14 +199,20 @@ final class DictationCoordinator: ObservableObject {
         }
     }
 
+    /// While the microphone starts, the settings captured at the press decide,
+    /// so the HUD opens at the size recording keeps instead of growing from a
+    /// pill into the transcript panel once audio flows.
     var shouldShowLiveTranscriptPanel: Bool {
-        isLivePreviewEnabled && state.isWorking
+        if isStarting, !state.isWorking, let activeConfig {
+            return activeConfig.dictationShowOverlay && activeConfig.dictationLivePreview
+        }
+        return isLivePreviewEnabled && state.isWorking
     }
 
     var shouldShowModelPreparation: Bool {
         Self.shouldShowModelPreparation(
             state: state,
-            hasStatus: modelPreparationStatus != nil,
+            hasStatus: modelPreparationStatus != nil && modelPreparationOutlastedGrace,
             hasProgress: modelPreparationProgress != nil,
             hasError: modelPreparationError != nil)
     }
@@ -1100,7 +1112,8 @@ final class DictationCoordinator: ObservableObject {
     }
 
     func retryModelPreparation() {
-        modelPreparationError = nil
+        // Both paths begin preparation, which clears the error while the
+        // panel is still showing it, so the panel stays up for the retry.
         if let pending = pendingTranscriptionRetry {
             pendingTranscriptionRetry = nil
             beginModelPreparation()
@@ -1472,9 +1485,19 @@ final class DictationCoordinator: ObservableObject {
         "Check your connection and free disk space, then try again."
 
     private func beginModelPreparation() {
+        // A panel already on screen (a Retry, a slow load) stays up.
+        let alreadyShown = shouldShowModelPreparation
         modelPreparationError = nil
         modelPreparationProgress = nil
         modelPreparationStatus = "Checking the selected speech model…"
+        modelPreparationOutlastedGrace = alreadyShown
+        modelPreparationGraceTask?.cancel()
+        modelPreparationGraceTask = alreadyShown ? nil : Task { [weak self] in
+            try? await Task.sleep(for: Self.modelPreparationGracePeriod)
+            guard let self, !Task.isCancelled, self.modelPreparationStatus != nil else { return }
+            self.modelPreparationOutlastedGrace = true
+            self.refreshOverlay()
+        }
         refreshOverlay()
     }
 
@@ -1497,6 +1520,9 @@ final class DictationCoordinator: ObservableObject {
         modelPreparationStatus = nil
         modelPreparationProgress = nil
         modelPreparationError = nil
+        modelPreparationOutlastedGrace = false
+        modelPreparationGraceTask?.cancel()
+        modelPreparationGraceTask = nil
     }
 
     private func discardPendingTranscriptionRetry() {
