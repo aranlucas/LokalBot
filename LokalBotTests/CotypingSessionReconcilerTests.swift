@@ -453,4 +453,31 @@ final class CotypingContinuationTests: XCTestCase {
             currentPrecedingText: "what's on your mind",
             acceptedPrecedingText: "what's on your mind"))
     }
+
+    /// Typing the suggested words and accepting them are the same to the
+    /// top-up: both keep the suggestion open, so the ghost stays ahead.
+    func testTypingThroughKeepsTheTopUpThatAcceptingKeeps() throws {
+        var open = session("I wanted to follow")
+        open.isOpenEnded = true
+        let accepted = open.advanced(by: " up on".count)
+        XCTAssertTrue(CotypingSuggestionExtension.shouldExtend(accepted, wordLimit: 4), "control: accepting asks for more")
+
+        let typed = try XCTUnwrap(CotypingSessionReconciler.sessionAdvancedByTypedCharacters(
+            open, typedCharacters: " up on"))
+        let published = try XCTUnwrap(CotypingSessionReconciler.sessionReconciledByPublishedTyping(
+            open, liveField: field("I wanted to follow up on")))
+        let caughtUp = try XCTUnwrap(CotypingSessionReconciler.sessionReconciledByPublishedTyping(
+            accepted, liveField: field("I wanted to follow up on")))
+        for advanced in [typed, published, caughtUp] {
+            XCTAssertEqual(advanced, accepted)
+            XCTAssertTrue(CotypingSuggestionExtension.shouldExtend(advanced, wordLimit: 4))
+        }
+    }
+
+    func testTypingThroughAFinishedSuggestionLeavesItFinished() throws {
+        let typed = try XCTUnwrap(CotypingSessionReconciler.sessionAdvancedByTypedCharacters(
+            session("I wanted to follow"), typedCharacters: " up on"))
+        XCTAssertFalse(typed.isOpenEnded)
+        XCTAssertFalse(CotypingSuggestionExtension.shouldExtend(typed, wordLimit: 4))
+    }
 }

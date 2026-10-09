@@ -394,14 +394,15 @@ extension CotypingCoordinator {
             state = .idle
             return false
         }
+        var fresh = CotypingSession(field: field, fullText: text, kind: .continuation)
+        fresh.isOpenEnded = CotypingSuggestionExtension.isOpenEnded(
+            text, wordLimit: settingsProvider().cotypingMaxWords)
         suggestionAnchorCache.record(
             identityKey: CotypingFieldIdentity.suggestionAnchor(for: field),
             requestFingerprint: activeSuggestionRequestFingerprint ?? "",
             precedingText: field.precedingText,
-            fullText: text)
-        var fresh = CotypingSession(field: field, fullText: text, kind: .continuation)
-        fresh.isOpenEnded = CotypingSuggestionExtension.isOpenEnded(
-            text, wordLimit: settingsProvider().cotypingMaxWords)
+            fullText: text,
+            isOpenEnded: fresh.isOpenEnded)
         present(fresh, overlayText: text)
         return true
     }
@@ -414,11 +415,12 @@ extension CotypingCoordinator {
         guard work == generation,
               field.selectionLength == 0,
               !field.isSecure else { return false }
-        guard let text = suggestionAnchorCache.remainder(
+        guard let restored = suggestionAnchorCache.restoration(
             identityKey: CotypingFieldIdentity.suggestionAnchor(for: field),
             requestFingerprint: requestFingerprint,
             precedingText: field.precedingText),
-              !text.isEmpty else { return false }
+              !restored.text.isEmpty else { return false }
+        let text = restored.text
 
         guard !CotypingTrailingDuplicationFilter.duplicatesTrailingText(
             text,
@@ -438,9 +440,9 @@ extension CotypingCoordinator {
         }
 
         lastAcceptedTail = nil
-        present(
-            CotypingSession(field: field, fullText: text, kind: .continuation),
-            overlayText: text)
+        var restoredSession = CotypingSession(field: field, fullText: text, kind: .continuation)
+        restoredSession.isOpenEnded = restored.isOpenEnded
+        present(restoredSession, overlayText: text)
         return true
     }
 

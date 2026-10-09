@@ -202,4 +202,41 @@ final class CotypingVisualCaretTests: XCTestCase {
         XCTAssertEqual(found.baseline, field.minY + baselines[1], accuracy: 1)
         XCTAssertEqual(found.pointSize, 14, accuracy: 0.7)
     }
+
+    // MARK: - Waiting for a find
+
+    /// A finished suggestion waits at most its budget for the caret, then is
+    /// shown beside the field. The slow find is left running for next time.
+    func testTheWaitForASlowFindEndsAtItsDeadline() async {
+        let find = Task { _ = try? await Task.sleep(for: .seconds(5)) }
+        defer { find.cancel() }
+        let start = ContinuousClock.now
+        await CotypingBoundedWait.wait(for: find, milliseconds: 50)
+        XCTAssertLessThan(start.duration(to: .now), .seconds(2))
+        XCTAssertFalse(find.isCancelled, "only the wait ends; the find keeps running")
+    }
+
+    func testAFindThatFinishesFirstEndsTheWaitAtOnce() async {
+        let find = Task { _ = try? await Task.sleep(for: .milliseconds(10)) }
+        let start = ContinuousClock.now
+        await CotypingBoundedWait.wait(for: find, milliseconds: 5_000)
+        XCTAssertLessThan(start.duration(to: .now), .seconds(2))
+    }
+
+    func testCancellingTheWaiterEndsTheWait() async {
+        let find = Task { _ = try? await Task.sleep(for: .seconds(5)) }
+        defer { find.cancel() }
+        let start = ContinuousClock.now
+        let waiter = Task { await CotypingBoundedWait.wait(for: find, milliseconds: 5_000) }
+        waiter.cancel()
+        await waiter.value
+        XCTAssertLessThan(start.duration(to: .now), .seconds(2))
+    }
+
+    @MainActor
+    func testWithNoFindRunningThereIsNothingToWaitFor() async {
+        let start = ContinuousClock.now
+        await CotypingVisualCaret().waitForPending(milliseconds: 5_000)
+        XCTAssertLessThan(start.duration(to: .now), .seconds(2))
+    }
 }

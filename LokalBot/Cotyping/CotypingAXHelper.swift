@@ -119,6 +119,13 @@ enum CotypingAXHelper {
     /// metadata. It is captured only when site exclusions are configured.
     private static let domainURLCaptureMaximumAgeSeconds: TimeInterval = 0.25
 
+    /// Window title and placeholder are read again once they are a second old. Chat
+    /// apps reuse one composer across conversations, so a title kept for as
+    /// long as the field stayed focused named the conversation left behind.
+    /// A second still lets one suggestion's prediction and validation reads
+    /// share a capture.
+    static let surfaceCaptureMaximumAgeSeconds: TimeInterval = 1
+
     /// A bounded-cost identity/privacy snapshot for dictation delivery. Unlike
     /// `resolveFocus`, this never reads the field value, surrounding text,
     /// caret geometry, window surface, URL, or style.
@@ -760,7 +767,7 @@ enum CotypingAXHelper {
                 inputFrameRect: inputFrameRect,
                 includeSurface: true,
                 includeURL: false)
-            capture = cacheState.surfaceCaptures.capture(forKey: surfaceKey) {
+            capture = cachedSurfaceCapture(in: cacheState.surfaceCaptures, forKey: surfaceKey) {
                 CotypingSurfaceCapture(
                     windowTitle: windowTitle(near: element),
                     fieldPlaceholder: stringAttribute(element, kAXPlaceholderValueAttribute as String),
@@ -789,6 +796,17 @@ enum CotypingAXHelper {
             capture.urlString = urlCapture.urlString
         }
         return capture
+    }
+
+    /// The field's window title and placeholder from `store`, read again with
+    /// `read` once the cached pair is older than `surfaceCaptureMaximumAgeSeconds`.
+    static func cachedSurfaceCapture(
+        in store: CotypingSurfaceCaptureSingleFlight,
+        forKey key: String,
+        clock: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
+        read: () -> CotypingSurfaceCapture
+    ) -> CotypingSurfaceCapture {
+        store.capture(forKey: key, maxAge: surfaceCaptureMaximumAgeSeconds, clock: clock, resolve: read)
     }
 
     /// Best-effort, fail-safe read of the focused tab's URL near `element`, for

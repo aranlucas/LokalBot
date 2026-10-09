@@ -139,6 +139,14 @@ final class CotypingRehearsalTopUpTests: XCTestCase {
         _ = try XCTUnwrap(rehearsal.accept(.chunk, text: draft, options: .init()))
         XCTAssertNil(rehearsal.topUpPrefix(wordLimit: 3))
     }
+
+    func testTypingTheSuggestedWordsAsksForMoreJustAsAcceptingDoes() throws {
+        var rehearsal = CotypingRehearsal()
+        rehearsal.present(" between the number", after: draft, wordLimit: 3)
+        XCTAssertEqual(rehearsal.textChanged(to: draft + " between"), .advanced)
+        let prefix = try XCTUnwrap(rehearsal.topUpPrefix(wordLimit: 3))
+        XCTAssertEqual(prefix, draft + " between the number")
+    }
 }
 
 /// Search boxes stay quiet.
