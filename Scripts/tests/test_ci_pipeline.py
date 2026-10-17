@@ -3,6 +3,7 @@ import copy
 import contextlib
 import io
 import importlib.util
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -27,6 +28,22 @@ shards = module('ui_shards', 'ui-shards.py')
 products = module('test_products', 'test-products.py')
 compiler = module('compiler_cache', 'compiler-cache.py')
 timing = module('ci_timings', 'ci-timings.py')
+
+
+class ArtifactDigestTests(unittest.TestCase):
+    def test_artifact_hashes_cover_empty_binary_and_multi_chunk_files(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            artifact = Path(temporary) / 'artifact.bin'
+            for data in [b'', bytes(range(256)), bytes(range(256)) * 8192 + b'tail']:
+                artifact.write_bytes(data)
+                expected = hashlib.sha256(data).hexdigest()
+                for helper in [release, products, compiler]:
+                    with self.subTest(helper=helper.__name__, size=len(data)):
+                        self.assertEqual(helper.digest(artifact), expected)
+                artifact.write_bytes(data + b'changed')
+                for helper in [release, products, compiler]:
+                    with self.subTest(helper=helper.__name__, changed=True, size=len(data)):
+                        self.assertNotEqual(helper.digest(artifact), expected)
 
 
 class PublicationGateTests(unittest.TestCase):
