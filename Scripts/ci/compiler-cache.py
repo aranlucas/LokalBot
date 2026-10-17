@@ -22,8 +22,11 @@ def output(*args):
 
 
 def digest(path):
+    checksum = hashlib.sha256()
     with path.open('rb') as stream:
-        return hashlib.file_digest(stream, 'sha256').hexdigest()
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            checksum.update(chunk)
+    return checksum.hexdigest()
 
 
 def fingerprint(paths):
